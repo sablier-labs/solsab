@@ -17,7 +17,7 @@ pub mod solsab {
         let cpi_accounts = SplTransfer {
             from: sender_ata.to_account_info().clone(),
             to: recipient_ata.to_account_info().clone(),
-            authority: sender_ata.to_account_info().clone(),
+            authority: ctx.accounts.sender.to_account_info().clone(),
         };
         let cpi_program = token_program.to_account_info();
         
@@ -31,10 +31,6 @@ pub mod solsab {
         stream.token_mint_account = ctx.accounts.sender_ata.mint;
         stream.total_stream_amount = amount;
 
-        Ok(())
-    }
-
-    pub fn get_lockup_linear_stream(_ctx: Context<GetLockupLinearStream>) -> Result<()> {
         Ok(())
     }
 }
@@ -69,23 +65,6 @@ pub struct CreateLockupLinearStream<'info> {
     
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
-}
-
-#[derive(Accounts)]
-pub struct GetLockupLinearStream<'info> {
-    #[account()]
-    pub sender_ata: Account<'info, TokenAccount>,
-
-    #[account(
-        constraint = recipient_ata.mint == sender_ata.mint
-    )]
-    pub recipient_ata: Account<'info, TokenAccount>,
-    
-    #[account(
-        seeds = [b"stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
-        bump = stream.bump,
-    )]
-    pub stream: Account<'info, Stream>,
 }
 
 #[account]
