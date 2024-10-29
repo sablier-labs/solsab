@@ -79,6 +79,7 @@ describe("solsab", () => {
     await program.methods
       .createLockupLinearStream(amount)
       .accounts({
+        mint: tokenMint,
         senderAta: senderAssociatedTokenAccount.address,
         recipientAta: recipientAssociatedTokenAccount.address,
       })
