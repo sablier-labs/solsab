@@ -6,9 +6,18 @@ import { assert } from "chai";
 import {
   createMint,
   getOrCreateAssociatedTokenAccount,
+  getAssociatedTokenAddressSync,
   mintTo,
 } from "@solana/spl-token";
+
+import {
+  confirmTransaction,
+  createAccountsMintsAndTokenAccounts,
+  makeKeypairs,
+} from "@solana-developers/helpers";
+
 import { Solsab } from "../target/types/solsab";
+
 const web3 = anchor.web3;
 
 describe("solsab", () => {
@@ -73,7 +82,7 @@ describe("solsab", () => {
       );
     console.log(`Sender ATA: ${senderAssociatedTokenAccount.address}`);
 
-    const txSignature = await mintTo(
+    const mintTxSig = await mintTo(
       connection,
       sender,
       tokenMint,
@@ -98,7 +107,7 @@ describe("solsab", () => {
 
     const amount = new anchor.BN(6);
 
-    await program.methods
+    let createStreamTxSig = await program.methods
       .createLockupLinearStream(amount)
       .accounts({
         mint: tokenMint,
@@ -107,5 +116,25 @@ describe("solsab", () => {
       })
       .signers([sender])
       .rpc();
+
+    await confirmTransaction(connection, createStreamTxSig, `confirmed`);
+
+    // Derive the Treasury's ATA address
+    const treasuryATA = getAssociatedTokenAddressSync(
+      tokenMint,
+      treasuryPDA,
+      true
+    );
+
+    // Assert that the Treasury ATA contains the deposited tokens
+    const treasuryBalanceResponse = await connection.getTokenAccountBalance(
+      treasuryATA
+    );
+    const treasuryBalance = new anchor.BN(treasuryBalanceResponse.value.amount);
+    assert(
+      treasuryBalance.eq(amount),
+      "Treasury hasn't received the sender's tokens"
+    );
+    console.log(`Treasury balance: ${treasuryBalance.toNumber()}`);
   });
 });
