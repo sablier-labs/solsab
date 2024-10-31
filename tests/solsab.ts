@@ -1,7 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
+import { assert } from "chai";
 // import { getCustomErrorMessage } from "@solana-developers/helpers";
-// import { assert } from "chai";
 // import { systemProgramErrors } from "./system-errors";
 import {
   createMint,
@@ -21,21 +21,43 @@ describe("solsab", () => {
   console.log(`Sender: ${sender.publicKey}`);
   const program = anchor.workspace.solsab as Program<Solsab>;
 
-  before(async () => {
+  let treasuryPDA: anchor.web3.PublicKey;
+
+  beforeEach(async () => {
     const balance = await connection.getBalance(sender.publicKey);
     const balanceInSOL = balance / web3.LAMPORTS_PER_SOL;
     const formattedBalance = new Intl.NumberFormat().format(balanceInSOL);
     console.log(`Balance: ${formattedBalance} SOL`);
   });
 
+  it("initializes the SolSab program", async () => {
+    // Pre-calculate the PDA address for the treasury
+    [treasuryPDA] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("treasury")],
+      program.programId
+    );
+
+    await program.methods
+      .initialize()
+      .accounts({
+        signer: provider.wallet.publicKey,
+      })
+      .rpc();
+
+    // Make sure the program is properly initialized
+    // Confirm that the treasury PDA account was created and has expected properties
+    const treasuryAccount = await program.account.treasury.fetch(treasuryPDA);
+    assert.ok(treasuryAccount, "Treasury PDA not initialized");
+  });
+
   it("Creates a LockupLinear Stream", async () => {
     const TOKEN_DECIMALS = 2;
-    const mintAuthority = null;
+    const freezeAuthority = null;
     const tokenMint = await createMint(
       connection,
       sender,
       sender.publicKey,
-      mintAuthority,
+      freezeAuthority,
       TOKEN_DECIMALS
     );
     console.log(`Token Mint: ${tokenMint}`);
@@ -64,7 +86,7 @@ describe("solsab", () => {
     const recipientAssociatedTokenAccount =
       await getOrCreateAssociatedTokenAccount(
         connection,
-        sender, //TODO: why can't recipient be the signer, even if they're airdropped SOL?
+        sender,
         tokenMint,
         recipient.publicKey
       );
