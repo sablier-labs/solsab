@@ -1,3 +1,4 @@
+import { PublicKey } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { assert } from "chai";
@@ -8,6 +9,7 @@ import {
   getOrCreateAssociatedTokenAccount,
   getAssociatedTokenAddressSync,
   mintTo,
+  Account,
 } from "@solana/spl-token";
 
 import {
@@ -29,6 +31,7 @@ describe("solsab", () => {
   const sender = (provider.wallet as anchor.Wallet).payer;
   console.log(`Sender: ${sender.publicKey}`);
   const program = anchor.workspace.solsab as Program<Solsab>;
+  const SOLSAB_PROGRAM_ID = program.programId;
 
   let treasuryPDA: anchor.web3.PublicKey;
 
@@ -38,6 +41,95 @@ describe("solsab", () => {
     const formattedBalance = new Intl.NumberFormat().format(balanceInSOL);
     console.log(`Balance: ${formattedBalance} SOL`);
   });
+
+  async function createCancelableLockupLinearStream(): Promise<{
+    stream: any;
+    senderATA: Account;
+    recipientATA: Account;
+    tokenMint: anchor.web3.PublicKey;
+    streamedAmount: anchor.BN;
+  }> {
+    const TOKEN_DECIMALS = 2;
+    const freezeAuthority = null;
+    const tokenMint = await createMint(
+      connection,
+      sender,
+      sender.publicKey,
+      freezeAuthority,
+      TOKEN_DECIMALS
+    );
+    console.log(`Token Mint: ${tokenMint}`);
+
+    const MINOR_UNITS_PER_MAJOR_UNITS = Math.pow(10, TOKEN_DECIMALS);
+
+    const senderATA = await getOrCreateAssociatedTokenAccount(
+      connection,
+      sender,
+      tokenMint,
+      sender.publicKey
+    );
+    console.log(`Sender ATA: ${senderATA.address}`);
+
+    const mintTxSig = await mintTo(
+      connection,
+      sender,
+      tokenMint,
+      senderATA.address,
+      sender,
+      10 * MINOR_UNITS_PER_MAJOR_UNITS
+    );
+
+    const recipient = anchor.web3.Keypair.generate();
+    const recipientATA = await getOrCreateAssociatedTokenAccount(
+      connection,
+      sender,
+      tokenMint,
+      recipient.publicKey
+    );
+    console.log(`Recipient ATA: ${recipientATA.address}`);
+
+    console.log(
+      `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
+    );
+
+    const streamedAmount = new anchor.BN(6);
+    const isCancelable = true;
+
+    let createStreamTxSig = await program.methods
+      .createLockupLinearStream(streamedAmount, isCancelable)
+      .accounts({
+        mint: tokenMint,
+        senderAta: senderATA.address,
+        recipientAta: recipientATA.address,
+      })
+      .signers([sender])
+      .rpc();
+
+    await confirmTransaction(connection, createStreamTxSig, `confirmed`);
+
+    // The seeds used when creating the Stream PDA
+    const seeds = [
+      Buffer.from("LL_stream"),
+      Buffer.from(senderATA.address.toBytes()),
+      Buffer.from(recipientATA.address.toBytes()),
+    ];
+
+    const [pdaAddress] = PublicKey.findProgramAddressSync(
+      seeds,
+      SOLSAB_PROGRAM_ID
+    );
+
+    // Assert that the Stream is no longer cancelable
+    const stream = await program.account.stream.fetch(pdaAddress);
+
+    return {
+      stream,
+      senderATA,
+      recipientATA,
+      tokenMint,
+      streamedAmount: streamedAmount,
+    };
+  }
 
   it("initializes the SolSab program", async () => {
     // Pre-calculate the PDA address for the treasury
@@ -60,65 +152,11 @@ describe("solsab", () => {
   });
 
   it("Creates a LockupLinear Stream", async () => {
-    const TOKEN_DECIMALS = 2;
-    const freezeAuthority = null;
-    const tokenMint = await createMint(
-      connection,
-      sender,
-      sender.publicKey,
-      freezeAuthority,
-      TOKEN_DECIMALS
-    );
-    console.log(`Token Mint: ${tokenMint}`);
-
-    const MINOR_UNITS_PER_MAJOR_UNITS = Math.pow(10, TOKEN_DECIMALS);
-
-    const senderAssociatedTokenAccount =
-      await getOrCreateAssociatedTokenAccount(
-        connection,
-        sender,
-        tokenMint,
-        sender.publicKey
-      );
-    console.log(`Sender ATA: ${senderAssociatedTokenAccount.address}`);
-
-    const mintTxSig = await mintTo(
-      connection,
-      sender,
+    const {
+      stream,
       tokenMint,
-      senderAssociatedTokenAccount.address,
-      sender,
-      10 * MINOR_UNITS_PER_MAJOR_UNITS
-    );
-
-    const recipient = anchor.web3.Keypair.generate();
-    const recipientAssociatedTokenAccount =
-      await getOrCreateAssociatedTokenAccount(
-        connection,
-        sender,
-        tokenMint,
-        recipient.publicKey
-      );
-    console.log(`Recipient ATA: ${recipientAssociatedTokenAccount.address}`);
-
-    console.log(
-      `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
-    );
-
-    const streamed_amount = new anchor.BN(6);
-    const is_cancelable = true;
-
-    let createStreamTxSig = await program.methods
-      .createLockupLinearStream(streamed_amount, is_cancelable)
-      .accounts({
-        mint: tokenMint,
-        senderAta: senderAssociatedTokenAccount.address,
-        recipientAta: recipientAssociatedTokenAccount.address,
-      })
-      .signers([sender])
-      .rpc();
-
-    await confirmTransaction(connection, createStreamTxSig, `confirmed`);
+      streamedAmount: streamedAmount,
+    } = await createCancelableLockupLinearStream();
 
     // Derive the Treasury's ATA address
     const treasuryATA = getAssociatedTokenAddressSync(
@@ -133,9 +171,32 @@ describe("solsab", () => {
     );
     const treasuryBalance = new anchor.BN(treasuryBalanceResponse.value.amount);
     assert(
-      treasuryBalance.eq(streamed_amount),
+      treasuryBalance.eq(streamedAmount),
       "Treasury hasn't received the sender's tokens"
     );
     console.log(`Treasury balance: ${treasuryBalance.toNumber()}`);
+
+    assert(
+      stream.isCancelable === true,
+      "The created Stream is non-cancelable"
+    );
+  });
+
+  it("Renounces the cancelability of a LockupLinear Stream", async () => {
+    const { stream, senderATA, recipientATA } =
+      await createCancelableLockupLinearStream();
+
+    let renounceStreamTxSig = await program.methods
+      .renounceStreamCancelability()
+      .accounts({
+        senderAta: senderATA.address,
+        recipientAta: recipientATA.address,
+      })
+      .signers([sender])
+      .rpc();
+
+    await confirmTransaction(connection, renounceStreamTxSig, `confirmed`);
+
+    assert(stream.isCancelable === true, "The Stream couldn't be renounced");
   });
 });
