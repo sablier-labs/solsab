@@ -1,0 +1,61 @@
+name: Build Solana Program
+
+# Run this workflow on pushes and pull requests to any branch
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+env:
+  SOLANA_VERSION: v1.9.9
+  ANCHOR_VERSION: 0.24.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.14.2
+          cache: "npm"
+      - run: npm install
+
+      - run: echo "/home/runner/.cargo/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - run: sudo apt-get update
+        shell: bash
+      - run: sudo apt-get install -y build-essential pkg-config libudev-dev llvm libclang-dev protobuf-compiler libssl-dev
+        shell: bash
+
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        shell: bash
+      - run: . "$HOME/.cargo/env"
+        shell: bash
+
+      - run: curl -sSfL https://release.anza.xyz/stable/install | sh
+        shell: bash
+      - run: export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+        shell: bash
+      - run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - run: cargo install --git https://github.com/coral-xyz/anchor avm --force
+        shell: bash
+      - run: avm install latest
+        shell: bash
+      - run: avm use latest
+        shell: bash
+
+      - run: anchor build
+        shell: bash
+
+    #   - run: npm i -g @project-serum/anchor-cli@$ANCHOR_VERSION ts-mocha typescript
+    #     shell: bash
+    #   - run: solana-keygen new
+    #     shell: bash
+    #   - run: solana airdrop 2
+    #     shell: bash
+    #   - run: anchor test
+    #     shell: bash
