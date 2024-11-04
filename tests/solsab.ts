@@ -105,10 +105,11 @@ describe("solsab", () => {
       `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
     );
 
-    const amount = new anchor.BN(6);
+    const streamed_amount = new anchor.BN(6);
+    const is_cancelable = true;
 
     let createStreamTxSig = await program.methods
-      .createLockupLinearStream(amount)
+      .createLockupLinearStream(streamed_amount, is_cancelable)
       .accounts({
         mint: tokenMint,
         senderAta: senderAssociatedTokenAccount.address,
@@ -132,7 +133,7 @@ describe("solsab", () => {
     );
     const treasuryBalance = new anchor.BN(treasuryBalanceResponse.value.amount);
     assert(
-      treasuryBalance.eq(amount),
+      treasuryBalance.eq(streamed_amount),
       "Treasury hasn't received the sender's tokens"
     );
     console.log(`Treasury balance: ${treasuryBalance.toNumber()}`);

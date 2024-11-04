@@ -4,9 +4,14 @@ use anchor_spl::{
     token::{transfer, TokenAccount, Token, Transfer as SplTransfer, Mint}, 
 };
 
+pub mod errors;
+use errors::ErrorCode;
+
+
 declare_id!("D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF");
 
 pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
+
 
 #[program]
 pub mod solsab {
@@ -19,7 +24,7 @@ pub mod solsab {
         Ok(())
     }
 
-    pub fn create_lockup_linear_stream(ctx: Context<CreateLockupLinearStream>, amount: u64) -> Result<()> {
+    pub fn create_lockup_linear_stream(ctx: Context<CreateLockupLinearStream>, amount: u64, is_cancelable: bool) -> Result<()> {
         let sender = &ctx.accounts.sender;
         let sender_ata = &ctx.accounts.sender_ata;
         let program_ata = &ctx.accounts.program_ata;
@@ -42,7 +47,47 @@ pub mod solsab {
         stream.recipient_ata = recipient_ata.key();
         stream.token_mint_account = ctx.accounts.sender_ata.mint;
         stream.total_stream_amount = amount;
+        stream.is_cancelable = is_cancelable;
+        stream.was_canceled = false;
 
+        Ok(())
+    }
+
+    pub fn cancel_lockup_linear_stream(ctx: Context<CancelLockupLinearStream>) -> Result<()> {
+        let sender = &ctx.accounts.sender;
+        let stream = &mut ctx.accounts.stream;
+        let sender_ata = &ctx.accounts.sender_ata;
+        let recipient_ata = &ctx.accounts.recipient_ata;
+
+        // Check if the Stream is cancelable
+        if !stream.is_cancelable {
+            return Err(ErrorCode::StreamIsNotCancelable.into());
+        }
+
+        // Check if the Stream was already canceled
+        if stream.was_canceled {
+            return Err(ErrorCode::StreamIsAlreadyCanceled.into());
+        }
+
+        // TODO: Transfer the streamed SPL tokens to the recipient
+        // TODO: Transfer the unstreamed SPL tokens back to the sender
+
+        // Mark the Stream as canceled
+        stream.was_canceled = true;
+        Ok(())
+    }
+
+
+    pub fn renounce_stream_cancelability(ctx: Context<RenounceStreamCancelability>) -> Result<()> {
+        let stream = &mut ctx.accounts.stream;
+
+        // Check if the Stream is cancelable
+        if !stream.is_cancelable {
+            return Err(ErrorCode::StreamCancelabilityIsAlreadyRenounced.into());
+        }
+
+        // Mark the Stream as non-cancelable
+        stream.is_cancelable = false;
         Ok(())
     }
 }
@@ -102,7 +147,7 @@ pub struct CreateLockupLinearStream<'info> {
     #[account(
         init,
         payer = sender,
-        seeds = [b"stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
+        seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
         space = ANCHOR_DISCRIMINATOR_SIZE + Stream::INIT_SPACE,
         bump
     )]
@@ -115,6 +160,52 @@ pub struct CreateLockupLinearStream<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
+
+#[derive(Accounts)]
+pub struct CancelLockupLinearStream<'info> {
+    #[account(mut)]
+    pub sender: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
+        bump
+    )]
+    pub stream: Account<'info, Stream>,
+
+    #[account(
+        mut, 
+        constraint = sender_ata.owner == sender.key(),
+    )]
+    pub sender_ata: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub recipient_ata: Account<'info, TokenAccount>,
+}
+
+
+#[derive(Accounts)]
+pub struct RenounceStreamCancelability<'info> {
+    #[account(mut)]
+    pub sender: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
+        bump
+    )]
+    pub stream: Account<'info, Stream>,
+
+    #[account(
+        mut, 
+        constraint = sender_ata.owner == sender.key(),
+    )]
+    pub sender_ata: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub recipient_ata: Account<'info, TokenAccount>,
+}
+
 #[account]
 #[derive(InitSpace)]
 pub struct Stream {
@@ -122,6 +213,8 @@ pub struct Stream {
     pub recipient_ata: Pubkey,
     pub token_mint_account: Pubkey,
     pub total_stream_amount: u64,
+    pub is_cancelable: bool,
+    pub was_canceled: bool,
     pub bump: u8,
 }
 
