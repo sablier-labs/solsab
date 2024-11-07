@@ -10,6 +10,7 @@ import {
   getAssociatedTokenAddressSync,
   mintTo,
   Account,
+  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
 import {
@@ -99,8 +100,8 @@ describe("solsab", () => {
       .createLockupLinearStream(streamedAmount, isCancelable)
       .accounts({
         mint: tokenMint,
-        senderAta: senderATA.address,
-        recipientAta: recipientATA.address,
+        recipient: recipient.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([sender])
       .rpc();

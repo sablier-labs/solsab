@@ -75,14 +75,14 @@ jobs:
         run: solana-keygen new --no-bip39-passphrase
         shell: bash
 
+      - name: Install
+        run: npm i -g @project-serum/anchor-cli@$ANCHOR_VERSION ts-mocha typescript
+        shell: bash
+
       - name: Run tests
         run: anchor test --skip-build
         shell: bash
 
-    #   - run: npm i -g @project-serum/anchor-cli@$ANCHOR_VERSION ts-mocha typescript
-    #     shell: bash
-    #   - run: solana-keygen new
-    #     shell: bash
     #   - run: solana airdrop 2
     #     shell: bash
     #   - run: anchor test

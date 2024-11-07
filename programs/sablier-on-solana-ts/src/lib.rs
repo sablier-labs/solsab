@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{transfer, TokenAccount, Token, Transfer as SplTransfer, Mint}, 
+    token_interface::{transfer_checked, TransferChecked, TokenAccount, Mint, TokenInterface}
 };
 
 pub mod errors;
@@ -28,18 +28,20 @@ pub mod solsab {
         let sender = &ctx.accounts.sender;
         let sender_ata = &ctx.accounts.sender_ata;
         let program_ata = &ctx.accounts.program_ata;
+        let mint = &ctx.accounts.mint;
 
         // Transfer the SPL tokens to the Treasury's ATA
         // Prepare the transfer instruction
-        let transfer_ix = SplTransfer {
-            from: sender_ata.to_account_info().clone(),
-            to: program_ata.to_account_info().clone(),
-            authority: sender.to_account_info().clone(),
+        let transfer_ix = TransferChecked {
+            from: sender_ata.to_account_info(),
+            mint: mint.to_account_info(),
+            to: program_ata.to_account_info(),
+            authority: sender.to_account_info(),
         };
         
         // Execute the transfer
         let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
-        transfer(cpi_ctx, amount)?;
+        transfer_checked(cpi_ctx, amount, mint.decimals)?;
 
         let recipient_ata = &ctx.accounts.recipient_ata;
         let stream = &mut ctx.accounts.stream;
@@ -54,10 +56,10 @@ pub mod solsab {
     }
 
     pub fn cancel_lockup_linear_stream(ctx: Context<CancelLockupLinearStream>) -> Result<()> {
-        let sender = &ctx.accounts.sender;
+        //let sender = &ctx.accounts.sender;
         let stream = &mut ctx.accounts.stream;
-        let sender_ata = &ctx.accounts.sender_ata;
-        let recipient_ata = &ctx.accounts.recipient_ata;
+        // let sender_ata = &ctx.accounts.sender_ata;
+        // let recipient_ata = &ctx.accounts.recipient_ata;
 
         // Check if the Stream is cancelable
         if !stream.is_cancelable {
@@ -115,20 +117,27 @@ pub struct CreateLockupLinearStream<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
 
-    pub mint: Account<'info, Mint>,
+    #[account(mint::token_program = token_program)]
+    pub mint: InterfaceAccount<'info, Mint>,
 
     #[account(
         mut, 
-        constraint = sender_ata.owner == sender.key(),
-        constraint = sender_ata.mint == mint.key()
+        associated_token::mint = mint,
+        associated_token::authority = sender,
+        associated_token::token_program = token_program
     )]
-    pub sender_ata: Account<'info, TokenAccount>,
+    pub sender_ata: InterfaceAccount<'info, TokenAccount>,
+
+    /// CHECK: The recipient may be any account, as long as it is the authority of recipient_ata
+    pub recipient: UncheckedAccount<'info>,
 
     #[account(
         mut, 
-        constraint = recipient_ata.mint == mint.key()
+        associated_token::mint = mint,
+        associated_token::authority = recipient,
+        associated_token::token_program = token_program
     )]
-    pub recipient_ata: Account<'info, TokenAccount>,
+    pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         seeds = [b"treasury"],
@@ -141,8 +150,9 @@ pub struct CreateLockupLinearStream<'info> {
         payer = sender,
         associated_token::mint = mint,
         associated_token::authority = treasury_pda,
+        associated_token::token_program = token_program
     )]
-    pub program_ata: Account<'info, TokenAccount>,
+    pub program_ata: InterfaceAccount<'info, TokenAccount>,
     
     #[account(
         init,
@@ -156,7 +166,7 @@ pub struct CreateLockupLinearStream<'info> {
     pub stream: Account<'info, Stream>,
     
     pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>, //TODO: also implement the support for the Token2022 standard (via the interface?)
+    pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
@@ -177,10 +187,10 @@ pub struct CancelLockupLinearStream<'info> {
         mut, 
         constraint = sender_ata.owner == sender.key(),
     )]
-    pub sender_ata: Account<'info, TokenAccount>,
+    pub sender_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(mut)]
-    pub recipient_ata: Account<'info, TokenAccount>,
+    pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
 }
 
 
@@ -200,10 +210,10 @@ pub struct RenounceStreamCancelability<'info> {
         mut, 
         constraint = sender_ata.owner == sender.key(),
     )]
-    pub sender_ata: Account<'info, TokenAccount>,
+    pub sender_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(mut)]
-    pub recipient_ata: Account<'info, TokenAccount>,
+    pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
 }
 
 #[account]
