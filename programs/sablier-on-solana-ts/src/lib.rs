@@ -3,6 +3,7 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{transfer_checked, TransferChecked, TokenAccount, Mint, TokenInterface}
 };
+use anchor_lang::solana_program::sysvar::{clock::Clock, Sysvar};
 
 pub mod errors;
 use errors::ErrorCode;
@@ -24,11 +25,27 @@ pub mod solsab {
         Ok(())
     }
 
-    pub fn create_lockup_linear_stream(ctx: Context<CreateLockupLinearStream>, amount: u64, is_cancelable: bool) -> Result<()> {
+    pub fn create_lockup_linear_stream(ctx: Context<CreateLockupLinearStream>, start_time:  i64, cliff_time:  i64, end_time:  i64, amount: u64, is_cancelable: bool) -> Result<()> {
         let sender = &ctx.accounts.sender;
         let sender_ata = &ctx.accounts.sender_ata;
         let program_ata = &ctx.accounts.program_ata;
         let mint = &ctx.accounts.mint;
+
+        // Assert that the deposited amount is not zero
+        if amount == 0 {
+            return Err(ErrorCode::InvalidDepositAmount.into());
+        }
+
+        // Assert that the end time is greater than the start time and is not in the past
+        let current_time = Clock::get().unwrap().unix_timestamp;
+        if end_time <= start_time || end_time <= current_time {
+            return Err(ErrorCode::InvalidStartOrEndTime.into());
+        }
+
+        // Assert that the cliff time is strictly between the start and end times
+        if start_time >= cliff_time || cliff_time >= end_time {
+            return Err(ErrorCode::InvalidCliffTime.into());
+        }
 
         // Transfer the SPL tokens to the Treasury's ATA
         // Prepare the transfer instruction
@@ -47,8 +64,14 @@ pub mod solsab {
         let stream = &mut ctx.accounts.stream;
         stream.sender_ata = sender_ata.key();
         stream.recipient_ata = recipient_ata.key();
-        stream.token_mint_account = ctx.accounts.sender_ata.mint;
-        stream.total_stream_amount = amount;
+        stream.token_mint_account = mint.key();
+
+        // TODO: shouldn't the Amounts field be allocated manually?
+        stream.amounts.deposited = amount;
+        
+
+        stream.start_time = start_time;
+        stream.end_time = end_time;
         stream.is_cancelable = is_cancelable;
         stream.was_canceled = false;
 
@@ -222,14 +245,42 @@ pub struct Stream {
     pub sender_ata: Pubkey,
     pub recipient_ata: Pubkey,
     pub token_mint_account: Pubkey,
-    pub total_stream_amount: u64,
+    pub amounts: Amounts,
+    pub start_time: i64,
+    pub cliff_time: i64,
+    pub end_time: i64,
     pub is_cancelable: bool,
     pub was_canceled: bool,
     pub bump: u8,
+}
+
+#[derive(Clone, InitSpace, anchor_lang::AnchorSerialize, anchor_lang::AnchorDeserialize)]
+pub struct Amounts {
+    pub deposited: u64,
+    pub withdrawn: u64,
+    pub refunded: u64,
 }
 
 #[account]
 #[derive(InitSpace)]
 pub struct Treasury {
     pub bump: u8,
+}
+
+
+pub fn get_streamed_amount(stream: Stream) -> u64 {
+    let current_time = Clock::get().unwrap().unix_timestamp;
+
+    if stream.cliff_time > current_time || stream.start_time > current_time {
+        return 0; // No assets have been streamed yet
+    }
+
+    if stream.end_time < current_time {
+        return stream.amounts.deposited; // All assets have been streamed
+    }
+
+    // Calculate the streamed amount
+    let elapsed_time = current_time - stream.start_time;
+    let total_duration = stream.end_time - stream.start_time;
+    (stream.amounts.deposited as u128 * elapsed_time as u128 / total_duration as u128) as u64
 }

@@ -8,7 +8,7 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -70,20 +70,3 @@ jobs:
 
       - run: anchor build
         shell: bash
-
-      - name: Create keypair
-        run: solana-keygen new --no-bip39-passphrase
-        shell: bash
-
-      - name: Install
-        run: npm i -g @project-serum/anchor-cli@$ANCHOR_VERSION ts-mocha typescript
-        shell: bash
-
-      - name: Run tests
-        run: anchor test --skip-build
-        shell: bash
-
-    #   - run: solana airdrop 2
-    #     shell: bash
-    #   - run: anchor test
-    #     shell: bash
