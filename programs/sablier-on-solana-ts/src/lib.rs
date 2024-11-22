@@ -79,10 +79,11 @@ pub mod solsab {
     }
 
     pub fn cancel_lockup_linear_stream(ctx: Context<CancelLockupLinearStream>) -> Result<()> {
-        //let sender = &ctx.accounts.sender;
         let stream = &mut ctx.accounts.stream;
-        // let sender_ata = &ctx.accounts.sender_ata;
-        // let recipient_ata = &ctx.accounts.recipient_ata;
+        let sender_ata = &ctx.accounts.sender_ata;
+        let recipient_ata = &ctx.accounts.recipient_ata;
+        let program_ata = &ctx.accounts.program_ata;
+        let mint = &ctx.accounts.mint;
 
         // Check if the Stream is cancelable
         if !stream.is_cancelable {
@@ -94,8 +95,37 @@ pub mod solsab {
             return Err(ErrorCode::StreamIsAlreadyCanceled.into());
         }
 
-        // TODO: Transfer the streamed SPL tokens to the recipient
-        // TODO: Transfer the unstreamed SPL tokens back to the sender
+        // Calculate the streamed amount
+        let streamed_amount = get_streamed_amount(stream);
+
+        // Transfer the streamed SPL tokens to the recipient
+        // Prepare the transfer instruction
+        let transfer_ix = TransferChecked {
+            from: program_ata.to_account_info(),
+            mint: mint.to_account_info(),
+            to: recipient_ata.to_account_info(),
+            authority: program_ata.to_account_info(),
+        };
+        
+        // Execute the transfer
+        let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
+        transfer_checked(cpi_ctx, streamed_amount, mint.decimals)?;
+
+        // Calculate the unstreamed amount
+        let unstreamed_amount = stream.amounts.deposited - streamed_amount;
+
+        // Transfer the unstreamed SPL tokens back to the sender
+        // Prepare the transfer instruction
+        let transfer_ix = TransferChecked {
+            from: program_ata.to_account_info(),
+            mint: mint.to_account_info(),
+            to: sender_ata.to_account_info(),
+            authority: program_ata.to_account_info(),
+        };
+
+        // Execute the transfer
+        let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
+        transfer_checked(cpi_ctx, unstreamed_amount, mint.decimals)?;
 
         // Mark the Stream as canceled
         stream.was_canceled = true;
@@ -206,6 +236,9 @@ pub struct CancelLockupLinearStream<'info> {
     )]
     pub stream: Account<'info, Stream>,
 
+    #[account(mint::token_program = token_program)]
+    pub mint: InterfaceAccount<'info, Mint>,
+
     #[account(
         mut, 
         constraint = sender_ata.owner == sender.key(),
@@ -214,6 +247,21 @@ pub struct CancelLockupLinearStream<'info> {
 
     #[account(mut)]
     pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        seeds = [b"treasury"],
+        bump
+    )]
+    pub treasury_pda: Account<'info, Treasury>,
+
+    #[account(
+        mut,
+        associated_token::mint = sender_ata.mint,
+        associated_token::authority = treasury_pda,
+        associated_token::token_program = token_program
+    )]
+    pub program_ata: InterfaceAccount<'info, TokenAccount>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 
@@ -268,7 +316,7 @@ pub struct Treasury {
 }
 
 
-pub fn get_streamed_amount(stream: Stream) -> u64 {
+pub fn get_streamed_amount(stream: &Stream) -> u64 {
     let current_time = Clock::get().unwrap().unix_timestamp;
 
     if stream.cliff_time > current_time || stream.start_time > current_time {
