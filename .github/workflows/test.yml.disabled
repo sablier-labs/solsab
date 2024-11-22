@@ -1,0 +1,84 @@
+name: Test Solana Program
+
+# Run this workflow on pushes and pull requests to any branch
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Get the required dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libudev-dev llvm libclang-dev protobuf-compiler libssl-dev
+        shell: bash
+
+      #   - name: Cache Solana CLI
+      #     uses: actions/cache@v4
+      #     id: cache-solana-cli
+      #     with:
+      #       path: |
+      #         ~/.local/share/solana
+      #         ~/.cache/solana
+      #       key: ${{ runner.os }}-solana-stable
+
+      - name: Install Solana CLI if not cached
+        # if: steps.cache-solana-cli.outputs.cache-hit != 'true'
+        run: |
+          curl -sSfL https://release.anza.xyz/stable/install | sh
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+        shell: bash
+
+      #   - name: Cache Anchor CLI
+      #     uses: actions/cache@v4
+      #     id: cache-anchor-cli
+      #     with:
+      #       path: |
+      #         ~/.cargo/bin/anchor
+      #         ~/.cargo/bin/avm
+      #       key: ${{ runner.os }}-anchor-latest
+
+      - name: Install Anchor CLI if not cached
+        # if: steps.cache-anchor-cli.outputs.cache-hit != 'true'
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --force
+          avm install latest
+        shell: bash
+
+      - run: avm use latest
+        shell: bash
+
+      - run: anchor build
+        shell: bash
+
+      # - name: Create keypair
+      #   run: solana-keygen new --no-bip39-passphrase
+      #   shell: bash
+
+      # - name: Install
+      #   run: npm i -g @project-serum/anchor-cli@$ANCHOR_VERSION ts-mocha typescript
+      #   shell: bash
+
+      # - name: Run tests
+      #   run: anchor test --skip-build
+      #   shell: bash

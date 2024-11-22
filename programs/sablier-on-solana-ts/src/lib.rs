@@ -111,8 +111,10 @@ pub mod solsab {
         let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
         transfer_checked(cpi_ctx, streamed_amount, mint.decimals)?;
 
+        stream.amounts.withdrawn += streamed_amount;
+
         // Calculate the unstreamed amount
-        let unstreamed_amount = stream.amounts.deposited - streamed_amount;
+        let refundable_amount = stream.amounts.deposited - streamed_amount;
 
         // Transfer the unstreamed SPL tokens back to the sender
         // Prepare the transfer instruction
@@ -125,13 +127,14 @@ pub mod solsab {
 
         // Execute the transfer
         let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
-        transfer_checked(cpi_ctx, unstreamed_amount, mint.decimals)?;
+        transfer_checked(cpi_ctx, refundable_amount, mint.decimals)?;
+
+        stream.amounts.refunded += refundable_amount;
 
         // Mark the Stream as canceled
         stream.was_canceled = true;
         Ok(())
     }
-
 
     pub fn renounce_stream_cancelability(ctx: Context<RenounceStreamCancelability>) -> Result<()> {
         let stream = &mut ctx.accounts.stream;
@@ -143,6 +146,54 @@ pub mod solsab {
 
         // Mark the Stream as non-cancelable
         stream.is_cancelable = false;
+        Ok(())
+    }
+
+    pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+        let stream = &mut ctx.accounts.stream;
+        let recipient_ata = &ctx.accounts.recipient_ata;
+        let program_ata = &ctx.accounts.program_ata;
+        let mint = &ctx.accounts.mint;
+
+        // Assert that the withdrawn amount is not zero
+        if amount == 0 {
+            return Err(ErrorCode::WithdrawalAmountCannotBeZero.into());
+        }
+
+        // Calculate the withdrawable amount
+        let withdrawable_amount = get_withdrawable_amount(stream);
+
+        // Assert that the withdrawable amount is not too big
+        if amount > withdrawable_amount {
+            return Err(ErrorCode::InvalidWithdrawalAmount.into());
+        }
+
+        // Transfer the withdrawable SPL tokens to the recipient
+        // Prepare the transfer instruction
+        let transfer_ix = TransferChecked {
+            from: program_ata.to_account_info(),
+            mint: mint.to_account_info(),
+            to: recipient_ata.to_account_info(),
+            authority: program_ata.to_account_info(),
+        };
+        
+        // Execute the transfer
+        let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
+        transfer_checked(cpi_ctx, withdrawable_amount, mint.decimals)?;
+
+        // Update the Stream's withdrawn amount
+        stream.amounts.withdrawn += withdrawable_amount;
+
+        let amounts = &stream.amounts;
+
+        // Mark the Stream as non-cancellable if it has been depleted
+        // 
+        // Note: the `>=` operator is used as as extra safety measure for the case when the withdrawn amount is bigger than expected, for one reason or the other
+        if amounts.withdrawn >= amounts.deposited - amounts.refunded
+        {
+            stream.is_cancelable = false;
+        }
+
         Ok(())
     }
 }
@@ -287,6 +338,47 @@ pub struct RenounceStreamCancelability<'info> {
     pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
 }
 
+#[derive(Accounts)]
+pub struct Withdraw<'info> {
+    #[account(mut)]
+    pub recipient: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
+        bump
+    )]
+    pub stream: Account<'info, Stream>,
+
+    #[account(mint::token_program = token_program)]
+    pub mint: InterfaceAccount<'info, Mint>,
+
+    #[account(mut)]
+    pub sender_ata: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        constraint = recipient_ata.owner == recipient.key(),
+    )]
+    pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
+    
+    #[account(
+        seeds = [b"treasury"],
+        bump
+    )]
+    pub treasury_pda: Account<'info, Treasury>,
+
+    #[account(
+        mut,
+        associated_token::mint = sender_ata.mint,
+        associated_token::authority = treasury_pda,
+        associated_token::token_program = token_program
+    )]
+    pub program_ata: InterfaceAccount<'info, TokenAccount>,
+
+    pub token_program: Interface<'info, TokenInterface>,
+}
+
 #[account]
 #[derive(InitSpace)]
 pub struct Stream {
@@ -331,4 +423,8 @@ pub fn get_streamed_amount(stream: &Stream) -> u64 {
     let elapsed_time = current_time - stream.start_time;
     let total_duration = stream.end_time - stream.start_time;
     (stream.amounts.deposited as u128 * elapsed_time as u128 / total_duration as u128) as u64
+}
+
+pub fn get_withdrawable_amount(stream: &Stream) -> u64 {
+    get_streamed_amount(stream) - stream.amounts.withdrawn
 }
