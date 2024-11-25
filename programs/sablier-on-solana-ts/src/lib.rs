@@ -6,7 +6,7 @@ use anchor_spl::{
 use anchor_lang::solana_program::sysvar::{clock::Clock, Sysvar};
 
 pub mod utils;
-use utils::{get_streamed_amount, get_withdrawable_amount};
+use utils::{get_streamed_amount, get_withdrawable_amount, internal_withdraw};
 
 pub mod errors;
 use errors::ErrorCode;
@@ -154,50 +154,25 @@ pub mod solsab {
 
     pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         let stream = &mut ctx.accounts.stream;
-        let recipient_ata = &ctx.accounts.recipient_ata;
-        let program_ata = &ctx.accounts.program_ata;
-        let mint = &ctx.accounts.mint;
+        let recipient_ata = ctx.accounts.recipient_ata.to_account_info();
+        let program_ata = ctx.accounts.program_ata.to_account_info();
+        let token_program = ctx.accounts.token_program.to_account_info();
+        let mint = ctx.accounts.mint.to_account_info();
+        let mint_decimals = ctx.accounts.mint.decimals;
 
-        // Assert that the withdrawn amount is not zero
-        if amount == 0 {
-            return Err(ErrorCode::WithdrawalAmountCannotBeZero.into());
-        }
+        internal_withdraw(stream, recipient_ata, program_ata, mint, mint_decimals, token_program, amount)
+    }
 
-        // Calculate the withdrawable amount
+    pub fn withdraw_max(ctx: Context<WithdrawMax>) -> Result<()> {
+        let stream = &mut ctx.accounts.stream;
+        let recipient_ata = ctx.accounts.recipient_ata.to_account_info();
+        let program_ata = ctx.accounts.program_ata.to_account_info();
+        let token_program = ctx.accounts.token_program.to_account_info();
+        let mint = ctx.accounts.mint.to_account_info();
+        let mint_decimals = ctx.accounts.mint.decimals;
+
         let withdrawable_amount = get_withdrawable_amount(stream);
-
-        // Assert that the withdrawable amount is not too big
-        if amount > withdrawable_amount {
-            return Err(ErrorCode::InvalidWithdrawalAmount.into());
-        }
-
-        // Transfer the withdrawable SPL tokens to the recipient
-        // Prepare the transfer instruction
-        let transfer_ix = TransferChecked {
-            from: program_ata.to_account_info(),
-            mint: mint.to_account_info(),
-            to: recipient_ata.to_account_info(),
-            authority: program_ata.to_account_info(),
-        };
-        
-        // Execute the transfer
-        let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
-        transfer_checked(cpi_ctx, withdrawable_amount, mint.decimals)?;
-
-        // Update the Stream's withdrawn amount
-        stream.amounts.withdrawn += withdrawable_amount;
-
-        let amounts = &stream.amounts;
-
-        // Mark the Stream as non-cancellable if it has been depleted
-        // 
-        // Note: the `>=` operator is used as as extra safety measure for the case when the withdrawn amount is bigger than expected, for one reason or the other
-        if amounts.withdrawn >= amounts.deposited - amounts.refunded
-        {
-            stream.is_cancelable = false;
-        }
-
-        Ok(())
+        internal_withdraw(stream, recipient_ata, program_ata, mint, mint_decimals, token_program, withdrawable_amount)
     }
 }
 
@@ -343,6 +318,47 @@ pub struct RenounceStreamCancelability<'info> {
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
+    #[account(mut)]
+    pub recipient: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
+        bump
+    )]
+    pub stream: Account<'info, Stream>,
+
+    #[account(mint::token_program = token_program)]
+    pub mint: InterfaceAccount<'info, Mint>,
+
+    #[account(mut)]
+    pub sender_ata: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        constraint = recipient_ata.owner == recipient.key(),
+    )]
+    pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
+    
+    #[account(
+        seeds = [b"treasury"],
+        bump
+    )]
+    pub treasury_pda: Account<'info, Treasury>,
+
+    #[account(
+        mut,
+        associated_token::mint = sender_ata.mint,
+        associated_token::authority = treasury_pda,
+        associated_token::token_program = token_program
+    )]
+    pub program_ata: InterfaceAccount<'info, TokenAccount>,
+
+    pub token_program: Interface<'info, TokenInterface>,
+}
+
+#[derive(Accounts)]
+pub struct WithdrawMax<'info> {
     #[account(mut)]
     pub recipient: Signer<'info>,
 

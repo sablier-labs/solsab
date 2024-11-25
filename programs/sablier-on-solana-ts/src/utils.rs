@@ -1,5 +1,11 @@
-use anchor_lang::solana_program::sysvar::{clock::Clock, Sysvar};
+use anchor_lang::{
+    prelude::{AccountInfo, CpiContext, Result},
+    solana_program::sysvar::{clock::Clock, Sysvar},
+};
 
+use anchor_spl::token_interface::{transfer_checked, TransferChecked};
+
+use crate::ErrorCode;
 use crate::Stream;
 
 pub fn get_streamed_amount(stream: &Stream) -> u64 {
@@ -21,4 +27,54 @@ pub fn get_streamed_amount(stream: &Stream) -> u64 {
 
 pub fn get_withdrawable_amount(stream: &Stream) -> u64 {
     get_streamed_amount(stream) - stream.amounts.withdrawn
+}
+
+pub fn internal_withdraw<'info>(
+    stream: &mut Stream,
+    recipient_ata: AccountInfo<'info>,
+    program_ata: AccountInfo<'info>,
+    mint: AccountInfo<'info>,
+    mint_decimals: u8,
+    token_program: AccountInfo<'info>,
+    amount: u64,
+) -> Result<()> {
+    // Assert that the withdrawn amount is not zero
+    if amount == 0 {
+        return Err(ErrorCode::WithdrawalAmountCannotBeZero.into());
+    }
+
+    // Calculate the withdrawable amount
+    let withdrawable_amount = get_withdrawable_amount(stream);
+
+    // Assert that the withdrawable amount is not too big
+    if amount > withdrawable_amount {
+        return Err(ErrorCode::InvalidWithdrawalAmount.into());
+    }
+
+    // Transfer the withdrawable SPL tokens to the recipient
+    // Prepare the transfer instruction
+    let transfer_ix = TransferChecked {
+        from: program_ata.clone(),
+        mint,
+        to: recipient_ata,
+        authority: program_ata,
+    };
+
+    // Execute the transfer
+    let cpi_ctx = CpiContext::new(token_program, transfer_ix);
+    transfer_checked(cpi_ctx, withdrawable_amount, mint_decimals)?;
+
+    // Update the Stream's withdrawn amount
+    stream.amounts.withdrawn += withdrawable_amount;
+
+    let amounts = &stream.amounts;
+
+    // Mark the Stream as non-cancellable if it has been depleted
+    //
+    // Note: the `>=` operator is used as as extra safety measure for the case when the withdrawn amount is bigger than expected, for one reason or the other
+    if amounts.withdrawn >= amounts.deposited - amounts.refunded {
+        stream.is_cancelable = false;
+    }
+
+    Ok(())
 }
