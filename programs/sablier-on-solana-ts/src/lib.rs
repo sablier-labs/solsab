@@ -1,9 +1,12 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{
+    prelude::*,
+    solana_program::sysvar::{clock::Clock, Sysvar},
+    AnchorDeserialize, AnchorSerialize,
+};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_interface::{transfer_checked, TransferChecked, TokenAccount, Mint, TokenInterface}
+    token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
 };
-use anchor_lang::solana_program::sysvar::{clock::Clock, Sysvar};
 
 pub mod utils;
 use utils::{get_streamed_amount, get_withdrawable_amount, internal_withdraw};
@@ -11,24 +14,29 @@ use utils::{get_streamed_amount, get_withdrawable_amount, internal_withdraw};
 pub mod errors;
 use errors::ErrorCode;
 
-
 declare_id!("D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF");
 
 pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
-
 
 #[program]
 pub mod solsab {
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        let treasury = &mut ctx.accounts.treasury_pda;
-        treasury.bump = ctx.bumps.treasury_pda;
+        //TODO: why is this needed?
+        ctx.accounts.treasury_pda.bump = ctx.bumps.treasury_pda;
 
         Ok(())
     }
 
-    pub fn create_lockup_linear_stream(ctx: Context<CreateLockupLinearStream>, start_time:  i64, cliff_time:  i64, end_time:  i64, amount: u64, is_cancelable: bool) -> Result<()> {
+    pub fn create_lockup_linear_stream(
+        ctx: Context<CreateLockupLinearStream>,
+        start_time: i64,
+        cliff_time: i64,
+        end_time: i64,
+        amount: u64,
+        is_cancelable: bool,
+    ) -> Result<()> {
         let sender = &ctx.accounts.sender;
         let sender_ata = &ctx.accounts.sender_ata;
         let program_ata = &ctx.accounts.program_ata;
@@ -50,28 +58,27 @@ pub mod solsab {
             return Err(ErrorCode::InvalidCliffTime.into());
         }
 
-        // Transfer the SPL tokens to the Treasury's ATA
-        // Prepare the transfer instruction
+        // Prepare the instruction to transfer the SPL tokens to the Treasury's ATA
         let transfer_ix = TransferChecked {
             from: sender_ata.to_account_info(),
             mint: mint.to_account_info(),
             to: program_ata.to_account_info(),
             authority: sender.to_account_info(),
         };
-        
+
         // Execute the transfer
         let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
         transfer_checked(cpi_ctx, amount, mint.decimals)?;
 
-        let recipient_ata = &ctx.accounts.recipient_ata;
+        // Initialize the fields of the newly created Stream
         let stream = &mut ctx.accounts.stream;
         stream.sender_ata = sender_ata.key();
+        let recipient_ata = &ctx.accounts.recipient_ata;
         stream.recipient_ata = recipient_ata.key();
         stream.token_mint_account = mint.key();
 
-        // TODO: shouldn't the Amounts field be allocated manually?
+        // TODO: shouldn't the Amounts field be allocated explicitly?
         stream.amounts.deposited = amount;
-        
 
         stream.start_time = start_time;
         stream.end_time = end_time;
@@ -88,39 +95,33 @@ pub mod solsab {
         let program_ata = &ctx.accounts.program_ata;
         let mint = &ctx.accounts.mint;
 
-        // Check if the Stream is cancelable
+        // Assert that the Stream is cancelable
         if !stream.is_cancelable {
             return Err(ErrorCode::StreamIsNotCancelable.into());
-        }
-
-        // Check if the Stream was already canceled
-        if stream.was_canceled {
-            return Err(ErrorCode::StreamIsAlreadyCanceled.into());
         }
 
         // Calculate the streamed amount
         let streamed_amount = get_streamed_amount(stream);
 
-        // Transfer the streamed SPL tokens to the recipient
-        // Prepare the transfer instruction
+        // Prepare the instruction to transfer the streamed SPL tokens to the recipient
         let transfer_ix = TransferChecked {
             from: program_ata.to_account_info(),
             mint: mint.to_account_info(),
             to: recipient_ata.to_account_info(),
             authority: program_ata.to_account_info(),
         };
-        
+
         // Execute the transfer
         let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
         transfer_checked(cpi_ctx, streamed_amount, mint.decimals)?;
 
+        // Update the Stream field tracking the withdrawn amount
         stream.amounts.withdrawn += streamed_amount;
 
-        // Calculate the unstreamed amount
+        // Calculate the refundable amount
         let refundable_amount = stream.amounts.deposited - streamed_amount;
 
-        // Transfer the unstreamed SPL tokens back to the sender
-        // Prepare the transfer instruction
+        // Prepare the instruction to transfer the refundable SPL tokens back to the sender
         let transfer_ix = TransferChecked {
             from: program_ata.to_account_info(),
             mint: mint.to_account_info(),
@@ -132,47 +133,57 @@ pub mod solsab {
         let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
         transfer_checked(cpi_ctx, refundable_amount, mint.decimals)?;
 
+        // Update the Stream field tracking the refunded amount
         stream.amounts.refunded += refundable_amount;
 
         // Mark the Stream as canceled
         stream.was_canceled = true;
+
+        // Mark the Stream as non-cancelable
+        stream.is_cancelable = false;
+
         Ok(())
     }
 
     pub fn renounce_stream_cancelability(ctx: Context<RenounceStreamCancelability>) -> Result<()> {
         let stream = &mut ctx.accounts.stream;
 
-        // Check if the Stream is cancelable
+        // Assert that the Stream is cancelable
         if !stream.is_cancelable {
             return Err(ErrorCode::StreamCancelabilityIsAlreadyRenounced.into());
         }
 
         // Mark the Stream as non-cancelable
         stream.is_cancelable = false;
+
         Ok(())
     }
 
     pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
-        let stream = &mut ctx.accounts.stream;
-        let recipient_ata = ctx.accounts.recipient_ata.to_account_info();
-        let program_ata = ctx.accounts.program_ata.to_account_info();
-        let token_program = ctx.accounts.token_program.to_account_info();
-        let mint = ctx.accounts.mint.to_account_info();
-        let mint_decimals = ctx.accounts.mint.decimals;
-
-        internal_withdraw(stream, recipient_ata, program_ata, mint, mint_decimals, token_program, amount)
+        internal_withdraw(
+            &mut ctx.accounts.stream,
+            ctx.accounts.recipient_ata.to_account_info(),
+            ctx.accounts.program_ata.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.mint.decimals,
+            ctx.accounts.token_program.to_account_info(),
+            amount,
+        )
     }
 
     pub fn withdraw_max(ctx: Context<WithdrawMax>) -> Result<()> {
         let stream = &mut ctx.accounts.stream;
-        let recipient_ata = ctx.accounts.recipient_ata.to_account_info();
-        let program_ata = ctx.accounts.program_ata.to_account_info();
-        let token_program = ctx.accounts.token_program.to_account_info();
-        let mint = ctx.accounts.mint.to_account_info();
-        let mint_decimals = ctx.accounts.mint.decimals;
-
         let withdrawable_amount = get_withdrawable_amount(stream);
-        internal_withdraw(stream, recipient_ata, program_ata, mint, mint_decimals, token_program, withdrawable_amount)
+
+        internal_withdraw(
+            stream,
+            ctx.accounts.recipient_ata.to_account_info(),
+            ctx.accounts.program_ata.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.mint.decimals,
+            ctx.accounts.token_program.to_account_info(),
+            withdrawable_amount,
+        )
     }
 }
 
@@ -193,7 +204,6 @@ pub struct Initialize<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
 #[derive(Accounts)]
 pub struct CreateLockupLinearStream<'info> {
     #[account(mut)]
@@ -203,7 +213,7 @@ pub struct CreateLockupLinearStream<'info> {
     pub mint: InterfaceAccount<'info, Mint>,
 
     #[account(
-        mut, 
+        mut,
         associated_token::mint = mint,
         associated_token::authority = sender,
         associated_token::token_program = token_program
@@ -214,7 +224,7 @@ pub struct CreateLockupLinearStream<'info> {
     pub recipient: UncheckedAccount<'info>,
 
     #[account(
-        mut, 
+        mut,
         associated_token::mint = mint,
         associated_token::authority = recipient,
         associated_token::token_program = token_program
@@ -235,7 +245,7 @@ pub struct CreateLockupLinearStream<'info> {
         associated_token::token_program = token_program
     )]
     pub program_ata: InterfaceAccount<'info, TokenAccount>,
-    
+
     #[account(
         init,
         payer = sender,
@@ -246,12 +256,11 @@ pub struct CreateLockupLinearStream<'info> {
     // TODO: find a way to allow multiple Streams between the same sender and recipient (wrt their ATAs)
     // idea: introduce a nonce in the form of the recent blockhash?
     pub stream: Account<'info, Stream>,
-    
+
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
-
 
 #[derive(Accounts)]
 pub struct CancelLockupLinearStream<'info> {
@@ -269,7 +278,7 @@ pub struct CancelLockupLinearStream<'info> {
     pub mint: InterfaceAccount<'info, Mint>,
 
     #[account(
-        mut, 
+        mut,
         constraint = sender_ata.owner == sender.key(),
     )]
     pub sender_ata: InterfaceAccount<'info, TokenAccount>,
@@ -293,7 +302,6 @@ pub struct CancelLockupLinearStream<'info> {
     pub token_program: Interface<'info, TokenInterface>,
 }
 
-
 #[derive(Accounts)]
 pub struct RenounceStreamCancelability<'info> {
     #[account(mut)]
@@ -307,7 +315,7 @@ pub struct RenounceStreamCancelability<'info> {
     pub stream: Account<'info, Stream>,
 
     #[account(
-        mut, 
+        mut,
         constraint = sender_ata.owner == sender.key(),
     )]
     pub sender_ata: InterfaceAccount<'info, TokenAccount>,
@@ -339,7 +347,7 @@ pub struct Withdraw<'info> {
         constraint = recipient_ata.owner == recipient.key(),
     )]
     pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
-    
+
     #[account(
         seeds = [b"treasury"],
         bump
@@ -380,7 +388,7 @@ pub struct WithdrawMax<'info> {
         constraint = recipient_ata.owner == recipient.key(),
     )]
     pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
-    
+
     #[account(
         seeds = [b"treasury"],
         bump
@@ -413,7 +421,7 @@ pub struct Stream {
     pub bump: u8,
 }
 
-#[derive(Clone, InitSpace, anchor_lang::AnchorSerialize, anchor_lang::AnchorDeserialize)]
+#[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub struct Amounts {
     pub deposited: u64,
     pub withdrawn: u64,

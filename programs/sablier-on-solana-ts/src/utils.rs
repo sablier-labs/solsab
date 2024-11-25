@@ -5,8 +5,7 @@ use anchor_lang::{
 
 use anchor_spl::token_interface::{transfer_checked, TransferChecked};
 
-use crate::ErrorCode;
-use crate::Stream;
+use crate::{ErrorCode, Stream};
 
 pub fn get_streamed_amount(stream: &Stream) -> u64 {
     let current_time = Clock::get().unwrap().unix_timestamp;
@@ -65,14 +64,13 @@ pub fn internal_withdraw<'info>(
     transfer_checked(cpi_ctx, withdrawable_amount, mint_decimals)?;
 
     // Update the Stream's withdrawn amount
-    stream.amounts.withdrawn += withdrawable_amount;
-
-    let amounts = &stream.amounts;
+    let stream_amounts = &mut stream.amounts;
+    stream_amounts.withdrawn += withdrawable_amount;
 
     // Mark the Stream as non-cancellable if it has been depleted
     //
     // Note: the `>=` operator is used as as extra safety measure for the case when the withdrawn amount is bigger than expected, for one reason or the other
-    if amounts.withdrawn >= amounts.deposited - amounts.refunded {
+    if stream_amounts.withdrawn >= stream_amounts.deposited - stream_amounts.refunded {
         stream.is_cancelable = false;
     }
 

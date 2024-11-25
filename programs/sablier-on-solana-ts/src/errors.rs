@@ -10,8 +10,6 @@ pub enum ErrorCode {
     InvalidStartOrEndTime,
     #[msg("Invalid withdrawal amount!")]
     InvalidWithdrawalAmount,
-    #[msg("Can't cancel a Stream that's already canceled!")]
-    StreamIsAlreadyCanceled,
     #[msg("Can't cancel a non-cancelable Stream!")]
     StreamIsNotCancelable,
     #[msg("Can't renounce an already-renounced Stream!")]

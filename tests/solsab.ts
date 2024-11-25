@@ -96,6 +96,10 @@ describe("solsab", () => {
     const streamedAmount = new anchor.BN(6);
     const isCancelable = true;
 
+    // const startTime = ;
+    // const cliffTime = ;
+    // const endTime = ;
+
     let createStreamTxSig = await program.methods
       .createLockupLinearStream(streamedAmount, isCancelable)
       .accounts({
