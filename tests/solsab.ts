@@ -96,12 +96,19 @@ describe("solsab", () => {
     const streamedAmount = new anchor.BN(6);
     const isCancelable = true;
 
-    // const startTime = ;
-    // const cliffTime = ;
-    // const endTime = ;
+    const now = Math.floor(Date.now() / 1000); // Current Unix timestamp in seconds
+    const startTime = new anchor.BN(now + 60); // Start in 1 minute
+    const cliffTime = new anchor.BN(now + 300); // Cliff in 5 minutes
+    const endTime = new anchor.BN(now + 3600); // End in 1 hour
 
     let createStreamTxSig = await program.methods
-      .createLockupLinearStream(streamedAmount, isCancelable)
+      .createLockupLinearStream(
+        startTime,
+        cliffTime,
+        endTime,
+        streamedAmount,
+        isCancelable
+      )
       .accounts({
         mint: tokenMint,
         recipient: recipient.publicKey,
