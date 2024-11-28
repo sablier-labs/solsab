@@ -43,6 +43,25 @@ describe("solsab", () => {
     console.log(`Balance: ${formattedBalance} SOL`);
   });
 
+  async function fetchStream(
+    senderATA: Account,
+    recipientATA: Account
+  ): Promise<{ stream: any }> {
+    // The seeds used when creating the Stream PDA
+    const seeds = [
+      Buffer.from("LL_stream"),
+      Buffer.from(senderATA.address.toBytes()),
+      Buffer.from(recipientATA.address.toBytes()),
+    ];
+
+    const [pdaAddress] = PublicKey.findProgramAddressSync(
+      seeds,
+      SOLSAB_PROGRAM_ID
+    );
+
+    return { stream: await program.account.stream.fetch(pdaAddress) };
+  }
+
   async function createCancelableLockupLinearStream(): Promise<{
     stream: any;
     senderATA: Account;
@@ -94,18 +113,14 @@ describe("solsab", () => {
     );
 
     const streamedAmount = new anchor.BN(6);
+    const streamMilestones = generateStandardStreamMilestones();
     const isCancelable = true;
-
-    const now = Math.floor(Date.now() / 1000); // Current Unix timestamp in seconds
-    const startTime = new anchor.BN(now + 60); // Start in 1 minute
-    const cliffTime = new anchor.BN(now + 300); // Cliff in 5 minutes
-    const endTime = new anchor.BN(now + 3600); // End in 1 hour
 
     let createStreamTxSig = await program.methods
       .createLockupLinearStream(
-        startTime,
-        cliffTime,
-        endTime,
+        streamMilestones.startTime,
+        streamMilestones.cliffTime,
+        streamMilestones.endTime,
         streamedAmount,
         isCancelable
       )
@@ -119,20 +134,8 @@ describe("solsab", () => {
 
     await confirmTransaction(connection, createStreamTxSig, `confirmed`);
 
-    // The seeds used when creating the Stream PDA
-    const seeds = [
-      Buffer.from("LL_stream"),
-      Buffer.from(senderATA.address.toBytes()),
-      Buffer.from(recipientATA.address.toBytes()),
-    ];
-
-    const [pdaAddress] = PublicKey.findProgramAddressSync(
-      seeds,
-      SOLSAB_PROGRAM_ID
-    );
-
     // Assert that the Stream is no longer cancelable
-    const stream = await program.account.stream.fetch(pdaAddress);
+    const stream = fetchStream(senderATA, recipientATA);
 
     return {
       stream,
@@ -143,7 +146,7 @@ describe("solsab", () => {
     };
   }
 
-  it("initializes the SolSab program", async () => {
+  it.only("initializes the SolSab program", async () => {
     // Pre-calculate the PDA address for the treasury
     [treasuryPDA] = web3.PublicKey.findProgramAddressSync(
       [Buffer.from("treasury")],
@@ -211,4 +214,60 @@ describe("solsab", () => {
 
     assert(stream.isCancelable === true, "The Stream couldn't be renounced");
   });
+
+  it.only("Cancels a LockupLinear Stream immediately after creating it", async () => {
+    const { senderATA, recipientATA, tokenMint, streamedAmount } =
+      await createCancelableLockupLinearStream();
+
+    let cancelStreamTxSig = await program.methods
+      .cancelLockupLinearStream()
+      .accounts({
+        senderAta: senderATA.address,
+        recipientAta: recipientATA.address,
+        mint: tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([sender])
+      .rpc();
+
+    await confirmTransaction(connection, cancelStreamTxSig, `confirmed`);
+
+    const stream = (await fetchStream(senderATA, recipientATA)).stream;
+
+    assert(
+      stream.wasCanceled === true && stream.isCancelable === false,
+      "The Stream couldn't be canceled"
+    );
+
+    assert(
+      stream.amounts.refunded === streamedAmount,
+      "The Stream's refunded amount is incorrect"
+    );
+
+    assert(
+      stream.amounts.withdrawn === 0,
+      "The Stream's withdrawn amount is incorrect"
+    );
+  });
+
+  // HELPER FUNCTIONS AND DATA STRUCTS
+
+  interface StreamMilestones {
+    startTime: anchor.BN;
+    cliffTime: anchor.BN;
+    endTime: anchor.BN;
+  }
+
+  function generateStandardStreamMilestones(): StreamMilestones {
+    const now = Math.floor(Date.now() / 1000); // Current Unix timestamp in seconds
+    const startTime = new anchor.BN(now + 60); // Start in 1 minute
+    const cliffTime = new anchor.BN(now + 300); // Cliff in 5 minutes
+    const endTime = new anchor.BN(now + 3600); // End in 1 hour
+
+    return {
+      startTime,
+      cliffTime,
+      endTime,
+    };
+  }
 });

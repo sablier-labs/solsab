@@ -39,7 +39,7 @@ pub mod solsab {
     ) -> Result<()> {
         let sender = &ctx.accounts.sender;
         let sender_ata = &ctx.accounts.sender_ata;
-        let program_ata = &ctx.accounts.program_ata;
+        let treasury_ata = &ctx.accounts.treasury_ata;
         let mint = &ctx.accounts.mint;
 
         // Assert that the deposited amount is not zero
@@ -62,7 +62,7 @@ pub mod solsab {
         let transfer_ix = TransferChecked {
             from: sender_ata.to_account_info(),
             mint: mint.to_account_info(),
-            to: program_ata.to_account_info(),
+            to: treasury_ata.to_account_info(),
             authority: sender.to_account_info(),
         };
 
@@ -92,7 +92,8 @@ pub mod solsab {
         let stream = &mut ctx.accounts.stream;
         let sender_ata = &ctx.accounts.sender_ata;
         let recipient_ata = &ctx.accounts.recipient_ata;
-        let program_ata = &ctx.accounts.program_ata;
+        let treasury_ata = &ctx.accounts.treasury_ata;
+        let treasury_pda = &ctx.accounts.treasury_pda;
         let mint = &ctx.accounts.mint;
 
         // Assert that the Stream is cancelable
@@ -105,14 +106,21 @@ pub mod solsab {
 
         // Prepare the instruction to transfer the streamed SPL tokens to the recipient
         let transfer_ix = TransferChecked {
-            from: program_ata.to_account_info(),
+            from: treasury_ata.to_account_info(),
             mint: mint.to_account_info(),
             to: recipient_ata.to_account_info(),
-            authority: program_ata.to_account_info(),
+            authority: treasury_pda.to_account_info(),
         };
 
+        // Wrap the Treasury PDA's seeds in the appropriate structure
+        let signer_seeds: &[&[&[u8]]] = &[&[b"treasury", &[ctx.accounts.treasury_pda.bump]]];
+
         // Execute the transfer
-        let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
+        let cpi_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            transfer_ix,
+            signer_seeds,
+        );
         transfer_checked(cpi_ctx, streamed_amount, mint.decimals)?;
 
         // Update the Stream field tracking the withdrawn amount
@@ -123,18 +131,22 @@ pub mod solsab {
 
         // Prepare the instruction to transfer the refundable SPL tokens back to the sender
         let transfer_ix = TransferChecked {
-            from: program_ata.to_account_info(),
+            from: treasury_ata.to_account_info(),
             mint: mint.to_account_info(),
             to: sender_ata.to_account_info(),
-            authority: program_ata.to_account_info(),
+            authority: treasury_pda.to_account_info(),
         };
 
         // Execute the transfer
-        let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
+        let cpi_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            transfer_ix,
+            signer_seeds,
+        );
         transfer_checked(cpi_ctx, refundable_amount, mint.decimals)?;
 
         // Update the Stream field tracking the refunded amount
-        stream.amounts.refunded += refundable_amount;
+        stream.amounts.refunded = refundable_amount;
 
         // Mark the Stream as canceled
         stream.was_canceled = true;
@@ -163,7 +175,7 @@ pub mod solsab {
         internal_withdraw(
             &mut ctx.accounts.stream,
             ctx.accounts.recipient_ata.to_account_info(),
-            ctx.accounts.program_ata.to_account_info(),
+            ctx.accounts.treasury_ata.to_account_info(),
             ctx.accounts.mint.to_account_info(),
             ctx.accounts.mint.decimals,
             ctx.accounts.token_program.to_account_info(),
@@ -178,7 +190,7 @@ pub mod solsab {
         internal_withdraw(
             stream,
             ctx.accounts.recipient_ata.to_account_info(),
-            ctx.accounts.program_ata.to_account_info(),
+            ctx.accounts.treasury_ata.to_account_info(),
             ctx.accounts.mint.to_account_info(),
             ctx.accounts.mint.decimals,
             ctx.accounts.token_program.to_account_info(),
@@ -244,7 +256,7 @@ pub struct CreateLockupLinearStream<'info> {
         associated_token::authority = treasury_pda,
         associated_token::token_program = token_program
     )]
-    pub program_ata: InterfaceAccount<'info, TokenAccount>,
+    pub treasury_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         init,
@@ -287,18 +299,19 @@ pub struct CancelLockupLinearStream<'info> {
     pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
+        mut,
         seeds = [b"treasury"],
-        bump
+        bump = treasury_pda.bump
     )]
     pub treasury_pda: Account<'info, Treasury>,
 
     #[account(
         mut,
-        associated_token::mint = sender_ata.mint,
+        associated_token::mint = mint,
         associated_token::authority = treasury_pda,
-        associated_token::token_program = token_program
+        associated_token::token_program = token_program,
     )]
-    pub program_ata: InterfaceAccount<'info, TokenAccount>,
+    pub treasury_ata: InterfaceAccount<'info, TokenAccount>,
     pub token_program: Interface<'info, TokenInterface>,
 }
 
@@ -360,7 +373,7 @@ pub struct Withdraw<'info> {
         associated_token::authority = treasury_pda,
         associated_token::token_program = token_program
     )]
-    pub program_ata: InterfaceAccount<'info, TokenAccount>,
+    pub treasury_ata: InterfaceAccount<'info, TokenAccount>,
 
     pub token_program: Interface<'info, TokenInterface>,
 }
@@ -401,7 +414,7 @@ pub struct WithdrawMax<'info> {
         associated_token::authority = treasury_pda,
         associated_token::token_program = token_program
     )]
-    pub program_ata: InterfaceAccount<'info, TokenAccount>,
+    pub treasury_ata: InterfaceAccount<'info, TokenAccount>,
 
     pub token_program: Interface<'info, TokenInterface>,
 }
