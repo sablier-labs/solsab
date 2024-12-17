@@ -313,7 +313,7 @@ describe("solsab", () => {
     );
   });
 
-  it.skip("Cancels a LockupLinear Stream after the tokens have been fully streamed", async () => {
+  it("Cancels a LockupLinear Stream after the tokens have been fully streamed", async () => {
     const {
       senderATA,
       recipientATA,
@@ -346,8 +346,6 @@ describe("solsab", () => {
       })
       .instruction();
 
-    // await confirmTransaction(connection, cancelStreamTxSig, `processed`);
-
     tx.add(cancelStreamIx);
     tx.sign(sender);
     await client.processTransaction(tx);
@@ -360,12 +358,12 @@ describe("solsab", () => {
     );
 
     assert(
-      stream.amounts.refunded === 0,
+      stream.amounts.refunded.eq(new anchor.BN(0)),
       "The Stream's refunded amount is incorrect"
     );
 
     assert(
-      stream.amounts.withdrawn === streamedAmount,
+      stream.amounts.withdrawn.eq(streamedAmount),
       "The Stream's withdrawn amount is incorrect"
     );
   });
