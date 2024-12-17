@@ -134,11 +134,8 @@ describe("solsab", () => {
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(createStreamIx, sender);
 
-    // Fetch the created Stream
-    const stream = (await fetchStream(senderATA, recipientATA)).stream;
-
     return {
-      stream,
+      stream: await fetchStream(senderATA, recipientATA),
       senderATA,
       recipientATA,
       tokenMint,
@@ -237,7 +234,7 @@ describe("solsab", () => {
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
 
-    const stream = (await fetchStream(senderATA, recipientATA)).stream;
+    const stream = await fetchStream(senderATA, recipientATA);
 
     assert(
       stream.wasCanceled === true && stream.isCancelable === false,
@@ -280,7 +277,7 @@ describe("solsab", () => {
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
 
-    const stream = (await fetchStream(senderATA, recipientATA)).stream;
+    const stream = await fetchStream(senderATA, recipientATA);
 
     assert(
       stream.wasCanceled === true && stream.isCancelable === false,
@@ -306,11 +303,10 @@ describe("solsab", () => {
     endTime: BN;
   }
 
-  // TODO: refactor the `stream: any` into just `any`
   async function fetchStream(
     senderATA: PublicKey,
     recipientATA: PublicKey
-  ): Promise<{ stream: any }> {
+  ): Promise<any> {
     // The seeds used when creating the Stream PDA
     const seeds = [
       Buffer.from("LL_stream"),
@@ -328,14 +324,13 @@ describe("solsab", () => {
       throw new Error("Stream account data is undefined");
     }
 
-    // Decode the raw bytes using the Anchor account layout
+    // Return the Stream data decoded via the Anchor account layout
     const streamLayout = program.account.stream;
-    const decodedStreamAccount = streamLayout.coder.accounts.decode(
+
+    return streamLayout.coder.accounts.decode(
       "stream",
       Buffer.from(streamAccount.data)
     );
-
-    return { stream: decodedStreamAccount };
   }
 
   function generateStandardStreamMilestones(): StreamMilestones {
