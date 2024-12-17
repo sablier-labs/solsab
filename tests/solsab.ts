@@ -333,18 +333,24 @@ describe("solsab", () => {
       )
     );
 
-    let cancelStreamTxSig = await program.methods
+    const tx = await initializeTx().then((tx) => tx);
+
+    let cancelStreamIx = await program.methods
       .cancelLockupLinearStream()
       .accounts({
+        sender: sender.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
-      .signers([sender])
-      .rpc();
+      .instruction();
 
-    await confirmTransaction(connection, cancelStreamTxSig, `processed`);
+    // await confirmTransaction(connection, cancelStreamTxSig, `processed`);
+
+    tx.add(cancelStreamIx);
+    tx.sign(sender);
+    await client.processTransaction(tx);
 
     const stream = (await fetchStream(senderATA, recipientATA)).stream;
 
