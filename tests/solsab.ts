@@ -1,5 +1,13 @@
-import { Connection, PublicKey } from "@solana/web3.js";
+import {
+  Connection,
+  PublicKey,
+  Keypair,
+  Transaction,
+  LAMPORTS_PER_SOL,
+  TransactionInstruction as TxIx,
+} from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
+import { BN } from "@coral-xyz/anchor";
 import { assert } from "chai";
 import {
   BanksClient,
@@ -18,37 +26,28 @@ import {
   TOKEN_PROGRAM_ID,
 } from "./anchor-bankrun-adapter";
 
-import {
-  confirmTransaction,
-  // createAccountsMintsAndTokenAccounts,
-  // makeKeypairs,
-} from "@solana-developers/helpers";
+//import * as helpers from "@solana-developers/helpers";
 
 import { Solsab } from "../target/types/solsab";
 import { before } from "mocha";
 
-const web3 = anchor.web3;
-
 describe("solsab", () => {
   let context: ProgramTestContext;
-  let connection: Connection;
   let client: BanksClient;
-  let sender: anchor.web3.Keypair;
+  let sender: Keypair;
   let provider: BankrunProvider;
 
   const program = anchor.workspace.solsab as anchor.Program<Solsab>;
   const SOLSAB_PROGRAM_ID = program.programId;
 
-  let treasuryPDA: anchor.web3.PublicKey;
+  let treasuryPDA: PublicKey;
 
   before(async () => {
     // Configure the testing environment
     context = await startAnchor("", [], []);
-    client = context.banksClient;
     provider = new BankrunProvider(context);
-
     anchor.setProvider(provider);
-    connection = anchor.getProvider().connection;
+    client = context.banksClient;
 
     // Output the sender's public key
     sender = provider.wallet.payer;
@@ -56,50 +55,17 @@ describe("solsab", () => {
 
     // Output the sender's SOL balance
     const balanceInSOL =
-      (await client.getBalance(sender.publicKey)) /
-      BigInt(web3.LAMPORTS_PER_SOL);
+      (await client.getBalance(sender.publicKey)) / BigInt(LAMPORTS_PER_SOL);
     const formattedBalance = new Intl.NumberFormat().format(balanceInSOL);
     console.log(`Balance: ${formattedBalance} SOL`);
   });
-
-  // TODO: refactor the `stream: any` into just `any`
-  async function fetchStream(
-    senderATA: PublicKey,
-    recipientATA: PublicKey
-  ): Promise<{ stream: any }> {
-    // The seeds used when creating the Stream PDA
-    const seeds = [
-      Buffer.from("LL_stream"),
-      Buffer.from(senderATA.toBytes()),
-      Buffer.from(recipientATA.toBytes()),
-    ];
-
-    const [pdaAddress] = PublicKey.findProgramAddressSync(
-      seeds,
-      SOLSAB_PROGRAM_ID
-    );
-
-    const streamAccount = await client.getAccount(pdaAddress);
-    // Decode the raw bytes using the Anchor account layout
-    if (!streamAccount) {
-      throw new Error("Stream account data is undefined");
-    }
-
-    const streamLayout = program.account.stream;
-    const decodedStreamAccount = streamLayout.coder.accounts.decode(
-      "stream",
-      Buffer.from(streamAccount.data)
-    );
-
-    return { stream: decodedStreamAccount };
-  }
 
   async function createCancelableLockupLinearStream(): Promise<{
     stream: any;
     senderATA: PublicKey;
     recipientATA: PublicKey;
-    tokenMint: anchor.web3.PublicKey;
-    streamedAmount: anchor.BN;
+    tokenMint: PublicKey;
+    streamedAmount: BN;
     streamMilestones: StreamMilestones;
   }> {
     const TOKEN_DECIMALS = 2;
@@ -123,7 +89,7 @@ describe("solsab", () => {
     );
     console.log(`Sender's ATA: ${senderATA}`);
 
-    const mintTxSig = await mintTo(
+    await mintTo(
       client,
       sender,
       tokenMint,
@@ -136,7 +102,7 @@ describe("solsab", () => {
       `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
     );
 
-    const recipient = anchor.web3.Keypair.generate();
+    const recipient = Keypair.generate();
     const recipientATA = await createAssociatedTokenAccount(
       client,
       sender,
@@ -145,12 +111,10 @@ describe("solsab", () => {
     );
     console.log(`Recipient's ATA: ${recipientATA}`);
 
-    const streamedAmount = new anchor.BN(6);
     const streamMilestones = generateStandardStreamMilestones();
+
+    const streamedAmount = new BN(6);
     const isCancelable = true;
-
-    const tx = await initializeTx().then((tx) => tx);
-
     let createStreamIx = await program.methods
       .createLockupLinearStream(
         streamMilestones.startTime,
@@ -167,10 +131,8 @@ describe("solsab", () => {
       })
       .instruction();
 
-    tx.add(createStreamIx);
-    tx.sign(sender);
-
-    await client.processTransaction(tx);
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(createStreamIx, sender);
 
     // Fetch the created Stream
     const stream = (await fetchStream(senderATA, recipientATA)).stream;
@@ -185,26 +147,14 @@ describe("solsab", () => {
     };
   }
 
-  async function initializeTx(): Promise<anchor.web3.Transaction> {
-    let tx = new anchor.web3.Transaction();
-
-    const res = await client.getLatestBlockhash();
-    if (!res) throw new Error("Couldn't get the latest blockhash");
-
-    tx.recentBlockhash = res[0];
-    return tx;
-  }
-
   it("initializes the SolSab program", async () => {
     // Pre-calculate the PDA address for the treasury
-    [treasuryPDA] = web3.PublicKey.findProgramAddressSync(
+    [treasuryPDA] = PublicKey.findProgramAddressSync(
       [Buffer.from("treasury")],
-      program.programId
+      SOLSAB_PROGRAM_ID
     );
 
     console.log("Treasury's PDA address: ", treasuryPDA.toBase58());
-
-    const tx = await initializeTx().then((tx) => tx);
 
     let initializeIx = await program.methods
       .initialize()
@@ -213,10 +163,8 @@ describe("solsab", () => {
       })
       .instruction();
 
-    tx.add(initializeIx);
-    tx.sign(sender);
-
-    await client.processTransaction(tx);
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(initializeIx, sender);
 
     // Make sure the program is properly initialized
     // Confirm that the treasury PDA account was created and has expected properties
@@ -239,7 +187,7 @@ describe("solsab", () => {
     const treasuryATAData = (await client.getAccount(treasuryATA))?.data;
     assert.ok(treasuryATAData, "Treasury ATA data is undefined");
 
-    const treasuryBalance = new anchor.BN(getTokenBalance(treasuryATAData));
+    const treasuryBalance = new BN(getTokenBalance(treasuryATAData));
 
     assert(
       treasuryBalance.eq(streamedAmount),
@@ -256,8 +204,6 @@ describe("solsab", () => {
     const { stream, senderATA, recipientATA } =
       await createCancelableLockupLinearStream();
 
-    const tx = await initializeTx().then((tx) => tx);
-
     let renounceStreamIx = await program.methods
       .renounceStreamCancelability()
       .accounts({
@@ -267,9 +213,8 @@ describe("solsab", () => {
       })
       .instruction();
 
-    tx.add(renounceStreamIx);
-    tx.sign(sender);
-    await client.processTransaction(tx);
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(renounceStreamIx, sender);
 
     assert(stream.isCancelable === true, "The Stream couldn't be renounced");
   });
@@ -277,8 +222,6 @@ describe("solsab", () => {
   it("Cancels a LockupLinear Stream immediately after creating it", async () => {
     const { senderATA, recipientATA, tokenMint, streamedAmount } =
       await createCancelableLockupLinearStream();
-
-    const tx = await initializeTx().then((tx) => tx);
 
     let cancelStreamIx = await program.methods
       .cancelLockupLinearStream()
@@ -291,9 +234,8 @@ describe("solsab", () => {
       })
       .instruction();
 
-    tx.add(cancelStreamIx);
-    tx.sign(sender);
-    await client.processTransaction(tx);
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
 
     const stream = (await fetchStream(senderATA, recipientATA)).stream;
 
@@ -308,7 +250,7 @@ describe("solsab", () => {
     );
 
     assert(
-      stream.amounts.withdrawn.eq(new anchor.BN(0)),
+      stream.amounts.withdrawn.eq(new BN(0)),
       "The Stream's withdrawn amount is incorrect"
     );
   });
@@ -322,18 +264,7 @@ describe("solsab", () => {
       streamMilestones,
     } = await createCancelableLockupLinearStream();
 
-    const currentClock = await client.getClock();
-    context.setClock(
-      new Clock(
-        currentClock.slot,
-        currentClock.epochStartTimestamp,
-        currentClock.epoch,
-        currentClock.leaderScheduleEpoch,
-        currentClock.unixTimestamp + BigInt(streamMilestones.endTime.toNumber())
-      )
-    );
-
-    const tx = await initializeTx().then((tx) => tx);
+    await timeTravelForwardTo(BigInt(streamMilestones.endTime.toString()));
 
     let cancelStreamIx = await program.methods
       .cancelLockupLinearStream()
@@ -346,9 +277,8 @@ describe("solsab", () => {
       })
       .instruction();
 
-    tx.add(cancelStreamIx);
-    tx.sign(sender);
-    await client.processTransaction(tx);
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
 
     const stream = (await fetchStream(senderATA, recipientATA)).stream;
 
@@ -358,7 +288,7 @@ describe("solsab", () => {
     );
 
     assert(
-      stream.amounts.refunded.eq(new anchor.BN(0)),
+      stream.amounts.refunded.eq(new BN(0)),
       "The Stream's refunded amount is incorrect"
     );
 
@@ -371,21 +301,90 @@ describe("solsab", () => {
   // HELPER FUNCTIONS AND DATA STRUCTS
 
   interface StreamMilestones {
-    startTime: anchor.BN;
-    cliffTime: anchor.BN;
-    endTime: anchor.BN;
+    startTime: BN;
+    cliffTime: BN;
+    endTime: BN;
+  }
+
+  // TODO: refactor the `stream: any` into just `any`
+  async function fetchStream(
+    senderATA: PublicKey,
+    recipientATA: PublicKey
+  ): Promise<{ stream: any }> {
+    // The seeds used when creating the Stream PDA
+    const seeds = [
+      Buffer.from("LL_stream"),
+      Buffer.from(senderATA.toBytes()),
+      Buffer.from(recipientATA.toBytes()),
+    ];
+
+    const [pdaAddress] = PublicKey.findProgramAddressSync(
+      seeds,
+      SOLSAB_PROGRAM_ID
+    );
+
+    const streamAccount = await client.getAccount(pdaAddress);
+    if (!streamAccount) {
+      throw new Error("Stream account data is undefined");
+    }
+
+    // Decode the raw bytes using the Anchor account layout
+    const streamLayout = program.account.stream;
+    const decodedStreamAccount = streamLayout.coder.accounts.decode(
+      "stream",
+      Buffer.from(streamAccount.data)
+    );
+
+    return { stream: decodedStreamAccount };
   }
 
   function generateStandardStreamMilestones(): StreamMilestones {
     const now = Math.floor(Date.now() / 1000); // Current Unix timestamp in seconds
-    const startTime = new anchor.BN(now + 60); // Start in 1 minute
-    const cliffTime = new anchor.BN(now + 300); // Cliff in 5 minutes
-    const endTime = new anchor.BN(now + 3600); // End in 1 hour
+    const startTime = new BN(now + 60); // Start in 1 minute
+    const cliffTime = new BN(now + 300); // Cliff in 5 minutes
+    const endTime = new BN(now + 3600); // End in 1 hour
 
     return {
       startTime,
       cliffTime,
       endTime,
     };
+  }
+
+  async function buildSignAndProcessTxFromIx(ix: TxIx, signer: Keypair) {
+    const tx = await initializeTxWithIx(ix);
+    tx.sign(signer);
+    await client.processTransaction(tx);
+  }
+
+  async function initializeTxWithIx(ix: TxIx): Promise<Transaction> {
+    return (await initializeTx()).add(ix);
+  }
+
+  async function initializeTx(): Promise<Transaction> {
+    let tx = new Transaction();
+
+    const res = await client.getLatestBlockhash();
+    if (!res) throw new Error("Couldn't get the latest blockhash");
+
+    tx.recentBlockhash = res[0];
+    return tx;
+  }
+
+  async function timeTravelForwardTo(timestamp: bigint) {
+    const currentClock = await client.getClock();
+
+    if (timestamp <= currentClock.unixTimestamp)
+      throw new Error("Invalid timestamp: cannot time travel backwards");
+
+    context.setClock(
+      new Clock(
+        currentClock.slot,
+        currentClock.epochStartTimestamp,
+        currentClock.epoch,
+        currentClock.leaderScheduleEpoch,
+        timestamp
+      )
+    );
   }
 });
