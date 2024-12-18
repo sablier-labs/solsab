@@ -87,7 +87,7 @@ describe("solsab", () => {
   });
 
   it("Creates a LockupLinear Stream", async () => {
-    const { stream, tokenMint, streamedAmount } =
+    const { stream, tokenMint, depositedAmount } =
       await createCancelableLockupLinearStream();
 
     // Derive the Treasury's ATA address
@@ -104,7 +104,7 @@ describe("solsab", () => {
     const treasuryBalance = new BN(getTokenBalance(treasuryATAData));
 
     assert(
-      treasuryBalance.eq(streamedAmount),
+      treasuryBalance.eq(depositedAmount),
       "Treasury hasn't received the sender's tokens"
     );
 
@@ -134,7 +134,7 @@ describe("solsab", () => {
   });
 
   it("Cancels a LockupLinear Stream immediately after creating it", async () => {
-    const { senderATA, recipientATA, tokenMint, streamedAmount } =
+    const { senderATA, recipientATA, tokenMint, depositedAmount } =
       await createCancelableLockupLinearStream();
 
     let cancelStreamIx = await program.methods
@@ -159,7 +159,7 @@ describe("solsab", () => {
     );
 
     assert(
-      stream.amounts.refunded.eq(streamedAmount),
+      stream.amounts.refunded.eq(depositedAmount),
       "The Stream's refunded amount is incorrect"
     );
 
@@ -169,12 +169,64 @@ describe("solsab", () => {
     );
   });
 
+  it("Cancels a LockupLinear Stream after a half of the tokens has been streamed", async () => {
+    const {
+      senderATA,
+      recipientATA,
+      tokenMint,
+      depositedAmount,
+      streamMilestones,
+    } = await createCancelableLockupLinearStream();
+
+    await timeTravelForwardTo(
+      BigInt(
+        streamMilestones.startTime
+          .add(streamMilestones.endTime)
+          .div(new BN(2))
+          .toString()
+      )
+    );
+
+    let cancelStreamIx = await program.methods
+      .cancelLockupLinearStream()
+      .accounts({
+        sender: sender.publicKey,
+        senderAta: senderATA,
+        recipientAta: recipientATA,
+        mint: tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
+
+    const stream = await fetchStream(senderATA, recipientATA);
+
+    assert(
+      stream.wasCanceled === true && stream.isCancelable === false,
+      "The Stream couldn't be canceled"
+    );
+
+    const expectedWithdrawnAmount = depositedAmount.div(new BN(2));
+
+    assert(
+      stream.amounts.withdrawn.eq(expectedWithdrawnAmount),
+      "The Stream's withdrawn amount is incorrect"
+    );
+
+    assert(
+      stream.amounts.refunded.eq(depositedAmount.sub(expectedWithdrawnAmount)),
+      "The Stream's refunded amount is incorrect"
+    );
+  });
+
   it("Cancels a LockupLinear Stream after the tokens have been fully streamed", async () => {
     const {
       senderATA,
       recipientATA,
       tokenMint,
-      streamedAmount,
+      depositedAmount: streamedAmount,
       streamMilestones,
     } = await createCancelableLockupLinearStream();
 
@@ -219,7 +271,7 @@ describe("solsab", () => {
     senderATA: PublicKey;
     recipientATA: PublicKey;
     tokenMint: PublicKey;
-    streamedAmount: BN;
+    depositedAmount: BN;
     streamMilestones: StreamMilestones;
   }> {
     const TOKEN_DECIMALS = 2;
@@ -267,14 +319,14 @@ describe("solsab", () => {
 
     const streamMilestones = generateStandardStreamMilestones();
 
-    const streamedAmount = new BN(6);
+    const depositedAmount = new BN(6);
     const isCancelable = true;
     let createStreamIx = await program.methods
       .createLockupLinearStream(
         streamMilestones.startTime,
         streamMilestones.cliffTime,
         streamMilestones.endTime,
-        streamedAmount,
+        depositedAmount,
         isCancelable
       )
       .accounts({
@@ -293,7 +345,7 @@ describe("solsab", () => {
       senderATA,
       recipientATA,
       tokenMint,
-      streamedAmount: streamedAmount,
+      depositedAmount,
       streamMilestones,
     };
   }
