@@ -1,5 +1,4 @@
 import {
-  Connection,
   PublicKey,
   Keypair,
   Transaction,
@@ -25,6 +24,8 @@ import {
   getTokenBalance,
   TOKEN_PROGRAM_ID,
 } from "./anchor-bankrun-adapter";
+
+import { StreamMilestones, generateStandardStreamMilestones } from "./utils";
 
 //import * as helpers from "@solana-developers/helpers";
 
@@ -59,90 +60,6 @@ describe("solsab", () => {
     const formattedBalance = new Intl.NumberFormat().format(balanceInSOL);
     console.log(`Balance: ${formattedBalance} SOL`);
   });
-
-  async function createCancelableLockupLinearStream(): Promise<{
-    stream: any;
-    senderATA: PublicKey;
-    recipientATA: PublicKey;
-    tokenMint: PublicKey;
-    streamedAmount: BN;
-    streamMilestones: StreamMilestones;
-  }> {
-    const TOKEN_DECIMALS = 2;
-    const freezeAuthority = null;
-
-    const tokenMint = await createMint(
-      client,
-      sender,
-      sender.publicKey,
-      freezeAuthority,
-      TOKEN_DECIMALS
-    );
-
-    const MINOR_UNITS_PER_MAJOR_UNITS = Math.pow(10, TOKEN_DECIMALS);
-
-    const senderATA = await createAssociatedTokenAccount(
-      client,
-      sender,
-      tokenMint,
-      sender.publicKey
-    );
-    console.log(`Sender's ATA: ${senderATA}`);
-
-    await mintTo(
-      client,
-      sender,
-      tokenMint,
-      senderATA,
-      sender,
-      10 * MINOR_UNITS_PER_MAJOR_UNITS
-    );
-
-    console.log(
-      `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
-    );
-
-    const recipient = Keypair.generate();
-    const recipientATA = await createAssociatedTokenAccount(
-      client,
-      sender,
-      tokenMint,
-      recipient.publicKey
-    );
-    console.log(`Recipient's ATA: ${recipientATA}`);
-
-    const streamMilestones = generateStandardStreamMilestones();
-
-    const streamedAmount = new BN(6);
-    const isCancelable = true;
-    let createStreamIx = await program.methods
-      .createLockupLinearStream(
-        streamMilestones.startTime,
-        streamMilestones.cliffTime,
-        streamMilestones.endTime,
-        streamedAmount,
-        isCancelable
-      )
-      .accounts({
-        sender: sender.publicKey,
-        mint: tokenMint,
-        recipient: recipient.publicKey,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .instruction();
-
-    // Build, sign and process the transaction
-    await buildSignAndProcessTxFromIx(createStreamIx, sender);
-
-    return {
-      stream: await fetchStream(senderATA, recipientATA),
-      senderATA,
-      recipientATA,
-      tokenMint,
-      streamedAmount: streamedAmount,
-      streamMilestones,
-    };
-  }
 
   it("initializes the SolSab program", async () => {
     // Pre-calculate the PDA address for the treasury
@@ -297,10 +214,88 @@ describe("solsab", () => {
 
   // HELPER FUNCTIONS AND DATA STRUCTS
 
-  interface StreamMilestones {
-    startTime: BN;
-    cliffTime: BN;
-    endTime: BN;
+  async function createCancelableLockupLinearStream(): Promise<{
+    stream: any;
+    senderATA: PublicKey;
+    recipientATA: PublicKey;
+    tokenMint: PublicKey;
+    streamedAmount: BN;
+    streamMilestones: StreamMilestones;
+  }> {
+    const TOKEN_DECIMALS = 2;
+    const freezeAuthority = null;
+
+    const tokenMint = await createMint(
+      client,
+      sender,
+      sender.publicKey,
+      freezeAuthority,
+      TOKEN_DECIMALS
+    );
+
+    const MINOR_UNITS_PER_MAJOR_UNITS = Math.pow(10, TOKEN_DECIMALS);
+
+    const senderATA = await createAssociatedTokenAccount(
+      client,
+      sender,
+      tokenMint,
+      sender.publicKey
+    );
+    console.log(`Sender's ATA: ${senderATA}`);
+
+    await mintTo(
+      client,
+      sender,
+      tokenMint,
+      senderATA,
+      sender,
+      10 * MINOR_UNITS_PER_MAJOR_UNITS
+    );
+
+    console.log(
+      `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
+    );
+
+    const recipient = Keypair.generate();
+    const recipientATA = await createAssociatedTokenAccount(
+      client,
+      sender,
+      tokenMint,
+      recipient.publicKey
+    );
+    console.log(`Recipient's ATA: ${recipientATA}`);
+
+    const streamMilestones = generateStandardStreamMilestones();
+
+    const streamedAmount = new BN(6);
+    const isCancelable = true;
+    let createStreamIx = await program.methods
+      .createLockupLinearStream(
+        streamMilestones.startTime,
+        streamMilestones.cliffTime,
+        streamMilestones.endTime,
+        streamedAmount,
+        isCancelable
+      )
+      .accounts({
+        sender: sender.publicKey,
+        mint: tokenMint,
+        recipient: recipient.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(createStreamIx, sender);
+
+    return {
+      stream: await fetchStream(senderATA, recipientATA),
+      senderATA,
+      recipientATA,
+      tokenMint,
+      streamedAmount: streamedAmount,
+      streamMilestones,
+    };
   }
 
   async function fetchStream(
@@ -333,19 +328,6 @@ describe("solsab", () => {
     );
   }
 
-  function generateStandardStreamMilestones(): StreamMilestones {
-    const now = Math.floor(Date.now() / 1000); // Current Unix timestamp in seconds
-    const startTime = new BN(now + 60); // Start in 1 minute
-    const cliffTime = new BN(now + 300); // Cliff in 5 minutes
-    const endTime = new BN(now + 3600); // End in 1 hour
-
-    return {
-      startTime,
-      cliffTime,
-      endTime,
-    };
-  }
-
   async function buildSignAndProcessTxFromIx(ix: TxIx, signer: Keypair) {
     const tx = await initializeTxWithIx(ix);
     tx.sign(signer);
@@ -357,11 +339,10 @@ describe("solsab", () => {
   }
 
   async function initializeTx(): Promise<Transaction> {
-    let tx = new Transaction();
-
     const res = await client.getLatestBlockhash();
     if (!res) throw new Error("Couldn't get the latest blockhash");
 
+    let tx = new Transaction();
     tx.recentBlockhash = res[0];
     return tx;
   }
