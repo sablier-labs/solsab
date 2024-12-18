@@ -5,22 +5,24 @@ use anchor_lang::{
 
 use anchor_spl::token_interface::{transfer_checked, TransferChecked};
 
-use crate::{ErrorCode, Stream};
+use crate::{ErrorCode, Milestones, Stream};
 
 pub fn get_streamed_amount(stream: &Stream) -> u64 {
     let current_time = Clock::get().unwrap().unix_timestamp;
 
-    if stream.cliff_time > current_time || stream.start_time > current_time {
+    let milestones: &Milestones = &stream.milestones;
+
+    if milestones.cliff_time > current_time || milestones.start_time > current_time {
         return 0; // No assets have been streamed yet
     }
 
-    if stream.end_time < current_time {
+    if milestones.end_time < current_time {
         return stream.amounts.deposited; // All assets have been streamed
     }
 
     // Calculate the streamed amount
-    let elapsed_time = current_time - stream.start_time;
-    let total_duration = stream.end_time - stream.start_time;
+    let elapsed_time = current_time - milestones.start_time;
+    let total_duration = milestones.end_time - milestones.start_time;
     (stream.amounts.deposited as u128 * elapsed_time as u128 / total_duration as u128) as u64
 }
 

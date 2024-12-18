@@ -107,7 +107,7 @@ describe("solsab", () => {
       stream,
       tokenMint,
       depositedAmount,
-      streamMilestones,
+      streamMilestones: milestones,
     } = await createCancelableLockupLinearStream();
 
     assert(
@@ -127,9 +127,9 @@ describe("solsab", () => {
     );
 
     assert(
-      stream.startTime.eq(streamMilestones.startTime) &&
-        stream.cliffTime.eq(streamMilestones.cliffTime) &&
-        stream.endTime.eq(streamMilestones.endTime),
+      stream.milestones.startTime.eq(milestones.startTime) &&
+        stream.milestones.cliffTime.eq(milestones.cliffTime) &&
+        stream.milestones.endTime.eq(milestones.endTime),
       "The created Stream's milestones are incorrect"
     );
 

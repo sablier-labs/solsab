@@ -34,7 +34,7 @@ pub mod solsab {
         start_time: i64,
         cliff_time: i64,
         end_time: i64,
-        amount: u64,
+        deposited_amount: u64,
         is_cancelable: bool,
     ) -> Result<()> {
         let sender = &ctx.accounts.sender;
@@ -43,7 +43,7 @@ pub mod solsab {
         let mint = &ctx.accounts.mint;
 
         // Assert that the deposited amount is not zero
-        if amount == 0 {
+        if deposited_amount == 0 {
             return Err(ErrorCode::InvalidDepositAmount.into());
         }
 
@@ -68,7 +68,7 @@ pub mod solsab {
 
         // Execute the transfer
         let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
-        transfer_checked(cpi_ctx, amount, mint.decimals)?;
+        transfer_checked(cpi_ctx, deposited_amount, mint.decimals)?;
 
         // Initialize the fields of the newly created Stream
         let stream = &mut ctx.accounts.stream;
@@ -77,12 +77,12 @@ pub mod solsab {
         stream.recipient_ata = recipient_ata.key();
         stream.token_mint_account = mint.key();
 
-        // TODO: shouldn't the Amounts field be allocated explicitly?
-        stream.amounts.deposited = amount;
+        stream.amounts.deposited = deposited_amount;
 
-        stream.start_time = start_time;
-        stream.cliff_time = cliff_time;
-        stream.end_time = end_time;
+        stream.milestones.start_time = start_time;
+        stream.milestones.cliff_time = cliff_time;
+        stream.milestones.end_time = end_time;
+
         stream.is_cancelable = is_cancelable;
         stream.was_canceled = false;
 
@@ -428,11 +428,7 @@ pub struct Stream {
     pub recipient_ata: Pubkey,
     pub token_mint_account: Pubkey,
     pub amounts: Amounts,
-
-    // TODO: encapsulate the milestones into a struct
-    pub start_time: i64,
-    pub cliff_time: i64,
-    pub end_time: i64,
+    pub milestones: Milestones,
     pub is_cancelable: bool,
     pub was_canceled: bool,
     pub bump: u8,
@@ -443,6 +439,13 @@ pub struct Amounts {
     pub deposited: u64,
     pub withdrawn: u64,
     pub refunded: u64,
+}
+
+#[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
+pub struct Milestones {
+    pub start_time: i64,
+    pub cliff_time: i64,
+    pub end_time: i64,
 }
 
 #[account]
