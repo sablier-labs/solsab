@@ -100,7 +100,7 @@ describe("solsab", () => {
     assert.ok(treasuryAccount, "Treasury PDA not initialized");
   });
 
-  it.only("Creates a LockupLinear Stream", async () => {
+  it("Creates a LockupLinear Stream", async () => {
     const {
       senderATA,
       recipientATA,
@@ -302,15 +302,18 @@ describe("solsab", () => {
     );
   });
 
-  it.skip("Withdraws from a LockupLinear Stream right before the cliff time", async () => {
-    const { senderATA, recipientATA, tokenMint, streamMilestones } =
-      await createCancelableLockupLinearStream();
+  it.only("Withdraws from a LockupLinear Stream at the end time", async () => {
+    const {
+      senderATA,
+      recipientATA,
+      tokenMint,
+      streamMilestones,
+      depositedAmount,
+    } = await createCancelableLockupLinearStream();
 
-    await timeTravelForwardTo(
-      BigInt(streamMilestones.cliffTime.sub(new BN(1)).toString())
-    );
+    await timeTravelForwardTo(BigInt(streamMilestones.endTime.toString()));
 
-    let amountToWithdraw = new BN(1);
+    let amountToWithdraw = depositedAmount;
 
     let withdrawIx = await program.methods
       .withdraw(amountToWithdraw)
@@ -324,7 +327,7 @@ describe("solsab", () => {
       .instruction();
 
     // Build, sign and process the transaction
-    await buildSignAndProcessTxFromIx(withdrawIx, sender);
+    await buildSignAndProcessTxFromIx(withdrawIx, recipient);
 
     const stream = await fetchStream(senderATA, recipientATA);
 
@@ -414,7 +417,6 @@ describe("solsab", () => {
       `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
     );
 
-    const recipient = Keypair.generate();
     const recipientATA = await createAssociatedTokenAccount(
       client,
       sender,

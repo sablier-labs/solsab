@@ -1,11 +1,12 @@
 use anchor_lang::{
-    prelude::{AccountInfo, CpiContext, Result},
+    prelude::{Account, AccountInfo, CpiContext, Result},
     solana_program::sysvar::{clock::Clock, Sysvar},
+    ToAccountInfo,
 };
 
 use anchor_spl::token_interface::{transfer_checked, TransferChecked};
 
-use crate::{ErrorCode, Milestones, Stream};
+use crate::{ErrorCode, Milestones, Stream, Treasury};
 
 pub fn get_streamed_amount(stream: &Stream) -> u64 {
     let current_time = Clock::get().unwrap().unix_timestamp;
@@ -33,7 +34,8 @@ pub fn get_withdrawable_amount(stream: &Stream) -> u64 {
 pub fn internal_withdraw<'info>(
     stream: &mut Stream,
     recipient_ata: AccountInfo<'info>,
-    program_ata: AccountInfo<'info>,
+    treasury_ata: AccountInfo<'info>,
+    treasury_pda: &Account<'info, Treasury>,
     mint: AccountInfo<'info>,
     mint_decimals: u8,
     token_program: AccountInfo<'info>,
@@ -55,14 +57,17 @@ pub fn internal_withdraw<'info>(
     // Transfer the withdrawable SPL tokens to the recipient
     // Prepare the transfer instruction
     let transfer_ix = TransferChecked {
-        from: program_ata.clone(),
+        from: treasury_ata.clone(),
         mint,
         to: recipient_ata,
-        authority: program_ata,
+        authority: treasury_pda.to_account_info(),
     };
 
+    // Wrap the Treasury PDA's seeds in the appropriate structure
+    let signer_seeds: &[&[&[u8]]] = &[&[b"treasury", &[treasury_pda.bump]]];
+
     // Execute the transfer
-    let cpi_ctx = CpiContext::new(token_program, transfer_ix);
+    let cpi_ctx = CpiContext::new_with_signer(token_program, transfer_ix, signer_seeds);
     transfer_checked(cpi_ctx, withdrawable_amount, mint_decimals)?;
 
     // Update the Stream's withdrawn amount

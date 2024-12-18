@@ -177,6 +177,7 @@ pub mod solsab {
             &mut ctx.accounts.stream,
             ctx.accounts.recipient_ata.to_account_info(),
             ctx.accounts.treasury_ata.to_account_info(),
+            &ctx.accounts.treasury_pda,
             ctx.accounts.mint.to_account_info(),
             ctx.accounts.mint.decimals,
             ctx.accounts.token_program.to_account_info(),
@@ -192,6 +193,7 @@ pub mod solsab {
             stream,
             ctx.accounts.recipient_ata.to_account_info(),
             ctx.accounts.treasury_ata.to_account_info(),
+            &ctx.accounts.treasury_pda,
             ctx.accounts.mint.to_account_info(),
             ctx.accounts.mint.decimals,
             ctx.accounts.token_program.to_account_info(),
@@ -364,14 +366,15 @@ pub struct Withdraw<'info> {
     pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
+        mut,
         seeds = [b"treasury"],
-        bump
+        bump = treasury_pda.bump
     )]
     pub treasury_pda: Account<'info, Treasury>,
 
     #[account(
         mut,
-        associated_token::mint = sender_ata.mint,
+        associated_token::mint = mint,
         associated_token::authority = treasury_pda,
         associated_token::token_program = token_program
     )]
@@ -405,14 +408,15 @@ pub struct WithdrawMax<'info> {
     pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
+        mut,
         seeds = [b"treasury"],
-        bump
+        bump = treasury_pda.bump
     )]
     pub treasury_pda: Account<'info, Treasury>,
 
     #[account(
         mut,
-        associated_token::mint = sender_ata.mint,
+        associated_token::mint = mint,
         associated_token::authority = treasury_pda,
         associated_token::token_program = token_program
     )]
