@@ -25,7 +25,11 @@ import {
   TOKEN_PROGRAM_ID,
 } from "./anchor-bankrun-adapter";
 
-import { StreamMilestones, generateStandardStreamMilestones } from "./utils";
+import {
+  StreamMilestones,
+  generateStandardStreamMilestones,
+  getDefaultAccountInfoWithSOL,
+} from "./utils";
 
 //import * as helpers from "@solana-developers/helpers";
 
@@ -36,12 +40,12 @@ describe("solsab", () => {
   let context: ProgramTestContext;
   let client: BanksClient;
   let sender: Keypair;
+  let recipient: Keypair;
   let provider: BankrunProvider;
+  let treasuryPDA: PublicKey;
 
   const program = anchor.workspace.solsab as anchor.Program<Solsab>;
   const SOLSAB_PROGRAM_ID = program.programId;
-
-  let treasuryPDA: PublicKey;
 
   before(async () => {
     // Configure the testing environment
@@ -50,15 +54,25 @@ describe("solsab", () => {
     anchor.setProvider(provider);
     client = context.banksClient;
 
-    // Output the sender's public key
+    // Initialize the sender and recipient accounts
     sender = provider.wallet.payer;
+    recipient = await generateAccWithSOL(context);
+
+    // Output the sender's public key
     console.log(`Sender: ${sender.publicKey}`);
 
     // Output the sender's SOL balance
-    const balanceInSOL =
+    const sendersBalance =
       (await client.getBalance(sender.publicKey)) / BigInt(LAMPORTS_PER_SOL);
-    const formattedBalance = new Intl.NumberFormat().format(balanceInSOL);
-    console.log(`Balance: ${formattedBalance} SOL`);
+    console.log(`Sender's balance: ${sendersBalance.toString()} SOL`);
+
+    // Output the recipient's public key
+    console.log(`Recipient: ${recipient.publicKey}`);
+
+    // Output the recipient's SOL balance
+    const recipientsBalance =
+      (await client.getBalance(recipient.publicKey)) / BigInt(LAMPORTS_PER_SOL);
+    console.log(`Recipient's balance: ${recipientsBalance.toString()} SOL`);
   });
 
   it("initializes the SolSab program", async () => {
@@ -264,7 +278,88 @@ describe("solsab", () => {
     );
   });
 
+  // it.only("Withdraws from a LockupLinear Stream right before the cliff time", async () => {
+  //   const {
+  //     senderATA,
+  //     recipientATA,
+  //     tokenMint,
+  //     depositedAmount,
+  //     streamMilestones,
+  //   } = await createCancelableLockupLinearStream();
+
+  //   await timeTravelForwardTo(
+  //     BigInt(streamMilestones.cliffTime.sub(new BN(1)).toString())
+  //   );
+
+  //   let withdrawStreamIx = await program.methods
+  //     .withdraw()
+  //     .accounts({
+  //       recipient: recipient.publicKey,
+  //       senderAta: senderATA,
+  //       recipientAta: recipientATA,
+  //       mint: tokenMint,
+  //       tokenProgram: TOKEN_PROGRAM_ID,
+  //     })
+  //     .instruction();
+
+  //   // Build, sign and process the transaction
+  //   await buildSignAndProcessTxFromIx(withdrawStreamIx, sender);
+
+  //   const stream = await fetchStream(senderATA, recipientATA);
+
+  //   assert(
+  //     stream.wasCanceled === true && stream.isCancelable === false,
+  //     "The Stream couldn't be canceled"
+  //   );
+
+  //   assert(
+  //     stream.amounts.refunded.eq(depositedAmount),
+  //     "The Stream's refunded amount is incorrect"
+  //   );
+
+  //   assert(
+  //     stream.amounts.withdrawn.eq(new BN(0)),
+  //     "The Stream's withdrawn amount is incorrect"
+  //   );
+  // });
+
   // HELPER FUNCTIONS AND DATA STRUCTS
+
+  async function buildSignAndProcessTxFromIx(ix: TxIx, signer: Keypair) {
+    const tx = await initializeTxWithIx(ix);
+    tx.sign(signer);
+    await client.processTransaction(tx);
+  }
+
+  async function initializeTxWithIx(ix: TxIx): Promise<Transaction> {
+    return (await initializeTx()).add(ix);
+  }
+
+  async function initializeTx(): Promise<Transaction> {
+    const res = await client.getLatestBlockhash();
+    if (!res) throw new Error("Couldn't get the latest blockhash");
+
+    let tx = new Transaction();
+    tx.recentBlockhash = res[0];
+    return tx;
+  }
+
+  async function timeTravelForwardTo(timestamp: bigint) {
+    const currentClock = await client.getClock();
+
+    if (timestamp <= currentClock.unixTimestamp)
+      throw new Error("Invalid timestamp: cannot time travel backwards");
+
+    context.setClock(
+      new Clock(
+        currentClock.slot,
+        currentClock.epochStartTimestamp,
+        currentClock.epoch,
+        currentClock.leaderScheduleEpoch,
+        timestamp
+      )
+    );
+  }
 
   async function createCancelableLockupLinearStream(): Promise<{
     stream: any;
@@ -380,39 +475,13 @@ describe("solsab", () => {
     );
   }
 
-  async function buildSignAndProcessTxFromIx(ix: TxIx, signer: Keypair) {
-    const tx = await initializeTxWithIx(ix);
-    tx.sign(signer);
-    await client.processTransaction(tx);
-  }
+  async function generateAccWithSOL(
+    context: ProgramTestContext
+  ): Promise<Keypair> {
+    const acc = Keypair.generate();
+    const accInfo = getDefaultAccountInfoWithSOL();
+    context.setAccount(acc.publicKey, accInfo);
 
-  async function initializeTxWithIx(ix: TxIx): Promise<Transaction> {
-    return (await initializeTx()).add(ix);
-  }
-
-  async function initializeTx(): Promise<Transaction> {
-    const res = await client.getLatestBlockhash();
-    if (!res) throw new Error("Couldn't get the latest blockhash");
-
-    let tx = new Transaction();
-    tx.recentBlockhash = res[0];
-    return tx;
-  }
-
-  async function timeTravelForwardTo(timestamp: bigint) {
-    const currentClock = await client.getClock();
-
-    if (timestamp <= currentClock.unixTimestamp)
-      throw new Error("Invalid timestamp: cannot time travel backwards");
-
-    context.setClock(
-      new Clock(
-        currentClock.slot,
-        currentClock.epochStartTimestamp,
-        currentClock.epoch,
-        currentClock.leaderScheduleEpoch,
-        timestamp
-      )
-    );
+    return acc;
   }
 });
