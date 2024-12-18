@@ -81,6 +81,7 @@ pub mod solsab {
         stream.amounts.deposited = amount;
 
         stream.start_time = start_time;
+        stream.cliff_time = cliff_time;
         stream.end_time = end_time;
         stream.is_cancelable = is_cancelable;
         stream.was_canceled = false;
@@ -312,6 +313,7 @@ pub struct CancelLockupLinearStream<'info> {
         associated_token::token_program = token_program,
     )]
     pub treasury_ata: InterfaceAccount<'info, TokenAccount>,
+
     pub token_program: Interface<'info, TokenInterface>,
 }
 
@@ -426,6 +428,8 @@ pub struct Stream {
     pub recipient_ata: Pubkey,
     pub token_mint_account: Pubkey,
     pub amounts: Amounts,
+
+    // TODO: encapsulate the milestones into a struct
     pub start_time: i64,
     pub cliff_time: i64,
     pub end_time: i64,

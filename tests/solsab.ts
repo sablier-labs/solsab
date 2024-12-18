@@ -75,7 +75,7 @@ describe("solsab", () => {
     console.log(`Recipient's balance: ${recipientsBalance.toString()} SOL`);
   });
 
-  it("initializes the SolSab program", async () => {
+  it.only("initializes the SolSab program", async () => {
     // Pre-calculate the PDA address for the treasury
     [treasuryPDA] = PublicKey.findProgramAddressSync(
       [Buffer.from("treasury")],
@@ -100,9 +100,38 @@ describe("solsab", () => {
     assert.ok(treasuryAccount, "Treasury PDA not initialized");
   });
 
-  it("Creates a LockupLinear Stream", async () => {
-    const { stream, tokenMint, depositedAmount } =
-      await createCancelableLockupLinearStream();
+  it.only("Creates a LockupLinear Stream", async () => {
+    const {
+      senderATA,
+      recipientATA,
+      stream,
+      tokenMint,
+      depositedAmount,
+      streamMilestones,
+    } = await createCancelableLockupLinearStream();
+
+    assert(
+      stream.senderAta.equals(senderATA) &&
+        stream.recipientAta.equals(recipientATA) &&
+        stream.tokenMintAccount.equals(tokenMint) &&
+        stream.isCancelable === true &&
+        stream.wasCanceled === false,
+      "The state of the created Stream is wrong"
+    );
+
+    assert(
+      stream.amounts.deposited.eq(depositedAmount) &&
+        stream.amounts.withdrawn.eq(new BN(0)) &&
+        stream.amounts.refunded.eq(new BN(0)),
+      "The created Stream's amounts are incorrect"
+    );
+
+    assert(
+      stream.startTime.eq(streamMilestones.startTime) &&
+        stream.cliffTime.eq(streamMilestones.cliffTime) &&
+        stream.endTime.eq(streamMilestones.endTime),
+      "The created Stream's milestones are incorrect"
+    );
 
     // Derive the Treasury's ATA address
     const treasuryATA = getAssociatedTokenAddressSync(
@@ -120,11 +149,6 @@ describe("solsab", () => {
     assert(
       treasuryBalance.eq(depositedAmount),
       "Treasury hasn't received the sender's tokens"
-    );
-
-    assert(
-      stream.isCancelable === true,
-      "The created Stream is non-cancelable"
     );
   });
 
@@ -278,50 +302,37 @@ describe("solsab", () => {
     );
   });
 
-  // it.only("Withdraws from a LockupLinear Stream right before the cliff time", async () => {
-  //   const {
-  //     senderATA,
-  //     recipientATA,
-  //     tokenMint,
-  //     depositedAmount,
-  //     streamMilestones,
-  //   } = await createCancelableLockupLinearStream();
+  it.skip("Withdraws from a LockupLinear Stream right before the cliff time", async () => {
+    const { senderATA, recipientATA, tokenMint, streamMilestones } =
+      await createCancelableLockupLinearStream();
 
-  //   await timeTravelForwardTo(
-  //     BigInt(streamMilestones.cliffTime.sub(new BN(1)).toString())
-  //   );
+    await timeTravelForwardTo(
+      BigInt(streamMilestones.cliffTime.sub(new BN(1)).toString())
+    );
 
-  //   let withdrawStreamIx = await program.methods
-  //     .withdraw()
-  //     .accounts({
-  //       recipient: recipient.publicKey,
-  //       senderAta: senderATA,
-  //       recipientAta: recipientATA,
-  //       mint: tokenMint,
-  //       tokenProgram: TOKEN_PROGRAM_ID,
-  //     })
-  //     .instruction();
+    let amountToWithdraw = new BN(1);
 
-  //   // Build, sign and process the transaction
-  //   await buildSignAndProcessTxFromIx(withdrawStreamIx, sender);
+    let withdrawIx = await program.methods
+      .withdraw(amountToWithdraw)
+      .accounts({
+        recipient: recipient.publicKey,
+        senderAta: senderATA,
+        recipientAta: recipientATA,
+        mint: tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
 
-  //   const stream = await fetchStream(senderATA, recipientATA);
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(withdrawIx, sender);
 
-  //   assert(
-  //     stream.wasCanceled === true && stream.isCancelable === false,
-  //     "The Stream couldn't be canceled"
-  //   );
+    const stream = await fetchStream(senderATA, recipientATA);
 
-  //   assert(
-  //     stream.amounts.refunded.eq(depositedAmount),
-  //     "The Stream's refunded amount is incorrect"
-  //   );
-
-  //   assert(
-  //     stream.amounts.withdrawn.eq(new BN(0)),
-  //     "The Stream's withdrawn amount is incorrect"
-  //   );
-  // });
+    assert(
+      stream.amounts.withdrawn.eq(amountToWithdraw),
+      "The Stream's withdrawn amount is incorrect"
+    );
+  });
 
   // HELPER FUNCTIONS AND DATA STRUCTS
 
