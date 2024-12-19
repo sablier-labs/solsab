@@ -49,6 +49,11 @@ pub mod solsab {
 
         // Assert that the end time is greater than the start time and is not in the past
         let current_time = Clock::get().unwrap().unix_timestamp;
+
+        msg!("current_time: {}", current_time);
+        msg!("start_time: {}", start_time);
+        msg!("end_time: {}", end_time);
+
         if end_time <= start_time || end_time <= current_time {
             return Err(ErrorCode::InvalidStartOrEndTime.into());
         }

@@ -47,7 +47,7 @@ describe("solsab", () => {
   const program = anchor.workspace.solsab as anchor.Program<Solsab>;
   const SOLSAB_PROGRAM_ID = program.programId;
 
-  before(async () => {
+  beforeEach(async () => {
     // Configure the testing environment
     context = await startAnchor("", [], []);
     provider = new BankrunProvider(context);
@@ -73,9 +73,7 @@ describe("solsab", () => {
     const recipientsBalance =
       (await client.getBalance(recipient.publicKey)) / BigInt(LAMPORTS_PER_SOL);
     console.log(`Recipient's balance: ${recipientsBalance.toString()} SOL`);
-  });
 
-  it.only("initializes the SolSab program", async () => {
     // Pre-calculate the PDA address for the treasury
     [treasuryPDA] = PublicKey.findProgramAddressSync(
       [Buffer.from("treasury")],
@@ -302,7 +300,7 @@ describe("solsab", () => {
     );
   });
 
-  it.only("Withdraws from a LockupLinear Stream at the end time", async () => {
+  it("Withdraws from a LockupLinear Stream at the end time", async () => {
     const {
       senderATA,
       recipientATA,
