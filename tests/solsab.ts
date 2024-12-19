@@ -106,7 +106,7 @@ describe("solsab", () => {
       tokenMint,
       depositedAmount,
       streamMilestones: milestones,
-    } = await createCancelableLockupLinearStream();
+    } = await createLockupLinearStream(true);
 
     assert(
       stream.senderAta.equals(senderATA) &&
@@ -151,8 +151,9 @@ describe("solsab", () => {
   });
 
   it("Renounces the cancelability of a LockupLinear Stream", async () => {
-    const { stream, senderATA, recipientATA } =
-      await createCancelableLockupLinearStream();
+    const { stream, senderATA, recipientATA } = await createLockupLinearStream(
+      true
+    );
 
     let renounceStreamIx = await program.methods
       .renounceStreamCancelability()
@@ -171,7 +172,7 @@ describe("solsab", () => {
 
   it("Cancels a LockupLinear Stream immediately after creating it", async () => {
     const { senderATA, recipientATA, tokenMint, depositedAmount } =
-      await createCancelableLockupLinearStream();
+      await createLockupLinearStream(true);
 
     let cancelStreamIx = await program.methods
       .cancelLockupLinearStream()
@@ -212,7 +213,7 @@ describe("solsab", () => {
       tokenMint,
       depositedAmount,
       streamMilestones,
-    } = await createCancelableLockupLinearStream();
+    } = await createLockupLinearStream(true);
 
     await timeTravelForwardTo(
       BigInt(
@@ -264,7 +265,7 @@ describe("solsab", () => {
       tokenMint,
       depositedAmount: streamedAmount,
       streamMilestones,
-    } = await createCancelableLockupLinearStream();
+    } = await createLockupLinearStream(true);
 
     await timeTravelForwardTo(BigInt(streamMilestones.endTime.toString()));
 
@@ -307,7 +308,7 @@ describe("solsab", () => {
       tokenMint,
       streamMilestones,
       depositedAmount,
-    } = await createCancelableLockupLinearStream();
+    } = await createLockupLinearStream(true);
 
     await timeTravelForwardTo(BigInt(streamMilestones.endTime.toString()));
 
@@ -373,7 +374,7 @@ describe("solsab", () => {
     );
   }
 
-  async function createCancelableLockupLinearStream(): Promise<{
+  async function createLockupLinearStream(isCancelable: boolean): Promise<{
     stream: any;
     senderATA: PublicKey;
     recipientATA: PublicKey;
@@ -426,7 +427,6 @@ describe("solsab", () => {
     const streamMilestones = generateStandardStreamMilestones();
 
     const depositedAmount = new BN(6);
-    const isCancelable = true;
     let createStreamIx = await program.methods
       .createLockupLinearStream(
         streamMilestones.startTime,
