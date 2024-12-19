@@ -143,7 +143,7 @@ export async function createAssociatedTokenAccount(
   return associatedToken;
 }
 
-export function getTokenBalance(ataData: Uint8Array): string {
+export function getTokenBalanceByATAAccountData(ataData: Uint8Array): string {
   // Amount is located at byte offset 64 and is 8 bytes long
   const amountOffset = 64;
   const amountBytes = ataData.slice(amountOffset, amountOffset + 8);

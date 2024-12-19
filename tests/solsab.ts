@@ -21,7 +21,7 @@ import {
   createAssociatedTokenAccount,
   getAssociatedTokenAddressSync,
   mintTo,
-  getTokenBalance,
+  getTokenBalanceByATAAccountData,
   TOKEN_PROGRAM_ID,
 } from "./anchor-bankrun-adapter";
 
@@ -139,10 +139,7 @@ describe("solsab", () => {
     );
 
     // Assert that the Treasury ATA contains the deposited tokens
-    const treasuryATAData = (await client.getAccount(treasuryATA))?.data;
-    assert.ok(treasuryATAData, "Treasury ATA data is undefined");
-
-    const treasuryBalance = new BN(getTokenBalance(treasuryATAData));
+    const treasuryBalance = await getTokenBalanceByATAKey(treasuryATA);
 
     assert(
       treasuryBalance.eq(depositedAmount),
@@ -170,9 +167,43 @@ describe("solsab", () => {
     assert(stream.isCancelable === true, "The Stream couldn't be renounced");
   });
 
+  it("Fails to cancel a non-cancelable Stream", async () => {
+    const { senderATA, recipientATA, tokenMint } =
+      await createLockupLinearStream(false);
+
+    let cancelStreamIx = await program.methods
+      .cancelLockupLinearStream()
+      .accounts({
+        sender: sender.publicKey,
+        senderAta: senderATA,
+        recipientAta: recipientATA,
+        mint: tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Build, sign and process the transaction
+    try {
+      await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
+      assert.fail("The Stream cancelation should've failed, but it didn't");
+    } catch (error) {
+      console.log("Unexpected error: ", error);
+
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1774"),
+        "The Stream cancelation failed with an unexpected error"
+      );
+    }
+  });
+
   it("Cancels a LockupLinear Stream immediately after creating it", async () => {
     const { senderATA, recipientATA, tokenMint, depositedAmount } =
       await createLockupLinearStream(true);
+
+    // Get the initial token balances of the sender and recipient
+    const [senderInitialTokenBalance, recipientInitialTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
 
     let cancelStreamIx = await program.methods
       .cancelLockupLinearStream()
@@ -188,6 +219,28 @@ describe("solsab", () => {
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
 
+    // Get the final token balances of the sender and recipient
+    const [senderFinalTokenBalance, recipientFinalTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+
+    // Assert that the sender's and recipient's token balances have been changed correctly
+    const expectedRefundedAmount = depositedAmount;
+    assert(
+      senderFinalTokenBalance.eq(
+        senderInitialTokenBalance.add(expectedRefundedAmount)
+      ),
+      "The amount refunded to the sender is incorrect"
+    );
+
+    const expectedWithdrawnAmount = new BN(0);
+    assert(
+      recipientFinalTokenBalance.eq(
+        recipientInitialTokenBalance.add(expectedWithdrawnAmount)
+      ),
+      "The amount withdrawn to the recipient is incorrect"
+    );
+
+    // Assert that the Stream state has been updated correctly
     const stream = await fetchStream(senderATA, recipientATA);
 
     assert(
@@ -196,12 +249,12 @@ describe("solsab", () => {
     );
 
     assert(
-      stream.amounts.refunded.eq(depositedAmount),
+      stream.amounts.refunded.eq(expectedRefundedAmount),
       "The Stream's refunded amount is incorrect"
     );
 
     assert(
-      stream.amounts.withdrawn.eq(new BN(0)),
+      stream.amounts.withdrawn.eq(expectedWithdrawnAmount),
       "The Stream's withdrawn amount is incorrect"
     );
   });
@@ -214,6 +267,10 @@ describe("solsab", () => {
       depositedAmount,
       streamMilestones,
     } = await createLockupLinearStream(true);
+
+    // Get the initial token balances of the sender and recipient
+    const [senderInitialTokenBalance, recipientInitialTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
 
     await timeTravelForwardTo(
       BigInt(
@@ -238,6 +295,28 @@ describe("solsab", () => {
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
 
+    // Get the final token balances of the sender and recipient
+    const [senderFinalTokenBalance, recipientFinalTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+
+    // Assert that the sender's and recipient's token balances have been changed correctly
+    const expectedWithdrawnAmount = depositedAmount.div(new BN(2));
+    assert(
+      recipientFinalTokenBalance.eq(
+        recipientInitialTokenBalance.add(expectedWithdrawnAmount)
+      ),
+      "The amount withdrawn to the recipient is incorrect"
+    );
+
+    const expectedRefundedAmount = depositedAmount.sub(expectedWithdrawnAmount);
+    assert(
+      senderFinalTokenBalance.eq(
+        senderInitialTokenBalance.add(expectedRefundedAmount)
+      ),
+      "The amount refunded to the sender is incorrect"
+    );
+
+    // Assert that the Stream state has been updated correctly
     const stream = await fetchStream(senderATA, recipientATA);
 
     assert(
@@ -245,15 +324,13 @@ describe("solsab", () => {
       "The Stream couldn't be canceled"
     );
 
-    const expectedWithdrawnAmount = depositedAmount.div(new BN(2));
-
     assert(
       stream.amounts.withdrawn.eq(expectedWithdrawnAmount),
       "The Stream's withdrawn amount is incorrect"
     );
 
     assert(
-      stream.amounts.refunded.eq(depositedAmount.sub(expectedWithdrawnAmount)),
+      stream.amounts.refunded.eq(expectedRefundedAmount),
       "The Stream's refunded amount is incorrect"
     );
   });
@@ -263,9 +340,13 @@ describe("solsab", () => {
       senderATA,
       recipientATA,
       tokenMint,
-      depositedAmount: streamedAmount,
+      depositedAmount,
       streamMilestones,
     } = await createLockupLinearStream(true);
+
+    // Get the initial token balances of the sender and recipient
+    const [senderInitialTokenBalance, recipientInitialTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
 
     await timeTravelForwardTo(BigInt(streamMilestones.endTime.toString()));
 
@@ -283,6 +364,28 @@ describe("solsab", () => {
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
 
+    // Get the final token balances of the sender and recipient
+    const [senderFinalTokenBalance, recipientFinalTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+
+    // Assert that the sender's and recipient's token balances have been changed correctly
+    const expectedRefundedAmount = new BN(0);
+    assert(
+      senderFinalTokenBalance.eq(
+        senderInitialTokenBalance.add(expectedRefundedAmount)
+      ),
+      "The amount refunded to the sender is incorrect"
+    );
+
+    const expectedWithdrawnAmount = depositedAmount;
+    assert(
+      recipientFinalTokenBalance.eq(
+        recipientInitialTokenBalance.add(expectedWithdrawnAmount)
+      ),
+      "The amount withdrawn to the recipient is incorrect"
+    );
+
+    // Assert that the Stream state has been updated correctly
     const stream = await fetchStream(senderATA, recipientATA);
 
     assert(
@@ -291,12 +394,12 @@ describe("solsab", () => {
     );
 
     assert(
-      stream.amounts.refunded.eq(new BN(0)),
+      stream.amounts.refunded.eq(expectedRefundedAmount),
       "The Stream's refunded amount is incorrect"
     );
 
     assert(
-      stream.amounts.withdrawn.eq(streamedAmount),
+      stream.amounts.withdrawn.eq(expectedWithdrawnAmount),
       "The Stream's withdrawn amount is incorrect"
     );
   });
@@ -310,12 +413,14 @@ describe("solsab", () => {
       depositedAmount,
     } = await createLockupLinearStream(true);
 
+    // Get the initial token balances of the sender and recipient
+    const [senderInitialTokenBalance, recipientInitialTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+
     await timeTravelForwardTo(BigInt(streamMilestones.endTime.toString()));
 
-    let amountToWithdraw = depositedAmount;
-
     let withdrawIx = await program.methods
-      .withdraw(amountToWithdraw)
+      .withdrawMax()
       .accounts({
         recipient: recipient.publicKey,
         senderAta: senderATA,
@@ -328,10 +433,32 @@ describe("solsab", () => {
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(withdrawIx, recipient);
 
+    // Get the final token balances of the sender and recipient
+    const [senderFinalTokenBalance, recipientFinalTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+
+    // Assert that the sender's and recipient's token balances have been changed correctly
+    const expectedRefundedAmount = new BN(0);
+    assert(
+      senderFinalTokenBalance.eq(
+        senderInitialTokenBalance.add(expectedRefundedAmount)
+      ),
+      "The amount refunded to the sender is incorrect"
+    );
+
+    const expectedWithdrawnAmount = depositedAmount;
+    assert(
+      recipientFinalTokenBalance.eq(
+        recipientInitialTokenBalance.add(expectedWithdrawnAmount)
+      ),
+      "The amount withdrawn to the recipient is incorrect"
+    );
+
+    // Assert that the Stream state has been updated correctly
     const stream = await fetchStream(senderATA, recipientATA);
 
     assert(
-      stream.amounts.withdrawn.eq(amountToWithdraw),
+      stream.amounts.withdrawn.eq(expectedWithdrawnAmount),
       "The Stream's withdrawn amount is incorrect"
     );
   });
@@ -344,36 +471,6 @@ describe("solsab", () => {
     await client.processTransaction(tx);
   }
 
-  async function initializeTxWithIx(ix: TxIx): Promise<Transaction> {
-    return (await initializeTx()).add(ix);
-  }
-
-  async function initializeTx(): Promise<Transaction> {
-    const res = await client.getLatestBlockhash();
-    if (!res) throw new Error("Couldn't get the latest blockhash");
-
-    let tx = new Transaction();
-    tx.recentBlockhash = res[0];
-    return tx;
-  }
-
-  async function timeTravelForwardTo(timestamp: bigint) {
-    const currentClock = await client.getClock();
-
-    if (timestamp <= currentClock.unixTimestamp)
-      throw new Error("Invalid timestamp: cannot time travel backwards");
-
-    context.setClock(
-      new Clock(
-        currentClock.slot,
-        currentClock.epochStartTimestamp,
-        currentClock.epoch,
-        currentClock.leaderScheduleEpoch,
-        timestamp
-      )
-    );
-  }
-
   async function createLockupLinearStream(isCancelable: boolean): Promise<{
     stream: any;
     senderATA: PublicKey;
@@ -384,6 +481,9 @@ describe("solsab", () => {
   }> {
     const TOKEN_DECIMALS = 2;
     const freezeAuthority = null;
+
+    // TODO: abstract the account creation into a separate function
+    // TODO: assert that the sender's ATA is debited correctly at Stream creation
 
     const tokenMint = await createMint(
       client,
@@ -494,5 +594,54 @@ describe("solsab", () => {
     context.setAccount(acc.publicKey, accInfo);
 
     return acc;
+  }
+
+  async function getTokenBalancesByATAKeys(
+    ...atas: PublicKey[]
+  ): Promise<BN[]> {
+    const balances = await Promise.all(
+      atas.map(async (ata) => {
+        const balance = await getTokenBalanceByATAKey(ata);
+        return balance;
+      })
+    );
+    return balances;
+  }
+
+  async function getTokenBalanceByATAKey(ata: PublicKey): Promise<BN> {
+    const ataData = (await client.getAccount(ata))?.data;
+    assert.ok(ataData, "ATA data is undefined");
+
+    return new BN(getTokenBalanceByATAAccountData(ataData));
+  }
+
+  async function initializeTxWithIx(ix: TxIx): Promise<Transaction> {
+    return (await initializeTx()).add(ix);
+  }
+
+  async function initializeTx(): Promise<Transaction> {
+    const res = await client.getLatestBlockhash();
+    if (!res) throw new Error("Couldn't get the latest blockhash");
+
+    let tx = new Transaction();
+    tx.recentBlockhash = res[0];
+    return tx;
+  }
+
+  async function timeTravelForwardTo(timestamp: bigint) {
+    const currentClock = await client.getClock();
+
+    if (timestamp <= currentClock.unixTimestamp)
+      throw new Error("Invalid timestamp: cannot time travel backwards");
+
+    context.setClock(
+      new Clock(
+        currentClock.slot,
+        currentClock.epochStartTimestamp,
+        currentClock.epoch,
+        currentClock.leaderScheduleEpoch,
+        timestamp
+      )
+    );
   }
 });
