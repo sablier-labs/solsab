@@ -98,15 +98,36 @@ describe("solsab", () => {
   });
 
   it("Creates a LockupLinear Stream", async () => {
-    const {
-      stream,
-      senderATA,
-      recipientATA,
-      tokenMint,
-      depositedAmount,
-      streamMilestones: milestones,
-    } = await createMintATAsAndStream(true);
+    const { tokenMint, senderATA, recipientATA } = await createMintAndATAs();
 
+    // Get the initial token balances of the sender and recipient
+    const [senderInitialTokenBalance, recipientInitialTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+
+    const { depositedAmount, streamMilestones: milestones } =
+      await createLockupLinearStream({
+        tokenMint,
+        isCancelable: true,
+      });
+
+    // Get the final token balances of the sender and recipient
+    const [senderFinalTokenBalance] = await getTokenBalancesByATAKeys(
+      senderATA,
+      recipientATA
+    );
+
+    // Assert that the sender's token balance has changed as expected
+    assert(
+      senderFinalTokenBalance.eq(
+        senderInitialTokenBalance.sub(depositedAmount)
+      ),
+      "The amount refunded to the sender is incorrect"
+    );
+
+    // Fetch the created Stream
+    const stream = await fetchStream(senderATA, recipientATA);
+
+    // Assert that the state of the created Stream is correct
     assert(
       stream.senderAta.equals(senderATA) &&
         stream.recipientAta.equals(recipientATA) &&
@@ -480,16 +501,14 @@ describe("solsab", () => {
   }> {
     const { tokenMint, senderATA, recipientATA } = await createMintAndATAs();
 
-    const { stream, depositedAmount, streamMilestones } =
+    const { depositedAmount, streamMilestones } =
       await createLockupLinearStream({
-        senderATA,
-        recipientATA,
         tokenMint,
         isCancelable: isStreamCancelable,
       });
 
     return {
-      stream,
+      stream: await fetchStream(senderATA, recipientATA),
       senderATA,
       recipientATA,
       tokenMint,
@@ -549,8 +568,6 @@ describe("solsab", () => {
   }
 
   interface CreateLockupLinearStreamArgs {
-    senderATA: PublicKey;
-    recipientATA: PublicKey;
     tokenMint: PublicKey;
     isCancelable: boolean;
   }
@@ -558,14 +575,10 @@ describe("solsab", () => {
   async function createLockupLinearStream(
     args: CreateLockupLinearStreamArgs
   ): Promise<{
-    stream: any;
     depositedAmount: BN;
     streamMilestones: StreamMilestones;
   }> {
-    // TODO: assert that the sender's ATA is debited correctly at Stream creation
-
-    const { senderATA, recipientATA, tokenMint, isCancelable } = args;
-
+    const { tokenMint, isCancelable } = args;
     const streamMilestones = generateStandardStreamMilestones();
 
     const depositedAmount = new BN(6);
@@ -589,7 +602,6 @@ describe("solsab", () => {
     await buildSignAndProcessTxFromIx(createStreamIx, sender);
 
     return {
-      stream: await fetchStream(senderATA, recipientATA),
       depositedAmount,
       streamMilestones,
     };
