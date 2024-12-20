@@ -34,7 +34,6 @@ import {
 //import * as helpers from "@solana-developers/helpers";
 
 import { Solsab } from "../target/types/solsab";
-import { before } from "mocha";
 
 describe("solsab", () => {
   let context: ProgramTestContext;
@@ -100,13 +99,13 @@ describe("solsab", () => {
 
   it("Creates a LockupLinear Stream", async () => {
     const {
+      stream,
       senderATA,
       recipientATA,
-      stream,
       tokenMint,
       depositedAmount,
       streamMilestones: milestones,
-    } = await createLockupLinearStream(true);
+    } = await createMintATAsAndStream(true);
 
     assert(
       stream.senderAta.equals(senderATA) &&
@@ -148,7 +147,7 @@ describe("solsab", () => {
   });
 
   it("Renounces the cancelability of a LockupLinear Stream", async () => {
-    const { stream, senderATA, recipientATA } = await createLockupLinearStream(
+    const { stream, senderATA, recipientATA } = await createMintATAsAndStream(
       true
     );
 
@@ -169,7 +168,7 @@ describe("solsab", () => {
 
   it("Fails to cancel a non-cancelable Stream", async () => {
     const { senderATA, recipientATA, tokenMint } =
-      await createLockupLinearStream(false);
+      await createMintATAsAndStream(false);
 
     let cancelStreamIx = await program.methods
       .cancelLockupLinearStream()
@@ -199,7 +198,7 @@ describe("solsab", () => {
 
   it("Cancels a LockupLinear Stream immediately after creating it", async () => {
     const { senderATA, recipientATA, tokenMint, depositedAmount } =
-      await createLockupLinearStream(true);
+      await createMintATAsAndStream(true);
 
     // Get the initial token balances of the sender and recipient
     const [senderInitialTokenBalance, recipientInitialTokenBalance] =
@@ -266,7 +265,7 @@ describe("solsab", () => {
       tokenMint,
       depositedAmount,
       streamMilestones,
-    } = await createLockupLinearStream(true);
+    } = await createMintATAsAndStream(true);
 
     // Get the initial token balances of the sender and recipient
     const [senderInitialTokenBalance, recipientInitialTokenBalance] =
@@ -342,7 +341,7 @@ describe("solsab", () => {
       tokenMint,
       depositedAmount,
       streamMilestones,
-    } = await createLockupLinearStream(true);
+    } = await createMintATAsAndStream(true);
 
     // Get the initial token balances of the sender and recipient
     const [senderInitialTokenBalance, recipientInitialTokenBalance] =
@@ -411,7 +410,7 @@ describe("solsab", () => {
       tokenMint,
       streamMilestones,
       depositedAmount,
-    } = await createLockupLinearStream(true);
+    } = await createMintATAsAndStream(true);
 
     // Get the initial token balances of the sender and recipient
     const [senderInitialTokenBalance, recipientInitialTokenBalance] =
@@ -471,7 +470,7 @@ describe("solsab", () => {
     await client.processTransaction(tx);
   }
 
-  async function createLockupLinearStream(isCancelable: boolean): Promise<{
+  async function createMintATAsAndStream(isStreamCancelable: boolean): Promise<{
     stream: any;
     senderATA: PublicKey;
     recipientATA: PublicKey;
@@ -479,11 +478,33 @@ describe("solsab", () => {
     depositedAmount: BN;
     streamMilestones: StreamMilestones;
   }> {
+    const { tokenMint, senderATA, recipientATA } = await createMintAndATAs();
+
+    const { stream, depositedAmount, streamMilestones } =
+      await createLockupLinearStream({
+        senderATA,
+        recipientATA,
+        tokenMint,
+        isCancelable: isStreamCancelable,
+      });
+
+    return {
+      stream,
+      senderATA,
+      recipientATA,
+      tokenMint,
+      depositedAmount,
+      streamMilestones,
+    };
+  }
+
+  async function createMintAndATAs(): Promise<{
+    tokenMint: PublicKey;
+    senderATA: PublicKey;
+    recipientATA: PublicKey;
+  }> {
     const TOKEN_DECIMALS = 2;
     const freezeAuthority = null;
-
-    // TODO: abstract the account creation into a separate function
-    // TODO: assert that the sender's ATA is debited correctly at Stream creation
 
     const tokenMint = await createMint(
       client,
@@ -524,6 +545,27 @@ describe("solsab", () => {
     );
     console.log(`Recipient's ATA: ${recipientATA}`);
 
+    return { tokenMint, senderATA, recipientATA };
+  }
+
+  interface CreateLockupLinearStreamArgs {
+    senderATA: PublicKey;
+    recipientATA: PublicKey;
+    tokenMint: PublicKey;
+    isCancelable: boolean;
+  }
+
+  async function createLockupLinearStream(
+    args: CreateLockupLinearStreamArgs
+  ): Promise<{
+    stream: any;
+    depositedAmount: BN;
+    streamMilestones: StreamMilestones;
+  }> {
+    // TODO: assert that the sender's ATA is debited correctly at Stream creation
+
+    const { senderATA, recipientATA, tokenMint, isCancelable } = args;
+
     const streamMilestones = generateStandardStreamMilestones();
 
     const depositedAmount = new BN(6);
@@ -548,9 +590,6 @@ describe("solsab", () => {
 
     return {
       stream: await fetchStream(senderATA, recipientATA),
-      senderATA,
-      recipientATA,
-      tokenMint,
       depositedAmount,
       streamMilestones,
     };
