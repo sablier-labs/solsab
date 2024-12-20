@@ -202,8 +202,8 @@ describe("solsab", () => {
       })
       .instruction();
 
-    // Build, sign and process the transaction
     try {
+      // Build, sign and process the transaction
       await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
       assert.fail("The Stream cancelation should've failed, but it didn't");
     } catch (error) {
@@ -417,6 +417,107 @@ describe("solsab", () => {
       stream.amounts.refunded.eq(expectedRefundedAmount),
       "The Stream's refunded amount is incorrect"
     );
+
+    assert(
+      stream.amounts.withdrawn.eq(expectedWithdrawnAmount),
+      "The Stream's withdrawn amount is incorrect"
+    );
+  });
+
+  it("Fails to withdraw right before cliffTime", async () => {
+    const {
+      senderATA,
+      recipientATA,
+      tokenMint,
+      streamMilestones,
+      depositedAmount,
+    } = await createMintATAsAndStream(true);
+
+    // Get the initial token balances of the sender and recipient
+    const [senderInitialTokenBalance, recipientInitialTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+
+    await timeTravelForwardTo(
+      BigInt(streamMilestones.cliffTime.sub(new BN(1)).toString())
+    );
+
+    let withdrawIx = await program.methods
+      .withdrawMax()
+      .accounts({
+        recipient: recipient.publicKey,
+        senderAta: senderATA,
+        recipientAta: recipientATA,
+        mint: tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    try {
+      // Build, sign and process the transaction
+      await buildSignAndProcessTxFromIx(withdrawIx, recipient);
+      assert.fail("The Stream withdrawal should've failed, but it didn't");
+    } catch (error) {
+      console.log("Unexpected error: ", error);
+
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1776"),
+        "The Stream withdrawal failed with an unexpected error"
+      );
+    }
+  });
+
+  it("Withdraws from a LockupLinear Stream when half of the tokens have been streamed", async () => {
+    const {
+      senderATA,
+      recipientATA,
+      tokenMint,
+      streamMilestones,
+      depositedAmount,
+    } = await createMintATAsAndStream(true);
+
+    // Get the initial token balances of the sender and recipient
+    const [senderInitialTokenBalance, recipientInitialTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+
+    await timeTravelForwardTo(
+      BigInt(
+        streamMilestones.startTime
+          .add(streamMilestones.endTime)
+          .div(new BN(2))
+          .toString()
+      )
+    );
+
+    let withdrawIx = await program.methods
+      .withdrawMax()
+      .accounts({
+        recipient: recipient.publicKey,
+        senderAta: senderATA,
+        recipientAta: recipientATA,
+        mint: tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(withdrawIx, recipient);
+
+    // Get the final token balances of the sender and recipient
+    const [senderFinalTokenBalance, recipientFinalTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+
+    // Assert that the sender's and recipient's token balances have been changed correctly
+    const expectedWithdrawnAmount = depositedAmount.div(new BN(2));
+    assert(
+      recipientFinalTokenBalance.eq(
+        recipientInitialTokenBalance.add(expectedWithdrawnAmount)
+      ),
+      "The amount withdrawn to the recipient is incorrect"
+    );
+
+    // Assert that the Stream state has been updated correctly
+    const stream = await fetchStream(senderATA, recipientATA);
 
     assert(
       stream.amounts.withdrawn.eq(expectedWithdrawnAmount),
