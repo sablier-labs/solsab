@@ -506,6 +506,35 @@ describe("solsab", () => {
     assert(stream.isCancelable === true, "The Stream couldn't be renounced");
   });
 
+  it.only("Fails to cancel a Stream that doesn't exist", async () => {
+    const { senderATA, recipientATA, tokenMint } =
+      await createMintATAsAndStream(true);
+
+    let cancelStreamIx = await program.methods
+      .cancelLockupLinearStream()
+      .accounts({
+        sender: recipientKeys.publicKey,
+        senderAta: recipientATA,
+        recipientAta: senderATA,
+        mint: tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    try {
+      // Build, sign and process the transaction
+      await buildSignAndProcessTxFromIx(cancelStreamIx, recipientKeys);
+      assert.fail("The Stream cancelation should've failed, but it didn't");
+    } catch (error) {
+      console.log("Unexpected error: ", error);
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0xbc4"), // Error Code: AccountNotInitialized (i.e. stream)
+        "The Stream cancelation failed with an unexpected error"
+      );
+    }
+  });
+
   it("Fails to cancel a non-cancelable Stream", async () => {
     const { senderATA, recipientATA, tokenMint } =
       await createMintATAsAndStream(false);
