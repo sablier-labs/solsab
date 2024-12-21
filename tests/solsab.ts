@@ -436,6 +436,56 @@ describe("solsab", () => {
     );
   });
 
+  it("Fails to renounce cancelability when the Stream is not cancelable", async () => {
+    const { senderATA, recipientATA } = await createMintATAsAndStream(false);
+
+    let renounceStreamIx = await program.methods
+      .renounceStreamCancelability()
+      .accounts({
+        sender: senderKeys.publicKey,
+        senderAta: senderATA,
+        recipientAta: recipientATA,
+      })
+      .instruction();
+
+    try {
+      // Build, sign and process the transaction
+      await buildSignAndProcessTxFromIx(renounceStreamIx, senderKeys);
+      assert.fail("The Stream cancelability renouncement should've failed");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1775"),
+        "The Stream cancelability renouncement failed with an unexpected error"
+      );
+    }
+  });
+
+  it("Fails to renounce cancelability when tx signer != Stream sender", async () => {
+    const { senderATA, recipientATA } = await createMintATAsAndStream(true);
+
+    let renounceStreamIx = await program.methods
+      .renounceStreamCancelability()
+      .accounts({
+        sender: senderKeys.publicKey,
+        senderAta: senderATA,
+        recipientAta: recipientATA,
+      })
+      .instruction();
+
+    try {
+      // Build, sign and process the transaction
+      await buildSignAndProcessTxFromIx(renounceStreamIx, recipientKeys);
+      assert.fail("The Stream cancelability renouncement should've failed");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("Signature verification failed"),
+        "The Stream cancelability renouncement failed with an unexpected error"
+      );
+    }
+  });
+
   it("Renounces the cancelability of a LockupLinear Stream", async () => {
     const { stream, senderATA, recipientATA } = await createMintATAsAndStream(
       true
