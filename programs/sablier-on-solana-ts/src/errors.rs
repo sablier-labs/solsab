@@ -6,8 +6,8 @@ pub enum ErrorCode {
     InvalidCliffTime,
     #[msg("Invalid deposit amount!")]
     InvalidDepositAmount,
-    #[msg("Invalid start or end time of the Stream!")]
-    InvalidStartOrEndTime,
+    #[msg("Stream end time cannot be in the past!")]
+    InvalidEndTime,
     #[msg("Invalid withdrawal amount!")]
     InvalidWithdrawalAmount,
     #[msg("Can't cancel a non-cancelable Stream!")]

@@ -38,8 +38,8 @@ import { Solsab } from "../target/types/solsab";
 describe("solsab", () => {
   let context: ProgramTestContext;
   let client: BanksClient;
-  let sender: Keypair;
-  let recipient: Keypair;
+  let senderKeys: Keypair;
+  let recipientKeys: Keypair;
   let provider: BankrunProvider;
   let treasuryPDA: PublicKey;
 
@@ -54,23 +54,25 @@ describe("solsab", () => {
     client = context.banksClient;
 
     // Initialize the sender and recipient accounts
-    sender = provider.wallet.payer;
-    recipient = await generateAccWithSOL(context);
+    senderKeys = provider.wallet.payer;
+    recipientKeys = await generateAccWithSOL(context);
 
     // Output the sender's public key
-    console.log(`Sender: ${sender.publicKey}`);
+    console.log(`Sender: ${senderKeys.publicKey}`);
 
     // Output the sender's SOL balance
     const sendersBalance =
-      (await client.getBalance(sender.publicKey)) / BigInt(LAMPORTS_PER_SOL);
+      (await client.getBalance(senderKeys.publicKey)) /
+      BigInt(LAMPORTS_PER_SOL);
     console.log(`Sender's balance: ${sendersBalance.toString()} SOL`);
 
     // Output the recipient's public key
-    console.log(`Recipient: ${recipient.publicKey}`);
+    console.log(`Recipient: ${recipientKeys.publicKey}`);
 
     // Output the recipient's SOL balance
     const recipientsBalance =
-      (await client.getBalance(recipient.publicKey)) / BigInt(LAMPORTS_PER_SOL);
+      (await client.getBalance(recipientKeys.publicKey)) /
+      BigInt(LAMPORTS_PER_SOL);
     console.log(`Recipient's balance: ${recipientsBalance.toString()} SOL`);
 
     // Pre-calculate the PDA address for the treasury
@@ -84,12 +86,12 @@ describe("solsab", () => {
     let initializeIx = await program.methods
       .initialize()
       .accounts({
-        signer: sender.publicKey,
+        signer: senderKeys.publicKey,
       })
       .instruction();
 
     // Build, sign and process the transaction
-    await buildSignAndProcessTxFromIx(initializeIx, sender);
+    await buildSignAndProcessTxFromIx(initializeIx, senderKeys);
 
     // Make sure the program is properly initialized
     // Confirm that the treasury PDA account was created and has expected properties
@@ -97,8 +99,8 @@ describe("solsab", () => {
     assert.ok(treasuryAccount, "Treasury PDA not initialized");
   });
 
-  it.only("Fails to create a LockupLinear Stream with a deposited amount > sender's balance", async () => {
-    const { tokenMint, senderATA, recipientATA } = await createMintAndATAs();
+  it("Fails to create a LockupLinear Stream with a deposited amount > sender's balance", async () => {
+    const { tokenMint, senderATA } = await createMintAndATAs();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = (await getTokenBalanceByATAKey(senderATA)).add(
@@ -108,8 +110,8 @@ describe("solsab", () => {
     // Attempt to create a Stream with a deposited amount greater than the sender's balance
     try {
       await createLockupLinearStream({
-        sender,
-        recipientKey: recipient.publicKey,
+        senderKeys: senderKeys,
+        recipient: recipientKeys.publicKey,
         tokenMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         streamMilestones: milestones,
@@ -121,7 +123,237 @@ describe("solsab", () => {
       assert(
         // TODO: Figure out a more robust way of checking the thrown error
         (error as Error).message.includes("custom program error: 0x1"),
-        "The Stream cancelation failed with an unexpected error"
+        "The Stream creation failed with an unexpected error"
+      );
+    }
+  });
+
+  it("Fails to create a LockupLinear Stream with a depositAmount = 0", async () => {
+    const { tokenMint } = await createMintAndATAs();
+
+    const milestones = generateStandardStreamMilestones();
+
+    // Attempt to create a Stream with a deposited amount of 0
+    try {
+      await createLockupLinearStream({
+        senderKeys: senderKeys,
+        recipient: recipientKeys.publicKey,
+        tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        streamMilestones: milestones,
+        depositedAmount: new BN(0),
+        isCancelable: true,
+      });
+      assert.fail("The Stream creation should've failed, but it didn't.");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1771"),
+        "The Stream creation failed with an unexpected error"
+      );
+    }
+  });
+
+  it("Fails to create a LockupLinear Stream with an invalid token mint", async () => {
+    const { senderATA } = await createMintAndATAs();
+
+    const milestones = generateStandardStreamMilestones();
+    const depositedAmount = await getTokenBalanceByATAKey(senderATA);
+
+    // Create an "invalid" mint (different from the one associated with the sender's and recipient's ATAs)
+    const invalidTokenMint = await createMint(
+      client,
+      senderKeys,
+      senderKeys.publicKey,
+      null,
+      2
+    );
+
+    // Attempt to create a Stream with an invalid token mint
+    try {
+      await createLockupLinearStream({
+        senderKeys: senderKeys,
+        recipient: recipientKeys.publicKey,
+        tokenMint: invalidTokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        streamMilestones: milestones,
+        depositedAmount,
+        isCancelable: true,
+      });
+      assert.fail("The Stream creation should've failed, but it didn't.");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0xbc4"),
+        "The Stream creation failed with an unexpected error"
+      );
+    }
+  });
+
+  it("Fails to create a LockupLinear Stream when cliffTime < startTime", async () => {
+    const { tokenMint, senderATA } = await createMintAndATAs();
+
+    const milestones = generateStandardStreamMilestones();
+    const depositedAmount = await getTokenBalanceByATAKey(senderATA);
+
+    // Attempt to create a Stream with cliffTime < startTime
+    milestones.cliffTime = milestones.startTime.sub(new BN(1));
+    try {
+      await createLockupLinearStream({
+        senderKeys: senderKeys,
+        recipient: recipientKeys.publicKey,
+        tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        streamMilestones: milestones,
+        depositedAmount,
+        isCancelable: true,
+      });
+      assert.fail("The Stream creation should've failed, but it didn't.");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1770"),
+        "The Stream creation failed with an unexpected error"
+      );
+    }
+  });
+
+  it("Fails to create a LockupLinear Stream when cliffTime == startTime", async () => {
+    const { tokenMint, senderATA } = await createMintAndATAs();
+
+    const milestones = generateStandardStreamMilestones();
+    const depositedAmount = await getTokenBalanceByATAKey(senderATA);
+
+    // Attempt to create a Stream with cliffTime < startTime
+    milestones.cliffTime = milestones.startTime;
+    try {
+      await createLockupLinearStream({
+        senderKeys: senderKeys,
+        recipient: recipientKeys.publicKey,
+        tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        streamMilestones: milestones,
+        depositedAmount,
+        isCancelable: true,
+      });
+      assert.fail("The Stream creation should've failed, but it didn't.");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1770"),
+        "The Stream creation failed with an unexpected error"
+      );
+    }
+  });
+
+  it("Fails to create a LockupLinear Stream when cliffTime > endTime", async () => {
+    const { tokenMint, senderATA } = await createMintAndATAs();
+
+    const milestones = generateStandardStreamMilestones();
+    const depositedAmount = await getTokenBalanceByATAKey(senderATA);
+
+    // Attempt to create a Stream with cliffTime > endTime
+    milestones.cliffTime = milestones.endTime.add(new BN(1));
+    try {
+      await createLockupLinearStream({
+        senderKeys: senderKeys,
+        recipient: recipientKeys.publicKey,
+        tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        streamMilestones: milestones,
+        depositedAmount,
+        isCancelable: true,
+      });
+      assert.fail("The Stream creation should've failed, but it didn't.");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1770"),
+        "The Stream creation failed with an unexpected error"
+      );
+    }
+  });
+
+  it("Fails to create a LockupLinear Stream when cliffTime == endTime", async () => {
+    const { tokenMint, senderATA } = await createMintAndATAs();
+
+    const milestones = generateStandardStreamMilestones();
+    const depositedAmount = await getTokenBalanceByATAKey(senderATA);
+
+    // Attempt to create a Stream with cliffTime > endTime
+    milestones.cliffTime = milestones.endTime;
+    try {
+      await createLockupLinearStream({
+        senderKeys: senderKeys,
+        recipient: recipientKeys.publicKey,
+        tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        streamMilestones: milestones,
+        depositedAmount,
+        isCancelable: true,
+      });
+      assert.fail("The Stream creation should've failed, but it didn't.");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1770"),
+        "The Stream creation failed with an unexpected error"
+      );
+    }
+  });
+
+  it("Fails to create a LockupLinear Stream when endTime < startTime", async () => {
+    const { tokenMint, senderATA } = await createMintAndATAs();
+
+    const milestones = generateStandardStreamMilestones();
+    const depositedAmount = await getTokenBalanceByATAKey(senderATA);
+
+    // Attempt to create a Stream with endTime < startTime
+    milestones.endTime = milestones.startTime.sub(new BN(1));
+    try {
+      await createLockupLinearStream({
+        senderKeys: senderKeys,
+        recipient: recipientKeys.publicKey,
+        tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        streamMilestones: milestones,
+        depositedAmount,
+        isCancelable: true,
+      });
+      assert.fail("The Stream creation should've failed, but it didn't.");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1770"),
+        "The Stream creation failed with an unexpected error"
+      );
+    }
+  });
+
+  it("Fails to create a LockupLinear Stream when endTime < current time", async () => {
+    const { tokenMint, senderATA } = await createMintAndATAs();
+
+    const milestones = generateStandardStreamMilestones();
+    const depositedAmount = await getTokenBalanceByATAKey(senderATA);
+
+    // Attempt to create a Stream with endTime < current time
+    milestones.endTime = new BN(0);
+    try {
+      await createLockupLinearStream({
+        senderKeys: senderKeys,
+        recipient: recipientKeys.publicKey,
+        tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        streamMilestones: milestones,
+        depositedAmount,
+        isCancelable: true,
+      });
+      assert.fail("The Stream creation should've failed, but it didn't.");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1772"),
+        "The Stream creation failed with an unexpected error"
       );
     }
   });
@@ -138,8 +370,8 @@ describe("solsab", () => {
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
     await createLockupLinearStream({
-      sender,
-      recipientKey: recipient.publicKey,
+      senderKeys: senderKeys,
+      recipient: recipientKeys.publicKey,
       tokenMint,
       tokenProgram: TOKEN_PROGRAM_ID,
       streamMilestones: milestones,
@@ -212,14 +444,14 @@ describe("solsab", () => {
     let renounceStreamIx = await program.methods
       .renounceStreamCancelability()
       .accounts({
-        sender: sender.publicKey,
+        sender: senderKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
       })
       .instruction();
 
     // Build, sign and process the transaction
-    await buildSignAndProcessTxFromIx(renounceStreamIx, sender);
+    await buildSignAndProcessTxFromIx(renounceStreamIx, senderKeys);
 
     assert(stream.isCancelable === true, "The Stream couldn't be renounced");
   });
@@ -231,7 +463,7 @@ describe("solsab", () => {
     let cancelStreamIx = await program.methods
       .cancelLockupLinearStream()
       .accounts({
-        sender: sender.publicKey,
+        sender: senderKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
@@ -241,7 +473,7 @@ describe("solsab", () => {
 
     try {
       // Build, sign and process the transaction
-      await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
+      await buildSignAndProcessTxFromIx(cancelStreamIx, senderKeys);
       assert.fail("The Stream cancelation should've failed, but it didn't");
     } catch (error) {
       assert(
@@ -263,7 +495,7 @@ describe("solsab", () => {
     let cancelStreamIx = await program.methods
       .cancelLockupLinearStream()
       .accounts({
-        sender: sender.publicKey,
+        sender: senderKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
@@ -272,7 +504,7 @@ describe("solsab", () => {
       .instruction();
 
     // Build, sign and process the transaction
-    await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
+    await buildSignAndProcessTxFromIx(cancelStreamIx, senderKeys);
 
     // Get the final token balances of the sender and recipient
     const [senderFinalTokenBalance, recipientFinalTokenBalance] =
@@ -339,7 +571,7 @@ describe("solsab", () => {
     let cancelStreamIx = await program.methods
       .cancelLockupLinearStream()
       .accounts({
-        sender: sender.publicKey,
+        sender: senderKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
@@ -348,7 +580,7 @@ describe("solsab", () => {
       .instruction();
 
     // Build, sign and process the transaction
-    await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
+    await buildSignAndProcessTxFromIx(cancelStreamIx, senderKeys);
 
     // Get the final token balances of the sender and recipient
     const [senderFinalTokenBalance, recipientFinalTokenBalance] =
@@ -408,7 +640,7 @@ describe("solsab", () => {
     let cancelStreamIx = await program.methods
       .cancelLockupLinearStream()
       .accounts({
-        sender: sender.publicKey,
+        sender: senderKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
@@ -417,7 +649,7 @@ describe("solsab", () => {
       .instruction();
 
     // Build, sign and process the transaction
-    await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
+    await buildSignAndProcessTxFromIx(cancelStreamIx, senderKeys);
 
     // Get the final token balances of the sender and recipient
     const [senderFinalTokenBalance, recipientFinalTokenBalance] =
@@ -479,7 +711,7 @@ describe("solsab", () => {
     let withdrawIx = await program.methods
       .withdrawMax()
       .accounts({
-        recipient: recipient.publicKey,
+        recipient: recipientKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
@@ -489,7 +721,7 @@ describe("solsab", () => {
 
     try {
       // Build, sign and process the transaction
-      await buildSignAndProcessTxFromIx(withdrawIx, recipient);
+      await buildSignAndProcessTxFromIx(withdrawIx, recipientKeys);
       assert.fail("The Stream withdrawal should've failed, but it didn't");
     } catch (error) {
       assert(
@@ -525,7 +757,7 @@ describe("solsab", () => {
     let withdrawIx = await program.methods
       .withdrawMax()
       .accounts({
-        recipient: recipient.publicKey,
+        recipient: recipientKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
@@ -534,7 +766,7 @@ describe("solsab", () => {
       .instruction();
 
     // Build, sign and process the transaction
-    await buildSignAndProcessTxFromIx(withdrawIx, recipient);
+    await buildSignAndProcessTxFromIx(withdrawIx, recipientKeys);
 
     // Get the final token balances of the sender and recipient
     const [senderFinalTokenBalance, recipientFinalTokenBalance] =
@@ -576,7 +808,7 @@ describe("solsab", () => {
     let withdrawIx = await program.methods
       .withdrawMax()
       .accounts({
-        recipient: recipient.publicKey,
+        recipient: recipientKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
@@ -585,7 +817,7 @@ describe("solsab", () => {
       .instruction();
 
     // Build, sign and process the transaction
-    await buildSignAndProcessTxFromIx(withdrawIx, recipient);
+    await buildSignAndProcessTxFromIx(withdrawIx, recipientKeys);
 
     // Get the final token balances of the sender and recipient
     const [senderFinalTokenBalance, recipientFinalTokenBalance] =
@@ -619,9 +851,9 @@ describe("solsab", () => {
 
   // HELPER FUNCTIONS AND DATA STRUCTS
 
-  async function buildSignAndProcessTxFromIx(ix: TxIx, signer: Keypair) {
+  async function buildSignAndProcessTxFromIx(ix: TxIx, signerKeys: Keypair) {
     const tx = await initializeTxWithIx(ix);
-    tx.sign(signer);
+    tx.sign(signerKeys);
     await client.processTransaction(tx);
   }
 
@@ -638,8 +870,8 @@ describe("solsab", () => {
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
     await createLockupLinearStream({
-      sender,
-      recipientKey: recipient.publicKey,
+      senderKeys: senderKeys,
+      recipient: recipientKeys.publicKey,
       tokenMint,
       tokenProgram: TOKEN_PROGRAM_ID,
       streamMilestones: milestones,
@@ -667,27 +899,27 @@ describe("solsab", () => {
 
     const tokenMint = await createMint(
       client,
-      sender,
-      sender.publicKey,
+      senderKeys,
+      senderKeys.publicKey,
       freezeAuthority,
       TOKEN_DECIMALS
     );
 
     const senderATA = await createAssociatedTokenAccount(
       client,
-      sender,
+      senderKeys,
       tokenMint,
-      sender.publicKey
+      senderKeys.publicKey
     );
     console.log(`Sender's ATA: ${senderATA}`);
 
     const MINOR_UNITS_PER_MAJOR_UNITS = Math.pow(10, TOKEN_DECIMALS);
     await mintTo(
       client,
-      sender,
+      senderKeys,
       tokenMint,
       senderATA,
-      sender,
+      senderKeys,
       10 * MINOR_UNITS_PER_MAJOR_UNITS
     );
 
@@ -697,9 +929,9 @@ describe("solsab", () => {
 
     const recipientATA = await createAssociatedTokenAccount(
       client,
-      sender,
+      senderKeys,
       tokenMint,
-      recipient.publicKey
+      recipientKeys.publicKey
     );
     console.log(`Recipient's ATA: ${recipientATA}`);
 
@@ -707,8 +939,8 @@ describe("solsab", () => {
   }
 
   interface CreateLockupLinearStreamArgs {
-    sender: Keypair;
-    recipientKey: PublicKey;
+    senderKeys: Keypair;
+    recipient: PublicKey;
     tokenMint: PublicKey;
     tokenProgram: PublicKey;
     streamMilestones: StreamMilestones;
@@ -718,10 +950,10 @@ describe("solsab", () => {
 
   async function createLockupLinearStream(
     args: CreateLockupLinearStreamArgs
-  ): Promise<{}> {
+  ): Promise<void> {
     const {
-      sender,
-      recipientKey: recipient,
+      senderKeys,
+      recipient,
       tokenMint,
       tokenProgram,
       streamMilestones,
@@ -738,17 +970,15 @@ describe("solsab", () => {
         isCancelable
       )
       .accounts({
-        sender: sender.publicKey,
+        sender: senderKeys.publicKey,
         mint: tokenMint,
-        recipient: recipient,
+        recipient,
         tokenProgram,
       })
       .instruction();
 
     // Build, sign and process the transaction
-    await buildSignAndProcessTxFromIx(createStreamIx, sender);
-
-    return { depositedAmount };
+    await buildSignAndProcessTxFromIx(createStreamIx, senderKeys);
   }
 
   async function fetchStream(

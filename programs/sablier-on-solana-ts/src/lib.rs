@@ -47,19 +47,15 @@ pub mod solsab {
             return Err(ErrorCode::InvalidDepositAmount.into());
         }
 
-        // Assert that the end time is greater than the start time and is not in the past
         let current_time = Clock::get().unwrap().unix_timestamp;
 
-        msg!("current_time: {}", current_time);
-        msg!("start_time: {}", start_time);
-        msg!("end_time: {}", end_time);
-
-        if end_time <= start_time || end_time <= current_time {
-            return Err(ErrorCode::InvalidStartOrEndTime.into());
+        // Assert that the end time is not in the past
+        if end_time <= current_time {
+            return Err(ErrorCode::InvalidEndTime.into());
         }
 
         // Assert that the cliff time is strictly between the start and end times
-        if start_time >= cliff_time || cliff_time >= end_time {
+        if cliff_time <= start_time || cliff_time >= end_time {
             return Err(ErrorCode::InvalidCliffTime.into());
         }
 
