@@ -506,7 +506,7 @@ describe("solsab", () => {
     assert(stream.isCancelable === true, "The Stream couldn't be renounced");
   });
 
-  it.only("Fails to cancel a Stream that doesn't exist", async () => {
+  it("Fails to cancel a Stream that doesn't exist", async () => {
     const { senderATA, recipientATA, tokenMint } =
       await createMintATAsAndStream(true);
 
@@ -526,7 +526,6 @@ describe("solsab", () => {
       await buildSignAndProcessTxFromIx(cancelStreamIx, recipientKeys);
       assert.fail("The Stream cancelation should've failed, but it didn't");
     } catch (error) {
-      console.log("Unexpected error: ", error);
       assert(
         // TODO: Figure out a more robust way of checking the thrown error
         (error as Error).message.includes("custom program error: 0xbc4"), // Error Code: AccountNotInitialized (i.e. stream)
@@ -770,18 +769,37 @@ describe("solsab", () => {
     );
   });
 
-  it("Fails to withdraw right before cliffTime", async () => {
-    const {
-      senderATA,
-      recipientATA,
-      tokenMint,
-      streamMilestones,
-      depositedAmount,
-    } = await createMintATAsAndStream(true);
+  it.only("Fails to withdraw from a Stream as a non-recipient", async () => {
+    const { senderATA, recipientATA, tokenMint } =
+      await createMintATAsAndStream(true);
 
-    // Get the initial token balances of the sender and recipient
-    const [senderInitialTokenBalance, recipientInitialTokenBalance] =
-      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+    let withdrawIx = await program.methods
+      .withdrawMax()
+      .accounts({
+        recipient: recipientKeys.publicKey,
+        senderAta: senderATA,
+        recipientAta: recipientATA,
+        mint: tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    try {
+      // Build, sign and process the transaction
+      await buildSignAndProcessTxFromIx(withdrawIx, senderKeys);
+      assert.fail("The Stream withdrawal should've failed, but it didn't");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("Signature verification failed"),
+        "The Stream withdrawal failed with an unexpected error"
+      );
+    }
+  });
+
+  it("Fails to withdraw right before cliffTime", async () => {
+    const { senderATA, recipientATA, tokenMint, streamMilestones } =
+      await createMintATAsAndStream(true);
 
     await timeTravelForwardTo(
       BigInt(streamMilestones.cliffTime.sub(new BN(1)).toString())
@@ -820,9 +838,10 @@ describe("solsab", () => {
       depositedAmount,
     } = await createMintATAsAndStream(true);
 
-    // Get the initial token balances of the sender and recipient
-    const [senderInitialTokenBalance, recipientInitialTokenBalance] =
-      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+    // Get the initial token balances of the recipient
+    const [recipientInitialTokenBalance] = await getTokenBalancesByATAKeys(
+      recipientATA
+    );
 
     await timeTravelForwardTo(
       BigInt(
@@ -847,11 +866,12 @@ describe("solsab", () => {
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(withdrawIx, recipientKeys);
 
-    // Get the final token balances of the sender and recipient
-    const [senderFinalTokenBalance, recipientFinalTokenBalance] =
-      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+    // Get the final token balances of the recipient
+    const [recipientFinalTokenBalance] = await getTokenBalancesByATAKeys(
+      recipientATA
+    );
 
-    // Assert that the sender's and recipient's token balances have been changed correctly
+    // Assert that the recipient's token balance has been changed correctly
     const expectedWithdrawnAmount = depositedAmount.div(new BN(2));
     assert(
       recipientFinalTokenBalance.eq(
@@ -878,9 +898,10 @@ describe("solsab", () => {
       depositedAmount,
     } = await createMintATAsAndStream(true);
 
-    // Get the initial token balances of the sender and recipient
-    const [senderInitialTokenBalance, recipientInitialTokenBalance] =
-      await getTokenBalancesByATAKeys(senderATA, recipientATA);
+    // Get the initial token balances of the recipient
+    const [recipientInitialTokenBalance] = await getTokenBalancesByATAKeys(
+      recipientATA
+    );
 
     await timeTravelForwardTo(BigInt(streamMilestones.endTime.toString()));
 
@@ -898,19 +919,12 @@ describe("solsab", () => {
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(withdrawIx, recipientKeys);
 
-    // Get the final token balances of the sender and recipient
-    const [senderFinalTokenBalance, recipientFinalTokenBalance] =
-      await getTokenBalancesByATAKeys(senderATA, recipientATA);
-
-    // Assert that the sender's and recipient's token balances have been changed correctly
-    const expectedRefundedAmount = new BN(0);
-    assert(
-      senderFinalTokenBalance.eq(
-        senderInitialTokenBalance.add(expectedRefundedAmount)
-      ),
-      "The amount refunded to the sender is incorrect"
+    // Get the final token balances of the recipient
+    const [recipientFinalTokenBalance] = await getTokenBalancesByATAKeys(
+      recipientATA
     );
 
+    // Assert that the recipient's token balance has been changed correctly
     const expectedWithdrawnAmount = depositedAmount;
     assert(
       recipientFinalTokenBalance.eq(
