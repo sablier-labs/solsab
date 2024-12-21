@@ -97,6 +97,35 @@ describe("solsab", () => {
     assert.ok(treasuryAccount, "Treasury PDA not initialized");
   });
 
+  it.only("Fails to create a LockupLinear Stream with a deposited amount > sender's balance", async () => {
+    const { tokenMint, senderATA, recipientATA } = await createMintAndATAs();
+
+    const milestones = generateStandardStreamMilestones();
+    const depositedAmount = (await getTokenBalanceByATAKey(senderATA)).add(
+      new BN(1)
+    );
+
+    // Attempt to create a Stream with a deposited amount greater than the sender's balance
+    try {
+      await createLockupLinearStream({
+        sender,
+        recipientKey: recipient.publicKey,
+        tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        streamMilestones: milestones,
+        depositedAmount: depositedAmount,
+        isCancelable: true,
+      });
+      assert.fail("The Stream creation should've failed, but it didn't.");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1"),
+        "The Stream cancelation failed with an unexpected error"
+      );
+    }
+  });
+
   it("Creates a LockupLinear Stream", async () => {
     const { tokenMint, senderATA, recipientATA } = await createMintAndATAs();
 
@@ -109,7 +138,10 @@ describe("solsab", () => {
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
     await createLockupLinearStream({
+      sender,
+      recipientKey: recipient.publicKey,
       tokenMint,
+      tokenProgram: TOKEN_PROGRAM_ID,
       streamMilestones: milestones,
       depositedAmount,
       isCancelable: true,
@@ -212,8 +244,6 @@ describe("solsab", () => {
       await buildSignAndProcessTxFromIx(cancelStreamIx, sender);
       assert.fail("The Stream cancelation should've failed, but it didn't");
     } catch (error) {
-      console.log("Unexpected error: ", error);
-
       assert(
         // TODO: Figure out a more robust way of checking the thrown error
         (error as Error).message.includes("custom program error: 0x1774"),
@@ -462,8 +492,6 @@ describe("solsab", () => {
       await buildSignAndProcessTxFromIx(withdrawIx, recipient);
       assert.fail("The Stream withdrawal should've failed, but it didn't");
     } catch (error) {
-      console.log("Unexpected error: ", error);
-
       assert(
         // TODO: Figure out a more robust way of checking the thrown error
         (error as Error).message.includes("custom program error: 0x1776"),
@@ -610,7 +638,10 @@ describe("solsab", () => {
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
     await createLockupLinearStream({
+      sender,
+      recipientKey: recipient.publicKey,
       tokenMint,
+      tokenProgram: TOKEN_PROGRAM_ID,
       streamMilestones: milestones,
       depositedAmount,
       isCancelable: isStreamCancelable,
@@ -676,7 +707,10 @@ describe("solsab", () => {
   }
 
   interface CreateLockupLinearStreamArgs {
+    sender: Keypair;
+    recipientKey: PublicKey;
     tokenMint: PublicKey;
+    tokenProgram: PublicKey;
     streamMilestones: StreamMilestones;
     depositedAmount: BN;
     isCancelable: boolean;
@@ -685,7 +719,15 @@ describe("solsab", () => {
   async function createLockupLinearStream(
     args: CreateLockupLinearStreamArgs
   ): Promise<{}> {
-    const { tokenMint, streamMilestones, depositedAmount, isCancelable } = args;
+    const {
+      sender,
+      recipientKey: recipient,
+      tokenMint,
+      tokenProgram,
+      streamMilestones,
+      depositedAmount,
+      isCancelable,
+    } = args;
 
     let createStreamIx = await program.methods
       .createLockupLinearStream(
@@ -698,8 +740,8 @@ describe("solsab", () => {
       .accounts({
         sender: sender.publicKey,
         mint: tokenMint,
-        recipient: recipient.publicKey,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        recipient: recipient,
+        tokenProgram,
       })
       .instruction();
 
