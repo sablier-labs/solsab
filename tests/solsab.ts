@@ -769,7 +769,7 @@ describe("solsab", () => {
     );
   });
 
-  it.only("Fails to withdraw from a Stream as a non-recipient", async () => {
+  it("Fails to withdraw from a Stream as a non-recipient", async () => {
     const { senderATA, recipientATA, tokenMint } =
       await createMintATAsAndStream(true);
 
@@ -829,7 +829,7 @@ describe("solsab", () => {
     }
   });
 
-  it("Withdraws from a LockupLinear Stream when half of the tokens have been streamed", async () => {
+  it("Withdraws max when half of the tokens have been streamed", async () => {
     const {
       senderATA,
       recipientATA,
@@ -889,7 +889,60 @@ describe("solsab", () => {
     );
   });
 
-  it("Withdraws from a LockupLinear Stream at endTime", async () => {
+  it("Withdraws a third of the streamed tokens at endTime", async () => {
+    const {
+      senderATA,
+      recipientATA,
+      tokenMint,
+      streamMilestones,
+      depositedAmount,
+    } = await createMintATAsAndStream(true);
+
+    // Get the initial token balances of the recipient
+    const [recipientInitialTokenBalance] = await getTokenBalancesByATAKeys(
+      recipientATA
+    );
+
+    await timeTravelForwardTo(BigInt(streamMilestones.endTime.toString()));
+
+    const withdrawAmount = depositedAmount.div(new BN(3));
+    let withdrawIx = await program.methods
+      .withdraw(withdrawAmount)
+      .accounts({
+        recipient: recipientKeys.publicKey,
+        senderAta: senderATA,
+        recipientAta: recipientATA,
+        mint: tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(withdrawIx, recipientKeys);
+
+    // Get the final token balances of the recipient
+    const [recipientFinalTokenBalance] = await getTokenBalancesByATAKeys(
+      recipientATA
+    );
+
+    // Assert that the recipient's token balance has been changed correctly
+    assert(
+      recipientFinalTokenBalance.eq(
+        recipientInitialTokenBalance.add(withdrawAmount)
+      ),
+      "The amount withdrawn to the recipient is incorrect"
+    );
+
+    // Assert that the Stream state has been updated correctly
+    const stream = await fetchStream(senderATA, recipientATA);
+
+    assert(
+      stream.amounts.withdrawn.eq(withdrawAmount),
+      "The Stream's withdrawn amount is incorrect"
+    );
+  });
+
+  it("Withdraws max at endTime", async () => {
     const {
       senderATA,
       recipientATA,

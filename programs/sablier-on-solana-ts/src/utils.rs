@@ -68,11 +68,11 @@ pub fn internal_withdraw<'info>(
 
     // Execute the transfer
     let cpi_ctx = CpiContext::new_with_signer(token_program, transfer_ix, signer_seeds);
-    transfer_checked(cpi_ctx, withdrawable_amount, mint_decimals)?;
+    transfer_checked(cpi_ctx, amount, mint_decimals)?;
 
     // Update the Stream's withdrawn amount
     let stream_amounts = &mut stream.amounts;
-    stream_amounts.withdrawn += withdrawable_amount;
+    stream_amounts.withdrawn += amount;
 
     // Mark the Stream as non-cancellable if it has been depleted
     //
