@@ -23,6 +23,7 @@ import {
   mintTo,
   getTokenBalanceByATAAccountData,
   TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
 } from "./anchor-bankrun-adapter";
 
 import {
@@ -361,14 +362,13 @@ describe("solsab", () => {
   it("Creates a LockupLinear Stream", async () => {
     const { tokenMint, senderATA, recipientATA } = await createMintAndATAs();
 
-    // Get the initial token balances of the sender and recipient
+    // Get the initial token balances of the sender
     const [senderInitialTokenBalance] = await getTokenBalancesByATAKeys(
-      senderATA,
-      recipientATA
+      senderATA
     );
 
     const milestones = generateStandardStreamMilestones();
-    const depositedAmount = await getTokenBalanceByATAKey(senderATA);
+    const depositedAmount = senderInitialTokenBalance;
     await createLockupLinearStream({
       senderKeys: senderKeys,
       recipient: recipientKeys.publicKey,
@@ -379,10 +379,9 @@ describe("solsab", () => {
       isCancelable: true,
     });
 
-    // Get the final token balances of the sender and recipient
+    // Get the final token balances of the sender
     const [senderFinalTokenBalance] = await getTokenBalancesByATAKeys(
-      senderATA,
-      recipientATA
+      senderATA
     );
 
     // Assert that the sender's token balance has changed as expected
@@ -390,7 +389,7 @@ describe("solsab", () => {
       senderFinalTokenBalance.eq(
         senderInitialTokenBalance.sub(depositedAmount)
       ),
-      "The amount refunded to the sender is incorrect"
+      "The amount debited from the sender is incorrect"
     );
 
     // Fetch the created Stream
@@ -425,6 +424,85 @@ describe("solsab", () => {
       tokenMint,
       treasuryPDA,
       true
+    );
+
+    // Assert that the Treasury ATA contains the deposited tokens
+    const treasuryBalance = await getTokenBalanceByATAKey(treasuryATA);
+
+    assert(
+      treasuryBalance.eq(depositedAmount),
+      "Treasury hasn't received the sender's tokens"
+    );
+  });
+
+  it("Creates a LockupLinear Stream with the Token2022 program", async () => {
+    const { tokenMint, senderATA, recipientATA } =
+      await createMintAndATAsToken2022();
+
+    // Get the initial token balances of the sender
+    const [senderInitialTokenBalance] = await getTokenBalancesByATAKeys(
+      senderATA
+    );
+
+    const milestones = generateStandardStreamMilestones();
+    const depositedAmount = senderInitialTokenBalance;
+
+    await createLockupLinearStream({
+      senderKeys: senderKeys,
+      recipient: recipientKeys.publicKey,
+      tokenMint,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+      streamMilestones: milestones,
+      depositedAmount,
+      isCancelable: true,
+    });
+
+    // Get the final token balances of the sender
+    const [senderFinalTokenBalance] = await getTokenBalancesByATAKeys(
+      senderATA
+    );
+
+    // Assert that the sender's token balance has changed as expected
+    assert(
+      senderFinalTokenBalance.eq(
+        senderInitialTokenBalance.sub(depositedAmount)
+      ),
+      "The amount debited from the sender is incorrect"
+    );
+
+    // Fetch the created Stream
+    const stream = await fetchStream(senderATA, recipientATA);
+
+    // Assert that the state of the created Stream is correct
+    assert(
+      stream.senderAta.equals(senderATA) &&
+        stream.recipientAta.equals(recipientATA) &&
+        stream.tokenMintAccount.equals(tokenMint) &&
+        stream.isCancelable === true &&
+        stream.wasCanceled === false,
+      "The state of the created Stream is wrong"
+    );
+
+    assert(
+      stream.amounts.deposited.eq(depositedAmount) &&
+        stream.amounts.withdrawn.eq(new BN(0)) &&
+        stream.amounts.refunded.eq(new BN(0)),
+      "The created Stream's amounts are incorrect"
+    );
+
+    assert(
+      stream.milestones.startTime.eq(milestones.startTime) &&
+        stream.milestones.cliffTime.eq(milestones.cliffTime) &&
+        stream.milestones.endTime.eq(milestones.endTime),
+      "The created Stream's milestones are incorrect"
+    );
+
+    // Derive the Treasury's ATA address
+    const treasuryATA = getAssociatedTokenAddressSync(
+      tokenMint,
+      treasuryPDA,
+      true,
+      TOKEN_2022_PROGRAM_ID
     );
 
     // Assert that the Treasury ATA contains the deposited tokens
@@ -1055,7 +1133,8 @@ describe("solsab", () => {
       client,
       senderKeys,
       tokenMint,
-      senderKeys.publicKey
+      senderKeys.publicKey,
+      TOKEN_PROGRAM_ID
     );
     console.log(`Sender's ATA: ${senderATA}`);
 
@@ -1077,7 +1156,75 @@ describe("solsab", () => {
       client,
       senderKeys,
       tokenMint,
-      recipientKeys.publicKey
+      recipientKeys.publicKey,
+      TOKEN_PROGRAM_ID
+    );
+    console.log(`Recipient's ATA: ${recipientATA}`);
+
+    return { tokenMint, senderATA, recipientATA };
+  }
+
+  interface CreateLockupLinearStreamArgs {
+    senderKeys: Keypair;
+    recipient: PublicKey;
+    tokenMint: PublicKey;
+    tokenProgram: PublicKey;
+    streamMilestones: StreamMilestones;
+    depositedAmount: BN;
+    isCancelable: boolean;
+  }
+
+  async function createMintAndATAsToken2022(): Promise<{
+    tokenMint: PublicKey;
+    senderATA: PublicKey;
+    recipientATA: PublicKey;
+  }> {
+    const TOKEN_DECIMALS = 9;
+    const freezeAuthority = null;
+    const tokenMint = await createMint(
+      client,
+      senderKeys,
+      senderKeys.publicKey,
+      freezeAuthority,
+      TOKEN_DECIMALS,
+      Keypair.generate(),
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    console.log(`Created Token Mint: ${tokenMint}`);
+
+    const senderATA = await createAssociatedTokenAccount(
+      client,
+      senderKeys,
+      tokenMint,
+      senderKeys.publicKey,
+      TOKEN_2022_PROGRAM_ID
+    );
+    console.log(`Sender's ATA: ${senderATA}`);
+
+    const MINOR_UNITS_PER_MAJOR_UNITS = Math.pow(10, TOKEN_DECIMALS);
+    const signers: anchor.web3.Signer[] = [];
+    await mintTo(
+      client,
+      senderKeys,
+      tokenMint,
+      senderATA,
+      senderKeys,
+      10 * MINOR_UNITS_PER_MAJOR_UNITS,
+      signers,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    console.log(
+      `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
+    );
+
+    const recipientATA = await createAssociatedTokenAccount(
+      client,
+      senderKeys,
+      tokenMint,
+      recipientKeys.publicKey,
+      TOKEN_2022_PROGRAM_ID
     );
     console.log(`Recipient's ATA: ${recipientATA}`);
 
