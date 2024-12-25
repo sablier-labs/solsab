@@ -41,6 +41,7 @@ describe("solsab", () => {
   let client: BanksClient;
   let senderKeys: Keypair;
   let recipientKeys: Keypair;
+  let thirdPartyKeys: Keypair;
   let provider: BankrunProvider;
   let treasuryPDA: PublicKey;
 
@@ -57,6 +58,7 @@ describe("solsab", () => {
     // Initialize the sender and recipient accounts
     senderKeys = provider.wallet.payer;
     recipientKeys = await generateAccWithSOL(context);
+    thirdPartyKeys = await generateAccWithSOL(context);
 
     // Output the sender's public key
     console.log(`Sender: ${senderKeys.publicKey}`);
@@ -854,7 +856,7 @@ describe("solsab", () => {
     let withdrawIx = await program.methods
       .withdrawMax()
       .accounts({
-        recipient: recipientKeys.publicKey,
+        signer: recipientKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
@@ -886,7 +888,7 @@ describe("solsab", () => {
     let withdrawIx = await program.methods
       .withdrawMax()
       .accounts({
-        recipient: recipientKeys.publicKey,
+        signer: recipientKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
@@ -933,7 +935,7 @@ describe("solsab", () => {
     let withdrawIx = await program.methods
       .withdrawMax()
       .accounts({
-        recipient: recipientKeys.publicKey,
+        signer: recipientKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
@@ -967,7 +969,7 @@ describe("solsab", () => {
     );
   });
 
-  it("Withdraws a third of the streamed tokens at endTime", async () => {
+  it("Withdraws - as recipient - a third of the streamed tokens at endTime", async () => {
     const {
       senderATA,
       recipientATA,
@@ -987,7 +989,7 @@ describe("solsab", () => {
     let withdrawIx = await program.methods
       .withdraw(withdrawAmount)
       .accounts({
-        recipient: recipientKeys.publicKey,
+        signer: recipientKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
@@ -1020,7 +1022,60 @@ describe("solsab", () => {
     );
   });
 
-  it("Withdraws max at endTime", async () => {
+  it("Withdraws - as a third party & to the Stream's recipient ATA - a third of the streamed tokens at endTime", async () => {
+    const {
+      senderATA,
+      recipientATA,
+      tokenMint,
+      streamMilestones,
+      depositedAmount,
+    } = await createMintATAsAndStream(true);
+
+    // Get the initial token balances of the recipient
+    const [recipientInitialTokenBalance] = await getTokenBalancesByATAKeys(
+      recipientATA
+    );
+
+    await timeTravelForwardTo(BigInt(streamMilestones.endTime.toString()));
+
+    const withdrawAmount = depositedAmount.div(new BN(3));
+    let withdrawIx = await program.methods
+      .withdraw(withdrawAmount)
+      .accounts({
+        signer: thirdPartyKeys.publicKey,
+        senderAta: senderATA,
+        recipientAta: recipientATA,
+        mint: tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(withdrawIx, thirdPartyKeys);
+
+    // Get the final token balances of the recipient
+    const [recipientFinalTokenBalance] = await getTokenBalancesByATAKeys(
+      recipientATA
+    );
+
+    // Assert that the recipient's token balance has been changed correctly
+    assert(
+      recipientFinalTokenBalance.eq(
+        recipientInitialTokenBalance.add(withdrawAmount)
+      ),
+      "The amount withdrawn to the recipient is incorrect"
+    );
+
+    // Assert that the Stream state has been updated correctly
+    const stream = await fetchStream(senderATA, recipientATA);
+
+    assert(
+      stream.amounts.withdrawn.eq(withdrawAmount),
+      "The Stream's withdrawn amount is incorrect"
+    );
+  });
+
+  it("Withdraws max - as recipient - at endTime", async () => {
     const {
       senderATA,
       recipientATA,
@@ -1039,7 +1094,7 @@ describe("solsab", () => {
     let withdrawIx = await program.methods
       .withdrawMax()
       .accounts({
-        recipient: recipientKeys.publicKey,
+        signer: recipientKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
         mint: tokenMint,
@@ -1049,6 +1104,59 @@ describe("solsab", () => {
 
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(withdrawIx, recipientKeys);
+
+    // Get the final token balances of the recipient
+    const [recipientFinalTokenBalance] = await getTokenBalancesByATAKeys(
+      recipientATA
+    );
+
+    // Assert that the recipient's token balance has been changed correctly
+    const expectedWithdrawnAmount = depositedAmount;
+    assert(
+      recipientFinalTokenBalance.eq(
+        recipientInitialTokenBalance.add(expectedWithdrawnAmount)
+      ),
+      "The amount withdrawn to the recipient is incorrect"
+    );
+
+    // Assert that the Stream state has been updated correctly
+    const stream = await fetchStream(senderATA, recipientATA);
+
+    assert(
+      stream.amounts.withdrawn.eq(expectedWithdrawnAmount),
+      "The Stream's withdrawn amount is incorrect"
+    );
+  });
+
+  it("Withdraws max - as a third party & to the Stream's recipient ATA - at endTime", async () => {
+    const {
+      senderATA,
+      recipientATA,
+      tokenMint,
+      streamMilestones,
+      depositedAmount,
+    } = await createMintATAsAndStream(true);
+
+    // Get the initial token balances of the recipient
+    const [recipientInitialTokenBalance] = await getTokenBalancesByATAKeys(
+      recipientATA
+    );
+
+    await timeTravelForwardTo(BigInt(streamMilestones.endTime.toString()));
+
+    let withdrawIx = await program.methods
+      .withdrawMax()
+      .accounts({
+        signer: thirdPartyKeys.publicKey,
+        senderAta: senderATA,
+        recipientAta: recipientATA,
+        mint: tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(withdrawIx, thirdPartyKeys);
 
     // Get the final token balances of the recipient
     const [recipientFinalTokenBalance] = await getTokenBalancesByATAKeys(

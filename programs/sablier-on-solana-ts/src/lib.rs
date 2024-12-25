@@ -345,7 +345,7 @@ pub struct RenounceStreamCancelability<'info> {
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
     #[account(mut)]
-    pub recipient: Signer<'info>,
+    pub signer: Signer<'info>,
 
     #[account(
         mut,
@@ -360,10 +360,7 @@ pub struct Withdraw<'info> {
     #[account(mut)]
     pub sender_ata: InterfaceAccount<'info, TokenAccount>,
 
-    #[account(
-        mut,
-        constraint = recipient_ata.owner == recipient.key(),
-    )]
+    #[account(mut)]
     pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
@@ -387,7 +384,7 @@ pub struct Withdraw<'info> {
 #[derive(Accounts)]
 pub struct WithdrawMax<'info> {
     #[account(mut)]
-    pub recipient: Signer<'info>,
+    pub signer: Signer<'info>,
 
     #[account(
         mut,
@@ -402,10 +399,7 @@ pub struct WithdrawMax<'info> {
     #[account(mut)]
     pub sender_ata: InterfaceAccount<'info, TokenAccount>,
 
-    #[account(
-        mut,
-        constraint = recipient_ata.owner == recipient.key(),
-    )]
+    #[account(mut)]
     pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
