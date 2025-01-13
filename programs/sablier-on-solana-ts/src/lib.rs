@@ -118,11 +118,8 @@ pub mod solsab {
         let signer_seeds: &[&[&[u8]]] = &[&[b"treasury", &[ctx.accounts.treasury_pda.bump]]];
 
         // Execute the transfer
-        let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            transfer_ix,
-            signer_seeds,
-        );
+        let cpi_ctx =
+            CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), transfer_ix, signer_seeds);
         transfer_checked(cpi_ctx, streamed_amount, mint.decimals)?;
 
         // Update the Stream field tracking the withdrawn amount
@@ -140,11 +137,8 @@ pub mod solsab {
         };
 
         // Execute the transfer
-        let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            transfer_ix,
-            signer_seeds,
-        );
+        let cpi_ctx =
+            CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), transfer_ix, signer_seeds);
         transfer_checked(cpi_ctx, refundable_amount, mint.decimals)?;
 
         // Update the Stream field tracking the refunded amount
