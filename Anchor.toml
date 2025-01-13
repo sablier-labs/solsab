@@ -4,6 +4,9 @@
 resolution = true
 skip-lint = false
 
+[programs.devnet]
+solsab = "uwuJk35aCL3z2FzfPr8fQE1U19A8N18qdA5YfdfUbPt"
+
 [programs.localnet]
 solsab = "D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF"
 
