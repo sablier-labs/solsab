@@ -76,7 +76,8 @@ pub fn internal_withdraw<'info>(
 
     // Mark the Stream as non-cancellable if it has been depleted
     //
-    // Note: the `>=` operator is used as as extra safety measure for the case when the withdrawn amount is bigger than expected, for one reason or the other
+    // Note: the `>=` operator is used as as extra safety measure for the case when the withdrawn amount is bigger than
+    // expected, for one reason or the other
     if stream_amounts.withdrawn >= stream_amounts.deposited - stream_amounts.refunded {
         stream.is_cancelable = false;
     }
