@@ -1,7 +1,16 @@
+# Anchor
 .anchor
-.DS_Store
 target
 **/*.rs.bk
-node_modules
 test-ledger
-.yarn
+
+# Misc
+.DS_Store
+*.env
+
+# Node.js
+.npm
+.pnp.*
+node_modules
+package-lock.json
+pnpm-lock.yaml
