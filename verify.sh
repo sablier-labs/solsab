@@ -6,7 +6,7 @@
 PROGRAM_ID="uwuJk35aCL3z2FzfPr8fQE1U19A8N18qdA5YfdfUbPt"
 CLUSTER=$(solana config get | grep 'RPC URL' | awk '{print $3}')
 COMMIT_HASH=$(git rev-parse --short HEAD)
-LOCAL_HASH=$(shasum -a 256 target/deploy/solsab.so | awk '{print $1}')
+LOCAL_HASH=$(shasum -a 256 target/verifiable/solsab.so | awk '{print $1}')
 
 echo "🌐 Cluster: $CLUSTER"
 echo "📝 Program ID: $PROGRAM_ID"
