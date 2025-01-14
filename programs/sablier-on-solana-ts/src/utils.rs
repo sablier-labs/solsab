@@ -74,7 +74,7 @@ pub fn internal_withdraw<'info>(
     let stream_amounts = &mut stream.amounts;
     stream_amounts.withdrawn += amount;
 
-    // Mark the Stream as non-cancellable if it has been depleted
+    // Mark the Stream as non-cancelable if it has been depleted
     //
     // Note: the `>=` operator is used as as extra safety measure for the case when the withdrawn amount is bigger than
     // expected, for one reason or the other

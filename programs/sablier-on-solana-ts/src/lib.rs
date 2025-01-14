@@ -14,7 +14,9 @@ use utils::{get_streamed_amount, get_withdrawable_amount, internal_withdraw};
 pub mod errors;
 use errors::ErrorCode;
 
-declare_id!("D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF");
+declare_id!("D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF"); // Localnet Program ID
+
+// declare_id!("uwuJk35aCL3z2FzfPr8fQE1U19A8N18qdA5YfdfUbPt"); // Devnet Program ID
 
 pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
 
@@ -23,7 +25,6 @@ pub mod solsab {
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        //TODO: why is this needed?
         ctx.accounts.treasury_pda.bump = ctx.bumps.treasury_pda;
 
         Ok(())
@@ -31,9 +32,7 @@ pub mod solsab {
 
     pub fn create_lockup_linear_stream(
         ctx: Context<CreateLockupLinearStream>,
-        start_time: i64,
-        cliff_time: i64,
-        end_time: i64,
+        milestones: Milestones,
         deposited_amount: u64,
         is_cancelable: bool,
     ) -> Result<()> {
@@ -50,12 +49,12 @@ pub mod solsab {
         let current_time = Clock::get().unwrap().unix_timestamp;
 
         // Assert that the end time is not in the past
-        if end_time <= current_time {
+        if milestones.end_time <= current_time {
             return Err(ErrorCode::InvalidEndTime.into());
         }
 
         // Assert that the cliff time is strictly between the start and end times
-        if cliff_time <= start_time || cliff_time >= end_time {
+        if milestones.cliff_time <= milestones.start_time || milestones.cliff_time >= milestones.end_time {
             return Err(ErrorCode::InvalidCliffTime.into());
         }
 
@@ -72,20 +71,16 @@ pub mod solsab {
         transfer_checked(cpi_ctx, deposited_amount, mint.decimals)?;
 
         // Initialize the fields of the newly created Stream
-        let stream = &mut ctx.accounts.stream;
-        stream.sender_ata = sender_ata.key();
-        let recipient_ata = &ctx.accounts.recipient_ata;
-        stream.recipient_ata = recipient_ata.key();
-        stream.token_mint_account = mint.key();
-
-        stream.amounts.deposited = deposited_amount;
-
-        stream.milestones.start_time = start_time;
-        stream.milestones.cliff_time = cliff_time;
-        stream.milestones.end_time = end_time;
-
-        stream.is_cancelable = is_cancelable;
-        stream.was_canceled = false;
+        **ctx.accounts.stream = Stream {
+            sender_ata: sender_ata.key(),
+            recipient_ata: ctx.accounts.recipient_ata.key(),
+            token_mint_account: mint.key(),
+            amounts: Amounts { deposited: deposited_amount, withdrawn: 0, refunded: 0 },
+            milestones,
+            is_cancelable,
+            was_canceled: false,
+            bump: ctx.bumps.stream,
+        };
 
         Ok(())
     }
@@ -102,6 +97,9 @@ pub mod solsab {
         if !stream.is_cancelable {
             return Err(ErrorCode::StreamIsNotCancelable.into());
         }
+
+        // TODO: don't send the streamed amount to the recipient, as an ill-intended recipient could transfer the stream
+        // to Tornado after finding out about the sender's intent to cancel the stream
 
         // Calculate the streamed amount
         let streamed_amount = get_streamed_amount(stream);
@@ -127,6 +125,8 @@ pub mod solsab {
 
         // Calculate the refundable amount
         let refundable_amount = stream.amounts.deposited - streamed_amount;
+
+        // TODO: only refund the sender if the refundable amount is greater than zero?
 
         // Prepare the instruction to transfer the refundable SPL tokens back to the sender
         let transfer_ix = TransferChecked {
@@ -228,24 +228,25 @@ pub struct CreateLockupLinearStream<'info> {
         associated_token::authority = sender,
         associated_token::token_program = token_program
     )]
-    pub sender_ata: InterfaceAccount<'info, TokenAccount>,
+    pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// CHECK: The recipient may be any account, as long as it is the authority of recipient_ata
     pub recipient: UncheckedAccount<'info>,
 
     #[account(
-        mut,
+        init_if_needed,
+        payer = sender,
         associated_token::mint = mint,
         associated_token::authority = recipient,
         associated_token::token_program = token_program
     )]
-    pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
+    pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         seeds = [b"treasury"],
-        bump
+        bump = treasury_pda.bump
     )]
-    pub treasury_pda: Account<'info, Treasury>,
+    pub treasury_pda: Box<Account<'info, Treasury>>,
 
     #[account(
         init_if_needed,
@@ -254,7 +255,7 @@ pub struct CreateLockupLinearStream<'info> {
         associated_token::authority = treasury_pda,
         associated_token::token_program = token_program
     )]
-    pub treasury_ata: InterfaceAccount<'info, TokenAccount>,
+    pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         init,
@@ -263,9 +264,8 @@ pub struct CreateLockupLinearStream<'info> {
         space = ANCHOR_DISCRIMINATOR_SIZE + Stream::INIT_SPACE,
         bump
     )]
-    // TODO: find a way to allow multiple Streams between the same sender and recipient (wrt their ATAs)
-    // idea: introduce a nonce in the form of the recent blockhash?
-    pub stream: Account<'info, Stream>,
+    // TODO: implement NFT logic to allow multiple Streams between the same sender and recipient (wrt their ATAs)
+    pub stream: Box<Account<'info, Stream>>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,

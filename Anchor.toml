@@ -14,7 +14,8 @@ solsab = "D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
+# cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

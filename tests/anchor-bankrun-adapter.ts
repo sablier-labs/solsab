@@ -58,45 +58,6 @@ export async function createMint(
   return mint;
 }
 
-// export async function createMintToken2022(
-//   banksClient: BanksClient,
-//   payer: Keypair,
-//   mintAuthority: PublicKey,
-//   freezeAuthority: PublicKey | null,
-//   decimals: number,
-//   mintKeypair = Keypair.generate(),
-//   extensions: token.ExtensionType[] = []
-// ): Promise<PublicKey> {
-//   const mintLen = token.getMintLen(extensions);
-//   let rent = await banksClient.getRent();
-//   const mintLamports = rent.minimumBalance(BigInt(mintLen));
-
-//   const mint = mintKeypair.publicKey;
-//   const tx = new Transaction().add(
-//     SystemProgram.createAccount({
-//       fromPubkey: payer.publicKey,
-//       newAccountPubkey: mint,
-//       space: mintLen,
-//       lamports: Number(mintLamports),
-//       programId: token.TOKEN_2022_PROGRAM_ID,
-//     }),
-
-//     token.createInitializeMint2Instruction(
-//       mint,
-//       decimals,
-//       mintAuthority,
-//       freezeAuthority,
-//       token.TOKEN_2022_PROGRAM_ID
-//     )
-//   );
-
-//   [tx.recentBlockhash] = (await banksClient.getLatestBlockhash())!;
-//   tx.sign(payer, mintKeypair);
-
-//   banksClient.processTransaction(tx);
-//   return mint;
-// }
-
 export async function createAccount(
   banksClient: BanksClient,
   payer: Signer,
@@ -174,6 +135,14 @@ export async function createAssociatedTokenAccount(
   await banksClient.processTransaction(tx);
 
   return ata;
+}
+
+export async function deriveATAAddress(
+  mint: PublicKey,
+  owner: PublicKey,
+  programId: PublicKey
+): Promise<PublicKey> {
+  return token.getAssociatedTokenAddressSync(mint, owner, true, programId);
 }
 
 export function getTokenBalanceByATAAccountData(ataData: Uint8Array): string {

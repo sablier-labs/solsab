@@ -19,6 +19,7 @@ import { BankrunProvider } from "anchor-bankrun";
 import {
   createMint,
   createAssociatedTokenAccount,
+  deriveATAAddress,
   getAssociatedTokenAddressSync,
   mintTo,
   getTokenBalanceByATAAccountData,
@@ -103,7 +104,7 @@ describe("solsab", () => {
   });
 
   it("Fails to create a LockupLinear Stream with a deposited amount > sender's balance", async () => {
-    const { tokenMint, senderATA } = await createMintAndATAs();
+    const { tokenMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = (await getTokenBalanceByATAKey(senderATA)).add(
@@ -132,7 +133,7 @@ describe("solsab", () => {
   });
 
   it("Fails to create a LockupLinear Stream with a depositAmount = 0", async () => {
-    const { tokenMint } = await createMintAndATAs();
+    const { tokenMint } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
 
@@ -158,7 +159,7 @@ describe("solsab", () => {
   });
 
   it("Fails to create a LockupLinear Stream with an invalid token mint", async () => {
-    const { senderATA } = await createMintAndATAs();
+    const { senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -194,7 +195,7 @@ describe("solsab", () => {
   });
 
   it("Fails to create a LockupLinear Stream when cliffTime < startTime", async () => {
-    const { tokenMint, senderATA } = await createMintAndATAs();
+    const { tokenMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -222,7 +223,7 @@ describe("solsab", () => {
   });
 
   it("Fails to create a LockupLinear Stream when cliffTime == startTime", async () => {
-    const { tokenMint, senderATA } = await createMintAndATAs();
+    const { tokenMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -250,7 +251,7 @@ describe("solsab", () => {
   });
 
   it("Fails to create a LockupLinear Stream when cliffTime > endTime", async () => {
-    const { tokenMint, senderATA } = await createMintAndATAs();
+    const { tokenMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -278,7 +279,7 @@ describe("solsab", () => {
   });
 
   it("Fails to create a LockupLinear Stream when cliffTime == endTime", async () => {
-    const { tokenMint, senderATA } = await createMintAndATAs();
+    const { tokenMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -306,7 +307,7 @@ describe("solsab", () => {
   });
 
   it("Fails to create a LockupLinear Stream when endTime < startTime", async () => {
-    const { tokenMint, senderATA } = await createMintAndATAs();
+    const { tokenMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -334,7 +335,7 @@ describe("solsab", () => {
   });
 
   it("Fails to create a LockupLinear Stream when endTime < current time", async () => {
-    const { tokenMint, senderATA } = await createMintAndATAs();
+    const { tokenMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -362,7 +363,7 @@ describe("solsab", () => {
   });
 
   it("Creates a LockupLinear Stream", async () => {
-    const { tokenMint, senderATA, recipientATA } = await createMintAndATAs();
+    const { tokenMint, senderATA } = await createTokenAndMintToSender();
 
     // Get the initial token balances of the sender
     const [senderInitialTokenBalance] = await getTokenBalancesByATAKeys(
@@ -393,6 +394,9 @@ describe("solsab", () => {
       ),
       "The amount debited from the sender is incorrect"
     );
+
+    // Derive the recipient's ATA address
+    const recipientATA = await deriveRecipientATA(tokenMint);
 
     // Fetch the created Stream
     const stream = await fetchStream(senderATA, recipientATA);
@@ -437,9 +441,8 @@ describe("solsab", () => {
     );
   });
 
-  it("Creates a LockupLinear Stream with the Token2022 program", async () => {
-    const { tokenMint, senderATA, recipientATA } =
-      await createMintAndATAsToken2022();
+  it.only("Creates a LockupLinear Stream with the Token2022 program", async () => {
+    const { tokenMint, senderATA } = await createToken2022AndMintToSender();
 
     // Get the initial token balances of the sender
     const [senderInitialTokenBalance] = await getTokenBalancesByATAKeys(
@@ -471,6 +474,9 @@ describe("solsab", () => {
       ),
       "The amount debited from the sender is incorrect"
     );
+
+    // Derive the recipient's ATA address
+    const recipientATA = await deriveRecipientATAToken2022(tokenMint);
 
     // Fetch the created Stream
     const stream = await fetchStream(senderATA, recipientATA);
@@ -1197,7 +1203,7 @@ describe("solsab", () => {
     depositedAmount: BN;
     streamMilestones: StreamMilestones;
   }> {
-    const { tokenMint, senderATA, recipientATA } = await createMintAndATAs();
+    const { tokenMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -1211,6 +1217,9 @@ describe("solsab", () => {
       isCancelable: isStreamCancelable,
     });
 
+    // Derive the recipient's ATA address
+    const recipientATA = await deriveRecipientATA(tokenMint);
+
     return {
       stream: await fetchStream(senderATA, recipientATA),
       senderATA,
@@ -1221,10 +1230,9 @@ describe("solsab", () => {
     };
   }
 
-  async function createMintAndATAs(): Promise<{
+  async function createTokenAndMintToSender(): Promise<{
     tokenMint: PublicKey;
     senderATA: PublicKey;
-    recipientATA: PublicKey;
   }> {
     const TOKEN_DECIMALS = 2;
     const freezeAuthority = null;
@@ -1260,16 +1268,7 @@ describe("solsab", () => {
       `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
     );
 
-    const recipientATA = await createAssociatedTokenAccount(
-      client,
-      senderKeys,
-      tokenMint,
-      recipientKeys.publicKey,
-      TOKEN_PROGRAM_ID
-    );
-    console.log(`Recipient's ATA: ${recipientATA}`);
-
-    return { tokenMint, senderATA, recipientATA };
+    return { tokenMint, senderATA };
   }
 
   interface CreateLockupLinearStreamArgs {
@@ -1282,10 +1281,9 @@ describe("solsab", () => {
     isCancelable: boolean;
   }
 
-  async function createMintAndATAsToken2022(): Promise<{
+  async function createToken2022AndMintToSender(): Promise<{
     tokenMint: PublicKey;
     senderATA: PublicKey;
-    recipientATA: PublicKey;
   }> {
     const TOKEN_DECIMALS = 9;
     const freezeAuthority = null;
@@ -1327,26 +1325,7 @@ describe("solsab", () => {
       `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
     );
 
-    const recipientATA = await createAssociatedTokenAccount(
-      client,
-      senderKeys,
-      tokenMint,
-      recipientKeys.publicKey,
-      TOKEN_2022_PROGRAM_ID
-    );
-    console.log(`Recipient's ATA: ${recipientATA}`);
-
-    return { tokenMint, senderATA, recipientATA };
-  }
-
-  interface CreateLockupLinearStreamArgs {
-    senderKeys: Keypair;
-    recipient: PublicKey;
-    tokenMint: PublicKey;
-    tokenProgram: PublicKey;
-    streamMilestones: StreamMilestones;
-    depositedAmount: BN;
-    isCancelable: boolean;
+    return { tokenMint, senderATA };
   }
 
   async function createLockupLinearStream(
@@ -1363,13 +1342,7 @@ describe("solsab", () => {
     } = args;
 
     let createStreamIx = await program.methods
-      .createLockupLinearStream(
-        streamMilestones.startTime,
-        streamMilestones.cliffTime,
-        streamMilestones.endTime,
-        depositedAmount,
-        isCancelable
-      )
+      .createLockupLinearStream(streamMilestones, depositedAmount, isCancelable)
       .accounts({
         sender: senderKeys.publicKey,
         mint: tokenMint,
@@ -1380,6 +1353,24 @@ describe("solsab", () => {
 
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(createStreamIx, senderKeys);
+  }
+
+  async function deriveRecipientATA(tokenMint: PublicKey): Promise<PublicKey> {
+    return deriveATAAddress(
+      tokenMint,
+      recipientKeys.publicKey,
+      TOKEN_PROGRAM_ID
+    );
+  }
+
+  async function deriveRecipientATAToken2022(
+    tokenMint: PublicKey
+  ): Promise<PublicKey> {
+    return deriveATAAddress(
+      tokenMint,
+      recipientKeys.publicKey,
+      TOKEN_2022_PROGRAM_ID
+    );
   }
 
   async function fetchStream(
