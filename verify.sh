@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # Options:
-#   --skip              Skip the build step
+#   --skip-build        Skip the build step
 #   --commit <hash>     Verify against a specific commit
 #   --cluster <url>     Specify the Solana cluster URL
 
 PROGRAM_ID="uwuJk35aCL3z2FzfPr8fQE1U19A8N18qdA5YfdfUbPt"
 CLUSTER=$(solana config get | grep 'RPC URL' | awk '{print $3}')
-COMMIT_HASH=$(git rev-parse --short HEAD)
 SKIP_BUILD=false
-SPECIFIC_COMMIT=""
+COMMIT_ID=""
+IS_COMMIT_SPECIFIC=false
 
 cleanup() {
     docker rm -f anchor-program 2>/dev/null
@@ -25,12 +25,13 @@ fail() {
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --skip)
+        --skip-build)
             SKIP_BUILD=true
             shift
             ;;
         --commit)
-            SPECIFIC_COMMIT="$2"
+            COMMIT_ID="$2"
+            IS_COMMIT_SPECIFIC=true
             shift 2
             ;;
         --cluster)
@@ -39,16 +40,17 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--skip] [--commit <hash>] [--cluster <url>]"
+            echo "Usage: $0 [--skip-build] [--commit <hash>] [--cluster <url>]"
             exit 1
             ;;
     esac
 done
 
-if [ -n "$SPECIFIC_COMMIT" ]; then
-    ORIGINAL_COMMIT=$(git rev-parse HEAD)
-    echo "📍 Checking out commit: $SPECIFIC_COMMIT"
-    git checkout $SPECIFIC_COMMIT || fail "Failed to checkout commit: $SPECIFIC_COMMIT"
+if [ "$IS_COMMIT_SPECIFIC" = true ]; then
+    echo "📍 Checking out commit: $COMMIT_ID"
+    git checkout $COMMIT_ID || fail "Failed to checkout commit: $COMMIT_ID"
+else
+    COMMIT_ID=$(git rev-parse HEAD)
 fi
 
 if [ "$SKIP_BUILD" = false ]; then
@@ -60,7 +62,7 @@ fi
 
 echo "🌐 Cluster: $CLUSTER"
 echo "📝 Program ID: $PROGRAM_ID"
-echo "🔍 Commit hash: $COMMIT_HASH"
+echo "🔍 Commit hash: $COMMIT_ID"
 
 DEPLOYED_HASH=$(solana-verify get-program-hash -u $CLUSTER $PROGRAM_ID) || fail "Failed to get deployed program hash"
 LOCAL_HASH=$(solana-verify get-executable-hash target/verifiable/solsab.so) || fail "Failed to get local program hash"
@@ -74,7 +76,7 @@ else
     echo "❌ Verification failed: Hash mismatch!"
 fi
 
-if [ -n "$SPECIFIC_COMMIT" ]; then
+if [ "$IS_COMMIT_SPECIFIC" = true ]; then
     echo "📍 Returning to current branch"
     git checkout - || fail "Failed to return to previous branch. Please checkout manually."
 fi
