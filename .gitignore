@@ -1,6 +1,7 @@
 # Anchor
 .anchor
 target
+docker-target
 **/*.rs.bk
 test-ledger
 
