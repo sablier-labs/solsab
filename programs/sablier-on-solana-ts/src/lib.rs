@@ -209,7 +209,7 @@ pub struct Initialize<'info> {
         seeds = [b"treasury"],
         bump
     )]
-    pub treasury_pda: Account<'info, Treasury>,
+    pub treasury_pda: Box<Account<'info, Treasury>>,
 
     pub system_program: Program<'info, System>,
 }
@@ -220,7 +220,7 @@ pub struct CreateLockupLinearStream<'info> {
     pub sender: Signer<'info>,
 
     #[account(mint::token_program = token_program)]
-    pub mint: InterfaceAccount<'info, Mint>,
+    pub mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         mut,
@@ -238,7 +238,7 @@ pub struct CreateLockupLinearStream<'info> {
         payer = sender,
         associated_token::mint = mint,
         associated_token::authority = recipient,
-        associated_token::token_program = token_program
+        associated_token::token_program = token_program,
     )]
     pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -280,28 +280,28 @@ pub struct CancelLockupLinearStream<'info> {
     #[account(
         mut,
         seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
-        bump
+        bump = stream.bump
     )]
-    pub stream: Account<'info, Stream>,
+    pub stream: Box<Account<'info, Stream>>,
 
     #[account(mint::token_program = token_program)]
-    pub mint: InterfaceAccount<'info, Mint>,
+    pub mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         mut,
         constraint = sender_ata.owner == sender.key(),
     )]
-    pub sender_ata: InterfaceAccount<'info, TokenAccount>,
+    pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(mut)]
-    pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
+    pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
         seeds = [b"treasury"],
         bump = treasury_pda.bump
     )]
-    pub treasury_pda: Account<'info, Treasury>,
+    pub treasury_pda: Box<Account<'info, Treasury>>,
 
     #[account(
         mut,
@@ -309,7 +309,7 @@ pub struct CancelLockupLinearStream<'info> {
         associated_token::authority = treasury_pda,
         associated_token::token_program = token_program,
     )]
-    pub treasury_ata: InterfaceAccount<'info, TokenAccount>,
+    pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Interface<'info, TokenInterface>,
 }
@@ -322,18 +322,18 @@ pub struct RenounceStreamCancelability<'info> {
     #[account(
         mut,
         seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
-        bump
+        bump = stream.bump
     )]
-    pub stream: Account<'info, Stream>,
+    pub stream: Box<Account<'info, Stream>>,
 
     #[account(
         mut,
         constraint = sender_ata.owner == sender.key(),
     )]
-    pub sender_ata: InterfaceAccount<'info, TokenAccount>,
+    pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(mut)]
-    pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
+    pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 }
 
 #[derive(Accounts)]
@@ -344,25 +344,25 @@ pub struct Withdraw<'info> {
     #[account(
         mut,
         seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
-        bump
+        bump = stream.bump
     )]
-    pub stream: Account<'info, Stream>,
+    pub stream: Box<Account<'info, Stream>>,
 
     #[account(mint::token_program = token_program)]
-    pub mint: InterfaceAccount<'info, Mint>,
+    pub mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(mut)]
-    pub sender_ata: InterfaceAccount<'info, TokenAccount>,
+    pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(mut)]
-    pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
+    pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
         seeds = [b"treasury"],
         bump = treasury_pda.bump
     )]
-    pub treasury_pda: Account<'info, Treasury>,
+    pub treasury_pda: Box<Account<'info, Treasury>>,
 
     #[account(
         mut,
@@ -370,7 +370,7 @@ pub struct Withdraw<'info> {
         associated_token::authority = treasury_pda,
         associated_token::token_program = token_program
     )]
-    pub treasury_ata: InterfaceAccount<'info, TokenAccount>,
+    pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Interface<'info, TokenInterface>,
 }
@@ -383,25 +383,25 @@ pub struct WithdrawMax<'info> {
     #[account(
         mut,
         seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
-        bump
+        bump = stream.bump
     )]
-    pub stream: Account<'info, Stream>,
+    pub stream: Box<Account<'info, Stream>>,
 
     #[account(mint::token_program = token_program)]
-    pub mint: InterfaceAccount<'info, Mint>,
+    pub mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(mut)]
-    pub sender_ata: InterfaceAccount<'info, TokenAccount>,
+    pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(mut)]
-    pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
+    pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
         seeds = [b"treasury"],
         bump = treasury_pda.bump
     )]
-    pub treasury_pda: Account<'info, Treasury>,
+    pub treasury_pda: Box<Account<'info, Treasury>>,
 
     #[account(
         mut,
@@ -409,7 +409,7 @@ pub struct WithdrawMax<'info> {
         associated_token::authority = treasury_pda,
         associated_token::token_program = token_program
     )]
-    pub treasury_ata: InterfaceAccount<'info, TokenAccount>,
+    pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Interface<'info, TokenInterface>,
 }

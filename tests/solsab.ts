@@ -441,7 +441,7 @@ describe("solsab", () => {
     );
   });
 
-  it.only("Creates a LockupLinear Stream with the Token2022 program", async () => {
+  it("Creates a LockupLinear Stream with the Token2022 program", async () => {
     const { tokenMint, senderATA } = await createToken2022AndMintToSender();
 
     // Get the initial token balances of the sender
@@ -1192,7 +1192,12 @@ describe("solsab", () => {
   async function buildSignAndProcessTxFromIx(ix: TxIx, signerKeys: Keypair) {
     const tx = await initializeTxWithIx(ix);
     tx.sign(signerKeys);
-    await client.processTransaction(tx);
+    const banksTxMeta = await client.processTransaction(tx);
+
+    console.log(
+      "Compute Units consumed by the Tx: {}",
+      banksTxMeta.computeUnitsConsumed.toString()
+    );
   }
 
   async function createMintATAsAndStream(isStreamCancelable: boolean): Promise<{
