@@ -88,7 +88,6 @@ pub mod solsab {
     pub fn cancel_lockup_linear_stream(ctx: Context<CancelLockupLinearStream>) -> Result<()> {
         let stream = &mut ctx.accounts.stream;
         let sender_ata = &ctx.accounts.sender_ata;
-        let recipient_ata = &ctx.accounts.recipient_ata;
         let treasury_ata = &ctx.accounts.treasury_ata;
         let treasury_pda = &ctx.accounts.treasury_pda;
         let mint = &ctx.accounts.mint;
@@ -98,51 +97,32 @@ pub mod solsab {
             return Err(ErrorCode::StreamIsNotCancelable.into());
         }
 
-        // TODO: don't send the streamed amount to the recipient, as an ill-intended recipient could transfer the stream
-        // to Tornado after finding out about the sender's intent to cancel the stream
-
-        // Calculate the streamed amount
-        let streamed_amount = get_streamed_amount(stream);
-
-        // Prepare the instruction to transfer the streamed SPL tokens to the recipient
-        let transfer_ix = TransferChecked {
-            from: treasury_ata.to_account_info(),
-            mint: mint.to_account_info(),
-            to: recipient_ata.to_account_info(),
-            authority: treasury_pda.to_account_info(),
-        };
-
-        // Wrap the Treasury PDA's seeds in the appropriate structure
-        let signer_seeds: &[&[&[u8]]] = &[&[b"treasury", &[ctx.accounts.treasury_pda.bump]]];
-
-        // Execute the transfer
-        let cpi_ctx =
-            CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), transfer_ix, signer_seeds);
-        transfer_checked(cpi_ctx, streamed_amount, mint.decimals)?;
-
-        // Update the Stream field tracking the withdrawn amount
-        stream.amounts.withdrawn += streamed_amount;
-
         // Calculate the refundable amount
-        let refundable_amount = stream.amounts.deposited - streamed_amount;
+        let refundable_amount = stream.amounts.deposited - get_streamed_amount(stream);
 
-        // TODO: only refund the sender if the refundable amount is greater than zero?
+        if refundable_amount > 0 {
+            // Prepare the instruction to transfer the refundable SPL tokens back to the sender
+            let transfer_ix = TransferChecked {
+                from: treasury_ata.to_account_info(),
+                mint: mint.to_account_info(),
+                to: sender_ata.to_account_info(),
+                authority: treasury_pda.to_account_info(),
+            };
 
-        // Prepare the instruction to transfer the refundable SPL tokens back to the sender
-        let transfer_ix = TransferChecked {
-            from: treasury_ata.to_account_info(),
-            mint: mint.to_account_info(),
-            to: sender_ata.to_account_info(),
-            authority: treasury_pda.to_account_info(),
-        };
+            // Wrap the Treasury PDA's seeds in the appropriate structure
+            let signer_seeds: &[&[&[u8]]] = &[&[b"treasury", &[ctx.accounts.treasury_pda.bump]]];
 
-        // Execute the transfer
-        let cpi_ctx =
-            CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), transfer_ix, signer_seeds);
-        transfer_checked(cpi_ctx, refundable_amount, mint.decimals)?;
+            // Execute the transfer
+            let cpi_ctx =
+                CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), transfer_ix, signer_seeds);
+            transfer_checked(cpi_ctx, refundable_amount, mint.decimals)?;
 
-        // Update the Stream field tracking the refunded amount
-        stream.amounts.refunded = refundable_amount;
+            // Update the Stream field tracking the refunded amount
+            stream.amounts.refunded = refundable_amount;
+        }
+
+        // Dev: We're not sending the streamed amount to the recipient to prevent a potential misuse by transferring the
+        // Stream to a censored address (e.g. Tornado Cash) after the cancelation intent is known.
 
         // Mark the Stream as canceled
         stream.was_canceled = true;
