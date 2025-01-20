@@ -24,6 +24,9 @@ pub fn get_streamed_amount(stream: &Stream) -> u64 {
     // Calculate the streamed amount
     let elapsed_time = current_time - milestones.start_time;
     let total_duration = milestones.end_time - milestones.start_time;
+
+    // Dev: The following cast is safe because we're up-casting the amounts (u64 -> u128), while the elapsed_time is
+    // always less than the total_duration
     (stream.amounts.deposited as u128 * elapsed_time as u128 / total_duration as u128) as u64
 }
 
@@ -72,7 +75,7 @@ pub fn internal_withdraw<'info>(
 
     // Update the Stream's withdrawn amount
     let stream_amounts = &mut stream.amounts;
-    stream_amounts.withdrawn += amount;
+    stream_amounts.withdrawn = stream_amounts.withdrawn.checked_add(amount).expect("Withdrawn amount overflow");
 
     // Mark the Stream as non-cancelable if it has been depleted
     //
