@@ -21,7 +21,7 @@ declare_id!("D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF"); // Localnet Program
 pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
 
 #[program]
-pub mod solsab {
+pub mod lockup {
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {

@@ -35,9 +35,9 @@ import {
 
 //import * as helpers from "@solana-developers/helpers";
 
-import { Solsab } from "../target/types/solsab";
+import { Lockup } from "../target/types/lockup";
 
-describe("solsab", () => {
+describe("lockup", () => {
   let context: ProgramTestContext;
   let client: BanksClient;
   let senderKeys: Keypair;
@@ -46,8 +46,8 @@ describe("solsab", () => {
   let provider: BankrunProvider;
   let treasuryPDA: PublicKey;
 
-  const program = anchor.workspace.solsab as anchor.Program<Solsab>;
-  const SOLSAB_PROGRAM_ID = program.programId;
+  const program = anchor.workspace.lockup as anchor.Program<Lockup>;
+  const LOCKUP_PROGRAM_ID = program.programId;
 
   beforeEach(async () => {
     // Configure the testing environment
@@ -82,7 +82,7 @@ describe("solsab", () => {
     // Pre-calculate the PDA address for the treasury
     [treasuryPDA] = PublicKey.findProgramAddressSync(
       [Buffer.from("treasury")],
-      SOLSAB_PROGRAM_ID
+      LOCKUP_PROGRAM_ID
     );
 
     console.log("Treasury's PDA address: ", treasuryPDA.toBase58());
@@ -1476,7 +1476,7 @@ describe("solsab", () => {
 
     const [pdaAddress] = PublicKey.findProgramAddressSync(
       seeds,
-      SOLSAB_PROGRAM_ID
+      LOCKUP_PROGRAM_ID
     );
 
     const streamAccount = await client.getAccount(pdaAddress);
