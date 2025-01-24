@@ -4,7 +4,7 @@ pub mod instructions;
 pub mod state;
 pub mod utils;
 
-use instructions::*;
+use crate::instructions::*;
 
 declare_id!("D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF"); // Localnet Program ID
 
@@ -18,6 +18,10 @@ pub mod lockup {
         instructions::initialize::handler(ctx)
     }
 
+    pub fn cancel(ctx: Context<Cancel>) -> Result<()> {
+        instructions::cancel::handler(ctx)
+    }
+
     pub fn create_with_timestamps(
         ctx: Context<CreateWithTimestamps>,
         start_time: i64,
@@ -26,7 +30,6 @@ pub mod lockup {
         deposited_amount: u64,
         is_cancelable: bool,
     ) -> Result<()> {
-        let milestones = state::lockup_stream::Milestones { start_time, cliff_time, end_time };
         instructions::create_with_timestamps::handler(
             ctx,
             start_time,
@@ -35,10 +38,6 @@ pub mod lockup {
             deposited_amount,
             is_cancelable,
         )
-    }
-
-    pub fn cancel(ctx: Context<Cancel>) -> Result<()> {
-        instructions::cancel::handler(ctx)
     }
 
     pub fn renounce(ctx: Context<Renounce>) -> Result<()> {

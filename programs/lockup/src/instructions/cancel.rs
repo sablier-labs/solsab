@@ -3,7 +3,7 @@ use anchor_spl::token_interface::{transfer_checked, Mint, TokenAccount, TokenInt
 
 use crate::{
     state::{lockup_stream::Stream, treasury::Treasury},
-    utils::{errors::ErrorCode, streaming_math::get_streamed_amount},
+    utils::{errors::ErrorCode, streaming_math::get_refundable_amount},
 };
 
 #[derive(Accounts)]
@@ -49,27 +49,27 @@ pub struct Cancel<'info> {
 }
 
 pub fn handler(ctx: Context<Cancel>) -> Result<()> {
-    let stream = &mut ctx.accounts.stream;
-    let sender_ata = &ctx.accounts.sender_ata;
-    let treasury_ata = &ctx.accounts.treasury_ata;
-    let treasury_pda = &ctx.accounts.treasury_pda;
-    let mint = &ctx.accounts.mint;
-
     // Assert that the Stream is cancelable
-    if !stream.is_cancelable {
+    if !ctx.accounts.stream.is_cancelable {
         return Err(ErrorCode::StreamIsNotCancelable.into());
     }
 
+    // Clone the milestones to avoid immutable borrow conflicts
+    let milestones = ctx.accounts.stream.milestones.clone();
+
+    // Mutably borrow the stream amounts
+    let stream_amounts = &mut ctx.accounts.stream.amounts;
+
     // Calculate the refundable amount
-    let refundable_amount = stream.amounts.deposited - get_streamed_amount(stream.milestones, stream.amounts.deposited);
+    let refundable_amount = get_refundable_amount(&milestones, stream_amounts.deposited);
 
     if refundable_amount > 0 {
         // Prepare the instruction to transfer the refundable SPL tokens back to the sender
         let transfer_ix = TransferChecked {
-            from: treasury_ata.to_account_info(),
-            mint: mint.to_account_info(),
-            to: sender_ata.to_account_info(),
-            authority: treasury_pda.to_account_info(),
+            from: ctx.accounts.treasury_ata.to_account_info(),
+            mint: ctx.accounts.mint.to_account_info(),
+            to: ctx.accounts.sender_ata.to_account_info(),
+            authority: ctx.accounts.treasury_pda.to_account_info(),
         };
 
         // Wrap the Treasury PDA's seeds in the appropriate structure
@@ -78,20 +78,17 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
         // Execute the transfer
         let cpi_ctx =
             CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), transfer_ix, signer_seeds);
-        transfer_checked(cpi_ctx, refundable_amount, mint.decimals)?;
+        transfer_checked(cpi_ctx, refundable_amount, ctx.accounts.mint.decimals)?;
 
         // Update the Stream field tracking the refunded amount
-        stream.amounts.refunded = refundable_amount;
+        stream_amounts.refunded = refundable_amount;
     }
 
-    // Dev: We're not sending the streamed amount to the recipient to prevent a potential misuse by transferring the
-    // Stream to a censored address (e.g. Tornado Cash) after the cancelation intent is known.
-
     // Mark the Stream as canceled
-    stream.was_canceled = true;
+    ctx.accounts.stream.was_canceled = true;
 
     // Mark the Stream as non-cancelable
-    stream.is_cancelable = false;
+    ctx.accounts.stream.is_cancelable = false;
 
     Ok(())
 }

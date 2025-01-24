@@ -526,7 +526,7 @@ describe("lockup", () => {
     const { senderATA, recipientATA } = await createMintATAsAndStream(false);
 
     let renounceStreamIx = await program.methods
-      .renounceStreamCancelability()
+      .renounce()
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
@@ -551,7 +551,7 @@ describe("lockup", () => {
     const { senderATA, recipientATA } = await createMintATAsAndStream(true);
 
     let renounceStreamIx = await program.methods
-      .renounceStreamCancelability()
+      .renounce()
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
@@ -578,7 +578,7 @@ describe("lockup", () => {
     );
 
     let renounceStreamIx = await program.methods
-      .renounceStreamCancelability()
+      .renounce()
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
@@ -597,7 +597,7 @@ describe("lockup", () => {
       await createMintATAsAndStream(true);
 
     let cancelStreamIx = await program.methods
-      .cancelLockupLinearStream()
+      .cancel()
       .accounts({
         sender: recipientKeys.publicKey,
         senderAta: recipientATA,
@@ -625,7 +625,7 @@ describe("lockup", () => {
       await createMintATAsAndStream(false);
 
     let cancelStreamIx = await program.methods
-      .cancelLockupLinearStream()
+      .cancel()
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
@@ -657,7 +657,7 @@ describe("lockup", () => {
       await getTokenBalancesByATAKeys(senderATA, recipientATA);
 
     let cancelStreamIx = await program.methods
-      .cancelLockupLinearStream()
+      .cancel()
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
@@ -1249,7 +1249,7 @@ describe("lockup", () => {
     await timeTravelForwardTo(timestamp);
 
     let cancelStreamIx = await program.methods
-      .cancelLockupLinearStream()
+      .cancel()
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
@@ -1432,7 +1432,13 @@ describe("lockup", () => {
     } = args;
 
     let createStreamIx = await program.methods
-      .createLockupLinearStream(streamMilestones, depositedAmount, isCancelable)
+      .createWithTimestamps(
+        streamMilestones.startTime,
+        streamMilestones.cliffTime,
+        streamMilestones.endTime,
+        depositedAmount,
+        isCancelable
+      )
       .accounts({
         sender: senderKeys.publicKey,
         mint: tokenMint,

@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked};
 
 use crate::{
-    state::treasury::Treasury,
+    state::{lockup_stream::Stream, treasury::Treasury},
     utils::{errors::ErrorCode, streaming_math::get_withdrawable_amount},
 };
 
@@ -52,20 +52,25 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     }
 
     // Calculate the withdrawable amount
-    let withdrawable_amount =
-        get_withdrawable_amount(stream.milestones, stream.amounts.deposited, stream.amounts.withdrawn);
+    let withdrawable_amount = get_withdrawable_amount(
+        &ctx.accounts.stream.milestones,
+        ctx.accounts.stream.amounts.deposited,
+        ctx.accounts.stream.amounts.withdrawn,
+    );
 
     // Assert that the withdrawable amount is not too big
     if amount > withdrawable_amount {
         return Err(ErrorCode::InvalidWithdrawalAmount.into());
     }
 
+    let treasury_pda = &mut ctx.accounts.treasury_pda;
+
     // Transfer the withdrawable SPL tokens to the recipient
     // Prepare the transfer instruction
     let transfer_ix = TransferChecked {
-        from: treasury_ata.clone(),
-        mint,
-        to: recipient_ata,
+        from: ctx.accounts.treasury_ata.to_account_info().clone(),
+        mint: ctx.accounts.mint.to_account_info(),
+        to: ctx.accounts.recipient_ata.to_account_info(),
         authority: treasury_pda.to_account_info(),
     };
 
@@ -73,19 +78,20 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[b"treasury", &[treasury_pda.bump]]];
 
     // Execute the transfer
-    let cpi_ctx = CpiContext::new_with_signer(token_program, transfer_ix, signer_seeds);
-    transfer_checked(cpi_ctx, amount, mint_decimals)?;
+    let cpi_ctx = CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), transfer_ix, signer_seeds);
+    transfer_checked(cpi_ctx, amount, ctx.accounts.mint.decimals)?;
+
+    let stream_amounts = &mut ctx.accounts.stream.amounts;
 
     // Update the Stream's withdrawn amount
-    let stream_amounts = &mut stream.amounts;
     stream_amounts.withdrawn = stream_amounts.withdrawn.checked_add(amount).expect("Withdrawn amount overflow");
 
     // Mark the Stream as non-cancelable if it has been depleted
     //
-    // Note: the `>=` operator is used as as extra safety measure for the case when the withdrawn amount is bigger than
+    // Note: the `>=` operator is used as an extra safety measure for the case when the withdrawn amount is bigger than
     // expected, for one reason or the other
     if stream_amounts.withdrawn >= stream_amounts.deposited - stream_amounts.refunded {
-        stream.is_cancelable = false;
+        ctx.accounts.stream.is_cancelable = false;
     }
 
     Ok(())

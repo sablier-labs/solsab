@@ -13,12 +13,6 @@ pub struct Stream {
     pub bump: u8,
 }
 
-enum LockupModel {
-    Dynamic,
-    Linear,
-    Tranche,
-}
-
 #[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub struct Amounts {
     pub deposited: u64,

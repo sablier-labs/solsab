@@ -4,7 +4,10 @@ use anchor_spl::{
     token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
 };
 
-use crate::utils::errors::ErrorCode;
+use crate::{
+    state::{lockup_stream, treasury::Treasury},
+    utils::{constants::ANCHOR_DISCRIMINATOR_SIZE, errors::ErrorCode},
+};
 
 #[derive(Accounts)]
 pub struct CreateWithTimestamps<'info> {
@@ -53,11 +56,11 @@ pub struct CreateWithTimestamps<'info> {
         init,
         payer = sender,
         seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
-        space = ANCHOR_DISCRIMINATOR_SIZE + Stream::INIT_SPACE,
+        space = ANCHOR_DISCRIMINATOR_SIZE + lockup_stream::Stream::INIT_SPACE,
         bump
     )]
     // TODO: implement NFT logic to allow multiple Streams between the same sender and recipient (wrt their ATAs)
-    pub stream: Box<Account<'info, Stream>>,
+    pub stream: Box<Account<'info, lockup_stream::Stream>>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
@@ -106,13 +109,16 @@ pub fn handler(
     let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
     transfer_checked(cpi_ctx, deposited_amount, mint.decimals)?;
 
+    let milestones: lockup_stream::Milestones = lockup_stream::Milestones { start_time, cliff_time, end_time };
+    let amounts = lockup_stream::Amounts { deposited: deposited_amount, withdrawn: 0, refunded: 0 };
+
     // Initialize the fields of the newly created Stream
-    **ctx.accounts.stream = Stream {
+    **ctx.accounts.stream = lockup_stream::Stream {
         sender_ata: sender_ata.key(),
         recipient_ata: ctx.accounts.recipient_ata.key(),
         token_mint_account: mint.key(),
-        amounts: Amounts { deposited: deposited_amount, withdrawn: 0, refunded: 0 },
-        milestones: Milestones { start_time, cliff_time, end_time },
+        amounts,
+        milestones,
         is_cancelable,
         was_canceled: false,
         bump: ctx.bumps.stream,
