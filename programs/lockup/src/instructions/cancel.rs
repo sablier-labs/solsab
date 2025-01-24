@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked};
 
 use crate::{
-    state::{lockup_stream::Stream, treasury::Treasury},
+    state::{lockup::Stream, treasury::Treasury},
     utils::{errors::ErrorCode, streaming_math::get_refundable_amount},
 };
 

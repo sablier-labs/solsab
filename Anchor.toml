@@ -5,10 +5,10 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-lockup = "uwuJk35aCL3z2FzfPr8fQE1U19A8N18qdA5YfdfUbPt"
+sablier_lockup = "uwuJk35aCL3z2FzfPr8fQE1U19A8N18qdA5YfdfUbPt"
 
 [programs.localnet]
-lockup = "D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF"
+sablier_lockup = "D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF"
 
 [registry]
 url = "https://api.apr.dev"

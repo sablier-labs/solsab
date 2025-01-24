@@ -1,6 +1,6 @@
 use anchor_lang::solana_program::sysvar::{clock::Clock, Sysvar};
 
-use crate::state::lockup_stream::Milestones;
+use crate::state::lockup::Milestones;
 
 pub fn get_streamed_amount(milestones: &Milestones, deposit_amount: u64) -> u64 {
     let current_time = Clock::get().unwrap().unix_timestamp;

@@ -11,7 +11,7 @@ declare_id!("D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF"); // Localnet Program
 // declare_id!("uwuJk35aCL3z2FzfPr8fQE1U19A8N18qdA5YfdfUbPt"); // Devnet Program ID
 
 #[program]
-pub mod lockup {
+pub mod sablier_lockup {
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {

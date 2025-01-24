@@ -1,2 +1,2 @@
-pub mod lockup_stream;
+pub mod lockup;
 pub mod treasury;

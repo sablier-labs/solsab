@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::TokenAccount;
 
-use crate::{state::lockup_stream::Stream, utils::errors::ErrorCode};
+use crate::{state::lockup::Stream, utils::errors::ErrorCode};
 
 #[derive(Accounts)]
 pub struct Renounce<'info> {
