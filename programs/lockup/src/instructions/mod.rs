@@ -1,3 +1,5 @@
+#![allow(ambiguous_glob_reexports)]
+
 pub mod cancel;
 pub mod create_with_timestamps;
 pub mod initialize;
@@ -10,4 +12,3 @@ pub use create_with_timestamps::*;
 pub use initialize::*;
 pub use renounce::*;
 pub use withdraw::*;
-pub use withdraw_max::*;
