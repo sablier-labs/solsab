@@ -20,13 +20,19 @@ pub fn get_streamed_amount(milestones: &Milestones, deposit_amount: u64) -> u64 
         return 0;
     }
 
-    // Calculate the streamed amount
-    let elapsed_time = current_time - milestones.start_time;
-    let total_duration = milestones.end_time - milestones.start_time;
+    const SCALING_FACTOR: u128 = 1e18 as u128;
 
-    // Dev: The following cast is safe because we're up-casting the amounts (u64 -> u128), while the elapsed_time is
-    // always less than the total_duration
-    (deposit_amount as u128 * elapsed_time as u128 / total_duration as u128) as u64
+    // Calculate time variables. Scale to 18 decimals for increased precision and cast to u128 to prevent overflow.
+    let elapsed_time = (current_time - milestones.start_time) as u128 * SCALING_FACTOR;
+    let total_duration = (milestones.end_time - milestones.start_time) as u128;
+    let elapsed_time_percentage = elapsed_time / total_duration;
+
+    // Calculate the streamed amount by multiplying the elapsed time percentage and deposit amount.
+    let streamed_amount = elapsed_time_percentage * (deposit_amount as u128);
+
+    // Descale the streamed amount to the token's decimals. After dividing by SCALING_FACTOR, casting
+    // down to u64 is safe.
+    (streamed_amount / SCALING_FACTOR) as u64
 }
 
 pub fn get_withdrawable_amount(milestones: &Milestones, deposit_amount: u64, withdrawn_amount: u64) -> u64 {
