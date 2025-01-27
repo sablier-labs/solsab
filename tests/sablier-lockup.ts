@@ -35,9 +35,9 @@ import {
 
 //import * as helpers from "@solana-developers/helpers";
 
-import { Lockup } from "../target/types/lockup";
+import { SablierLockup } from "../target/types/sablier_lockup";
 
-describe("lockup", () => {
+describe("SablierLockup", () => {
   let context: ProgramTestContext;
   let client: BanksClient;
   let senderKeys: Keypair;
@@ -46,7 +46,8 @@ describe("lockup", () => {
   let provider: BankrunProvider;
   let treasuryPDA: PublicKey;
 
-  const program = anchor.workspace.lockup as anchor.Program<Lockup>;
+  const program = anchor.workspace
+    .sablier_lockup as anchor.Program<SablierLockup>;
   const LOCKUP_PROGRAM_ID = program.programId;
 
   beforeEach(async () => {
