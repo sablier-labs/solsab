@@ -1,13 +1,25 @@
 use anchor_lang::{prelude::*, solana_program::sysvar::clock::Clock};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
+    metadata::{
+        create_master_edition_v3, create_metadata_accounts_v3, mpl_token_metadata::types::DataV2,
+        set_and_verify_sized_collection_item, CreateMasterEditionV3, CreateMetadataAccountsV3, Metadata,
+        SetAndVerifySizedCollectionItem,
+    },
+    token_interface::{mint_to, transfer_checked, Mint, MintTo, TokenAccount, TokenInterface, TransferChecked},
 };
 
 use crate::{
-    state::{lockup, treasury::Treasury},
-    utils::{constants::ANCHOR_DISCRIMINATOR_SIZE, errors::ErrorCode},
+    state::{lockup::*, nft_collection_data::NftCollectionData, treasury::Treasury},
+    utils::errors::ErrorCode,
 };
+
+#[constant]
+pub const NFT_NAME: &str = "SolSab Lockup Linear Stream #";
+#[constant]
+pub const NFT_URI: &str = "A custom URI pointing to a JSON";
+#[constant]
+pub const NFT_SYMBOL: &str = "LL_STREAM";
 
 #[derive(Accounts)]
 pub struct CreateWithTimestamps<'info> {
@@ -15,13 +27,13 @@ pub struct CreateWithTimestamps<'info> {
     pub sender: Signer<'info>,
 
     #[account(mint::token_program = token_program)]
-    pub mint: Box<InterfaceAccount<'info, Mint>>,
+    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         mut,
-        associated_token::mint = mint,
+        associated_token::mint = asset_mint,
         associated_token::authority = sender,
-        associated_token::token_program = token_program
+        //associated_token::token_program = token_program
     )]
     pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -29,11 +41,10 @@ pub struct CreateWithTimestamps<'info> {
     pub recipient: UncheckedAccount<'info>,
 
     #[account(
-        init_if_needed,
-        payer = sender,
-        associated_token::mint = mint,
+        mut,
+        associated_token::mint = asset_mint,
         associated_token::authority = recipient,
-        associated_token::token_program = token_program,
+        //associated_token::token_program = token_program,
     )]
     pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -44,27 +55,96 @@ pub struct CreateWithTimestamps<'info> {
     pub treasury_pda: Box<Account<'info, Treasury>>,
 
     #[account(
-        init_if_needed,
-        payer = sender,
-        associated_token::mint = mint,
+        mut,
+        associated_token::mint = asset_mint,
         associated_token::authority = treasury_pda,
-        associated_token::token_program = token_program
+        //associated_token::token_program = token_program
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
+        mut,
+        seeds = [b"nft_collection_data".as_ref()],
+        bump = nft_collection_data.bump
+    )]
+    pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
+
+    #[account(
+        mut,
+        seeds = [b"nft_collection_mint".as_ref()],
+        bump,
+    )]
+    pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    #[account(
+        mut,
+        seeds = [b"metadata", token_metadata_program.key().as_ref(), nft_collection_mint.key().as_ref()],
+        bump,
+        seeds::program = token_metadata_program.key(),
+    )]
+    /// CHECK: This account will only be touched by the Metaplex program
+    pub nft_collection_metadata: UncheckedAccount<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"metadata", token_metadata_program.key().as_ref(),
+            nft_collection_mint.key().as_ref(), b"edition"],
+        bump,
+        seeds::program = token_metadata_program.key(),
+    )]
+    /// CHECK: This account will only be touched by the Metaplex program
+    pub nft_collection_master_edition: UncheckedAccount<'info>,
+
+    #[account(
         init,
         payer = sender,
-        seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
-        space = ANCHOR_DISCRIMINATOR_SIZE + lockup::Stream::INIT_SPACE,
-        bump
+        seeds = [b"stream_nft_mint",
+                 nft_collection_data.nfts_total_supply.to_le_bytes().as_ref()],
+        bump,
+        mint::decimals = 0,
+        mint::authority = nft_collection_mint,
+        mint::freeze_authority = nft_collection_mint,
+        mint::token_program = token_program,
     )]
-    // TODO: implement NFT logic to allow multiple Streams between the same sender and recipient (wrt their ATAs)
-    pub stream: Box<Account<'info, lockup::Stream>>,
+    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    #[account(
+        init,
+        payer = sender,
+        associated_token::mint = stream_nft_mint,
+        associated_token::authority = sender,
+        //associated_token::token_program = token_program,
+    )]
+    pub senders_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    #[account(
+        mut,
+        seeds = [b"metadata",
+                 token_metadata_program.key().as_ref(),
+                 stream_nft_mint.key().as_ref()],
+        bump,
+        seeds::program = token_metadata_program.key(),
+    )]
+    /// CHECK: This account will be initialized by the Metaplex program
+    pub stream_nft_metadata: UncheckedAccount<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"metadata",
+                 token_metadata_program.key().as_ref(),
+                 stream_nft_mint.key().as_ref(),
+                 b"edition"],
+        bump,
+        seeds::program = token_metadata_program.key(),
+    )]
+    /// CHECK: This account will be initialized by the Metaplex program
+    pub stream_nft_master_edition: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_metadata_program: Program<'info, Metadata>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn handler(
@@ -78,7 +158,7 @@ pub fn handler(
     let sender = &ctx.accounts.sender;
     let sender_ata = &ctx.accounts.sender_ata;
     let treasury_ata = &ctx.accounts.treasury_ata;
-    let mint = &ctx.accounts.mint;
+    let mint = &ctx.accounts.asset_mint;
 
     // Assert that the deposited amount is not zero
     if deposited_amount == 0 {
@@ -109,20 +189,107 @@ pub fn handler(
     let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
     transfer_checked(cpi_ctx, deposited_amount, mint.decimals)?;
 
-    let milestones: lockup::Milestones = lockup::Milestones { start_time, cliff_time, end_time };
-    let amounts = lockup::Amounts { deposited: deposited_amount, withdrawn: 0, refunded: 0 };
+    let milestones: Milestones = Milestones { start_time, cliff_time, end_time };
+    let amounts = Amounts { deposited: deposited_amount, withdrawn: 0, refunded: 0 };
 
     // Initialize the fields of the newly created Stream
-    **ctx.accounts.stream = lockup::Stream {
-        sender_ata: sender_ata.key(),
-        recipient_ata: ctx.accounts.recipient_ata.key(),
-        token_mint_account: mint.key(),
-        amounts,
-        milestones,
-        is_cancelable,
-        was_canceled: false,
-        bump: ctx.bumps.stream,
-    };
+    // **ctx.accounts.stream = Stream {
+    //     sender_ata: sender_ata.key(),
+    //     recipient_ata: ctx.accounts.recipient_ata.key(),
+    //     token_mint_account: mint.key(),
+    //     amounts,
+    //     milestones,
+    //     is_cancelable,
+    //     was_canceled: false,
+    //     bump: ctx.bumps.stream,
+    // };
+
+    let stream_nft_name = NFT_NAME.to_owned() + ctx.accounts.nft_collection_data.nfts_total_supply.to_string().as_str();
+
+    let signer_seeds: &[&[&[u8]]] = &[&[b"nft_collection_mint".as_ref(), &[ctx.bumps.nft_collection_mint]]];
+
+    // Mint Ticket
+    mint_to(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            MintTo {
+                mint: ctx.accounts.stream_nft_mint.to_account_info(),
+                to: ctx.accounts.senders_stream_nft_ata.to_account_info(),
+                authority: ctx.accounts.nft_collection_mint.to_account_info(),
+            },
+            signer_seeds,
+        ),
+        1,
+    )?;
+
+    create_metadata_accounts_v3(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_metadata_program.to_account_info(),
+            CreateMetadataAccountsV3 {
+                metadata: ctx.accounts.stream_nft_metadata.to_account_info(),
+                mint: ctx.accounts.stream_nft_mint.to_account_info(),
+                mint_authority: ctx.accounts.nft_collection_mint.to_account_info(),
+                update_authority: ctx.accounts.nft_collection_mint.to_account_info(),
+                payer: ctx.accounts.sender.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+                rent: ctx.accounts.rent.to_account_info(),
+            },
+            signer_seeds,
+        ),
+        DataV2 {
+            name: stream_nft_name,
+            symbol: NFT_SYMBOL.to_string(),
+            uri: NFT_URI.to_string(),
+            seller_fee_basis_points: 0,
+            creators: None,
+            collection: None,
+            uses: None,
+        },
+        true,
+        true,
+        None,
+    )?;
+
+    create_master_edition_v3(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_metadata_program.to_account_info(),
+            CreateMasterEditionV3 {
+                payer: ctx.accounts.sender.to_account_info(),
+                mint: ctx.accounts.stream_nft_mint.to_account_info(),
+                edition: ctx.accounts.stream_nft_master_edition.to_account_info(),
+                mint_authority: ctx.accounts.nft_collection_mint.to_account_info(),
+                update_authority: ctx.accounts.nft_collection_mint.to_account_info(),
+                metadata: ctx.accounts.stream_nft_metadata.to_account_info(),
+                token_program: ctx.accounts.token_program.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+                rent: ctx.accounts.rent.to_account_info(),
+            },
+            signer_seeds,
+        ),
+        Some(0),
+    )?;
+
+    // verify nft as part of collection
+    set_and_verify_sized_collection_item(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_metadata_program.to_account_info(),
+            SetAndVerifySizedCollectionItem {
+                metadata: ctx.accounts.stream_nft_metadata.to_account_info(),
+                collection_authority: ctx.accounts.nft_collection_mint.to_account_info(),
+                payer: ctx.accounts.sender.to_account_info(),
+                update_authority: ctx.accounts.nft_collection_mint.to_account_info(),
+                collection_mint: ctx.accounts.nft_collection_mint.to_account_info(),
+                collection_metadata: ctx.accounts.nft_collection_metadata.to_account_info(),
+                collection_master_edition: ctx.accounts.nft_collection_master_edition.to_account_info(),
+            },
+            signer_seeds,
+        ),
+        None,
+    )?;
+
+    let nfts_total_supply = &mut ctx.accounts.nft_collection_data.nfts_total_supply;
+    *nfts_total_supply =
+        nfts_total_supply.checked_add(1).expect("The Total Supply of the NFT Collection has overflowed");
 
     Ok(())
 }

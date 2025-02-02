@@ -14,8 +14,18 @@ declare_id!("D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF"); // Localnet Program
 pub mod sablier_lockup {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        instructions::initialize::handler(ctx)
+    pub fn init_treasury_and_recipient_atas_if_needed(
+        ctx: Context<InitTreasuryAndRecipientATAsIfNeeded>,
+    ) -> Result<()> {
+        instructions::init_treasury_and_recipient_atas_if_needed::handler(ctx)
+    }
+
+    pub fn initialize_phase_one(ctx: Context<InitializePhaseOne>) -> Result<()> {
+        instructions::initialize_phase_one::handler(ctx)
+    }
+
+    pub fn initialize_phase_two(ctx: Context<InitializePhaseTwo>) -> Result<()> {
+        instructions::initialize_phase_two::handler(ctx)
     }
 
     pub fn cancel(ctx: Context<Cancel>) -> Result<()> {

@@ -41,7 +41,7 @@ pub struct Cancel<'info> {
         mut,
         associated_token::mint = mint,
         associated_token::authority = treasury_pda,
-        associated_token::token_program = token_program,
+        //associated_token::token_program = token_program,
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 

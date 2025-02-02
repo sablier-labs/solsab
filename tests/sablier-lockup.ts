@@ -1,4 +1,5 @@
 import {
+  ComputeBudgetProgram,
   PublicKey,
   Keypair,
   Transaction,
@@ -45,14 +46,32 @@ describe("SablierLockup", () => {
   let thirdPartyKeys: Keypair;
   let provider: BankrunProvider;
   let treasuryPDA: PublicKey;
+  let nftCollectionDataPDA: PublicKey;
+  let nftCollectionMint: PublicKey;
+  let nftCollectionTokenAccount: PublicKey;
+  let nftCollectionMetadata: PublicKey;
+  let nftCollectionMasterEdition: PublicKey;
 
   const program = anchor.workspace
     .sablier_lockup as anchor.Program<SablierLockup>;
   const LOCKUP_PROGRAM_ID = program.programId;
 
+  const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey(
+    "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+  );
+
   beforeEach(async () => {
     // Configure the testing environment
-    context = await startAnchor("", [], []);
+    context = await startAnchor(
+      "",
+      [
+        {
+          name: "token_metadata_program",
+          programId: TOKEN_METADATA_PROGRAM_ID,
+        },
+      ],
+      []
+    );
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
     client = context.banksClient;
@@ -81,31 +100,119 @@ describe("SablierLockup", () => {
     console.log(`Recipient's balance: ${recipientsBalance.toString()} SOL`);
 
     // Pre-calculate the PDA address for the treasury
-    [treasuryPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("treasury")],
-      LOCKUP_PROGRAM_ID
-    );
+    treasuryPDA = getPDAAddress([Buffer.from("treasury")], LOCKUP_PROGRAM_ID);
 
     console.log("Treasury's PDA address: ", treasuryPDA.toBase58());
 
-    let initializeIx = await program.methods
-      .initialize()
+    // Pre-calculate the PDA address for the NFT Collection Data
+    nftCollectionDataPDA = getPDAAddress(
+      [Buffer.from("nft_collection_data")],
+      LOCKUP_PROGRAM_ID
+    );
+
+    console.log(
+      "NFT Collection Data's PDA address: ",
+      nftCollectionDataPDA.toBase58()
+    );
+
+    let initializePhaseOneIx = await program.methods
+      .initializePhaseOne()
       .accounts({
         signer: senderKeys.publicKey,
       })
       .instruction();
 
     // Build, sign and process the transaction
-    await buildSignAndProcessTxFromIx(initializeIx, senderKeys);
+    await buildSignAndProcessTxFromIx(initializePhaseOneIx, senderKeys);
 
-    // Make sure the program is properly initialized
-    // Confirm that the treasury PDA account was created and has expected properties
-    const treasuryAccount = await client.getAccount(treasuryPDA);
-    assert.ok(treasuryAccount, "Treasury PDA not initialized");
+    // Confirm that the treasury PDA account has been initialized
+    assert.ok(
+      await client.getAccount(treasuryPDA),
+      "Treasury PDA not initialized"
+    );
+
+    // Confirm that the NFT Collection Data PDA account has been initialized
+    assert.ok(
+      await client.getAccount(nftCollectionDataPDA),
+      "NFT Collection Data PDA not initialized"
+    );
+
+    console.log(
+      "NFT Collection Data bytes: {:#?}",
+      (await client.getAccount(nftCollectionDataPDA))?.data
+    );
+
+    let initializePhaseTwoIx = await program.methods
+      .initializePhaseTwo()
+      .accounts({
+        signer: senderKeys.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(initializePhaseTwoIx, senderKeys);
+
+    nftCollectionMint = getPDAAddress(
+      [Buffer.from("nft_collection_mint")],
+      LOCKUP_PROGRAM_ID
+    );
+
+    const nftCollectionMintToBuffer = nftCollectionMint.toBuffer();
+
+    nftCollectionTokenAccount = getPDAAddress(
+      [Buffer.from("collection_token_account"), nftCollectionMintToBuffer],
+      LOCKUP_PROGRAM_ID
+    );
+
+    // Confirm that the NFT Collection Mint account has been initialized
+    assert.ok(
+      await client.getAccount(nftCollectionMint),
+      "NFT Collection Mint not initialized"
+    );
+
+    // TODO: figure our the exact derivation of the NFT Collection Token Account, in order to properly test its initialization
+
+    // // Confirm that the NFT Collection Token Account has been initialized
+    // assert.ok(
+    //   await client.getAccount(nftCollectionTokenAccount),
+    //   "NFT Collection Token Account not initialized"
+    // );
+
+    nftCollectionMetadata = getPDAAddress(
+      [
+        Buffer.from("metadata"),
+        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        nftCollectionMintToBuffer,
+      ],
+      TOKEN_METADATA_PROGRAM_ID
+    );
+
+    // Confirm that the NFT Collection Metadata account has been initialized
+    assert.ok(
+      await client.getAccount(nftCollectionMetadata),
+      "NFT Collection Metadata not initialized"
+    );
+
+    nftCollectionMasterEdition = getPDAAddress(
+      [
+        Buffer.from("metadata"),
+        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        nftCollectionMintToBuffer,
+        Buffer.from("edition"),
+      ],
+      TOKEN_METADATA_PROGRAM_ID
+    );
+
+    // Confirm that the NFT Collection Master Edition account has been initialized
+    assert.ok(
+      await client.getAccount(nftCollectionMasterEdition),
+      "NFT Collection Master Edition not initialized"
+    );
   });
 
   it("Fails to create a LockupLinear Stream with a deposited amount > sender's balance", async () => {
-    const { tokenMint, senderATA } = await createTokenAndMintToSender();
+    const { assetMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = (await getTokenBalanceByATAKey(senderATA)).add(
@@ -114,10 +221,10 @@ describe("SablierLockup", () => {
 
     // Attempt to create a Stream with a deposited amount greater than the sender's balance
     try {
-      await createLockupLinearStream({
+      await createLLStreamWithTimestamps({
         senderKeys: senderKeys,
         recipient: recipientKeys.publicKey,
-        tokenMint,
+        assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         streamMilestones: milestones,
         depositedAmount: depositedAmount,
@@ -134,16 +241,16 @@ describe("SablierLockup", () => {
   });
 
   it("Fails to create a LockupLinear Stream with a depositAmount = 0", async () => {
-    const { tokenMint } = await createTokenAndMintToSender();
+    const { assetMint } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
 
     // Attempt to create a Stream with a deposited amount of 0
     try {
-      await createLockupLinearStream({
+      await createLLStreamWithTimestamps({
         senderKeys: senderKeys,
         recipient: recipientKeys.publicKey,
-        tokenMint,
+        assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         streamMilestones: milestones,
         depositedAmount: new BN(0),
@@ -176,10 +283,10 @@ describe("SablierLockup", () => {
 
     // Attempt to create a Stream with an invalid token mint
     try {
-      await createLockupLinearStream({
+      await createLLStreamWithTimestamps({
         senderKeys: senderKeys,
         recipient: recipientKeys.publicKey,
-        tokenMint: invalidTokenMint,
+        assetMint: invalidTokenMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         streamMilestones: milestones,
         depositedAmount,
@@ -196,7 +303,7 @@ describe("SablierLockup", () => {
   });
 
   it("Fails to create a LockupLinear Stream when cliffTime < startTime", async () => {
-    const { tokenMint, senderATA } = await createTokenAndMintToSender();
+    const { assetMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -204,10 +311,10 @@ describe("SablierLockup", () => {
     // Attempt to create a Stream with cliffTime < startTime
     milestones.cliffTime = milestones.startTime.sub(new BN(1));
     try {
-      await createLockupLinearStream({
+      await createLLStreamWithTimestamps({
         senderKeys: senderKeys,
         recipient: recipientKeys.publicKey,
-        tokenMint,
+        assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         streamMilestones: milestones,
         depositedAmount,
@@ -224,7 +331,7 @@ describe("SablierLockup", () => {
   });
 
   it("Fails to create a LockupLinear Stream when cliffTime == startTime", async () => {
-    const { tokenMint, senderATA } = await createTokenAndMintToSender();
+    const { assetMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -232,10 +339,10 @@ describe("SablierLockup", () => {
     // Attempt to create a Stream with cliffTime < startTime
     milestones.cliffTime = milestones.startTime;
     try {
-      await createLockupLinearStream({
+      await createLLStreamWithTimestamps({
         senderKeys: senderKeys,
         recipient: recipientKeys.publicKey,
-        tokenMint,
+        assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         streamMilestones: milestones,
         depositedAmount,
@@ -252,7 +359,7 @@ describe("SablierLockup", () => {
   });
 
   it("Fails to create a LockupLinear Stream when cliffTime > endTime", async () => {
-    const { tokenMint, senderATA } = await createTokenAndMintToSender();
+    const { assetMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -260,10 +367,10 @@ describe("SablierLockup", () => {
     // Attempt to create a Stream with cliffTime > endTime
     milestones.cliffTime = milestones.endTime.add(new BN(1));
     try {
-      await createLockupLinearStream({
+      await createLLStreamWithTimestamps({
         senderKeys: senderKeys,
         recipient: recipientKeys.publicKey,
-        tokenMint,
+        assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         streamMilestones: milestones,
         depositedAmount,
@@ -280,7 +387,7 @@ describe("SablierLockup", () => {
   });
 
   it("Fails to create a LockupLinear Stream when cliffTime == endTime", async () => {
-    const { tokenMint, senderATA } = await createTokenAndMintToSender();
+    const { assetMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -288,10 +395,10 @@ describe("SablierLockup", () => {
     // Attempt to create a Stream with cliffTime > endTime
     milestones.cliffTime = milestones.endTime;
     try {
-      await createLockupLinearStream({
+      await createLLStreamWithTimestamps({
         senderKeys: senderKeys,
         recipient: recipientKeys.publicKey,
-        tokenMint,
+        assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         streamMilestones: milestones,
         depositedAmount,
@@ -308,7 +415,7 @@ describe("SablierLockup", () => {
   });
 
   it("Fails to create a LockupLinear Stream when endTime < startTime", async () => {
-    const { tokenMint, senderATA } = await createTokenAndMintToSender();
+    const { assetMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -316,10 +423,10 @@ describe("SablierLockup", () => {
     // Attempt to create a Stream with endTime < startTime
     milestones.endTime = milestones.startTime.sub(new BN(1));
     try {
-      await createLockupLinearStream({
+      await createLLStreamWithTimestamps({
         senderKeys: senderKeys,
         recipient: recipientKeys.publicKey,
-        tokenMint,
+        assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         streamMilestones: milestones,
         depositedAmount,
@@ -336,7 +443,7 @@ describe("SablierLockup", () => {
   });
 
   it("Fails to create a LockupLinear Stream when endTime < current time", async () => {
-    const { tokenMint, senderATA } = await createTokenAndMintToSender();
+    const { assetMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
@@ -344,10 +451,10 @@ describe("SablierLockup", () => {
     // Attempt to create a Stream with endTime < current time
     milestones.endTime = new BN(0);
     try {
-      await createLockupLinearStream({
+      await createLLStreamWithTimestamps({
         senderKeys: senderKeys,
         recipient: recipientKeys.publicKey,
-        tokenMint,
+        assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         streamMilestones: milestones,
         depositedAmount,
@@ -363,8 +470,8 @@ describe("SablierLockup", () => {
     }
   });
 
-  it("Creates a LockupLinear Stream", async () => {
-    const { tokenMint, senderATA } = await createTokenAndMintToSender();
+  it.only("Creates a LockupLinear Stream", async () => {
+    const { assetMint, senderATA } = await createTokenAndMintToSender();
 
     // Get the initial token balances of the sender
     const [senderInitialTokenBalance] = await getTokenBalancesByATAKeys(
@@ -373,10 +480,10 @@ describe("SablierLockup", () => {
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = senderInitialTokenBalance;
-    await createLockupLinearStream({
+    await createLLStreamWithTimestamps({
       senderKeys: senderKeys,
       recipient: recipientKeys.publicKey,
-      tokenMint,
+      assetMint,
       tokenProgram: TOKEN_PROGRAM_ID,
       streamMilestones: milestones,
       depositedAmount,
@@ -397,7 +504,7 @@ describe("SablierLockup", () => {
     );
 
     // Derive the recipient's ATA address
-    const recipientATA = await deriveRecipientATA(tokenMint);
+    const recipientATA = await deriveRecipientATA(assetMint);
 
     // Fetch the created Stream
     const stream = await fetchStream(senderATA, recipientATA);
@@ -406,7 +513,7 @@ describe("SablierLockup", () => {
     assert(
       stream.senderAta.equals(senderATA) &&
         stream.recipientAta.equals(recipientATA) &&
-        stream.tokenMintAccount.equals(tokenMint) &&
+        stream.tokenMintAccount.equals(assetMint) &&
         stream.isCancelable === true &&
         stream.wasCanceled === false,
       "The state of the created Stream is wrong"
@@ -428,7 +535,7 @@ describe("SablierLockup", () => {
 
     // Derive the Treasury's ATA address
     const treasuryATA = getAssociatedTokenAddressSync(
-      tokenMint,
+      assetMint,
       treasuryPDA,
       true
     );
@@ -443,7 +550,7 @@ describe("SablierLockup", () => {
   });
 
   it("Creates a LockupLinear Stream with the Token2022 program", async () => {
-    const { tokenMint, senderATA } = await createToken2022AndMintToSender();
+    const { assetMint, senderATA } = await createToken2022AndMintToSender();
 
     // Get the initial token balances of the sender
     const [senderInitialTokenBalance] = await getTokenBalancesByATAKeys(
@@ -453,10 +560,10 @@ describe("SablierLockup", () => {
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = senderInitialTokenBalance;
 
-    await createLockupLinearStream({
+    await createLLStreamWithTimestamps({
       senderKeys: senderKeys,
       recipient: recipientKeys.publicKey,
-      tokenMint,
+      assetMint,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       streamMilestones: milestones,
       depositedAmount,
@@ -477,7 +584,7 @@ describe("SablierLockup", () => {
     );
 
     // Derive the recipient's ATA address
-    const recipientATA = await deriveRecipientATAToken2022(tokenMint);
+    const recipientATA = await deriveRecipientATAToken2022(assetMint);
 
     // Fetch the created Stream
     const stream = await fetchStream(senderATA, recipientATA);
@@ -486,7 +593,7 @@ describe("SablierLockup", () => {
     assert(
       stream.senderAta.equals(senderATA) &&
         stream.recipientAta.equals(recipientATA) &&
-        stream.tokenMintAccount.equals(tokenMint) &&
+        stream.tokenMintAccount.equals(assetMint) &&
         stream.isCancelable === true &&
         stream.wasCanceled === false,
       "The state of the created Stream is wrong"
@@ -508,7 +615,7 @@ describe("SablierLockup", () => {
 
     // Derive the Treasury's ATA address
     const treasuryATA = getAssociatedTokenAddressSync(
-      tokenMint,
+      assetMint,
       treasuryPDA,
       true,
       TOKEN_2022_PROGRAM_ID
@@ -594,7 +701,7 @@ describe("SablierLockup", () => {
   });
 
   it("Fails to cancel a Stream that doesn't exist", async () => {
-    const { senderATA, recipientATA, tokenMint } =
+    const { senderATA, recipientATA, assetMint } =
       await createMintATAsAndStream(true);
 
     let cancelStreamIx = await program.methods
@@ -603,7 +710,7 @@ describe("SablierLockup", () => {
         sender: recipientKeys.publicKey,
         senderAta: recipientATA,
         recipientAta: senderATA,
-        mint: tokenMint,
+        mint: assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction();
@@ -622,7 +729,7 @@ describe("SablierLockup", () => {
   });
 
   it("Fails to cancel a non-cancelable Stream", async () => {
-    const { senderATA, recipientATA, tokenMint } =
+    const { senderATA, recipientATA, assetMint } =
       await createMintATAsAndStream(false);
 
     let cancelStreamIx = await program.methods
@@ -631,7 +738,7 @@ describe("SablierLockup", () => {
         sender: senderKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
-        mint: tokenMint,
+        mint: assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction();
@@ -650,7 +757,7 @@ describe("SablierLockup", () => {
   });
 
   it("Cancels a LockupLinear Stream immediately after creating it", async () => {
-    const { senderATA, recipientATA, tokenMint, depositedAmount } =
+    const { senderATA, recipientATA, assetMint, depositedAmount } =
       await createMintATAsAndStream(true);
 
     // Get the initial token balances of the sender and recipient
@@ -663,7 +770,7 @@ describe("SablierLockup", () => {
         sender: senderKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
-        mint: tokenMint,
+        mint: assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction();
@@ -715,7 +822,7 @@ describe("SablierLockup", () => {
     const {
       senderATA,
       recipientATA,
-      tokenMint,
+      assetMint,
       depositedAmount,
       streamMilestones: milestones,
     } = await createMintATAsAndStream(true);
@@ -730,7 +837,7 @@ describe("SablierLockup", () => {
     await cancelStreamAtSpecificTime(
       senderATA,
       recipientATA,
-      tokenMint,
+      assetMint,
       cancelTime
     );
 
@@ -775,7 +882,7 @@ describe("SablierLockup", () => {
   });
 
   it("Cancels a LockupLinear Stream after the tokens have been fully streamed", async () => {
-    const { senderATA, recipientATA, tokenMint, streamMilestones } =
+    const { senderATA, recipientATA, assetMint, streamMilestones } =
       await createMintATAsAndStream(true);
 
     // Get the initial token balances of the sender and recipient
@@ -787,7 +894,7 @@ describe("SablierLockup", () => {
     await cancelStreamAtSpecificTime(
       senderATA,
       recipientATA,
-      tokenMint,
+      assetMint,
       cancelTime
     );
 
@@ -832,7 +939,7 @@ describe("SablierLockup", () => {
   });
 
   it("Fails to withdraw from a Stream as a non-recipient", async () => {
-    const { senderATA, recipientATA, tokenMint } =
+    const { senderATA, recipientATA, assetMint } =
       await createMintATAsAndStream(true);
 
     let withdrawIx = await program.methods
@@ -841,7 +948,7 @@ describe("SablierLockup", () => {
         signer: recipientKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
-        mint: tokenMint,
+        mint: assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction();
@@ -860,7 +967,7 @@ describe("SablierLockup", () => {
   });
 
   it("Fails to withdraw right before cliffTime", async () => {
-    const { senderATA, recipientATA, tokenMint, streamMilestones } =
+    const { senderATA, recipientATA, assetMint, streamMilestones } =
       await createMintATAsAndStream(true);
 
     await timeTravelForwardTo(
@@ -873,7 +980,7 @@ describe("SablierLockup", () => {
         signer: recipientKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
-        mint: tokenMint,
+        mint: assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction();
@@ -895,7 +1002,7 @@ describe("SablierLockup", () => {
     const {
       senderATA,
       recipientATA,
-      tokenMint,
+      assetMint,
       streamMilestones,
       depositedAmount,
     } = await createMintATAsAndStream(true);
@@ -918,7 +1025,7 @@ describe("SablierLockup", () => {
       recipientKeys,
       recipientATA,
       senderATA,
-      tokenMint,
+      assetMint,
       TOKEN_PROGRAM_ID
     );
 
@@ -949,7 +1056,7 @@ describe("SablierLockup", () => {
     const {
       senderATA,
       recipientATA,
-      tokenMint,
+      assetMint,
       depositedAmount,
       streamMilestones: milestones,
     } = await createMintATAsAndStream(true);
@@ -964,7 +1071,7 @@ describe("SablierLockup", () => {
     await cancelStreamAtSpecificTime(
       senderATA,
       recipientATA,
-      tokenMint,
+      assetMint,
       cancelTime
     );
 
@@ -972,7 +1079,7 @@ describe("SablierLockup", () => {
       recipientKeys,
       recipientATA,
       senderATA,
-      tokenMint,
+      assetMint,
       TOKEN_PROGRAM_ID
     );
 
@@ -1020,7 +1127,7 @@ describe("SablierLockup", () => {
     const {
       senderATA,
       recipientATA,
-      tokenMint,
+      assetMint,
       streamMilestones,
       depositedAmount,
     } = await createMintATAsAndStream(true);
@@ -1039,7 +1146,7 @@ describe("SablierLockup", () => {
         signer: recipientKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
-        mint: tokenMint,
+        mint: assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction();
@@ -1073,7 +1180,7 @@ describe("SablierLockup", () => {
     const {
       senderATA,
       recipientATA,
-      tokenMint,
+      assetMint,
       streamMilestones,
       depositedAmount,
     } = await createMintATAsAndStream(true);
@@ -1092,7 +1199,7 @@ describe("SablierLockup", () => {
         signer: thirdPartyKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
-        mint: tokenMint,
+        mint: assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction();
@@ -1126,7 +1233,7 @@ describe("SablierLockup", () => {
     const {
       senderATA,
       recipientATA,
-      tokenMint,
+      assetMint,
       streamMilestones,
       depositedAmount,
     } = await createMintATAsAndStream(true);
@@ -1144,7 +1251,7 @@ describe("SablierLockup", () => {
         signer: recipientKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
-        mint: tokenMint,
+        mint: assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction();
@@ -1179,7 +1286,7 @@ describe("SablierLockup", () => {
     const {
       senderATA,
       recipientATA,
-      tokenMint,
+      assetMint,
       streamMilestones,
       depositedAmount,
     } = await createMintATAsAndStream(true);
@@ -1197,7 +1304,7 @@ describe("SablierLockup", () => {
         signer: thirdPartyKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
-        mint: tokenMint,
+        mint: assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction();
@@ -1230,8 +1337,16 @@ describe("SablierLockup", () => {
 
   // HELPER FUNCTIONS AND DATA STRUCTS
 
-  async function buildSignAndProcessTxFromIx(ix: TxIx, signerKeys: Keypair) {
-    const tx = await initializeTxWithIx(ix);
+  async function buildSignAndProcessTxFromIx(
+    ix: TxIx,
+    signerKeys: Keypair,
+    cuLimit?: number
+  ) {
+    const tx =
+      cuLimit === undefined
+        ? await initializeTxWithIx(ix)
+        : await initializeTxWithIxAndCULimit(ix, cuLimit);
+
     tx.sign(signerKeys);
     const banksTxMeta = await client.processTransaction(tx);
 
@@ -1244,7 +1359,7 @@ describe("SablierLockup", () => {
   async function cancelStreamAtSpecificTime(
     senderATA: PublicKey,
     recipientATA: PublicKey,
-    tokenMint: PublicKey,
+    assetMint: PublicKey,
     timestamp: bigint
   ): Promise<void> {
     await timeTravelForwardTo(timestamp);
@@ -1255,7 +1370,7 @@ describe("SablierLockup", () => {
         sender: senderKeys.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
-        mint: tokenMint,
+        mint: assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction();
@@ -1268,18 +1383,18 @@ describe("SablierLockup", () => {
     stream: any;
     senderATA: PublicKey;
     recipientATA: PublicKey;
-    tokenMint: PublicKey;
+    assetMint: PublicKey;
     depositedAmount: BN;
     streamMilestones: StreamMilestones;
   }> {
-    const { tokenMint, senderATA } = await createTokenAndMintToSender();
+    const { assetMint, senderATA } = await createTokenAndMintToSender();
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = await getTokenBalanceByATAKey(senderATA);
-    await createLockupLinearStream({
+    await createLLStreamWithTimestamps({
       senderKeys: senderKeys,
       recipient: recipientKeys.publicKey,
-      tokenMint,
+      assetMint,
       tokenProgram: TOKEN_PROGRAM_ID,
       streamMilestones: milestones,
       depositedAmount,
@@ -1287,26 +1402,26 @@ describe("SablierLockup", () => {
     });
 
     // Derive the recipient's ATA address
-    const recipientATA = await deriveRecipientATA(tokenMint);
+    const recipientATA = await deriveRecipientATA(assetMint);
 
     return {
       stream: await fetchStream(senderATA, recipientATA),
       senderATA,
       recipientATA,
-      tokenMint,
+      assetMint,
       depositedAmount,
       streamMilestones: milestones,
     };
   }
 
   async function createTokenAndMintToSender(): Promise<{
-    tokenMint: PublicKey;
+    assetMint: PublicKey;
     senderATA: PublicKey;
   }> {
     const TOKEN_DECIMALS = 2;
     const freezeAuthority = null;
 
-    const tokenMint = await createMint(
+    const assetMint = await createMint(
       client,
       senderKeys,
       senderKeys.publicKey,
@@ -1317,7 +1432,7 @@ describe("SablierLockup", () => {
     const senderATA = await createAssociatedTokenAccount(
       client,
       senderKeys,
-      tokenMint,
+      assetMint,
       senderKeys.publicKey,
       TOKEN_PROGRAM_ID
     );
@@ -1327,7 +1442,7 @@ describe("SablierLockup", () => {
     await mintTo(
       client,
       senderKeys,
-      tokenMint,
+      assetMint,
       senderATA,
       senderKeys,
       10 * MINOR_UNITS_PER_MAJOR_UNITS
@@ -1337,14 +1452,14 @@ describe("SablierLockup", () => {
       `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
     );
 
-    return { tokenMint, senderATA };
+    return { assetMint, senderATA };
   }
 
   async function withdrawMax(
     txSigner: Keypair,
     recipientATA: PublicKey,
     senderATA: PublicKey,
-    tokenMint: PublicKey,
+    assetMint: PublicKey,
     tokenProgram: PublicKey
   ) {
     let withdrawIx = await program.methods
@@ -1353,7 +1468,7 @@ describe("SablierLockup", () => {
         signer: txSigner.publicKey,
         senderAta: senderATA,
         recipientAta: recipientATA,
-        mint: tokenMint,
+        mint: assetMint,
         tokenProgram,
       })
       .instruction();
@@ -1362,10 +1477,17 @@ describe("SablierLockup", () => {
     await buildSignAndProcessTxFromIx(withdrawIx, txSigner);
   }
 
-  interface CreateLockupLinearStreamArgs {
+  interface InitTreasuryAndRecipientATAsIfNeededArgs {
+    signerKeys: Keypair;
+    assetMint: PublicKey;
+    recipient: PublicKey;
+    tokenProgram: PublicKey;
+  }
+
+  interface CreateLLStreamWithTimestampsArgs {
     senderKeys: Keypair;
     recipient: PublicKey;
-    tokenMint: PublicKey;
+    assetMint: PublicKey;
     tokenProgram: PublicKey;
     streamMilestones: StreamMilestones;
     depositedAmount: BN;
@@ -1373,12 +1495,12 @@ describe("SablierLockup", () => {
   }
 
   async function createToken2022AndMintToSender(): Promise<{
-    tokenMint: PublicKey;
+    assetMint: PublicKey;
     senderATA: PublicKey;
   }> {
     const TOKEN_DECIMALS = 9;
     const freezeAuthority = null;
-    const tokenMint = await createMint(
+    const assetMint = await createMint(
       client,
       senderKeys,
       senderKeys.publicKey,
@@ -1388,12 +1510,12 @@ describe("SablierLockup", () => {
       TOKEN_2022_PROGRAM_ID
     );
 
-    console.log(`Created Token Mint: ${tokenMint}`);
+    console.log(`Created Token Mint: ${assetMint}`);
 
     const senderATA = await createAssociatedTokenAccount(
       client,
       senderKeys,
-      tokenMint,
+      assetMint,
       senderKeys.publicKey,
       TOKEN_2022_PROGRAM_ID
     );
@@ -1404,7 +1526,7 @@ describe("SablierLockup", () => {
     await mintTo(
       client,
       senderKeys,
-      tokenMint,
+      assetMint,
       senderATA,
       senderKeys,
       10 * MINOR_UNITS_PER_MAJOR_UNITS,
@@ -1416,21 +1538,53 @@ describe("SablierLockup", () => {
       `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
     );
 
-    return { tokenMint, senderATA };
+    return { assetMint, senderATA };
   }
 
-  async function createLockupLinearStream(
-    args: CreateLockupLinearStreamArgs
+  async function initTreasuryAndRecipientATAsIfNeeded(
+    args: InitTreasuryAndRecipientATAsIfNeededArgs
+  ): Promise<void> {
+    const { signerKeys, recipient, assetMint, tokenProgram } = args;
+
+    let createStreamIx = await program.methods
+      .initTreasuryAndRecipientAtasIfNeeded()
+      .accounts({
+        sender: signerKeys.publicKey,
+        recipient,
+        assetMint,
+        tokenProgram,
+      })
+      .instruction();
+
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(createStreamIx, signerKeys);
+  }
+
+  async function createLLStreamWithTimestamps(
+    args: CreateLLStreamWithTimestampsArgs
   ): Promise<void> {
     const {
       senderKeys,
       recipient,
-      tokenMint,
+      assetMint,
       tokenProgram,
       streamMilestones,
       depositedAmount,
       isCancelable,
     } = args;
+
+    await initTreasuryAndRecipientATAsIfNeeded({
+      signerKeys: senderKeys,
+      recipient,
+      assetMint,
+      tokenProgram,
+    });
+
+    const totalSupply = await getNftCollectionTotalSupply(nftCollectionDataPDA);
+    const streamNftMint = getPDAAddress(
+      [Buffer.from("stream_nft_mint"), totalSupply.toBuffer("le", 8)],
+      LOCKUP_PROGRAM_ID // TODO: why is the Lockup program - and not the Token Program need to be used here?
+    );
 
     let createStreamIx = await program.methods
       .createWithTimestamps(
@@ -1440,31 +1594,91 @@ describe("SablierLockup", () => {
         depositedAmount,
         isCancelable
       )
-      .accounts({
+      // Dev: `.accountsPartial()` is being used instead of `.accounts()` because the Bankrun provider fails to resolve the streamNftMint account itself - and we need to specify it explicitly
+      .accountsPartial({
         sender: senderKeys.publicKey,
-        mint: tokenMint,
+        streamNftMint,
+        assetMint,
         recipient,
         tokenProgram,
       })
       .instruction();
 
     // Build, sign and process the transaction
-    await buildSignAndProcessTxFromIx(createStreamIx, senderKeys);
+    await buildSignAndProcessTxFromIx(createStreamIx, senderKeys, 270_000);
+
+    // Confirm that the Stream NFT Mint account has been initialized
+    assert.ok(
+      await client.getAccount(streamNftMint),
+      "Stream NFT Mint not initialized"
+    );
+
+    const streamNftMintToBuffer = streamNftMint.toBuffer();
+
+    const streamNftMetadata = getPDAAddress(
+      [
+        Buffer.from("metadata"),
+        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        streamNftMintToBuffer,
+      ],
+      TOKEN_METADATA_PROGRAM_ID
+    );
+
+    // Confirm that the Stream NFT Metadata account has been initialized
+    assert.ok(
+      await client.getAccount(streamNftMetadata),
+      "Stream NFT Metadata not initialized"
+    );
+
+    const streamNftMasterEdition = getPDAAddress(
+      [
+        Buffer.from("metadata"),
+        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        streamNftMintToBuffer,
+        Buffer.from("edition"),
+      ],
+      TOKEN_METADATA_PROGRAM_ID
+    );
+
+    // Confirm that the Stream NFT Master account has been initialized
+    assert.ok(
+      await client.getAccount(streamNftMasterEdition),
+      "Stream NFT Master Edition not initialized"
+    );
+
+    const sendersStreamNftATA = await deriveATAAddress(
+      streamNftMint,
+      senderKeys.publicKey,
+      tokenProgram
+    );
+
+    // Confirm that the Sender's Stream NFT ATA has been initialized
+    assert.ok(
+      await client.getAccount(sendersStreamNftATA),
+      "Sender's Stream NFT ATA not initialized"
+    );
   }
 
-  async function deriveRecipientATA(tokenMint: PublicKey): Promise<PublicKey> {
+  function getPDAAddress(
+    seeds: Array<Buffer | Uint8Array>,
+    programId: PublicKey
+  ): PublicKey {
+    return anchor.web3.PublicKey.findProgramAddressSync(seeds, programId)[0];
+  }
+
+  async function deriveRecipientATA(assetMint: PublicKey): Promise<PublicKey> {
     return deriveATAAddress(
-      tokenMint,
+      assetMint,
       recipientKeys.publicKey,
       TOKEN_PROGRAM_ID
     );
   }
 
   async function deriveRecipientATAToken2022(
-    tokenMint: PublicKey
+    assetMint: PublicKey
   ): Promise<PublicKey> {
     return deriveATAAddress(
-      tokenMint,
+      assetMint,
       recipientKeys.publicKey,
       TOKEN_2022_PROGRAM_ID
     );
@@ -1481,10 +1695,7 @@ describe("SablierLockup", () => {
       Buffer.from(recipientATA.toBytes()),
     ];
 
-    const [pdaAddress] = PublicKey.findProgramAddressSync(
-      seeds,
-      LOCKUP_PROGRAM_ID
-    );
+    const pdaAddress = getPDAAddress(seeds, LOCKUP_PROGRAM_ID);
 
     const streamAccount = await client.getAccount(pdaAddress);
     if (!streamAccount) {
@@ -1533,6 +1744,17 @@ describe("SablierLockup", () => {
     return (await initializeTx()).add(ix);
   }
 
+  async function initializeTxWithIxAndCULimit(
+    ix: TxIx,
+    cuLimit: number
+  ): Promise<Transaction> {
+    const cuLimitIx = ComputeBudgetProgram.setComputeUnitLimit({
+      units: cuLimit,
+    });
+
+    return (await initializeTx()).add(cuLimitIx).add(ix);
+  }
+
   async function initializeTx(): Promise<Transaction> {
     const res = await client.getLatestBlockhash();
     if (!res) throw new Error("Couldn't get the latest blockhash");
@@ -1556,6 +1778,31 @@ describe("SablierLockup", () => {
         currentClock.leaderScheduleEpoch,
         timestamp
       )
+    );
+  }
+
+  async function getNftCollectionTotalSupply(
+    nftCollectionAddress: PublicKey
+  ): Promise<BN> {
+    const nftCollectionData = await fetchNftCollectionData(
+      nftCollectionAddress
+    );
+
+    return new BN(nftCollectionData.nftsTotalSupply.toString(), 10);
+  }
+
+  async function fetchNftCollectionData(address: PublicKey): Promise<any> {
+    const nftCollectionDataAcc = await client.getAccount(address);
+    if (!nftCollectionDataAcc) {
+      throw new Error("NFT Collection Data account is undefined");
+    }
+
+    // Return the NFT Collection Data decoded via the Anchor account layout
+    const nftCollectionDataLayout = program.account.nftCollectionData;
+
+    return nftCollectionDataLayout.coder.accounts.decode(
+      "nftCollectionData",
+      Buffer.from(nftCollectionDataAcc.data)
     );
   }
 });
