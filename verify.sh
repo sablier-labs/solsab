@@ -65,7 +65,7 @@ echo "📝 Program ID: $PROGRAM_ID"
 echo "🔍 Commit hash: $COMMIT_ID"
 
 DEPLOYED_HASH=$(solana-verify get-program-hash -u $CLUSTER $PROGRAM_ID) || fail "Failed to get deployed program hash"
-LOCAL_HASH=$(solana-verify get-executable-hash target/verifiable/solsab.so) || fail "Failed to get local program hash"
+LOCAL_HASH=$(solana-verify get-executable-hash target/verifiable/lockup.so) || fail "Failed to get local program hash"
 
 echo "🔍 Local program hash: $LOCAL_HASH"
 echo "🔍 Deployed program hash: $DEPLOYED_HASH"

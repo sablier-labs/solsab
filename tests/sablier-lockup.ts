@@ -35,9 +35,9 @@ import {
 
 //import * as helpers from "@solana-developers/helpers";
 
-import { Solsab } from "../target/types/solsab";
+import { Lockup } from "../target/types/lockup";
 
-describe("solsab", () => {
+describe("lockup", () => {
   let context: ProgramTestContext;
   let client: BanksClient;
   let senderKeys: Keypair;
@@ -46,8 +46,8 @@ describe("solsab", () => {
   let provider: BankrunProvider;
   let treasuryPDA: PublicKey;
 
-  const program = anchor.workspace.solsab as anchor.Program<Solsab>;
-  const SOLSAB_PROGRAM_ID = program.programId;
+  const program = anchor.workspace.lockup as anchor.Program<Lockup>;
+  const LOCKUP_PROGRAM_ID = program.programId;
 
   beforeEach(async () => {
     // Configure the testing environment
@@ -82,7 +82,7 @@ describe("solsab", () => {
     // Pre-calculate the PDA address for the treasury
     [treasuryPDA] = PublicKey.findProgramAddressSync(
       [Buffer.from("treasury")],
-      SOLSAB_PROGRAM_ID
+      LOCKUP_PROGRAM_ID
     );
 
     console.log("Treasury's PDA address: ", treasuryPDA.toBase58());
@@ -526,7 +526,7 @@ describe("solsab", () => {
     const { senderATA, recipientATA } = await createMintATAsAndStream(false);
 
     let renounceStreamIx = await program.methods
-      .renounceStreamCancelability()
+      .renounce()
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
@@ -551,7 +551,7 @@ describe("solsab", () => {
     const { senderATA, recipientATA } = await createMintATAsAndStream(true);
 
     let renounceStreamIx = await program.methods
-      .renounceStreamCancelability()
+      .renounce()
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
@@ -578,7 +578,7 @@ describe("solsab", () => {
     );
 
     let renounceStreamIx = await program.methods
-      .renounceStreamCancelability()
+      .renounce()
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
@@ -597,7 +597,7 @@ describe("solsab", () => {
       await createMintATAsAndStream(true);
 
     let cancelStreamIx = await program.methods
-      .cancelLockupLinearStream()
+      .cancel()
       .accounts({
         sender: recipientKeys.publicKey,
         senderAta: recipientATA,
@@ -625,7 +625,7 @@ describe("solsab", () => {
       await createMintATAsAndStream(false);
 
     let cancelStreamIx = await program.methods
-      .cancelLockupLinearStream()
+      .cancel()
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
@@ -657,7 +657,7 @@ describe("solsab", () => {
       await getTokenBalancesByATAKeys(senderATA, recipientATA);
 
     let cancelStreamIx = await program.methods
-      .cancelLockupLinearStream()
+      .cancel()
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
@@ -1249,7 +1249,7 @@ describe("solsab", () => {
     await timeTravelForwardTo(timestamp);
 
     let cancelStreamIx = await program.methods
-      .cancelLockupLinearStream()
+      .cancel()
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
@@ -1432,7 +1432,13 @@ describe("solsab", () => {
     } = args;
 
     let createStreamIx = await program.methods
-      .createLockupLinearStream(streamMilestones, depositedAmount, isCancelable)
+      .createWithTimestamps(
+        streamMilestones.startTime,
+        streamMilestones.cliffTime,
+        streamMilestones.endTime,
+        depositedAmount,
+        isCancelable
+      )
       .accounts({
         sender: senderKeys.publicKey,
         mint: tokenMint,
@@ -1476,7 +1482,7 @@ describe("solsab", () => {
 
     const [pdaAddress] = PublicKey.findProgramAddressSync(
       seeds,
-      SOLSAB_PROGRAM_ID
+      LOCKUP_PROGRAM_ID
     );
 
     const streamAccount = await client.getAccount(pdaAddress);

@@ -1658,6 +1658,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 
 [[package]]
+name = "sablier_lockup"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+]
+
+[[package]]
 name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2025,14 +2033,6 @@ dependencies = [
  "subtle",
  "thiserror",
  "zeroize",
-]
-
-[[package]]
-name = "solsab"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "anchor-spl",
 ]
 
 [[package]]
