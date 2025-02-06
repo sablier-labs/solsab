@@ -17,6 +17,7 @@ pub struct InitializePhaseOne<'info> {
         seeds = [b"treasury"],
         bump
     )]
+    // TODO: merge the treasury with nft_collection_data?
     pub treasury_pda: Box<Account<'info, Treasury>>,
 
     #[account(

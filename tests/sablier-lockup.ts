@@ -51,10 +51,8 @@ describe("SablierLockup", () => {
   let nftCollectionTokenAccount: PublicKey;
   let nftCollectionMetadata: PublicKey;
   let nftCollectionMasterEdition: PublicKey;
-
-  const program = anchor.workspace
-    .sablier_lockup as anchor.Program<SablierLockup>;
-  const LOCKUP_PROGRAM_ID = program.programId;
+  let program: anchor.Program<SablierLockup>;
+  let lockup_program_id: PublicKey;
 
   const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey(
     "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
@@ -72,9 +70,13 @@ describe("SablierLockup", () => {
       ],
       []
     );
+    client = context.banksClient;
+
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
-    client = context.banksClient;
+    // DEV: The program must be fetched after the provider has been set, so that the data from inside a program's PDA can be accessed/used as a seed for another PDA (e.g. `stream_nft_mint` being derived from `nft_collection_data.nfts_total_supply`)
+    program = anchor.workspace.sablier_lockup as anchor.Program<SablierLockup>;
+    lockup_program_id = program.programId;
 
     // Initialize the sender and recipient accounts
     senderKeys = provider.wallet.payer;
@@ -100,14 +102,14 @@ describe("SablierLockup", () => {
     console.log(`Recipient's balance: ${recipientsBalance.toString()} SOL`);
 
     // Pre-calculate the PDA address for the treasury
-    treasuryPDA = getPDAAddress([Buffer.from("treasury")], LOCKUP_PROGRAM_ID);
+    treasuryPDA = getPDAAddress([Buffer.from("treasury")], lockup_program_id);
 
     console.log("Treasury's PDA address: ", treasuryPDA.toBase58());
 
     // Pre-calculate the PDA address for the NFT Collection Data
     nftCollectionDataPDA = getPDAAddress(
       [Buffer.from("nft_collection_data")],
-      LOCKUP_PROGRAM_ID
+      lockup_program_id
     );
 
     console.log(
@@ -155,14 +157,14 @@ describe("SablierLockup", () => {
 
     nftCollectionMint = getPDAAddress(
       [Buffer.from("nft_collection_mint")],
-      LOCKUP_PROGRAM_ID
+      lockup_program_id
     );
 
     const nftCollectionMintToBuffer = nftCollectionMint.toBuffer();
 
     nftCollectionTokenAccount = getPDAAddress(
       [Buffer.from("collection_token_account"), nftCollectionMintToBuffer],
-      LOCKUP_PROGRAM_ID
+      lockup_program_id
     );
 
     // Confirm that the NFT Collection Mint account has been initialized
@@ -1583,7 +1585,7 @@ describe("SablierLockup", () => {
     const totalSupply = await getNftCollectionTotalSupply(nftCollectionDataPDA);
     const streamNftMint = getPDAAddress(
       [Buffer.from("stream_nft_mint"), totalSupply.toBuffer("le", 8)],
-      LOCKUP_PROGRAM_ID // TODO: why is the Lockup program - and not the Token Program need to be used here?
+      lockup_program_id // TODO: why is the Lockup program - and not the Token Program need to be used here?
     );
 
     let createStreamIx = await program.methods
@@ -1595,9 +1597,8 @@ describe("SablierLockup", () => {
         isCancelable
       )
       // Dev: `.accountsPartial()` is being used instead of `.accounts()` because the Bankrun provider fails to resolve the streamNftMint account itself - and we need to specify it explicitly
-      .accountsPartial({
+      .accounts({
         sender: senderKeys.publicKey,
-        streamNftMint,
         assetMint,
         recipient,
         tokenProgram,
@@ -1695,7 +1696,7 @@ describe("SablierLockup", () => {
       Buffer.from(recipientATA.toBytes()),
     ];
 
-    const pdaAddress = getPDAAddress(seeds, LOCKUP_PROGRAM_ID);
+    const pdaAddress = getPDAAddress(seeds, lockup_program_id);
 
     const streamAccount = await client.getAccount(pdaAddress);
     if (!streamAccount) {
