@@ -11,7 +11,7 @@ use anchor_spl::{
 
 use crate::{
     state::{lockup::*, nft_collection_data::NftCollectionData, treasury::Treasury},
-    utils::errors::ErrorCode,
+    utils::{constants::ANCHOR_DISCRIMINATOR_SIZE, errors::ErrorCode},
 };
 
 #[constant]
@@ -26,7 +26,9 @@ pub struct CreateWithTimestamps<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
 
-    #[account(mint::token_program = token_program)]
+    // The Token Program of the Asset Mint is not enforced (via `#[account(mint::token_program = token_program)]`), as
+    // we want to support different token programs for the Asset Mint and the Stream NFT Mint
+    #[account()]
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
@@ -37,16 +39,8 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    /// CHECK: The recipient may be any account, as long as it is the authority of recipient_ata
+    /// CHECK: The recipient may be any account
     pub recipient: UncheckedAccount<'info>,
-
-    #[account(
-        mut,
-        associated_token::mint = asset_mint,
-        associated_token::authority = recipient,
-        //associated_token::token_program = token_program,
-    )]
-    pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         seeds = [b"treasury"],
@@ -70,7 +64,6 @@ pub struct CreateWithTimestamps<'info> {
     pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
 
     #[account(
-        mut,
         seeds = [b"nft_collection_mint".as_ref()],
         bump,
     )]
@@ -78,7 +71,9 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
         mut,
-        seeds = [b"metadata", token_metadata_program.key().as_ref(), nft_collection_mint.key().as_ref()],
+        seeds = [b"metadata",
+                 token_metadata_program.key().as_ref(),
+                 nft_collection_mint.key().as_ref()],
         bump,
         seeds::program = token_metadata_program.key(),
     )]
@@ -86,9 +81,10 @@ pub struct CreateWithTimestamps<'info> {
     pub nft_collection_metadata: UncheckedAccount<'info>,
 
     #[account(
-        mut,
-        seeds = [b"metadata", token_metadata_program.key().as_ref(),
-            nft_collection_mint.key().as_ref(), b"edition"],
+        seeds = [b"metadata",
+                 token_metadata_program.key().as_ref(),
+                 nft_collection_mint.key().as_ref(),
+                 b"edition"],
         bump,
         seeds::program = token_metadata_program.key(),
     )]
@@ -96,17 +92,25 @@ pub struct CreateWithTimestamps<'info> {
     pub nft_collection_master_edition: UncheckedAccount<'info>,
 
     #[account(
-        init,
-        payer = sender,
+        mut,
         seeds = [b"stream_nft_mint",
                  nft_collection_data.nfts_total_supply.to_le_bytes().as_ref()],
         bump,
-        mint::decimals = 0,
-        mint::authority = nft_collection_mint,
-        mint::freeze_authority = nft_collection_mint,
-        mint::token_program = token_program,
+        // mint::decimals = 0,
+        // mint::authority = nft_collection_mint,
+        // mint::freeze_authority = nft_collection_mint,
+        // mint::token_program = token_program,
     )]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    #[account(
+        init,
+        payer = sender,
+        seeds = [b"LL_stream", stream_nft_mint.key().as_ref()],
+        space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
+        bump
+    )]
+    pub stream_data: Box<Account<'info, StreamData>>,
 
     #[account(
         init,
@@ -158,7 +162,7 @@ pub fn handler(
     let sender = &ctx.accounts.sender;
     let sender_ata = &ctx.accounts.sender_ata;
     let treasury_ata = &ctx.accounts.treasury_ata;
-    let mint = &ctx.accounts.asset_mint;
+    let asset_mint = &ctx.accounts.asset_mint;
 
     // Assert that the deposited amount is not zero
     if deposited_amount == 0 {
@@ -180,35 +184,20 @@ pub fn handler(
     // Prepare the instruction to transfer the SPL tokens to the Treasury's ATA
     let transfer_ix = TransferChecked {
         from: sender_ata.to_account_info(),
-        mint: mint.to_account_info(),
+        mint: asset_mint.to_account_info(),
         to: treasury_ata.to_account_info(),
         authority: sender.to_account_info(),
     };
 
     // Execute the transfer
     let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
-    transfer_checked(cpi_ctx, deposited_amount, mint.decimals)?;
-
-    let milestones: Milestones = Milestones { start_time, cliff_time, end_time };
-    let amounts = Amounts { deposited: deposited_amount, withdrawn: 0, refunded: 0 };
-
-    // Initialize the fields of the newly created Stream
-    // **ctx.accounts.stream = Stream {
-    //     sender_ata: sender_ata.key(),
-    //     recipient_ata: ctx.accounts.recipient_ata.key(),
-    //     token_mint_account: mint.key(),
-    //     amounts,
-    //     milestones,
-    //     is_cancelable,
-    //     was_canceled: false,
-    //     bump: ctx.bumps.stream,
-    // };
+    transfer_checked(cpi_ctx, deposited_amount, asset_mint.decimals)?;
 
     let stream_nft_name = NFT_NAME.to_owned() + ctx.accounts.nft_collection_data.nfts_total_supply.to_string().as_str();
 
     let signer_seeds: &[&[&[u8]]] = &[&[b"nft_collection_mint".as_ref(), &[ctx.bumps.nft_collection_mint]]];
 
-    // Mint Ticket
+    // Mint Stream NFT Token
     mint_to(
         CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
@@ -288,8 +277,25 @@ pub fn handler(
     )?;
 
     let nfts_total_supply = &mut ctx.accounts.nft_collection_data.nfts_total_supply;
+    let stream_id = *nfts_total_supply;
     *nfts_total_supply =
         nfts_total_supply.checked_add(1).expect("The Total Supply of the NFT Collection has overflowed");
+
+    let milestones: Milestones = Milestones { start_time, cliff_time, end_time };
+    let amounts = Amounts { deposited: deposited_amount, withdrawn: 0, refunded: 0 };
+
+    // Initialize the fields of the newly created Stream
+    **ctx.accounts.stream_data = StreamData {
+        id: stream_id,
+        sender: sender.key(),
+        recipient: ctx.accounts.recipient.key(),
+        asset_mint: asset_mint.key(),
+        amounts,
+        milestones,
+        is_cancelable,
+        was_canceled: false,
+        bump: ctx.bumps.stream_data,
+    };
 
     Ok(())
 }

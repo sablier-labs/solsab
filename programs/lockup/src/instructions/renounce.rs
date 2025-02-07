@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::TokenAccount;
 
-use crate::{state::lockup::Stream, utils::errors::ErrorCode};
+use crate::{state::lockup::StreamData, utils::errors::ErrorCode};
 
 #[derive(Accounts)]
 pub struct Renounce<'info> {
@@ -13,7 +13,7 @@ pub struct Renounce<'info> {
         seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
         bump = stream.bump
     )]
-    pub stream: Box<Account<'info, Stream>>,
+    pub stream: Box<Account<'info, StreamData>>,
 
     #[account(
         mut,

@@ -2,10 +2,11 @@ use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 #[account]
 #[derive(InitSpace)]
-pub struct Stream {
-    pub sender_ata: Pubkey,
-    pub recipient_ata: Pubkey,
-    pub token_mint_account: Pubkey,
+pub struct StreamData {
+    pub id: u64,
+    pub sender: Pubkey,
+    pub recipient: Pubkey,
+    pub asset_mint: Pubkey,
     pub amounts: Amounts,
     pub milestones: Milestones,
     pub is_cancelable: bool,

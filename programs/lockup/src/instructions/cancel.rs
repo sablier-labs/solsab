@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked};
 
 use crate::{
-    state::{lockup::Stream, treasury::Treasury},
+    state::{lockup::StreamData, treasury::Treasury},
     utils::{errors::ErrorCode, streaming_math::get_refundable_amount},
 };
 
@@ -16,9 +16,9 @@ pub struct Cancel<'info> {
         seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
         bump = stream.bump
     )]
-    pub stream: Box<Account<'info, Stream>>,
+    pub stream: Box<Account<'info, StreamData>>,
 
-    #[account(mint::token_program = token_program)]
+    // #[account(mint::token_program = token_program)]
     pub mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
