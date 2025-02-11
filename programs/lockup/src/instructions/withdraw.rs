@@ -5,7 +5,7 @@ use anchor_spl::{
 };
 
 use crate::{
-    state::{lockup::StreamData, nft_collection_data::NftCollectionData, treasury::Treasury},
+    state::{lockup::StreamData, treasury::Treasury},
     utils::{errors::ErrorCode, streaming_math::get_withdrawable_amount},
 };
 
@@ -16,7 +16,7 @@ pub struct Withdraw<'info> {
     pub signer: Signer<'info>,
 
     #[account(
-        constraint = asset_mint.key() == stream.asset_mint,
+        constraint = asset_mint.key() == stream_data.asset_mint,
     )]
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
 
@@ -33,12 +33,6 @@ pub struct Withdraw<'info> {
     pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-        seeds = [b"nft_collection_data".as_ref()],
-        bump = nft_collection_data.bump
-    )]
-    pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
-
-    #[account(
         seeds = [b"stream_nft_mint",
                  stream_id.to_le_bytes().as_ref()],
         bump,
@@ -48,9 +42,9 @@ pub struct Withdraw<'info> {
     #[account(
         mut,
         seeds = [b"LL_stream", stream_nft_mint.key().as_ref()],
-        bump = stream.bump
+        bump = stream_data.bump
     )]
-    pub stream: Box<Account<'info, StreamData>>,
+    pub stream_data: Box<Account<'info, StreamData>>,
 
     #[account(
         mut,
@@ -63,7 +57,7 @@ pub struct Withdraw<'info> {
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = treasury_pda,
-        //associated_token::token_program = token_program
+        // associated_token::token_program = token_program
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -80,9 +74,9 @@ pub fn handler(ctx: Context<Withdraw>, _stream_id: u64, amount: u64) -> Result<(
 
     // Calculate the withdrawable amount
     let withdrawable_amount = get_withdrawable_amount(
-        &ctx.accounts.stream.milestones,
-        ctx.accounts.stream.amounts.deposited,
-        ctx.accounts.stream.amounts.withdrawn,
+        &ctx.accounts.stream_data.milestones,
+        ctx.accounts.stream_data.amounts.deposited,
+        ctx.accounts.stream_data.amounts.withdrawn,
     );
 
     // Assert that the withdrawable amount is not too big
@@ -108,7 +102,7 @@ pub fn handler(ctx: Context<Withdraw>, _stream_id: u64, amount: u64) -> Result<(
     let cpi_ctx = CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), transfer_ix, signer_seeds);
     transfer_checked(cpi_ctx, amount, ctx.accounts.asset_mint.decimals)?;
 
-    let stream_amounts = &mut ctx.accounts.stream.amounts;
+    let stream_amounts = &mut ctx.accounts.stream_data.amounts;
 
     // Update the Stream's withdrawn amount
     stream_amounts.withdrawn = stream_amounts.withdrawn.checked_add(amount).expect("Withdrawn amount overflow");
@@ -118,7 +112,7 @@ pub fn handler(ctx: Context<Withdraw>, _stream_id: u64, amount: u64) -> Result<(
     // Note: the `>=` operator is used as an extra safety measure for the case when the withdrawn amount is bigger than
     // expected, for one reason or the other
     if stream_amounts.withdrawn >= stream_amounts.deposited - stream_amounts.refunded {
-        ctx.accounts.stream.is_cancelable = false;
+        ctx.accounts.stream_data.is_cancelable = false;
     }
 
     Ok(())

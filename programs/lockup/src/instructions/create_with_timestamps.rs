@@ -57,7 +57,8 @@ pub struct CreateWithTimestamps<'info> {
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-        mut,
+        // Dev: for some reason, referencing nft_collection_data as mutable is causing the "A seeds constraint was violated" error when deriving the stream_nft_mint account
+        // mut,
         seeds = [b"nft_collection_data".as_ref()],
         bump = nft_collection_data.bump
     )]

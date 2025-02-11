@@ -10,8 +10,6 @@ use anchor_spl::{
     token_interface::{mint_to, Mint, MintTo, TokenAccount, TokenInterface},
 };
 
-use crate::state::treasury::Treasury;
-
 #[constant]
 pub const NFT_NAME: &str = "SolSab Lockup Linear Streams";
 #[constant]
@@ -23,13 +21,6 @@ pub const NFT_SYMBOL: &str = "LL_STREAMS";
 pub struct InitializePhaseTwo<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
-
-    #[account(
-        mut,
-        seeds = [b"treasury"],
-        bump = treasury_pda.bump
-    )]
-    pub treasury_pda: Box<Account<'info, Treasury>>,
 
     #[account(
         init,
