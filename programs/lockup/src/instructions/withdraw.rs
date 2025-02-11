@@ -20,7 +20,10 @@ pub struct Withdraw<'info> {
     )]
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    /// CHECK: The recipient may be any account
+    #[account(
+        constraint = recipient.key() == stream_data.recipient,
+    )]
+    /// CHECK: This account may only be the Stream's recipient
     pub recipient: UncheckedAccount<'info>,
 
     #[account(
@@ -43,7 +46,6 @@ pub struct Withdraw<'info> {
         mut,
         seeds = [b"LL_stream", stream_nft_mint.key().as_ref()],
         bump = stream_data.bump,
-        constraint = stream_data.recipient == recipient.key(),
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 

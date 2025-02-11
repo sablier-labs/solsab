@@ -657,75 +657,69 @@ describe("SablierLockup", () => {
     );
   });
 
-  // it("Fails to renounce cancelability when the Stream is not cancelable", async () => {
-  //   const { streamData } = await createMintATAsAndStream(false);
+  it("Fails to renounce cancelability when the Stream is not cancelable", async () => {
+    const { streamData } = await createMintATAsAndStream(false);
 
-  //   let renounceStreamIx = await program.methods
-  //     .renounce(streamData.id)
-  //     .accounts({
-  //       sender: senderKeys.publicKey,
-  //     })
-  //     .instruction();
+    let renounceStreamIx = await program.methods
+      .renounce(streamData.id)
+      .accounts({
+        sender: senderKeys.publicKey,
+      })
+      .instruction();
 
-  //   try {
-  //     // Build, sign and process the transaction
-  //     await buildSignAndProcessTxFromIx(renounceStreamIx, senderKeys);
-  //     assert.fail("The Stream cancelability renouncement should've failed");
-  //   } catch (error) {
-  //     assert(
-  //       // TODO: Figure out a more robust way of checking the thrown error
-  //       (error as Error).message.includes("custom program error: 0x1775"),
-  //       "The Stream cancelability renouncement failed with an unexpected error"
-  //     );
-  //   }
-  // });
+    try {
+      // Build, sign and process the transaction
+      await buildSignAndProcessTxFromIx(renounceStreamIx, senderKeys);
+      assert.fail("The Stream cancelability renouncement should've failed");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1775"),
+        "The Stream cancelability renouncement failed with an unexpected error"
+      );
+    }
+  });
 
-  // it("Fails to renounce cancelability when tx signer != Stream sender", async () => {
-  //   const { senderATA, recipientATA } = await createMintATAsAndStream(true);
+  it("Fails to renounce cancelability when tx signer != Stream sender", async () => {
+    const { streamData } = await createMintATAsAndStream(true);
 
-  //   let renounceStreamIx = await program.methods
-  //     .renounce()
-  //     .accounts({
-  //       sender: senderKeys.publicKey,
-  //       senderAta: senderATA,
-  //       recipientAta: recipientATA,
-  //     })
-  //     .instruction();
+    let renounceStreamIx = await program.methods
+      .renounce(streamData.id)
+      .accounts({
+        sender: senderKeys.publicKey,
+      })
+      .instruction();
 
-  //   try {
-  //     // Build, sign and process the transaction
-  //     await buildSignAndProcessTxFromIx(renounceStreamIx, recipientKeys);
-  //     assert.fail("The Stream cancelability renouncement should've failed");
-  //   } catch (error) {
-  //     assert(
-  //       // TODO: Figure out a more robust way of checking the thrown error
-  //       (error as Error).message.includes("Signature verification failed"),
-  //       "The Stream cancelability renouncement failed with an unexpected error"
-  //     );
-  //   }
-  // });
+    try {
+      // Build, sign and process the transaction
+      await buildSignAndProcessTxFromIx(renounceStreamIx, recipientKeys);
+      assert.fail("The Stream cancelability renouncement should've failed");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("Signature verification failed"),
+        "The Stream cancelability renouncement failed with an unexpected error"
+      );
+    }
+  });
 
   it("Renounces the cancelability of a LockupLinear Stream", async () => {
-    const { streamData, senderATA, recipient } = await createMintATAsAndStream(
-      true
+    const { streamData } = await createMintATAsAndStream(true);
+
+    let renounceStreamIx = await program.methods
+      .renounce(streamData.id)
+      .accounts({
+        sender: senderKeys.publicKey,
+      })
+      .instruction();
+
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(renounceStreamIx, senderKeys);
+
+    assert(
+      streamData.isCancelable === true,
+      "The Stream couldn't be renounced"
     );
-
-    // let renounceStreamIx = await program.methods
-    //   .renounce()
-    //   .accounts({
-    //     sender: senderKeys.publicKey,
-    //     senderAta: senderATA,
-    //     recipientAta: recipientATA,
-    //   })
-    //   .instruction();
-
-    // // Build, sign and process the transaction
-    // await buildSignAndProcessTxFromIx(renounceStreamIx, senderKeys);
-
-    // assert(
-    //   streamData.isCancelable === true,
-    //   "The Stream couldn't be renounced"
-    // );
   });
 
   // it("Fails to cancel a Stream that doesn't exist", async () => {

@@ -48,8 +48,8 @@ pub mod sablier_lockup {
         )
     }
 
-    pub fn renounce(ctx: Context<Renounce>) -> Result<()> {
-        instructions::renounce::handler(ctx)
+    pub fn renounce(ctx: Context<Renounce>, stream_id: u64) -> Result<()> {
+        instructions::renounce::handler(ctx, stream_id)
     }
 
     pub fn withdraw(ctx: Context<Withdraw>, stream_id: u64, amount: u64) -> Result<()> {
