@@ -42,7 +42,8 @@ pub struct Withdraw<'info> {
     #[account(
         mut,
         seeds = [b"LL_stream", stream_nft_mint.key().as_ref()],
-        bump = stream_data.bump
+        bump = stream_data.bump,
+        constraint = stream_data.recipient == recipient.key(),
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 

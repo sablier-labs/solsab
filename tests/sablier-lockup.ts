@@ -705,25 +705,28 @@ describe("SablierLockup", () => {
   //   }
   // });
 
-  // it("Renounces the cancelability of a LockupLinear Stream", async () => {
-  //   const { streamData, senderATA, recipientATA } = await createMintATAsAndStream(
-  //     true
-  //   );
+  it("Renounces the cancelability of a LockupLinear Stream", async () => {
+    const { streamData, senderATA, recipient } = await createMintATAsAndStream(
+      true
+    );
 
-  //   let renounceStreamIx = await program.methods
-  //     .renounce()
-  //     .accounts({
-  //       sender: senderKeys.publicKey,
-  //       senderAta: senderATA,
-  //       recipientAta: recipientATA,
-  //     })
-  //     .instruction();
+    // let renounceStreamIx = await program.methods
+    //   .renounce()
+    //   .accounts({
+    //     sender: senderKeys.publicKey,
+    //     senderAta: senderATA,
+    //     recipientAta: recipientATA,
+    //   })
+    //   .instruction();
 
-  //   // Build, sign and process the transaction
-  //   await buildSignAndProcessTxFromIx(renounceStreamIx, senderKeys);
+    // // Build, sign and process the transaction
+    // await buildSignAndProcessTxFromIx(renounceStreamIx, senderKeys);
 
-  //   assert(streamData.isCancelable === true, "The Stream couldn't be renounced");
-  // });
+    // assert(
+    //   streamData.isCancelable === true,
+    //   "The Stream couldn't be renounced"
+    // );
+  });
 
   // it("Fails to cancel a Stream that doesn't exist", async () => {
   //   const { senderATA, recipientATA, assetMint } =
