@@ -26,8 +26,8 @@ pub mod sablier_lockup {
         instructions::initialize_phase_two::handler(ctx)
     }
 
-    pub fn cancel(ctx: Context<Cancel>) -> Result<()> {
-        instructions::cancel::handler(ctx)
+    pub fn cancel(ctx: Context<Cancel>, stream_id: u64) -> Result<()> {
+        instructions::cancel::handler(ctx, stream_id)
     }
 
     pub fn create_with_timestamps(

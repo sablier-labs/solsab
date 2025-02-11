@@ -501,9 +501,7 @@ describe("SablierLockup", () => {
     console.log("Deduced Stream ID: ", streamId.toString());
 
     // Get the initial token balances of the sender
-    const [senderInitialTokenBalance] = await getTokenBalancesByATAKeys(
-      senderATA
-    );
+    const senderInitialTokenBalance = await getTokenBalanceByATAKey(senderATA);
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = senderInitialTokenBalance;
@@ -518,9 +516,7 @@ describe("SablierLockup", () => {
     });
 
     // Get the final token balances of the sender
-    const [senderFinalTokenBalance] = await getTokenBalancesByATAKeys(
-      senderATA
-    );
+    const senderFinalTokenBalance = await getTokenBalanceByATAKey(senderATA);
 
     // Assert that the sender's token balance has changed as expected
     assert(
@@ -580,9 +576,7 @@ describe("SablierLockup", () => {
     const streamId = await deduceCurrentStreamId();
 
     // Get the initial token balances of the sender
-    const [senderInitialTokenBalance] = await getTokenBalancesByATAKeys(
-      senderATA
-    );
+    const senderInitialTokenBalance = await getTokenBalanceByATAKey(senderATA);
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = senderInitialTokenBalance;
@@ -598,9 +592,7 @@ describe("SablierLockup", () => {
     });
 
     // Get the final token balances of the sender
-    const [senderFinalTokenBalance] = await getTokenBalancesByATAKeys(
-      senderATA
-    );
+    const senderFinalTokenBalance = await getTokenBalanceByATAKey(senderATA);
 
     // Assert that the sender's token balance has changed as expected
     assert(
@@ -722,243 +714,250 @@ describe("SablierLockup", () => {
     );
   });
 
-  // it("Fails to cancel a Stream that doesn't exist", async () => {
-  //   const { senderATA, recipientATA, assetMint } =
-  //     await createMintATAsAndStream(true);
+  it("Fails to cancel a Stream that doesn't exist", async () => {
+    const { streamData, senderATA, recipient, assetMint } =
+      await createMintATAsAndStream(true);
 
-  //   let cancelStreamIx = await program.methods
-  //     .cancel()
-  //     .accounts({
-  //       sender: recipientKeys.publicKey,
-  //       senderAta: recipientATA,
-  //       recipientAta: senderATA,
-  //       mint: assetMint,
-  //       tokenProgram: TOKEN_PROGRAM_ID,
-  //     })
-  //     .instruction();
+    let wrongStreamId = streamData.id.add(new BN(1));
+    let cancelStreamIx = await program.methods
+      .cancel(wrongStreamId)
+      .accounts({
+        sender: recipientKeys.publicKey,
+        senderAta: senderATA,
+        recipient,
+        assetMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
 
-  //   try {
-  //     // Build, sign and process the transaction
-  //     await buildSignAndProcessTxFromIx(cancelStreamIx, recipientKeys);
-  //     assert.fail("The Stream cancelation should've failed, but it didn't");
-  //   } catch (error) {
-  //     assert(
-  //       // TODO: Figure out a more robust way of checking the thrown error
-  //       (error as Error).message.includes("custom program error: 0xbc4"), // Error Code: AccountNotInitialized (i.e. streamData)
-  //       "The Stream cancelation failed with an unexpected error"
-  //     );
-  //   }
-  // });
+    try {
+      // Build, sign and process the transaction
+      await buildSignAndProcessTxFromIx(cancelStreamIx, recipientKeys);
+      assert.fail("The Stream cancelation should've failed, but it didn't");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0xbc4"), // Error Code: AccountNotInitialized (i.e. streamData)
+        "The Stream cancelation failed with an unexpected error"
+      );
+    }
+  });
 
-  // it("Fails to cancel a non-cancelable Stream", async () => {
-  //   const { senderATA, recipientATA, assetMint } =
-  //     await createMintATAsAndStream(false);
+  it("Fails to cancel a non-cancelable Stream", async () => {
+    const { streamData, senderATA, recipient, assetMint } =
+      await createMintATAsAndStream(false);
 
-  //   let cancelStreamIx = await program.methods
-  //     .cancel()
-  //     .accounts({
-  //       sender: senderKeys.publicKey,
-  //       senderAta: senderATA,
-  //       recipientAta: recipientATA,
-  //       mint: assetMint,
-  //       tokenProgram: TOKEN_PROGRAM_ID,
-  //     })
-  //     .instruction();
+    let cancelStreamIx = await program.methods
+      .cancel(streamData.id)
+      .accounts({
+        sender: senderKeys.publicKey,
+        senderAta: senderATA,
+        recipient,
+        assetMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
 
-  //   try {
-  //     // Build, sign and process the transaction
-  //     await buildSignAndProcessTxFromIx(cancelStreamIx, senderKeys);
-  //     assert.fail("The Stream cancelation should've failed, but it didn't");
-  //   } catch (error) {
-  //     assert(
-  //       // TODO: Figure out a more robust way of checking the thrown error
-  //       (error as Error).message.includes("custom program error: 0x1774"),
-  //       "The Stream cancelation failed with an unexpected error"
-  //     );
-  //   }
-  // });
+    try {
+      // Build, sign and process the transaction
+      await buildSignAndProcessTxFromIx(cancelStreamIx, senderKeys);
+      assert.fail("The Stream cancelation should've failed, but it didn't");
+    } catch (error) {
+      assert(
+        // TODO: Figure out a more robust way of checking the thrown error
+        (error as Error).message.includes("custom program error: 0x1774"),
+        "The Stream cancelation failed with an unexpected error"
+      );
+    }
+  });
 
-  // it("Cancels a LockupLinear Stream immediately after creating it", async () => {
-  //   const { senderATA, recipientATA, assetMint, depositedAmount } =
-  //     await createMintATAsAndStream(true);
+  it("Cancels a LockupLinear Stream immediately after creating it", async () => {
+    const { streamData, senderATA, recipient, assetMint, depositedAmount } =
+      await createMintATAsAndStream(true);
 
-  //   // Get the initial token balances of the sender and recipient
-  //   const [senderInitialTokenBalance, recipientInitialTokenBalance] =
-  //     await getTokenBalancesByATAKeys(senderATA, recipientATA);
+    // Get the initial token balance of the sender
+    const senderInitialTokenBalance = await getTokenBalanceByATAKey(senderATA);
 
-  //   let cancelStreamIx = await program.methods
-  //     .cancel()
-  //     .accounts({
-  //       sender: senderKeys.publicKey,
-  //       senderAta: senderATA,
-  //       recipientAta: recipientATA,
-  //       mint: assetMint,
-  //       tokenProgram: TOKEN_PROGRAM_ID,
-  //     })
-  //     .instruction();
+    let cancelStreamIx = await program.methods
+      .cancel(streamData.id)
+      .accounts({
+        sender: senderKeys.publicKey,
+        senderAta: senderATA,
+        recipient,
+        assetMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
 
-  //   // Build, sign and process the transaction
-  //   await buildSignAndProcessTxFromIx(cancelStreamIx, senderKeys);
+    // Build, sign and process the transaction
+    await buildSignAndProcessTxFromIx(cancelStreamIx, senderKeys);
 
-  //   // Get the final token balances of the sender and recipient
-  //   const [senderFinalTokenBalance, recipientFinalTokenBalance] =
-  //     await getTokenBalancesByATAKeys(senderATA, recipientATA);
+    // Derive the recipient's ATA address
+    const recipientATA = await deriveRecipientATA(assetMint);
 
-  //   // Assert that the sender's and recipient's token balances have been changed correctly
-  //   const expectedRefundedAmount = depositedAmount;
-  //   assert(
-  //     senderFinalTokenBalance.eq(
-  //       senderInitialTokenBalance.add(expectedRefundedAmount)
-  //     ),
-  //     "The amount refunded to the sender is incorrect"
-  //   );
+    // Get the final token balances of the sender and recipient
+    const [senderFinalTokenBalance, recipientFinalTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
 
-  //   const expectedWithdrawnAmount = new BN(0);
-  //   assert(
-  //     recipientFinalTokenBalance.eq(
-  //       recipientInitialTokenBalance.add(expectedWithdrawnAmount)
-  //     ),
-  //     "No withdrawal to the recipient was expected"
-  //   );
+    // Assert that the sender's and recipient's token balances have been changed correctly
+    const expectedRefundedAmount = depositedAmount;
+    assert(
+      senderFinalTokenBalance.eq(
+        senderInitialTokenBalance.add(expectedRefundedAmount)
+      ),
+      "The amount refunded to the sender is incorrect"
+    );
 
-  //   // Assert that the Stream state has been updated correctly
-  //   const streamData = await fetchStream(senderATA, recipientATA);
+    const expectedWithdrawnAmount = new BN(0);
+    assert(
+      recipientFinalTokenBalance.eq(expectedWithdrawnAmount),
+      "No withdrawal to the recipient was expected"
+    );
 
-  //   assert(
-  //     streamData.wasCanceled === true && streamData.isCancelable === false,
-  //     "The Stream couldn't be canceled"
-  //   );
+    // Assert that the Stream state has been updated correctly
+    const fetchedStreamData = await fetchStream(streamData.id);
 
-  //   assert(
-  //     streamData.amounts.refunded.eq(expectedRefundedAmount),
-  //     "The Stream's refunded amount is incorrect"
-  //   );
+    assert(
+      fetchedStreamData.wasCanceled === true &&
+        fetchedStreamData.isCancelable === false,
+      "The Stream couldn't be canceled"
+    );
 
-  //   assert(
-  //     streamData.amounts.withdrawn.eq(expectedWithdrawnAmount),
-  //     "The Stream's withdrawn amount is incorrect"
-  //   );
-  // });
+    assert(
+      fetchedStreamData.amounts.refunded.eq(expectedRefundedAmount),
+      "The Stream's refunded amount is incorrect"
+    );
 
-  // it("Cancels a LockupLinear Stream at half time", async () => {
-  //   const {
-  //     senderATA,
-  //     recipientATA,
-  //     assetMint,
-  //     depositedAmount,
-  //     milestones,
-  //   } = await createMintATAsAndStream(true);
+    assert(
+      fetchedStreamData.amounts.withdrawn.eq(expectedWithdrawnAmount),
+      "The Stream's withdrawn amount is incorrect"
+    );
+  });
 
-  //   // Get the initial token balances of the sender and recipient
-  //   const [senderInitialTokenBalance, recipientInitialTokenBalance] =
-  //     await getTokenBalancesByATAKeys(senderATA, recipientATA);
+  it("Cancels a LockupLinear Stream at half time", async () => {
+    const {
+      streamData,
+      senderATA,
+      recipient,
+      assetMint,
+      depositedAmount,
+      milestones,
+    } = await createMintATAsAndStream(true);
 
-  //   const cancelTime = BigInt(
-  //     milestones.startTime.add(milestones.endTime).div(new BN(2)).toString()
-  //   );
-  //   await cancelStreamAtSpecificTime(
-  //     senderATA,
-  //     recipientATA,
-  //     assetMint,
-  //     cancelTime
-  //   );
+    // Get the initial token balance of the sender
+    const senderInitialTokenBalance = await getTokenBalanceByATAKey(senderATA);
 
-  //   // Get the final token balances of the sender and recipient
-  //   const [senderFinalTokenBalance, recipientFinalTokenBalance] =
-  //     await getTokenBalancesByATAKeys(senderATA, recipientATA);
+    const cancelTime = BigInt(
+      milestones.startTime.add(milestones.endTime).div(new BN(2)).toString()
+    );
+    await cancelStreamAtSpecificTime(
+      streamData.id,
+      senderATA,
+      recipient,
+      assetMint,
+      cancelTime
+    );
 
-  //   // Assert that the sender's and recipient's token balances have been changed correctly
-  //   const expectedWithdrawnAmount = new BN(0);
-  //   assert(
-  //     recipientFinalTokenBalance.eq(
-  //       recipientInitialTokenBalance.add(expectedWithdrawnAmount)
-  //     ),
-  //     "No withdrawal to the recipient was expected"
-  //   );
+    // Derive the recipient's ATA address
+    const recipientATA = await deriveRecipientATA(assetMint);
 
-  //   const expectedRefundedAmount = depositedAmount.div(new BN(2));
-  //   assert(
-  //     senderFinalTokenBalance.eq(
-  //       senderInitialTokenBalance.add(expectedRefundedAmount)
-  //     ),
-  //     "The amount refunded to the sender is incorrect"
-  //   );
+    // Get the final token balances of the sender and recipient
+    const [senderFinalTokenBalance, recipientFinalTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
 
-  //   // Assert that the Stream state has been updated correctly
-  //   const streamData = await fetchStream(senderATA, recipientATA);
+    // Assert that the sender's and recipient's token balances have been changed correctly
+    const expectedWithdrawnAmount = new BN(0);
+    assert(
+      recipientFinalTokenBalance.eq(expectedWithdrawnAmount),
+      "No withdrawal to the recipient was expected"
+    );
 
-  //   assert(
-  //     streamData.wasCanceled === true && streamData.isCancelable === false,
-  //     "The Stream couldn't be canceled"
-  //   );
+    const expectedRefundedAmount = depositedAmount.div(new BN(2));
+    assert(
+      senderFinalTokenBalance.eq(
+        senderInitialTokenBalance.add(expectedRefundedAmount)
+      ),
+      "The amount refunded to the sender is incorrect"
+    );
 
-  //   assert(
-  //     streamData.amounts.withdrawn.eq(expectedWithdrawnAmount),
-  //     "The Stream's withdrawn amount is incorrect"
-  //   );
+    // Assert that the Stream state has been updated correctly
+    const fetchedStreamData = await fetchStream(streamData.id);
 
-  //   assert(
-  //     streamData.amounts.refunded.eq(expectedRefundedAmount),
-  //     "The Stream's refunded amount is incorrect"
-  //   );
-  // });
+    assert(
+      fetchedStreamData.wasCanceled === true &&
+        fetchedStreamData.isCancelable === false,
+      "The Stream couldn't be canceled"
+    );
 
-  // it("Cancels a LockupLinear Stream after the tokens have been fully streamed", async () => {
-  //   const { senderATA, recipientATA, assetMint, milestones } =
-  //     await createMintATAsAndStream(true);
+    assert(
+      fetchedStreamData.amounts.withdrawn.eq(expectedWithdrawnAmount),
+      "The Stream's withdrawn amount is incorrect"
+    );
 
-  //   // Get the initial token balances of the sender and recipient
-  //   const [senderInitialTokenBalance, recipientInitialTokenBalance] =
-  //     await getTokenBalancesByATAKeys(senderATA, recipientATA);
+    assert(
+      fetchedStreamData.amounts.refunded.eq(expectedRefundedAmount),
+      "The Stream's refunded amount is incorrect"
+    );
+  });
 
-  //   const cancelTime = BigInt(milestones.endTime.toString());
+  it("Cancels a LockupLinear Stream after the tokens have been fully streamed", async () => {
+    const { streamData, senderATA, recipient, assetMint, milestones } =
+      await createMintATAsAndStream(true);
 
-  //   await cancelStreamAtSpecificTime(
-  //     senderATA,
-  //     recipientATA,
-  //     assetMint,
-  //     cancelTime
-  //   );
+    // Get the initial token balances of the sender and recipient
+    const senderInitialTokenBalance = await getTokenBalanceByATAKey(senderATA);
 
-  //   // Get the final token balances of the sender and recipient
-  //   const [senderFinalTokenBalance, recipientFinalTokenBalance] =
-  //     await getTokenBalancesByATAKeys(senderATA, recipientATA);
+    const cancelTime = BigInt(milestones.endTime.toString());
 
-  //   // Assert that the sender's and recipient's token balances have been changed correctly
-  //   const expectedRefundedAmount = new BN(0);
-  //   assert(
-  //     senderFinalTokenBalance.eq(
-  //       senderInitialTokenBalance.add(expectedRefundedAmount)
-  //     ),
-  //     "The amount refunded to the sender is incorrect"
-  //   );
+    await cancelStreamAtSpecificTime(
+      streamData.id,
+      senderATA,
+      recipient,
+      assetMint,
+      cancelTime
+    );
 
-  //   const expectedWithdrawnAmount = new BN(0);
-  //   assert(
-  //     recipientFinalTokenBalance.eq(
-  //       recipientInitialTokenBalance.add(expectedWithdrawnAmount)
-  //     ),
-  //     "No withdrawal to the recipient was expected"
-  //   );
+    // Derive the recipient's ATA address
+    const recipientATA = await deriveRecipientATA(assetMint);
 
-  //   // Assert that the Stream state has been updated correctly
-  //   const streamData = await fetchStream(senderATA, recipientATA);
+    // Get the final token balances of the sender and recipient
+    const [senderFinalTokenBalance, recipientFinalTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
 
-  //   assert(
-  //     streamData.wasCanceled === true && streamData.isCancelable === false,
-  //     "The Stream couldn't be canceled"
-  //   );
+    // Assert that the sender's and recipient's token balances have been changed correctly
+    const expectedRefundedAmount = new BN(0);
+    assert(
+      senderFinalTokenBalance.eq(
+        senderInitialTokenBalance.add(expectedRefundedAmount)
+      ),
+      "The amount refunded to the sender is incorrect"
+    );
 
-  //   assert(
-  //     streamData.amounts.refunded.eq(expectedRefundedAmount),
-  //     "The Stream's refunded amount is incorrect"
-  //   );
+    const expectedWithdrawnAmount = new BN(0);
+    assert(
+      recipientFinalTokenBalance.eq(expectedWithdrawnAmount),
+      "No withdrawal to the recipient was expected"
+    );
 
-  //   assert(
-  //     streamData.amounts.withdrawn.eq(expectedWithdrawnAmount),
-  //     "The Stream's withdrawn amount is incorrect"
-  //   );
-  // });
+    // Assert that the Stream state has been updated correctly
+    const fetchedStreamData = await fetchStream(streamData.id);
+
+    assert(
+      fetchedStreamData.wasCanceled === true &&
+        fetchedStreamData.isCancelable === false,
+      "The Stream couldn't be canceled"
+    );
+
+    assert(
+      fetchedStreamData.amounts.refunded.eq(expectedRefundedAmount),
+      "The Stream's refunded amount is incorrect"
+    );
+
+    assert(
+      fetchedStreamData.amounts.withdrawn.eq(expectedWithdrawnAmount),
+      "The Stream's withdrawn amount is incorrect"
+    );
+  });
 
   it("Fails to withdraw from a Stream as a non-recipient", async () => {
     const { streamData, recipient, assetMint } = await createMintATAsAndStream(
@@ -1041,9 +1040,7 @@ describe("SablierLockup", () => {
     const recipientATA = await deriveRecipientATA(assetMint);
 
     // Get the recipient's token balance
-    const [recipientTokenBalance] = await getTokenBalancesByATAKeys(
-      recipientATA
-    );
+    const recipientTokenBalance = await getTokenBalanceByATAKey(recipientATA);
 
     // Assert that the recipient's token balance has been changed correctly
     const expectedWithdrawnAmount = depositedAmount.div(new BN(2));
@@ -1061,82 +1058,79 @@ describe("SablierLockup", () => {
     );
   });
 
-  // it("Withdraws max - as recipient - after the Stream has been canceled at half time", async () => {
-  //   const {
-  //     streamData,
-  //     recipient,
-  //     senderATA,
-  //     assetMint,
-  //     depositedAmount,
-  //     milestones,
-  //   } = await createMintATAsAndStream(true);
+  it("Withdraws max - as recipient - after the Stream has been canceled at half time", async () => {
+    const {
+      streamData,
+      recipient,
+      senderATA,
+      assetMint,
+      depositedAmount,
+      milestones,
+    } = await createMintATAsAndStream(true);
 
-  //   // Get the initial token balances of the sender and recipient
-  //   const senderInitialTokenBalance = await getTokenBalancesByATAKeys(
-  //     senderATA
-  //   );
+    // Get the initial token balances of the sender and recipient
+    const senderInitialTokenBalance = await getTokenBalanceByATAKey(senderATA);
 
-  //   const cancelTime = BigInt(
-  //     milestones.startTime.add(milestones.endTime).div(new BN(2)).toString()
-  //   );
-  //   await cancelStreamAtSpecificTime(
-  //     senderATA,
-  //     //recipientATA,
-  //     assetMint,
-  //     cancelTime
-  //   );
+    const cancelTime = BigInt(
+      milestones.startTime.add(milestones.endTime).div(new BN(2)).toString()
+    );
+    await cancelStreamAtSpecificTime(
+      streamData.id,
+      senderATA,
+      recipient,
+      assetMint,
+      cancelTime
+    );
 
-  //   await withdrawMax(
-  //     streamData.id,
-  //     recipientKeys,
-  //     recipient,
-  //     assetMint,
-  //     TOKEN_PROGRAM_ID
-  //   );
+    await withdrawMax(
+      streamData.id,
+      recipientKeys,
+      recipient,
+      assetMint,
+      TOKEN_PROGRAM_ID
+    );
 
-  //   // Derive the recipient's ATA address
-  //   const recipientATA = await deriveRecipientATA(assetMint);
+    // Derive the recipient's ATA address
+    const recipientATA = await deriveRecipientATA(assetMint);
 
-  //   // Get the final token balances of the sender and recipient
-  //   const [senderFinalTokenBalance, recipientFinalTokenBalance] =
-  //     await getTokenBalancesByATAKeys(senderATA, recipientATA);
+    // Get the final token balances of the sender and recipient
+    const [senderFinalTokenBalance, recipientFinalTokenBalance] =
+      await getTokenBalancesByATAKeys(senderATA, recipientATA);
 
-  //   // Assert that the sender's and recipient's token balances have been changed correctly
-  //   const expectedWithdrawnAmount = depositedAmount.div(new BN(2));
-  //   assert(
-  //     recipientFinalTokenBalance.eq(
-  //       recipientInitialTokenBalance.add(expectedWithdrawnAmount)
-  //     ),
-  //     "No withdrawal to the recipient was expected"
-  //   );
+    // Assert that the sender's and recipient's token balances have been changed correctly
+    const expectedWithdrawnAmount = depositedAmount.div(new BN(2));
+    assert(
+      recipientFinalTokenBalance.eq(expectedWithdrawnAmount),
+      "No withdrawal to the recipient was expected"
+    );
 
-  //   const expectedRefundedAmount = expectedWithdrawnAmount;
-  //   assert(
-  //     senderFinalTokenBalance.eq(
-  //       senderInitialTokenBalance.add(expectedRefundedAmount)
-  //     ),
-  //     "The amount refunded to the sender is incorrect"
-  //   );
+    const expectedRefundedAmount = expectedWithdrawnAmount;
+    assert(
+      senderFinalTokenBalance.eq(
+        senderInitialTokenBalance.add(expectedRefundedAmount)
+      ),
+      "The amount refunded to the sender is incorrect"
+    );
 
-  //   // Assert that the Stream state has been updated correctly
-  //   const fetchedStreamData = await fetchStream(streamData.id);
+    // Assert that the Stream state has been updated correctly
+    const fetchedStreamData = await fetchStream(streamData.id);
 
-  //   assert(
-  //     fetchedStreamData.wasCanceled === true &&
-  //       fetchedStreamData.isCancelable === false,
-  //     "The Stream couldn't be canceled"
-  //   );
+    assert(
+      fetchedStreamData.wasCanceled === true &&
+        fetchedStreamData.isCancelable === false,
+      "The Stream couldn't be canceled"
+    );
 
-  //   assert(
-  //     fetchedStreamData.amounts.withdrawn.eq(expectedWithdrawnAmount),
-  //     "The Stream's withdrawn amount is incorrect"
-  //   );
+    assert(
+      fetchedStreamData.amounts.withdrawn.eq(expectedWithdrawnAmount),
+      "The Stream's withdrawn amount is incorrect"
+    );
 
-  //   assert(
-  //     fetchedStreamData.amounts.refunded.eq(expectedRefundedAmount),
-  //     "The Stream's refunded amount is incorrect"
-  //   );
-  // });
+    assert(
+      fetchedStreamData.amounts.refunded.eq(expectedRefundedAmount),
+      "The Stream's refunded amount is incorrect"
+    );
+  });
 
   it("Withdraws - as recipient - a third of the streamed tokens at endTime", async () => {
     const { streamData, recipient, assetMint, milestones, depositedAmount } =
@@ -1162,9 +1156,7 @@ describe("SablierLockup", () => {
     const recipientATA = await deriveRecipientATA(assetMint);
 
     // Get the token balance of the recipient
-    const [recipientTokenBalance] = await getTokenBalancesByATAKeys(
-      recipientATA
-    );
+    const recipientTokenBalance = await getTokenBalanceByATAKey(recipientATA);
 
     // Assert that the recipient's token balance has been changed correctly
     assert(
@@ -1205,9 +1197,7 @@ describe("SablierLockup", () => {
     const recipientATA = await deriveRecipientATA(assetMint);
 
     // Get the recipient's token balance
-    const [recipientTokenBalance] = await getTokenBalancesByATAKeys(
-      recipientATA
-    );
+    const recipientTokenBalance = await getTokenBalanceByATAKey(recipientATA);
 
     // Assert that the recipient's token balance has been changed correctly
     assert(
@@ -1247,9 +1237,7 @@ describe("SablierLockup", () => {
     const recipientATA = await deriveRecipientATA(assetMint);
 
     // Get the recipient's token balance
-    const [recipientTokenBalance] = await getTokenBalancesByATAKeys(
-      recipientATA
-    );
+    const recipientTokenBalance = await getTokenBalanceByATAKey(recipientATA);
 
     // Assert that the recipient's token balance has been changed correctly
     const expectedWithdrawnAmount = depositedAmount;
@@ -1290,9 +1278,7 @@ describe("SablierLockup", () => {
     const recipientATA = await deriveRecipientATA(assetMint);
 
     // Get the recipient's token balance
-    const [recipientTokenBalance] = await getTokenBalancesByATAKeys(
-      recipientATA
-    );
+    const recipientTokenBalance = await getTokenBalanceByATAKey(recipientATA);
 
     // Assert that the recipient's token balance has been changed correctly
     const expectedWithdrawnAmount = depositedAmount;
@@ -1332,20 +1318,21 @@ describe("SablierLockup", () => {
   }
 
   async function cancelStreamAtSpecificTime(
+    streamId: BN,
     senderATA: PublicKey,
-    recipientATA: PublicKey,
+    recipient: PublicKey,
     assetMint: PublicKey,
     timestamp: bigint
   ): Promise<void> {
     await timeTravelForwardTo(timestamp);
 
     let cancelStreamIx = await program.methods
-      .cancel()
+      .cancel(streamId)
       .accounts({
         sender: senderKeys.publicKey,
         senderAta: senderATA,
-        recipientAta: recipientATA,
-        mint: assetMint,
+        recipient,
+        assetMint,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction();
