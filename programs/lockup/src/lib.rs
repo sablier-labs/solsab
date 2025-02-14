@@ -14,18 +14,6 @@ declare_id!("D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF"); // Localnet Program
 pub mod sablier_lockup {
     use super::*;
 
-    pub fn prepare_for_stream_creation(ctx: Context<PrepareForStreamCreation>) -> Result<()> {
-        instructions::prepare_for_stream_creation::handler(ctx)
-    }
-
-    pub fn initialize_phase_one(ctx: Context<InitializePhaseOne>) -> Result<()> {
-        instructions::initialize_phase_one::handler(ctx)
-    }
-
-    pub fn initialize_phase_two(ctx: Context<InitializePhaseTwo>) -> Result<()> {
-        instructions::initialize_phase_two::handler(ctx)
-    }
-
     pub fn cancel(ctx: Context<Cancel>, stream_id: u64) -> Result<()> {
         instructions::cancel::handler(ctx, stream_id)
     }
@@ -46,6 +34,18 @@ pub mod sablier_lockup {
             deposited_amount,
             is_cancelable,
         )
+    }
+
+    pub fn initialize_phase_one(ctx: Context<InitializePhaseOne>) -> Result<()> {
+        instructions::initialize_phase_one::handler(ctx)
+    }
+
+    pub fn initialize_phase_two(ctx: Context<InitializePhaseTwo>) -> Result<()> {
+        instructions::initialize_phase_two::handler(ctx)
+    }
+
+    pub fn prepare_for_stream_creation(ctx: Context<PrepareForStreamCreation>) -> Result<()> {
+        instructions::prepare_for_stream_creation::handler(ctx)
     }
 
     pub fn renounce(ctx: Context<Renounce>, stream_id: u64) -> Result<()> {

@@ -155,7 +155,7 @@ describe("SablierLockup", () => {
       .initializePhaseTwo()
       .accounts({
         signer: senderKeys.publicKey,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        nftTokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction();
 
@@ -1642,7 +1642,7 @@ describe("SablierLockup", () => {
       Buffer.from(nftcollectionDataAccount.data)
     );
 
-    return nftCollectionData.nftsTotalSupply;
+    return nftCollectionData.totalSupply;
   }
 
   async function fetchStream(streamId: BN): Promise<any> {
@@ -1775,7 +1775,7 @@ describe("SablierLockup", () => {
       nftCollectionAddress
     );
 
-    return new BN(nftCollectionData.nftsTotalSupply.toString(), 10);
+    return new BN(nftCollectionData.totalSupply.toString(), 10);
   }
 
   async function fetchNftCollectionData(address: PublicKey): Promise<any> {

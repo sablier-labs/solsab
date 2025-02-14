@@ -61,14 +61,14 @@ pub struct Cancel<'info> {
     #[account(
         mut,
         seeds = [b"treasury"],
-        bump = treasury_pda.bump
+        bump = treasury.bump
     )]
-    pub treasury_pda: Box<Account<'info, Treasury>>,
+    pub treasury: Box<Account<'info, Treasury>>,
 
     #[account(
         mut,
         associated_token::mint = asset_mint,
-        associated_token::authority = treasury_pda,
+        associated_token::authority = treasury,
         associated_token::token_program = token_program,
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
@@ -99,11 +99,11 @@ pub fn handler(ctx: Context<Cancel>, _stream_id: u64) -> Result<()> {
             from: ctx.accounts.treasury_ata.to_account_info(),
             mint: ctx.accounts.asset_mint.to_account_info(),
             to: ctx.accounts.sender_ata.to_account_info(),
-            authority: ctx.accounts.treasury_pda.to_account_info(),
+            authority: ctx.accounts.treasury.to_account_info(),
         };
 
         // Wrap the Treasury PDA's seeds in the appropriate structure
-        let signer_seeds: &[&[&[u8]]] = &[&[b"treasury", &[ctx.accounts.treasury_pda.bump]]];
+        let signer_seeds: &[&[&[u8]]] = &[&[b"treasury", &[ctx.accounts.treasury.bump]]];
 
         // Execute the transfer
         let cpi_ctx =
