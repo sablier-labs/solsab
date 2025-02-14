@@ -249,7 +249,7 @@ describe("SablierLockup", () => {
         senderKeys,
         recipient: recipientKeys.publicKey,
         assetMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        assetTokenProgram: TOKEN_PROGRAM_ID,
         milestones,
         depositedAmount: depositedAmount,
         isCancelable: true,
@@ -275,7 +275,7 @@ describe("SablierLockup", () => {
         senderKeys,
         recipient: recipientKeys.publicKey,
         assetMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        assetTokenProgram: TOKEN_PROGRAM_ID,
         milestones,
         depositedAmount: new BN(0),
         isCancelable: true,
@@ -311,7 +311,7 @@ describe("SablierLockup", () => {
         senderKeys,
         recipient: recipientKeys.publicKey,
         assetMint: invalidTokenMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        assetTokenProgram: TOKEN_PROGRAM_ID,
         milestones,
         depositedAmount,
         isCancelable: true,
@@ -339,7 +339,7 @@ describe("SablierLockup", () => {
         senderKeys,
         recipient: recipientKeys.publicKey,
         assetMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        assetTokenProgram: TOKEN_PROGRAM_ID,
         milestones,
         depositedAmount,
         isCancelable: true,
@@ -367,7 +367,7 @@ describe("SablierLockup", () => {
         senderKeys,
         recipient: recipientKeys.publicKey,
         assetMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        assetTokenProgram: TOKEN_PROGRAM_ID,
         milestones,
         depositedAmount,
         isCancelable: true,
@@ -395,7 +395,7 @@ describe("SablierLockup", () => {
         senderKeys,
         recipient: recipientKeys.publicKey,
         assetMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        assetTokenProgram: TOKEN_PROGRAM_ID,
         milestones,
         depositedAmount,
         isCancelable: true,
@@ -423,7 +423,7 @@ describe("SablierLockup", () => {
         senderKeys,
         recipient: recipientKeys.publicKey,
         assetMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        assetTokenProgram: TOKEN_PROGRAM_ID,
         milestones,
         depositedAmount,
         isCancelable: true,
@@ -451,7 +451,7 @@ describe("SablierLockup", () => {
         senderKeys,
         recipient: recipientKeys.publicKey,
         assetMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        assetTokenProgram: TOKEN_PROGRAM_ID,
         milestones,
         depositedAmount,
         isCancelable: true,
@@ -479,7 +479,7 @@ describe("SablierLockup", () => {
         senderKeys,
         recipient: recipientKeys.publicKey,
         assetMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        assetTokenProgram: TOKEN_PROGRAM_ID,
         milestones,
         depositedAmount,
         isCancelable: true,
@@ -505,11 +505,12 @@ describe("SablierLockup", () => {
 
     const milestones = generateStandardStreamMilestones();
     const depositedAmount = senderInitialTokenBalance;
+
     await createLLStreamWithTimestamps({
       senderKeys,
       recipient: recipientKeys.publicKey,
       assetMint,
-      tokenProgram: TOKEN_PROGRAM_ID,
+      assetTokenProgram: TOKEN_PROGRAM_ID,
       milestones,
       depositedAmount,
       isCancelable: true,
@@ -570,7 +571,7 @@ describe("SablierLockup", () => {
     );
   });
 
-  it.skip("Creates a LockupLinear Stream with the Token2022 program", async () => {
+  it("Creates a LockupLinear Stream with the Token2022 program", async () => {
     const { assetMint, senderATA } = await createToken2022AndMintToSender();
 
     const streamId = await deduceCurrentStreamId();
@@ -585,7 +586,7 @@ describe("SablierLockup", () => {
       senderKeys,
       recipient: recipientKeys.publicKey,
       assetMint,
-      tokenProgram: TOKEN_2022_PROGRAM_ID,
+      assetTokenProgram: TOKEN_2022_PROGRAM_ID,
       milestones,
       depositedAmount,
       isCancelable: true,
@@ -602,17 +603,15 @@ describe("SablierLockup", () => {
       "The amount debited from the sender is incorrect"
     );
 
-    // Derive the recipient's ATA address
-    const recipientATA = await deriveRecipientATAToken2022(assetMint);
-
     // Fetch the created Stream
     const streamData = await fetchStream(streamId);
 
     // Assert that the state of the created Stream is correct
     assert(
-      streamData.senderAta.equals(senderATA) &&
-        streamData.recipientAta.equals(recipientATA) &&
-        streamData.assetMintAccount.equals(assetMint) &&
+      streamData.id.eq(streamId) &&
+        streamData.sender.equals(senderKeys.publicKey) &&
+        streamData.recipient.equals(recipientKeys.publicKey) &&
+        streamData.assetMint.equals(assetMint) &&
         streamData.isCancelable === true &&
         streamData.wasCanceled === false,
       "The state of the created Stream is wrong"
@@ -1359,7 +1358,7 @@ describe("SablierLockup", () => {
       senderKeys,
       recipient,
       assetMint,
-      tokenProgram: TOKEN_PROGRAM_ID,
+      assetTokenProgram: TOKEN_PROGRAM_ID,
       milestones,
       depositedAmount,
       isCancelable: isStreamCancelable,
@@ -1440,14 +1439,14 @@ describe("SablierLockup", () => {
   interface PrepareForStreamCreationArgs {
     signerKeys: Keypair;
     assetMint: PublicKey;
-    tokenProgram: PublicKey;
+    assetTokenProgram: PublicKey;
   }
 
   interface CreateLLStreamWithTimestampsArgs {
     senderKeys: Keypair;
     recipient: PublicKey;
     assetMint: PublicKey;
-    tokenProgram: PublicKey;
+    assetTokenProgram: PublicKey;
     milestones: StreamMilestones;
     depositedAmount: BN;
     isCancelable: boolean;
@@ -1507,7 +1506,7 @@ describe("SablierLockup", () => {
       senderKeys,
       recipient,
       assetMint,
-      tokenProgram,
+      assetTokenProgram,
       milestones,
       depositedAmount,
       isCancelable,
@@ -1516,12 +1515,14 @@ describe("SablierLockup", () => {
     await prepareForStreamCreation({
       signerKeys: senderKeys,
       assetMint,
-      tokenProgram,
+      assetTokenProgram,
     });
 
     const totalSupply = await getNftCollectionTotalSupply(
       nftCollectionDataAddress
     );
+
+    const nftTokenProgram = TOKEN_PROGRAM_ID;
 
     let createStreamIx = await program.methods
       .createWithTimestamps(
@@ -1535,7 +1536,8 @@ describe("SablierLockup", () => {
         sender: senderKeys.publicKey,
         assetMint,
         recipient,
-        tokenProgram,
+        assetTokenProgram,
+        nftTokenProgram,
       })
       .instruction();
 
@@ -1589,7 +1591,7 @@ describe("SablierLockup", () => {
     const sendersStreamNftATA = await deriveATAAddress(
       streamNftMint,
       senderKeys.publicKey,
-      tokenProgram
+      nftTokenProgram
     );
 
     // Confirm that the Sender's Stream NFT ATA has been initialized
@@ -1731,14 +1733,17 @@ describe("SablierLockup", () => {
   async function prepareForStreamCreation(
     args: PrepareForStreamCreationArgs
   ): Promise<void> {
-    const { signerKeys, assetMint, tokenProgram } = args;
+    const { signerKeys, assetMint, assetTokenProgram } = args;
+
+    const nftTokenProgram = TOKEN_PROGRAM_ID;
 
     let createStreamIx = await program.methods
       .prepareForStreamCreation()
       .accounts({
         sender: signerKeys.publicKey,
         assetMint,
-        tokenProgram,
+        assetTokenProgram,
+        nftTokenProgram,
       })
       .instruction();
 

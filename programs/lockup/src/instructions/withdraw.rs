@@ -31,7 +31,7 @@ pub struct Withdraw<'info> {
         payer = signer,
         associated_token::mint = asset_mint,
         associated_token::authority = recipient,
-        // associated_token::token_program = token_program,
+        associated_token::token_program = token_program,
     )]
     pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -60,7 +60,7 @@ pub struct Withdraw<'info> {
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = treasury_pda,
-        // associated_token::token_program = token_program
+        associated_token::token_program = token_program
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 

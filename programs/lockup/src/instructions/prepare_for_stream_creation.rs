@@ -28,7 +28,7 @@ pub struct PrepareForStreamCreation<'info> {
         payer = sender,
         associated_token::mint = asset_mint,
         associated_token::authority = treasury_pda,
-        // associated_token::token_program = token_program
+        associated_token::token_program = asset_token_program
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -53,12 +53,13 @@ pub struct PrepareForStreamCreation<'info> {
         mint::decimals = 0,
         mint::authority = nft_collection_mint,
         mint::freeze_authority = nft_collection_mint,
-        mint::token_program = token_program,
+        mint::token_program = nft_token_program,
     )]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     pub system_program: Program<'info, System>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub asset_token_program: Interface<'info, TokenInterface>,
+    pub nft_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 

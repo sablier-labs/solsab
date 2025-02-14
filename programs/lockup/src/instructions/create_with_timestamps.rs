@@ -35,7 +35,7 @@ pub struct CreateWithTimestamps<'info> {
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = sender,
-        //associated_token::token_program = token_program
+        associated_token::token_program = asset_token_program
     )]
     pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -52,7 +52,7 @@ pub struct CreateWithTimestamps<'info> {
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = treasury_pda,
-        //associated_token::token_program = token_program
+        associated_token::token_program = asset_token_program
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -65,6 +65,7 @@ pub struct CreateWithTimestamps<'info> {
     pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
 
     #[account(
+        mut,
         seeds = [b"nft_collection_mint".as_ref()],
         bump,
     )]
@@ -82,6 +83,7 @@ pub struct CreateWithTimestamps<'info> {
     pub nft_collection_metadata: UncheckedAccount<'info>,
 
     #[account(
+        mut,
         seeds = [b"metadata",
                  token_metadata_program.key().as_ref(),
                  nft_collection_mint.key().as_ref(),
@@ -97,10 +99,6 @@ pub struct CreateWithTimestamps<'info> {
         seeds = [b"stream_nft_mint",
                  nft_collection_data.nfts_total_supply.to_le_bytes().as_ref()],
         bump,
-        // mint::decimals = 0,
-        // mint::authority = nft_collection_mint,
-        // mint::freeze_authority = nft_collection_mint,
-        // mint::token_program = token_program,
     )]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
@@ -118,7 +116,7 @@ pub struct CreateWithTimestamps<'info> {
         payer = sender,
         associated_token::mint = stream_nft_mint,
         associated_token::authority = sender,
-        //associated_token::token_program = token_program,
+        associated_token::token_program = nft_token_program,
     )]
     pub senders_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -146,7 +144,8 @@ pub struct CreateWithTimestamps<'info> {
     pub stream_nft_master_edition: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub asset_token_program: Interface<'info, TokenInterface>,
+    pub nft_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_metadata_program: Program<'info, Metadata>,
     pub rent: Sysvar<'info, Rent>,
@@ -191,7 +190,7 @@ pub fn handler(
     };
 
     // Execute the transfer
-    let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_ix);
+    let cpi_ctx = CpiContext::new(ctx.accounts.asset_token_program.to_account_info(), transfer_ix);
     transfer_checked(cpi_ctx, deposited_amount, asset_mint.decimals)?;
 
     let stream_nft_name = NFT_NAME.to_owned() + ctx.accounts.nft_collection_data.nfts_total_supply.to_string().as_str();
@@ -201,7 +200,7 @@ pub fn handler(
     // Mint Stream NFT Token
     mint_to(
         CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.nft_token_program.to_account_info(),
             MintTo {
                 mint: ctx.accounts.stream_nft_mint.to_account_info(),
                 to: ctx.accounts.senders_stream_nft_ata.to_account_info(),
@@ -250,7 +249,7 @@ pub fn handler(
                 mint_authority: ctx.accounts.nft_collection_mint.to_account_info(),
                 update_authority: ctx.accounts.nft_collection_mint.to_account_info(),
                 metadata: ctx.accounts.stream_nft_metadata.to_account_info(),
-                token_program: ctx.accounts.token_program.to_account_info(),
+                token_program: ctx.accounts.nft_token_program.to_account_info(),
                 system_program: ctx.accounts.system_program.to_account_info(),
                 rent: ctx.accounts.rent.to_account_info(),
             },

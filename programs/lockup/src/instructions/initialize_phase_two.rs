@@ -39,10 +39,12 @@ pub struct InitializePhaseTwo<'info> {
         seeds = [b"collection_token_account".as_ref()],
         bump,
         token::mint = nft_collection_mint,
-        token::authority = nft_collection_token_account
+        token::authority = nft_collection_token_account,
+        token::token_program = token_program
         
         // TODO: why is the SolSab program - and not a token program - being paired with the seeds in this init?
 
+        // Why aren't the associated token constraints used here, instead?
         // associated_token::mint = nft_collection_mint,
         // associated_token::authority = nft_collection_token_account,
         // associated_token::token_program = token_program
