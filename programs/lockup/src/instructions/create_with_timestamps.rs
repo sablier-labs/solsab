@@ -9,9 +9,12 @@ use anchor_spl::{
     token_interface::{mint_to, transfer_checked, Mint, MintTo, TokenAccount, TokenInterface, TransferChecked},
 };
 
+use base64::{engine::general_purpose::STANDARD as Engine, Engine as _};
+use std::string::String;
+
 use crate::{
     state::{lockup::*, nft_collection_data::NftCollectionData, treasury::Treasury},
-    utils::{constants::ANCHOR_DISCRIMINATOR_SIZE, errors::ErrorCode},
+    utils::errors::ErrorCode,
 };
 
 #[constant]
@@ -101,11 +104,9 @@ pub struct CreateWithTimestamps<'info> {
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        init,
-        payer = sender,
-        space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
+        mut,
         seeds = [b"LL_stream", stream_nft_mint.key().as_ref()],
-        bump
+        bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 
@@ -113,7 +114,7 @@ pub struct CreateWithTimestamps<'info> {
         init,
         payer = sender,
         associated_token::mint = stream_nft_mint,
-        associated_token::authority = sender,
+        associated_token::authority = recipient,
         associated_token::token_program = nft_token_program,
     )]
     pub senders_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
@@ -296,11 +297,39 @@ pub fn handler(
         milestones,
         is_cancelable,
         was_canceled: false,
-        bump: ctx.bumps.stream_data,
+        bump: ctx.accounts.stream_data.bump,
     };
 
     let total_supply = &mut ctx.accounts.nft_collection_data.total_supply;
     *total_supply = total_supply.checked_add(1).expect("The Total Supply of the NFT Collection has overflowed");
 
     Ok(())
+}
+
+/// Generate SVG dynamically based on the NFT name
+fn generate_svg(name: &str) -> String {
+    format!(
+        r#"<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="blue"/>
+            <text x="50%" y="50%" font-size="30" fill="white" text-anchor="middle" dy=".3em">{}</text>
+        </svg>"#,
+        name
+    )
+}
+
+/// Generate metadata with the dynamically generated SVG
+fn generate_metadata_uri(name: &str) -> String {
+    let svg = generate_svg(name);
+    let svg_base64 = Engine.encode(svg);
+    let image_uri = format!("data:image/svg+xml;base64,{}", svg_base64);
+
+    format!(
+        r#"{{
+            "name": "{}",
+            "description": "On-chain NFT with dynamically generated SVG",
+            "image": "{}",
+            "external_url": "https://sablier.com"
+        }}"#,
+        name, image_uri
+    )
 }

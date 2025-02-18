@@ -139,6 +139,8 @@ describe("SablierLockup", () => {
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(initializePhaseOneIx, senderKeys);
 
+    console.log("Phase One initialized");
+
     // Confirm that the treasury PDA account has been initialized
     assert.ok(
       await client.getAccount(treasuryAddress),
@@ -161,6 +163,8 @@ describe("SablierLockup", () => {
 
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(initializePhaseTwoIx, senderKeys);
+
+    console.log("Phase Two initialized");
 
     nftCollectionMint = getPDAAddress(
       [Buffer.from("nft_collection_mint")],
@@ -1518,6 +1522,8 @@ describe("SablierLockup", () => {
       assetTokenProgram,
     });
 
+    console.log("Prepared for stream creation");
+
     const totalSupply = await getNftCollectionTotalSupply(
       nftCollectionDataAddress
     );
@@ -1543,6 +1549,8 @@ describe("SablierLockup", () => {
 
     // Build, sign and process the transaction
     await buildSignAndProcessTxFromIx(createStreamIx, senderKeys, 270_000);
+
+    console.log("Stream created");
 
     const streamNftMint = getPDAAddress(
       [Buffer.from("stream_nft_mint"), totalSupply.toBuffer("le", 8)],
@@ -1572,6 +1580,8 @@ describe("SablierLockup", () => {
       "Stream NFT Metadata not initialized"
     );
 
+    // TODO: assert that the Token Standard field inside the Metadata equals `NonFungible`
+
     const streamNftMasterEdition = getPDAAddress(
       [
         Buffer.from("metadata"),
@@ -1588,15 +1598,15 @@ describe("SablierLockup", () => {
       "Stream NFT Master Edition not initialized"
     );
 
-    const sendersStreamNftATA = await deriveATAAddress(
+    const recipientsStreamNftATA = await deriveATAAddress(
       streamNftMint,
-      senderKeys.publicKey,
+      recipientKeys.publicKey,
       nftTokenProgram
     );
 
     // Confirm that the Sender's Stream NFT ATA has been initialized
     assert.ok(
-      await client.getAccount(sendersStreamNftATA),
+      await client.getAccount(recipientsStreamNftATA),
       "Sender's Stream NFT ATA not initialized"
     );
   }

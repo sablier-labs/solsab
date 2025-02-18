@@ -4,17 +4,6 @@ export {
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 
-// import {
-//   web3.SystemProgram,
-//   web3.Signer,
-//   web3.PublicKey,
-//   web3.Keypair,
-//   web3.Transaction,
-//   web3.Commitment,
-//   web3.ConfirmOptions,
-//   //AccountInfo,
-// } from "@solana/web3.js";
-
 import web3 from "@solana/web3.js";
 
 import * as token from "@solana/spl-token";
