@@ -4,16 +4,7 @@ export {
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 
-import {
-  SystemProgram,
-  Signer,
-  PublicKey,
-  Keypair,
-  Transaction,
-  Commitment,
-  ConfirmOptions,
-  AccountInfo,
-} from "@solana/web3.js";
+import web3 from "@solana/web3.js";
 
 import * as token from "@solana/spl-token";
 import {
@@ -24,18 +15,18 @@ import {
 
 export async function createMint(
   banksClient: BanksClient,
-  payer: Keypair,
-  mintAuthority: PublicKey,
-  freezeAuthority: PublicKey | null,
+  payer: web3.Keypair,
+  mintAuthority: web3.PublicKey,
+  freezeAuthority: web3.PublicKey | null,
   decimals: number,
-  mintKeypair = Keypair.generate(),
+  mintKeypair = web3.Keypair.generate(),
   programId = token.TOKEN_PROGRAM_ID
-): Promise<PublicKey> {
+): Promise<web3.PublicKey> {
   let rent = await banksClient.getRent();
 
   const mint = mintKeypair.publicKey;
-  const tx = new Transaction().add(
-    SystemProgram.createAccount({
+  const tx = new web3.Transaction().add(
+    web3.SystemProgram.createAccount({
       fromPubkey: payer.publicKey,
       newAccountPubkey: mint,
       space: token.MINT_SIZE,
@@ -60,13 +51,13 @@ export async function createMint(
 
 export async function createAccount(
   banksClient: BanksClient,
-  payer: Signer,
-  mint: PublicKey,
-  owner: PublicKey,
-  keypair?: Keypair,
-  confirmOptions?: ConfirmOptions,
+  payer: web3.Signer,
+  mint: web3.PublicKey,
+  owner: web3.PublicKey,
+  keypair?: web3.Keypair,
+  confirmOptions?: web3.ConfirmOptions,
   programId = token.TOKEN_PROGRAM_ID
-): Promise<PublicKey> {
+): Promise<web3.PublicKey> {
   let rent = await banksClient.getRent();
   // If a keypair isn't provided, create the associated token account and return its address
   if (!keypair)
@@ -87,8 +78,8 @@ export async function createAccount(
   );
   const space = token.getAccountLenForMint(mintState);
 
-  const tx = new Transaction().add(
-    SystemProgram.createAccount({
+  const tx = new web3.Transaction().add(
+    web3.SystemProgram.createAccount({
       fromPubkey: payer.publicKey,
       newAccountPubkey: keypair.publicKey,
       space,
@@ -112,14 +103,14 @@ export async function createAccount(
 
 export async function createAssociatedTokenAccount(
   banksClient: BanksClient,
-  payer: Signer,
-  mint: PublicKey,
-  owner: PublicKey,
-  programId: PublicKey
-): Promise<PublicKey> {
+  payer: web3.Signer,
+  mint: web3.PublicKey,
+  owner: web3.PublicKey,
+  programId: web3.PublicKey
+): Promise<web3.PublicKey> {
   const ata = token.getAssociatedTokenAddressSync(mint, owner, true, programId);
 
-  const tx = new Transaction().add(
+  const tx = new web3.Transaction().add(
     token.createAssociatedTokenAccountInstruction(
       payer.publicKey,
       ata,
@@ -138,10 +129,10 @@ export async function createAssociatedTokenAccount(
 }
 
 export async function deriveATAAddress(
-  mint: PublicKey,
-  owner: PublicKey,
-  programId: PublicKey
-): Promise<PublicKey> {
+  mint: web3.PublicKey,
+  owner: web3.PublicKey,
+  programId: web3.PublicKey
+): Promise<web3.PublicKey> {
   return token.getAssociatedTokenAddressSync(mint, owner, true, programId);
 }
 
@@ -163,19 +154,19 @@ export function getTokenBalanceByATAAccountData(ataData: Uint8Array): string {
 
 export async function getMint(
   banksClient: BanksClient,
-  address: PublicKey,
-  commitment?: Commitment,
+  address: web3.PublicKey,
+  commitment?: web3.Commitment,
   programId = token.TOKEN_PROGRAM_ID
 ): Promise<token.Mint> {
   const info = await banksClient.getAccount(address, commitment);
-  return token.unpackMint(address, info as AccountInfo<Buffer>, programId);
+  return token.unpackMint(address, info as web3.AccountInfo<Buffer>, programId);
 }
 
 // `mintTo` without the mintAuthority signer
 // uses bankrun's special `setAccount` function
 export async function mintToOverride(
   context: ProgramTestContext,
-  destination: PublicKey,
+  destination: web3.PublicKey,
   amount: bigint
 ) {
   const banksClient = context.banksClient;
@@ -190,13 +181,13 @@ export async function mintToOverride(
       owner,
       amount,
       delegateOption: 0,
-      delegate: PublicKey.default,
+      delegate: web3.PublicKey.default,
       delegatedAmount: 0n,
       state: 1,
       isNativeOption: 0,
       isNative: 0n,
       closeAuthorityOption: 0,
-      closeAuthority: PublicKey.default,
+      closeAuthority: web3.PublicKey.default,
     },
     accData
   );
@@ -211,17 +202,17 @@ export async function mintToOverride(
 
 export async function mintTo(
   banksClient: BanksClient,
-  payer: Signer,
-  mint: PublicKey,
-  destination: PublicKey,
-  authority: Signer | PublicKey,
+  payer: web3.Signer,
+  mint: web3.PublicKey,
+  destination: web3.PublicKey,
+  authority: web3.Signer | web3.PublicKey,
   amount: number | bigint,
-  multiSigners: Signer[] = [],
+  multiSigners: web3.Signer[] = [],
   programId = token.TOKEN_PROGRAM_ID
 ): Promise<BanksTransactionMeta> {
   const [authorityPublicKey, signers] = getSigners(authority, multiSigners);
 
-  const tx = new Transaction().add(
+  const tx = new web3.Transaction().add(
     token.createMintToInstruction(
       mint,
       destination,
@@ -239,17 +230,17 @@ export async function mintTo(
 
 export async function transfer(
   banksClient: BanksClient,
-  payer: Signer,
-  source: PublicKey,
-  destination: PublicKey,
-  owner: PublicKey | Signer,
+  payer: web3.Signer,
+  source: web3.PublicKey,
+  destination: web3.PublicKey,
+  owner: web3.PublicKey | web3.Signer,
   amount: number | bigint,
-  multiSigners: Signer[] = [],
+  multiSigners: web3.Signer[] = [],
   programId = token.TOKEN_PROGRAM_ID
 ): Promise<BanksTransactionMeta> {
   const [ownerPublicKey, signers] = getSigners(owner, multiSigners);
 
-  const tx = new Transaction().add(
+  const tx = new web3.Transaction().add(
     token.createTransferInstruction(
       source,
       destination,
@@ -266,20 +257,24 @@ export async function transfer(
 }
 
 export function getSigners(
-  signerOrMultisig: Signer | PublicKey,
-  multiSigners: Signer[]
-): [PublicKey, Signer[]] {
-  return signerOrMultisig instanceof PublicKey
+  signerOrMultisig: web3.Signer | web3.PublicKey,
+  multiSigners: web3.Signer[]
+): [web3.PublicKey, web3.Signer[]] {
+  return signerOrMultisig instanceof web3.PublicKey
     ? [signerOrMultisig, multiSigners]
     : [signerOrMultisig.publicKey, [signerOrMultisig]];
 }
 
 export async function getAccount(
   banksClient: BanksClient,
-  address: PublicKey,
-  commitment?: Commitment,
+  address: web3.PublicKey,
+  commitment?: web3.Commitment,
   programId = token.TOKEN_PROGRAM_ID
 ): Promise<token.Account> {
   const info = await banksClient.getAccount(address, commitment);
-  return token.unpackAccount(address, info as AccountInfo<Buffer>, programId);
+  return token.unpackAccount(
+    address,
+    info as web3.AccountInfo<Buffer>,
+    programId
+  );
 }
