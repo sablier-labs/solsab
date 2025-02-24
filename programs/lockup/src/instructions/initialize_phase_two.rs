@@ -10,10 +10,12 @@ use anchor_spl::{
     token_interface::{mint_to, Mint, MintTo, TokenAccount, TokenInterface},
 };
 
+use crate::utils::nft_metadata::generate_nft_metadata_uri;
+
 #[constant]
-pub const NFT_NAME: &str = "Sablier Lockup Linear Streams";
+pub const NFT_NAME: &str = "Sablier LockupLinear Streams";
 #[constant]
-pub const NFT_URI: &str = "[The URI for the JSON containing the NFT metadata]";
+pub const NFT_DESCRIPTION: &str = "This NFT represents the collection of Sablier Lockup Linear Streams";
 #[constant]
 pub const NFT_SYMBOL: &str = "LL_STREAMS";
 
@@ -108,6 +110,8 @@ pub fn handler(ctx: Context<InitializePhaseTwo>) -> Result<()> {
         1,
     )?;
 
+    let nft_metadata_uri = generate_nft_metadata_uri(NFT_NAME, NFT_DESCRIPTION);
+
     // Create the Metadata accounts for the Collection NFT
     create_metadata_accounts_v3(
         CpiContext::new_with_signer(
@@ -126,7 +130,7 @@ pub fn handler(ctx: Context<InitializePhaseTwo>) -> Result<()> {
         DataV2 {
             name: NFT_NAME.to_string(),
             symbol: NFT_SYMBOL.to_string(),
-            uri: NFT_URI.to_string(),
+            uri: nft_metadata_uri,
             seller_fee_basis_points: 0,
             creators: Some(vec![Creator {
                 address: nft_collection_mint.key(),

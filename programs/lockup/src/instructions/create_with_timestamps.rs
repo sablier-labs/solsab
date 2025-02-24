@@ -11,11 +11,13 @@ use anchor_spl::{
 
 use crate::{
     state::{lockup::*, nft_collection_data::NftCollectionData, treasury::Treasury},
-    utils::{errors::ErrorCode, nft_metadata::generate_stream_nft_metadata_uri_base64},
+    utils::{errors::ErrorCode, nft_metadata::generate_nft_metadata_uri},
 };
 
 #[constant]
 pub const NFT_NAME: &str = "Sablier Lockup Linear Stream #";
+#[constant]
+pub const NFT_DESCRIPTION: &str = "This NFT represents a Sablier Lockup Linear Stream";
 #[constant]
 pub const NFT_SYMBOL: &str = "LL_STREAM";
 
@@ -213,7 +215,7 @@ pub fn handler(
         1,
     )?;
 
-    let stream_nft_metadata_uri = generate_stream_nft_metadata_uri_base64(stream_nft_name.clone().as_str());
+    let nft_metadata_uri = generate_nft_metadata_uri(stream_nft_name.clone().as_str(), NFT_DESCRIPTION);
 
     create_metadata_accounts_v3(
         CpiContext::new_with_signer(
@@ -232,7 +234,7 @@ pub fn handler(
         DataV2 {
             name: stream_nft_name,
             symbol: NFT_SYMBOL.to_string(),
-            uri: stream_nft_metadata_uri,
+            uri: nft_metadata_uri,
             seller_fee_basis_points: 0,
             creators: None,
             collection: None,

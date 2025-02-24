@@ -1,8 +1,8 @@
 use base64::{engine::general_purpose::STANDARD as Engine, Engine as _};
 use std::string::String;
 
-/// Generate Stream NFT image SVG dynamically based on the NFT name
-fn generate_stream_nft_svg(name: &str) -> String {
+/// Dynamically generate the SVG image for an NFT, based on its name
+fn generate_nft_svg(name: &str) -> String {
     format!(
         r#"<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
             <rect width="100%" height="100%" fill="white"/>
@@ -12,36 +12,32 @@ fn generate_stream_nft_svg(name: &str) -> String {
     )
 }
 
-/// Generate metadata with the dynamically generated SVG
-pub fn generate_stream_nft_metadata_uri_base64(name: &str) -> String {
-    let svg = generate_stream_nft_svg(name);
+/// Dynamically generate the URI - in Base64 - for the NFT metadata
+pub fn generate_nft_metadata_uri(name: &str, description: &str) -> String {
+    let svg = generate_nft_svg(name);
     let svg_base64 = Engine.encode(svg);
     let image_uri_base64 = format!("data:image/svg+xml;base64,{}", svg_base64);
 
-    let nft_metadata = format!(
-        r#"{{
-            "name": "{}",
-            "description": "On-chain NFT with dynamically generated SVG",
-            "image": "{}",
-            "external_url": "https://sablier.com"
-        }}"#,
-        name, image_uri_base64
+    let metadata_json = format!(
+        r#"{{"name": "{name}","description": {description},"image": "{image_uri_base64}","external_url": "https://sablier.com"}}"#
     );
 
-    Engine.encode(nft_metadata)
+    let metadata_json_base64 = Engine.encode(metadata_json);
+    format!(r#"data:application/json;base64,{}"#, metadata_json_base64)
 }
 
-/// Unit tests for the functions
+/// Unit tests for the metadata generation functions
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const EXPECTED_URI: &str = "ewogICAgICAgICAgICAibmFtZSI6ICJUZXN0TkZUIiwKICAgICAgICAgICAgImRlc2NyaXB0aW9uIjogIk9uLWNoYWluIE5GVCB3aXRoIGR5bmFtaWNhbGx5IGdlbmVyYXRlZCBTVkciLAogICAgICAgICAgICAiaW1hZ2UiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCM2FXUjBhRDBpTXpBd0lpQm9aV2xuYUhROUlqTXdNQ0lnZUcxc2JuTTlJbWgwZEhBNkx5OTNkM2N1ZHpNdWIzSm5Mekl3TURBdmMzWm5JajRLSUNBZ0lDQWdJQ0FnSUNBZ1BISmxZM1FnZDJsa2RHZzlJakV3TUNVaUlHaGxhV2RvZEQwaU1UQXdKU0lnWm1sc2JEMGlkMmhwZEdVaUx6NEtJQ0FnSUNBZ0lDQWdJQ0FnUEhSbGVIUWdlRDBpTlRBbElpQjVQU0kxTUNVaUlHWnZiblF0YzJsNlpUMGlNekFpSUdacGJHdzlJbUpzZFdVaUlIUmxlSFF0WVc1amFHOXlQU0p0YVdSa2JHVWlJR1I1UFNJdU0yVnRJajVVWlhOMFRrWlVQQzkwWlhoMFBnb2dJQ0FnSUNBZ0lEd3ZjM1puUGc9PSIsCiAgICAgICAgICAgICJleHRlcm5hbF91cmwiOiAiaHR0cHM6Ly9zYWJsaWVyLmNvbSIKICAgICAgICB9";
+    const EXPECTED_URI: &str = "data:application/json;base64,eyJuYW1lIjogIlRlc3QgTkZUIG5hbWUiLCJkZXNjcmlwdGlvbiI6IFRlc3QgTkZUIGRlc2NyaXB0aW9uLCJpbWFnZSI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIzYVdSMGFEMGlNekF3SWlCb1pXbG5hSFE5SWpNd01DSWdlRzFzYm5NOUltaDBkSEE2THk5M2QzY3Vkek11YjNKbkx6SXdNREF2YzNabklqNEtJQ0FnSUNBZ0lDQWdJQ0FnUEhKbFkzUWdkMmxrZEdnOUlqRXdNQ1VpSUdobGFXZG9kRDBpTVRBd0pTSWdabWxzYkQwaWQyaHBkR1VpTHo0S0lDQWdJQ0FnSUNBZ0lDQWdQSFJsZUhRZ2VEMGlOVEFsSWlCNVBTSTFNQ1VpSUdadmJuUXRjMmw2WlQwaU16QWlJR1pwYkd3OUltSnNkV1VpSUhSbGVIUXRZVzVqYUc5eVBTSnRhV1JrYkdVaUlHUjVQU0l1TTJWdElqNVVaWE4wSUU1R1ZDQnVZVzFsUEM5MFpYaDBQZ29nSUNBZ0lDQWdJRHd2YzNablBnPT0iLCJleHRlcm5hbF91cmwiOiAiaHR0cHM6Ly9zYWJsaWVyLmNvbSJ9";
 
     #[test]
-    fn test_generate_stream_nft_metadata_uri() {
-        let metadata_uri = generate_stream_nft_metadata_uri_base64("TestNFT");
+    fn test_generate_nft_metadata_uri() {
+        let metadata_uri = generate_nft_metadata_uri("Test NFT name", "Test NFT description");
 
+        println!("metadata_uri: {}", metadata_uri);
         assert_eq!(metadata_uri, EXPECTED_URI);
     }
 }
