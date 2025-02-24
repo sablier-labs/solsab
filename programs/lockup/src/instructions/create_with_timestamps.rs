@@ -9,18 +9,13 @@ use anchor_spl::{
     token_interface::{mint_to, transfer_checked, Mint, MintTo, TokenAccount, TokenInterface, TransferChecked},
 };
 
-use base64::{engine::general_purpose::STANDARD as Engine, Engine as _};
-use std::string::String;
-
 use crate::{
     state::{lockup::*, nft_collection_data::NftCollectionData, treasury::Treasury},
-    utils::errors::ErrorCode,
+    utils::{errors::ErrorCode, nft_metadata::generate_stream_nft_metadata_uri_base64},
 };
 
 #[constant]
 pub const NFT_NAME: &str = "Sablier Lockup Linear Stream #";
-#[constant]
-pub const NFT_URI: &str = "[The URI for the JSON containing the NFT metadata]";
 #[constant]
 pub const NFT_SYMBOL: &str = "LL_STREAM";
 
@@ -218,6 +213,8 @@ pub fn handler(
         1,
     )?;
 
+    let stream_nft_metadata_uri = generate_stream_nft_metadata_uri_base64(stream_nft_name.clone().as_str());
+
     create_metadata_accounts_v3(
         CpiContext::new_with_signer(
             token_metadata_program.to_account_info(),
@@ -235,7 +232,7 @@ pub fn handler(
         DataV2 {
             name: stream_nft_name,
             symbol: NFT_SYMBOL.to_string(),
-            uri: NFT_URI.to_string(),
+            uri: stream_nft_metadata_uri,
             seller_fee_basis_points: 0,
             creators: None,
             collection: None,
@@ -304,32 +301,4 @@ pub fn handler(
     *total_supply = total_supply.checked_add(1).expect("The Total Supply of the NFT Collection has overflowed");
 
     Ok(())
-}
-
-/// Generate SVG dynamically based on the NFT name
-fn generate_svg(name: &str) -> String {
-    format!(
-        r#"<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
-            <rect width="100%" height="100%" fill="blue"/>
-            <text x="50%" y="50%" font-size="30" fill="white" text-anchor="middle" dy=".3em">{}</text>
-        </svg>"#,
-        name
-    )
-}
-
-/// Generate metadata with the dynamically generated SVG
-fn generate_metadata_uri(name: &str) -> String {
-    let svg = generate_svg(name);
-    let svg_base64 = Engine.encode(svg);
-    let image_uri = format!("data:image/svg+xml;base64,{}", svg_base64);
-
-    format!(
-        r#"{{
-            "name": "{}",
-            "description": "On-chain NFT with dynamically generated SVG",
-            "image": "{}",
-            "external_url": "https://sablier.com"
-        }}"#,
-        name, image_uri
-    )
 }
