@@ -11,15 +11,11 @@ use anchor_spl::{
 
 use crate::{
     state::{lockup::*, nft_collection_data::NftCollectionData, treasury::Treasury},
-    utils::{errors::ErrorCode, nft_metadata::generate_nft_metadata_uri},
+    utils::{
+        constants::{LOCKUP_METADATA_NAME, LOCKUP_METADATA_SYMBOL, LOCKUP_METADATA_URI},
+        errors::ErrorCode,
+    },
 };
-
-#[constant]
-pub const NFT_NAME: &str = "Sablier Lockup Linear Stream #";
-#[constant]
-pub const NFT_DESCRIPTION: &str = "This NFT represents a Sablier Lockup Linear Stream";
-#[constant]
-pub const NFT_SYMBOL: &str = "LL_STREAM";
 
 #[derive(Accounts)]
 pub struct CreateWithTimestamps<'info> {
@@ -197,7 +193,6 @@ pub fn handler(
     transfer_checked(cpi_ctx, deposited_amount, asset_mint.decimals)?;
 
     let stream_id = ctx.accounts.nft_collection_data.total_supply;
-    let stream_nft_name = NFT_NAME.to_owned() + stream_id.to_string().as_str();
 
     let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[b"nft_collection_mint", &[ctx.bumps.nft_collection_mint]]];
 
@@ -215,8 +210,6 @@ pub fn handler(
         1,
     )?;
 
-    let nft_metadata_uri = generate_nft_metadata_uri(stream_nft_name.clone().as_str(), NFT_DESCRIPTION);
-
     create_metadata_accounts_v3(
         CpiContext::new_with_signer(
             token_metadata_program.to_account_info(),
@@ -232,9 +225,9 @@ pub fn handler(
             nft_collection_mint_signer_seeds,
         ),
         DataV2 {
-            name: stream_nft_name,
-            symbol: NFT_SYMBOL.to_string(),
-            uri: nft_metadata_uri,
+            name: LOCKUP_METADATA_NAME.to_string(),
+            symbol: LOCKUP_METADATA_SYMBOL.to_string(),
+            uri: LOCKUP_METADATA_URI.to_string(),
             seller_fee_basis_points: 0,
             creators: None,
             collection: None,

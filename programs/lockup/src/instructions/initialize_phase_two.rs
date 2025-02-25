@@ -10,14 +10,7 @@ use anchor_spl::{
     token_interface::{mint_to, Mint, MintTo, TokenAccount, TokenInterface},
 };
 
-use crate::utils::nft_metadata::generate_nft_metadata_uri;
-
-#[constant]
-pub const NFT_NAME: &str = "Sablier LockupLinear Streams";
-#[constant]
-pub const NFT_DESCRIPTION: &str = "This NFT represents the collection of Sablier Lockup Linear Streams";
-#[constant]
-pub const NFT_SYMBOL: &str = "LL_STREAMS";
+use crate::utils::constants::{LOCKUP_METADATA_NAME, LOCKUP_METADATA_SYMBOL, LOCKUP_METADATA_URI};
 
 #[derive(Accounts)]
 pub struct InitializePhaseTwo<'info> {
@@ -110,7 +103,7 @@ pub fn handler(ctx: Context<InitializePhaseTwo>) -> Result<()> {
         1,
     )?;
 
-    let nft_metadata_uri = generate_nft_metadata_uri(NFT_NAME, NFT_DESCRIPTION);
+
 
     // Create the Metadata accounts for the Collection NFT
     create_metadata_accounts_v3(
@@ -128,9 +121,9 @@ pub fn handler(ctx: Context<InitializePhaseTwo>) -> Result<()> {
             nft_collection_mint_signer_seeds,
         ),
         DataV2 {
-            name: NFT_NAME.to_string(),
-            symbol: NFT_SYMBOL.to_string(),
-            uri: nft_metadata_uri,
+            name: LOCKUP_METADATA_NAME.to_string(),
+            symbol: LOCKUP_METADATA_SYMBOL.to_string(),
+            uri: LOCKUP_METADATA_URI.to_string(),
             seller_fee_basis_points: 0,
             creators: Some(vec![Creator {
                 address: nft_collection_mint.key(),
