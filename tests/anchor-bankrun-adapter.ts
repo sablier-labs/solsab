@@ -1,8 +1,4 @@
-export {
-  getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID,
-  TOKEN_2022_PROGRAM_ID,
-} from "@solana/spl-token";
+export { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 import web3 from "@solana/web3.js";
 
@@ -128,11 +124,11 @@ export async function createAssociatedTokenAccount(
   return ata;
 }
 
-export async function deriveATAAddress(
+export function deriveATAAddress(
   mint: web3.PublicKey,
   owner: web3.PublicKey,
   programId: web3.PublicKey
-): Promise<web3.PublicKey> {
+): web3.PublicKey {
   return token.getAssociatedTokenAddressSync(mint, owner, true, programId);
 }
 
@@ -150,6 +146,18 @@ export function getTokenBalanceByATAAccountData(ataData: Uint8Array): string {
   );
 
   return balance.toString();
+}
+export function getTotalSupplyByAccountData(mintData: Uint8Array): string {
+  // The supply is an 8-byte little-endian unsigned integer located at offset 36.
+  const supplyOffset = 36;
+  const supplyBytes = mintData.slice(supplyOffset, supplyOffset + 8);
+
+  const supply = supplyBytes.reduce(
+    (acc, byte, index) => acc + BigInt(byte) * (1n << (8n * BigInt(index))),
+    0n
+  );
+
+  return supply.toString();
 }
 
 export async function getMint(
