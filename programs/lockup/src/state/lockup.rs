@@ -15,6 +15,8 @@ pub struct StreamData {
 
 #[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub struct Amounts {
+    pub start_unlock: u64,
+    pub cliff_unlock: u64,
     pub deposited: u64,
     pub refunded: u64,
     pub withdrawn: u64,

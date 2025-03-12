@@ -1,12 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import web3 from "@solana/web3.js";
 
-export interface StreamMilestones {
-  startTime: anchor.BN;
-  cliffTime: anchor.BN;
-  endTime: anchor.BN;
-}
-
 // Helper to create a default AccountInfo with 100 SOL
 export function getDefaultAccountInfoWithSOL(): web3.AccountInfo<Uint8Array> {
   return {
@@ -16,6 +10,45 @@ export function getDefaultAccountInfoWithSOL(): web3.AccountInfo<Uint8Array> {
     rentEpoch: 0, // Default rent epoch
     data: new Uint8Array(), // Empty data
   };
+}
+
+export interface UnlockAmounts {
+  startUnlock: anchor.BN;
+  cliffUnlock: anchor.BN;
+}
+
+export function getDefaultUnlockAmounts(): UnlockAmounts {
+  return {
+    startUnlock: new anchor.BN(0),
+    cliffUnlock: new anchor.BN(0),
+  };
+}
+
+export function getUnlockAmountsJustStart(): UnlockAmounts {
+  return {
+    startUnlock: new anchor.BN(100),
+    cliffUnlock: new anchor.BN(0),
+  };
+}
+
+export function getUnlockAmountsJustCliff(): UnlockAmounts {
+  return {
+    startUnlock: new anchor.BN(0),
+    cliffUnlock: new anchor.BN(100),
+  };
+}
+
+export function getUnlockAmountsStartAndCliff(): UnlockAmounts {
+  return {
+    startUnlock: new anchor.BN(100),
+    cliffUnlock: new anchor.BN(100),
+  };
+}
+
+export interface StreamMilestones {
+  startTime: anchor.BN;
+  cliffTime: anchor.BN;
+  endTime: anchor.BN;
 }
 
 export function getDefaultMilestones(): StreamMilestones {

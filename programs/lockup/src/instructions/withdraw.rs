@@ -87,11 +87,8 @@ pub fn handler(ctx: Context<Withdraw>, _stream_id: u64, amount: u64) -> Result<(
     }
 
     // Calculate the withdrawable amount
-    let withdrawable_amount = get_withdrawable_amount(
-        &ctx.accounts.stream_data.milestones,
-        ctx.accounts.stream_data.amounts.deposited,
-        ctx.accounts.stream_data.amounts.withdrawn,
-    );
+    let withdrawable_amount =
+        get_withdrawable_amount(&ctx.accounts.stream_data.milestones, &ctx.accounts.stream_data.amounts);
 
     // Assert that the withdrawable amount is not too big
     if amount > withdrawable_amount {
