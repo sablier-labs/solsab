@@ -5,12 +5,12 @@ use crate::state::lockup::{Amounts, Milestones};
 pub fn get_streamed_amount(milestones: &Milestones, amounts: &Amounts) -> u64 {
     let now = Clock::get().unwrap().unix_timestamp;
 
-    // If the start time is in the future or right now, return zero.
-    if milestones.start_time >= now {
+    // If the start time is in the future, return zero.
+    if milestones.start_time > now {
         return 0;
     }
 
-    // If the end time is not in the future, return the deposited amount.
+    // If the end time is in the past or right now, return the deposited amount.
     if milestones.end_time <= now {
         return amounts.deposited;
     }
