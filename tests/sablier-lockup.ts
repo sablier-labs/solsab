@@ -640,7 +640,7 @@ describe("SablierLockup", () => {
 
     await assertCancelabilityRenouncementFailure(
       streamData.id,
-      "custom program error: 0x1777"
+      "custom program error: 0x1778"
     );
   });
 
@@ -770,7 +770,7 @@ describe("SablierLockup", () => {
       streamData.id,
       assetMint,
       assetTokenProgram,
-      "custom program error: 0x1776"
+      "custom program error: 0x1777"
     );
   });
 
@@ -1010,7 +1010,7 @@ describe("SablierLockup", () => {
       getDefaultUnlockAmounts(),
       milestones.endTime,
       WithdrawalSize.ZERO,
-      "custom program error: 0x1778"
+      "custom program error: 0x1779"
     );
   });
 
@@ -1248,7 +1248,7 @@ describe("SablierLockup", () => {
       getDefaultUnlockAmounts(),
       milestones.endTime,
       WithdrawalSize.ZERO,
-      "custom program error: 0x1778"
+      "custom program error: 0x1779"
     );
   });
 
@@ -1499,7 +1499,7 @@ describe("SablierLockup", () => {
       getDefaultUnlockAmounts(),
       milestones.cliffTime.sub(new BN(1)),
       WithdrawalSize.MAX,
-      "custom program error: 0x1778"
+      "custom program error: 0x1779"
     );
   });
 
@@ -1586,7 +1586,7 @@ describe("SablierLockup", () => {
       getDefaultUnlockAmounts(),
       milestones.cliffTime.sub(new BN(1)),
       WithdrawalSize.MAX,
-      "custom program error: 0x1778"
+      "custom program error: 0x1779"
     );
   });
 
