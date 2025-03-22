@@ -2,6 +2,8 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum ErrorCode {
+    #[msg("Can't collect zero fees!")]
+    CantCollectZeroFees,
     #[msg("Deposit amount is less than the unlock amounts!")]
     DepositAmountLessThanUnlockAmounts,
     #[msg("Invalid cliff time of the Stream!")]
@@ -16,10 +18,14 @@ pub enum ErrorCode {
     InvalidWithdrawalAmount,
     #[msg("The Total Supply of the NFT Collection has overflowed!")]
     NftCollectionTotalSupplyOverflow,
+    #[msg("Not enough fees for withdrawal!")]
+    NotEnoughFeesForWithdrawal,
     #[msg("Can't cancel a non-cancelable Stream!")]
     StreamIsNotCancelable,
     #[msg("Can't renounce an already-renounced Stream!")]
     StreamCancelabilityIsAlreadyRenounced,
     #[msg("Can't withdraw a zero amount!")]
     WithdrawalAmountCannotBeZero,
+    #[msg("Rent exemption doubling has failed!")]
+    RentExemptionDoublingFailed,
 }

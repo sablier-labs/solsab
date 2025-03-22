@@ -18,6 +18,10 @@ pub mod sablier_lockup {
         instructions::cancel::handler(ctx, stream_id)
     }
 
+    pub fn collect_fees(ctx: Context<CollectFees>, lamports_amount: u64) -> Result<()> {
+        instructions::collect_fees::handler(ctx, lamports_amount)
+    }
+
     pub fn create_with_timestamps(
         ctx: Context<CreateWithTimestamps>,
         start_time: i64,
@@ -40,8 +44,8 @@ pub mod sablier_lockup {
         )
     }
 
-    pub fn initialize_phase_one(ctx: Context<InitializePhaseOne>) -> Result<()> {
-        instructions::initialize_phase_one::handler(ctx)
+    pub fn initialize_phase_one(ctx: Context<InitializePhaseOne>, fee_collector: Pubkey) -> Result<()> {
+        instructions::initialize_phase_one::handler(ctx, fee_collector)
     }
 
     pub fn initialize_phase_two(ctx: Context<InitializePhaseTwo>) -> Result<()> {
