@@ -47,7 +47,7 @@ pub struct PrepareForStreamCreation<'info> {
     pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        init,
+        init_if_needed,
         payer = sender,
         seeds = [b"stream_nft_mint",
                  nft_collection_data.total_supply.to_le_bytes().as_ref()],
@@ -60,7 +60,7 @@ pub struct PrepareForStreamCreation<'info> {
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        init,
+        init_if_needed,
         payer = sender,
         space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
         seeds = [b"LL_stream", stream_nft_mint.key().as_ref()],
