@@ -1,6 +1,8 @@
 import * as anchor from "@coral-xyz/anchor";
 import web3 from "@solana/web3.js";
 
+import { BanksClient } from "solana-bankrun";
+
 // Helper to create a default AccountInfo with 100 SOL
 export function getDefaultAccountInfoWithSOL(): web3.AccountInfo<Uint8Array> {
   return {
@@ -51,10 +53,12 @@ export interface StreamMilestones {
   endTime: anchor.BN;
 }
 
-// TODO: use BankClient's internal clock to get the current time
+export async function getDefaultMilestones(
+  client: BanksClient
+): Promise<StreamMilestones> {
+  // Get the current timestamp from Bankrun
+  const now = Number((await client.getClock()).unixTimestamp);
 
-export function getDefaultMilestones(): StreamMilestones {
-  const now = Math.floor(Date.now() / 1000); // Current Unix timestamp in seconds
   const startTime = new anchor.BN(now + 60); // Start in 1 minute
   const cliffTime = new anchor.BN(now + 300); // Cliff in 5 minutes
   const endTime = new anchor.BN(now + 3600); // End in 1 hour
@@ -66,8 +70,12 @@ export function getDefaultMilestones(): StreamMilestones {
   };
 }
 
-export function getMilestonesWithPastStartTime(): StreamMilestones {
-  const now = Math.floor(Date.now() / 1000); // Current Unix timestamp in seconds
+export async function getMilestonesWithPastStartTime(
+  client: BanksClient
+): Promise<StreamMilestones> {
+  // Get the current timestamp from Bankrun
+  const now = Number((await client.getClock()).unixTimestamp);
+
   const startTime = new anchor.BN(now - 60); // Start 1 minute ago
   const cliffTime = new anchor.BN(now + 300); // Cliff in 5 minutes
   const endTime = new anchor.BN(now + 3600); // End in 1 hour
@@ -79,8 +87,12 @@ export function getMilestonesWithPastStartTime(): StreamMilestones {
   };
 }
 
-export function getMilestonesWithPastCliffTime(): StreamMilestones {
-  const now = Math.floor(Date.now() / 1000); // Current Unix timestamp in seconds
+export async function getMilestonesWithPastCliffTime(
+  client: BanksClient
+): Promise<StreamMilestones> {
+  // Get the current timestamp from Bankrun
+  const now = Number((await client.getClock()).unixTimestamp);
+
   const startTime = new anchor.BN(now - 300); // Start 5 minutes ago
   const cliffTime = new anchor.BN(now - 60); // Cliff 1 minute ago
   const endTime = new anchor.BN(now + 3600); // End in 1 hour
@@ -92,8 +104,12 @@ export function getMilestonesWithPastCliffTime(): StreamMilestones {
   };
 }
 
-export function getMilestonesWithPastEndTime(): StreamMilestones {
-  const now = Math.floor(Date.now() / 1000); // Current Unix timestamp in seconds
+export async function getMilestonesWithPastEndTime(
+  client: BanksClient
+): Promise<StreamMilestones> {
+  // Get the current timestamp from Bankrun
+  const now = Number((await client.getClock()).unixTimestamp);
+
   const startTime = new anchor.BN(now - 3600); // Start 1 hour ago
   const cliffTime = new anchor.BN(now - 300); // Cliff 5 minutes ago
   const endTime = new anchor.BN(now - 60); // End 1 minute ago
