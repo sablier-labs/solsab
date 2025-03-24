@@ -1,4 +1,4 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, solana_program::program::invoke};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
@@ -8,6 +8,8 @@ use crate::{
     state::{lockup::StreamData, treasury::Treasury},
     utils::{errors::ErrorCode, streaming_math::get_withdrawable_amount},
 };
+
+const WITHDRAWAL_FEE_LAMPORTS: u64 = 10_000_000; // 0.01 SOL
 
 #[derive(Accounts)]
 #[instruction(stream_id: u64)]
@@ -94,6 +96,14 @@ pub fn handler(ctx: Context<Withdraw>, _stream_id: u64, amount: u64) -> Result<(
     if amount > withdrawable_amount {
         return Err(ErrorCode::InvalidWithdrawalAmount.into());
     }
+
+    // Collect the withdrawal fee from the tx signer
+    let fee_collection_ix = anchor_lang::solana_program::system_instruction::transfer(
+        &ctx.accounts.signer.key(),
+        &ctx.accounts.treasury.key(),
+        WITHDRAWAL_FEE_LAMPORTS,
+    );
+    invoke(&fee_collection_ix, &[ctx.accounts.signer.to_account_info(), ctx.accounts.treasury.to_account_info()])?;
 
     let treasury = &mut ctx.accounts.treasury;
 

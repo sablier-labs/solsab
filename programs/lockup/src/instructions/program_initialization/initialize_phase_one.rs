@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    state::{nft_collection_data::NftCollectionData, treasury::Treasury},
+    state::{fee_collector::FeeCollectorData, nft_collection_data::NftCollectionData, treasury::Treasury},
     utils::constants::ANCHOR_DISCRIMINATOR_SIZE,
 };
 
@@ -23,6 +23,15 @@ pub struct InitializePhaseOne<'info> {
     #[account(
         init,
         payer = signer,
+        seeds = [b"fee_collector_data"],
+        space = ANCHOR_DISCRIMINATOR_SIZE + FeeCollectorData::INIT_SPACE,
+        bump
+    )]
+    pub fee_collector_data: Box<Account<'info, FeeCollectorData>>,
+
+    #[account(
+        init,
+        payer = signer,
         seeds = [b"nft_collection_data"],
         space = ANCHOR_DISCRIMINATOR_SIZE + NftCollectionData::INIT_SPACE,
         bump
@@ -32,8 +41,11 @@ pub struct InitializePhaseOne<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<InitializePhaseOne>) -> Result<()> {
+pub fn handler(ctx: Context<InitializePhaseOne>, fee_collector: Pubkey) -> Result<()> {
     ctx.accounts.treasury.bump = ctx.bumps.treasury;
+
+    ctx.accounts.fee_collector_data.bump = ctx.bumps.fee_collector_data;
+    ctx.accounts.fee_collector_data.address = fee_collector;
 
     ctx.accounts.nft_collection_data.bump = ctx.bumps.nft_collection_data;
     ctx.accounts.nft_collection_data.total_supply = 0;
