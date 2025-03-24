@@ -1,64 +1,80 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
+};
 
 use crate::{
-    state::{lockup::Stream, treasury::Treasury},
+    state::{lockup::StreamData, treasury::Treasury},
     utils::{errors::ErrorCode, streaming_math::get_refundable_amount},
 };
 
 #[derive(Accounts)]
+#[instruction(stream_id: u64)]
 pub struct Cancel<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = sender.key() == stream_data.sender,
+    )]
     pub sender: Signer<'info>,
 
     #[account(
-        mut,
-        seeds = [b"LL_stream", sender_ata.key().as_ref(), recipient_ata.key().as_ref()],
-        bump = stream.bump
+        constraint = asset_mint.key() == stream_data.asset_mint,
     )]
-    pub stream: Box<Account<'info, Stream>>,
+    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    #[account(mint::token_program = token_program)]
-    pub mint: Box<InterfaceAccount<'info, Mint>>,
+    #[account(
+        seeds = [b"stream_nft_mint",
+                 stream_id.to_le_bytes().as_ref()],
+        bump,
+    )]
+    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         mut,
-        constraint = sender_ata.owner == sender.key(),
+        seeds = [b"LL_stream", stream_nft_mint.key().as_ref()],
+        bump = stream_data.bump,
     )]
-    pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub stream_data: Box<Account<'info, StreamData>>,
 
-    #[account(mut)]
-    pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    #[account(
+        mut,
+        associated_token::mint = asset_mint,
+        associated_token::authority = sender,
+        associated_token::token_program = asset_token_program,
+    )]
+    pub sender_asset_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
         seeds = [b"treasury"],
-        bump = treasury_pda.bump
+        bump = treasury.bump
     )]
-    pub treasury_pda: Box<Account<'info, Treasury>>,
+    pub treasury: Box<Account<'info, Treasury>>,
 
     #[account(
         mut,
-        associated_token::mint = mint,
-        associated_token::authority = treasury_pda,
-        associated_token::token_program = token_program,
+        associated_token::mint = asset_mint,
+        associated_token::authority = treasury,
+        associated_token::token_program = asset_token_program,
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    pub token_program: Interface<'info, TokenInterface>,
+    pub asset_token_program: Interface<'info, TokenInterface>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-pub fn handler(ctx: Context<Cancel>) -> Result<()> {
+pub fn handler(ctx: Context<Cancel>, _stream_id: u64) -> Result<()> {
     // Assert that the Stream is cancelable
-    if !ctx.accounts.stream.is_cancelable {
+    if !ctx.accounts.stream_data.is_cancelable {
         return Err(ErrorCode::StreamIsNotCancelable.into());
     }
 
     // Clone the milestones to avoid immutable borrow conflicts
-    let milestones = ctx.accounts.stream.milestones.clone();
+    let milestones = ctx.accounts.stream_data.milestones.clone();
 
     // Mutably borrow the stream amounts
-    let stream_amounts = &mut ctx.accounts.stream.amounts;
+    let stream_amounts = &mut ctx.accounts.stream_data.amounts;
 
     // Calculate the refundable amount
     let refundable_amount = get_refundable_amount(&milestones, stream_amounts.deposited);
@@ -67,28 +83,28 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
         // Prepare the instruction to transfer the refundable SPL tokens back to the sender
         let transfer_ix = TransferChecked {
             from: ctx.accounts.treasury_ata.to_account_info(),
-            mint: ctx.accounts.mint.to_account_info(),
-            to: ctx.accounts.sender_ata.to_account_info(),
-            authority: ctx.accounts.treasury_pda.to_account_info(),
+            mint: ctx.accounts.asset_mint.to_account_info(),
+            to: ctx.accounts.sender_asset_ata.to_account_info(),
+            authority: ctx.accounts.treasury.to_account_info(),
         };
 
         // Wrap the Treasury PDA's seeds in the appropriate structure
-        let signer_seeds: &[&[&[u8]]] = &[&[b"treasury", &[ctx.accounts.treasury_pda.bump]]];
+        let signer_seeds: &[&[&[u8]]] = &[&[b"treasury", &[ctx.accounts.treasury.bump]]];
 
         // Execute the transfer
         let cpi_ctx =
-            CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), transfer_ix, signer_seeds);
-        transfer_checked(cpi_ctx, refundable_amount, ctx.accounts.mint.decimals)?;
+            CpiContext::new_with_signer(ctx.accounts.asset_token_program.to_account_info(), transfer_ix, signer_seeds);
+        transfer_checked(cpi_ctx, refundable_amount, ctx.accounts.asset_mint.decimals)?;
 
         // Update the Stream field tracking the refunded amount
         stream_amounts.refunded = refundable_amount;
     }
 
     // Mark the Stream as canceled
-    ctx.accounts.stream.was_canceled = true;
+    ctx.accounts.stream_data.was_canceled = true;
 
     // Mark the Stream as non-cancelable
-    ctx.accounts.stream.is_cancelable = false;
+    ctx.accounts.stream_data.is_cancelable = false;
 
     Ok(())
 }
