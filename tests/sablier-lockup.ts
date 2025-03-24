@@ -36,7 +36,12 @@ import {
   getMilestonesWithPastStartTime,
   getMilestonesWithPastCliffTime,
   getMilestonesWithPastEndTime,
-  getStreamedAmountAtCancelTime,
+  getStreamedAmountAt,
+  UnlockAmounts,
+  getDefaultUnlockAmounts,
+  getUnlockAmountsJustStart,
+  getUnlockAmountsJustCliff,
+  getUnlockAmountsStartAndCliff,
 } from "./utils";
 
 import { SablierLockup } from "../target/types/sablier_lockup";
@@ -241,7 +246,8 @@ describe("SablierLockup", () => {
 
   it("Fails to create a LL Stream with a deposited amount > sender's balance", async () => {
     const { assetMint, senderATA } = await createTokenAndMintToSender(
-      TOKEN_PROGRAM_ID
+      TOKEN_PROGRAM_ID,
+      getDefaultUnlockAmounts()
     );
 
     // Attempt to create a Stream with a deposited amount > sender's balance
@@ -253,6 +259,7 @@ describe("SablierLockup", () => {
     await assertStreamCreationFailure(
       assetMint,
       depositedAmount,
+      getDefaultUnlockAmounts(),
       getDefaultMilestones(),
       isCancelable,
       TOKEN_PROGRAM_ID,
@@ -261,7 +268,10 @@ describe("SablierLockup", () => {
   });
 
   it("Fails to create a LL Stream with a depositAmount = 0", async () => {
-    const { assetMint } = await createTokenAndMintToSender(TOKEN_PROGRAM_ID);
+    const { assetMint } = await createTokenAndMintToSender(
+      TOKEN_PROGRAM_ID,
+      getDefaultUnlockAmounts()
+    );
 
     // Attempt to create a Stream with a deposited amount of 0
     const depositedAmount = new BN(0);
@@ -270,15 +280,19 @@ describe("SablierLockup", () => {
     await assertStreamCreationFailure(
       assetMint,
       depositedAmount,
+      getDefaultUnlockAmounts(),
       getDefaultMilestones(),
       isCancelable,
       TOKEN_PROGRAM_ID,
-      "0x1771"
+      "0x1773"
     );
   });
 
   it("Fails to create a LL Stream with an invalid token mint", async () => {
-    const { senderATA } = await createTokenAndMintToSender(TOKEN_PROGRAM_ID);
+    const { senderATA } = await createTokenAndMintToSender(
+      TOKEN_PROGRAM_ID,
+      getDefaultUnlockAmounts()
+    );
 
     // Create an "invalid" mint (different from that of the sender's ATA)
     const invalidAssetMint = await createMint(
@@ -296,6 +310,7 @@ describe("SablierLockup", () => {
     await assertStreamCreationFailure(
       invalidAssetMint,
       depositedAmount,
+      getDefaultUnlockAmounts(),
       getDefaultMilestones(),
       isCancelable,
       TOKEN_PROGRAM_ID,
@@ -305,7 +320,8 @@ describe("SablierLockup", () => {
 
   it("Fails to create a LL Stream when cliffTime < startTime", async () => {
     const { assetMint, senderATA } = await createTokenAndMintToSender(
-      TOKEN_PROGRAM_ID
+      TOKEN_PROGRAM_ID,
+      getDefaultUnlockAmounts()
     );
 
     // Attempt to create a Stream with cliffTime < startTime
@@ -317,16 +333,18 @@ describe("SablierLockup", () => {
     await assertStreamCreationFailure(
       assetMint,
       depositedAmount,
+      getDefaultUnlockAmounts(),
       milestones,
       isCancelable,
       TOKEN_PROGRAM_ID,
-      "0x1770"
+      "0x1771"
     );
   });
 
   it("Fails to create a LL Stream when cliffTime == startTime", async () => {
     const { assetMint, senderATA } = await createTokenAndMintToSender(
-      TOKEN_PROGRAM_ID
+      TOKEN_PROGRAM_ID,
+      getDefaultUnlockAmounts()
     );
 
     // Attempt to create a Stream with cliffTime < startTime
@@ -338,16 +356,18 @@ describe("SablierLockup", () => {
     await assertStreamCreationFailure(
       assetMint,
       depositedAmount,
+      getDefaultUnlockAmounts(),
       milestones,
       isCancelable,
       TOKEN_PROGRAM_ID,
-      "0x1770"
+      "0x1771"
     );
   });
 
   it("Fails to create a LL Stream when cliffTime > endTime", async () => {
     const { assetMint, senderATA } = await createTokenAndMintToSender(
-      TOKEN_PROGRAM_ID
+      TOKEN_PROGRAM_ID,
+      getDefaultUnlockAmounts()
     );
 
     // Attempt to create a Stream with cliffTime > endTime
@@ -359,16 +379,18 @@ describe("SablierLockup", () => {
     await assertStreamCreationFailure(
       assetMint,
       depositedAmount,
+      getDefaultUnlockAmounts(),
       milestones,
       isCancelable,
       TOKEN_PROGRAM_ID,
-      "0x1770"
+      "0x1771"
     );
   });
 
   it("Fails to create a LL Stream when cliffTime == endTime", async () => {
     const { assetMint, senderATA } = await createTokenAndMintToSender(
-      TOKEN_PROGRAM_ID
+      TOKEN_PROGRAM_ID,
+      getDefaultUnlockAmounts()
     );
 
     // Attempt to create a Stream with cliffTime > endTime
@@ -380,16 +402,18 @@ describe("SablierLockup", () => {
     await assertStreamCreationFailure(
       assetMint,
       depositedAmount,
+      getDefaultUnlockAmounts(),
       milestones,
       isCancelable,
       TOKEN_PROGRAM_ID,
-      "0x1770"
+      "0x1771"
     );
   });
 
   it("Fails to create a LL Stream when endTime < startTime", async () => {
     const { assetMint, senderATA } = await createTokenAndMintToSender(
-      TOKEN_PROGRAM_ID
+      TOKEN_PROGRAM_ID,
+      getDefaultUnlockAmounts()
     );
 
     // Attempt to create a Stream with endTime < startTime
@@ -401,72 +425,154 @@ describe("SablierLockup", () => {
     await assertStreamCreationFailure(
       assetMint,
       depositedAmount,
+      getDefaultUnlockAmounts(),
       milestones,
       isCancelable,
       TOKEN_PROGRAM_ID,
-      "0x1770"
+      "0x1771"
     );
   });
 
-  it("Creates a cancelable LL Stream with the SPL Token program", async () => {
-    await testStreamCreation(TOKEN_PROGRAM_ID, true, getDefaultMilestones());
-  });
-
-  it("Creates 3 cancelable LL Streams with the SPL Token program", async () => {
-    await testStreamCreation(TOKEN_PROGRAM_ID, true, getDefaultMilestones());
-    await testStreamCreation(TOKEN_PROGRAM_ID, true, getDefaultMilestones());
-    await testStreamCreation(TOKEN_PROGRAM_ID, true, getDefaultMilestones());
-  });
-
-  it("Creates a cancelable LL Stream with a past startTime", async () => {
+  it("Creates a cancelable SPL Token LL Stream", async () => {
     await testStreamCreation(
       TOKEN_PROGRAM_ID,
       true,
-      getMilestonesWithPastStartTime()
+      getDefaultMilestones(),
+      getDefaultUnlockAmounts()
     );
   });
 
-  it("Creates a cancelable LL Stream with a past cliffTime", async () => {
+  it("Creates 3 cancelable SPL Token LL Streams", async () => {
     await testStreamCreation(
       TOKEN_PROGRAM_ID,
       true,
-      getMilestonesWithPastCliffTime()
+      getDefaultMilestones(),
+      getDefaultUnlockAmounts()
+    );
+    await testStreamCreation(
+      TOKEN_PROGRAM_ID,
+      true,
+      getDefaultMilestones(),
+      getDefaultUnlockAmounts()
+    );
+    await testStreamCreation(
+      TOKEN_PROGRAM_ID,
+      true,
+      getDefaultMilestones(),
+      getDefaultUnlockAmounts()
     );
   });
 
-  it("Creates a cancelable LL Stream with a past endTime", async () => {
+  it("Creates a cancelable SPL Token LL Stream with a past startTime", async () => {
     await testStreamCreation(
       TOKEN_PROGRAM_ID,
       true,
-      getMilestonesWithPastEndTime()
+      getMilestonesWithPastStartTime(),
+      getDefaultUnlockAmounts()
+    );
+  });
+
+  it("Creates a cancelable SPL Token LL Stream with a past cliffTime", async () => {
+    await testStreamCreation(
+      TOKEN_PROGRAM_ID,
+      true,
+      getMilestonesWithPastCliffTime(),
+      getDefaultUnlockAmounts()
+    );
+  });
+
+  it("Creates a cancelable SPL Token LL Stream with a past endTime", async () => {
+    await testStreamCreation(
+      TOKEN_PROGRAM_ID,
+      true,
+      getMilestonesWithPastEndTime(),
+      getDefaultUnlockAmounts()
+    );
+  });
+
+  it("Creates a cancelable SPL Token Start-Unlock LL Stream", async () => {
+    await testStreamCreation(
+      TOKEN_PROGRAM_ID,
+      true,
+      getDefaultMilestones(),
+      getUnlockAmountsJustStart()
+    );
+  });
+
+  it("Creates a cancelable SPL Token Cliff-Unlock LL Stream", async () => {
+    await testStreamCreation(
+      TOKEN_PROGRAM_ID,
+      true,
+      getDefaultMilestones(),
+      getUnlockAmountsJustCliff()
+    );
+  });
+
+  it("Creates a cancelable SPL Token StartCliff-Unlock LL Stream", async () => {
+    await testStreamCreation(
+      TOKEN_PROGRAM_ID,
+      true,
+      getDefaultMilestones(),
+      getUnlockAmountsStartAndCliff()
     );
   });
 
   // Stream Creation Tests (Token2022)
 
-  it("Creates a cancelable LL Stream with the SPL Token2022 program", async () => {
+  it("Creates a cancelable Token2022 LL Stream", async () => {
     await testStreamCreation(
       TOKEN_2022_PROGRAM_ID,
       true,
-      getDefaultMilestones()
+      getDefaultMilestones(),
+      getDefaultUnlockAmounts()
     );
   });
 
-  it("Creates 3 cancelable Streams with the SPL Token2022 program", async () => {
+  it("Creates 3 cancelable Token2022 Streams", async () => {
     await testStreamCreation(
       TOKEN_2022_PROGRAM_ID,
       true,
-      getDefaultMilestones()
+      getDefaultMilestones(),
+      getDefaultUnlockAmounts()
     );
     await testStreamCreation(
       TOKEN_2022_PROGRAM_ID,
       true,
-      getDefaultMilestones()
+      getDefaultMilestones(),
+      getDefaultUnlockAmounts()
     );
     await testStreamCreation(
       TOKEN_2022_PROGRAM_ID,
       true,
-      getDefaultMilestones()
+      getDefaultMilestones(),
+      getDefaultUnlockAmounts()
+    );
+  });
+
+  it("Creates a cancelable Token2022 Start-Unlock LL Stream", async () => {
+    await testStreamCreation(
+      TOKEN_2022_PROGRAM_ID,
+      true,
+      getDefaultMilestones(),
+      getUnlockAmountsJustStart()
+    );
+  });
+
+  it("Creates a cancelable Token2022 Cliff-Unlock LL Stream", async () => {
+    await testStreamCreation(
+      TOKEN_2022_PROGRAM_ID,
+      true,
+      getDefaultMilestones(),
+      getUnlockAmountsJustCliff()
+    );
+  });
+
+  it("Creates a cancelable Token2022 StartCliff-Unlock LL Stream", async () => {
+    await testStreamCreation(
+      TOKEN_2022_PROGRAM_ID,
+      true,
+      getDefaultMilestones(),
+      getUnlockAmountsStartAndCliff()
     );
   });
 
@@ -482,6 +588,7 @@ describe("SablierLockup", () => {
     createStreamAndTestTransferability(
       TOKEN_PROGRAM_ID,
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       true
     );
   });
@@ -490,6 +597,7 @@ describe("SablierLockup", () => {
     createStreamAndTestTransferability(
       TOKEN_PROGRAM_ID,
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       false
     );
   });
@@ -506,6 +614,7 @@ describe("SablierLockup", () => {
     createStreamAndTestTransferability(
       TOKEN_2022_PROGRAM_ID,
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       true
     );
   });
@@ -514,6 +623,7 @@ describe("SablierLockup", () => {
     createStreamAndTestTransferability(
       TOKEN_2022_PROGRAM_ID,
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       false
     );
   });
@@ -524,12 +634,13 @@ describe("SablierLockup", () => {
     const { streamData } = await createMintATAsAndStream(
       false,
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID
     );
 
     await assertCancelabilityRenouncementFailure(
       streamData.id,
-      "custom program error: 0x1775"
+      "custom program error: 0x1777"
     );
   });
 
@@ -537,6 +648,7 @@ describe("SablierLockup", () => {
     const { streamData } = await createMintATAsAndStream(
       true,
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID
     );
 
@@ -629,6 +741,7 @@ describe("SablierLockup", () => {
     const { streamData, assetMint } = await createMintATAsAndStream(
       true,
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       assetTokenProgram
     );
 
@@ -648,6 +761,7 @@ describe("SablierLockup", () => {
     const { streamData, assetMint } = await createMintATAsAndStream(
       false,
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       assetTokenProgram
     );
 
@@ -656,13 +770,14 @@ describe("SablierLockup", () => {
       streamData.id,
       assetMint,
       assetTokenProgram,
-      "custom program error: 0x1774"
+      "custom program error: 0x1776"
     );
   });
 
   it("Cancels an SPL Token LL Stream immediately after creating it", async () => {
     await createStreamAndTestCancelability(
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID
     );
   });
@@ -670,6 +785,7 @@ describe("SablierLockup", () => {
   it("Cancels an SPL Token LL Stream at half time", async () => {
     await createStreamAndTestCancelability(
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID,
       CancelTime.Halfish
     );
@@ -678,6 +794,7 @@ describe("SablierLockup", () => {
   it("Cancels an SPL Token LL Stream after the tokens have been fully streamed", async () => {
     await createStreamAndTestCancelability(
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID,
       CancelTime.Endish
     );
@@ -686,6 +803,7 @@ describe("SablierLockup", () => {
   it("Cancels an SPL Token LL Stream with a past startTime immediately after creating it", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastStartTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID
     );
   });
@@ -693,6 +811,7 @@ describe("SablierLockup", () => {
   it("Cancels an SPL Token LL Stream with a past startTime at half time", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastStartTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID,
       CancelTime.Halfish
     );
@@ -701,6 +820,7 @@ describe("SablierLockup", () => {
   it("Cancels an SPL Token LL Stream with a past startTime after the tokens have been fully streamed", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastStartTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID,
       CancelTime.Endish
     );
@@ -709,6 +829,7 @@ describe("SablierLockup", () => {
   it("Cancels an SPL Token LL Stream with a past cliffTime immediately after creating it", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastCliffTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID
     );
   });
@@ -716,6 +837,7 @@ describe("SablierLockup", () => {
   it("Cancels an SPL Token LL Stream with a past cliffTime at half time", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastCliffTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID,
       CancelTime.Halfish
     );
@@ -724,6 +846,7 @@ describe("SablierLockup", () => {
   it("Cancels an SPL Token LL Stream with a past cliffTime after the tokens have been fully streamed", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastCliffTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID,
       CancelTime.Endish
     );
@@ -732,6 +855,7 @@ describe("SablierLockup", () => {
   it("Cancels an SPL Token LL Stream with a past endTime immediately after creating it", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastEndTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID
     );
   });
@@ -739,6 +863,7 @@ describe("SablierLockup", () => {
   it("Cancels an SPL Token LL Stream with a past endTime at half time", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastEndTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID,
       CancelTime.Halfish
     );
@@ -747,6 +872,7 @@ describe("SablierLockup", () => {
   it("Cancels an SPL Token LL Stream with a past endTime after the tokens have been fully streamed", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastEndTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_PROGRAM_ID,
       CancelTime.Endish
     );
@@ -757,6 +883,7 @@ describe("SablierLockup", () => {
   it("Cancels a Token2022 LL Stream immediately after creating it", async () => {
     await createStreamAndTestCancelability(
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       TOKEN_2022_PROGRAM_ID
     );
   });
@@ -764,6 +891,7 @@ describe("SablierLockup", () => {
   it("Cancels a Token2022 LL Stream at half time", async () => {
     await createStreamAndTestCancelability(
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       TOKEN_2022_PROGRAM_ID,
       CancelTime.Halfish
     );
@@ -772,6 +900,7 @@ describe("SablierLockup", () => {
   it("Cancels a Token2022 LL Stream after the tokens have been fully streamed", async () => {
     await createStreamAndTestCancelability(
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       TOKEN_2022_PROGRAM_ID,
       CancelTime.Endish
     );
@@ -780,6 +909,7 @@ describe("SablierLockup", () => {
   it("Cancels a Token2022 LL Stream with a past startTime immediately after creating it", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastStartTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_2022_PROGRAM_ID
     );
   });
@@ -787,6 +917,7 @@ describe("SablierLockup", () => {
   it("Cancels a Token2022 LL Stream with a past startTime at half time", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastStartTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_2022_PROGRAM_ID,
       CancelTime.Halfish
     );
@@ -795,6 +926,7 @@ describe("SablierLockup", () => {
   it("Cancels a Token2022 LL Stream with a past startTime after the tokens have been fully streamed", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastStartTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_2022_PROGRAM_ID,
       CancelTime.Endish
     );
@@ -803,6 +935,7 @@ describe("SablierLockup", () => {
   it("Cancels a Token2022 LL Stream with a past cliffTime immediately after creating it", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastCliffTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_2022_PROGRAM_ID
     );
   });
@@ -810,6 +943,7 @@ describe("SablierLockup", () => {
   it("Cancels a Token2022 LL Stream with a past cliffTime at half time", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastCliffTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_2022_PROGRAM_ID,
       CancelTime.Halfish
     );
@@ -818,6 +952,7 @@ describe("SablierLockup", () => {
   it("Cancels a Token2022 LL Stream with a past cliffTime after the tokens have been fully streamed", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastCliffTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_2022_PROGRAM_ID,
       CancelTime.Endish
     );
@@ -826,6 +961,7 @@ describe("SablierLockup", () => {
   it("Cancels a Token2022 LL Stream with a past endTime immediately after creating it", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastEndTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_2022_PROGRAM_ID
     );
   });
@@ -833,6 +969,7 @@ describe("SablierLockup", () => {
   it("Cancels a Token2022 LL Stream with a past endTime at half time", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastEndTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_2022_PROGRAM_ID,
       CancelTime.Halfish
     );
@@ -841,6 +978,7 @@ describe("SablierLockup", () => {
   it("Cancels a Token2022 LL Stream with a past endTime after the tokens have been fully streamed", async () => {
     await createStreamAndTestCancelability(
       getMilestonesWithPastEndTime(),
+      getDefaultUnlockAmounts(),
       TOKEN_2022_PROGRAM_ID,
       CancelTime.Endish
     );
@@ -855,9 +993,10 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime.sub(new BN(1)),
-      "custom program error: 0x1773",
-      WithdrawalSize.WholeDeposit
+      WithdrawalSize.EntireDeposit,
+      "custom program error: 0x1775"
     );
   });
 
@@ -868,9 +1007,10 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
-      "custom program error: 0x1776",
-      WithdrawalSize.ZERO
+      WithdrawalSize.ZERO,
+      "custom program error: 0x1778"
     );
   });
 
@@ -881,9 +1021,10 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.cliffTime.sub(new BN(1)),
-      "custom program error: 0x1773",
-      WithdrawalSize.OneToken
+      WithdrawalSize.OneToken,
+      "custom program error: 0x1775"
     );
   });
 
@@ -894,9 +1035,52 @@ describe("SablierLockup", () => {
       senderKeys.publicKey,
       TOKEN_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
-      "custom program error: 0xbc4",
-      WithdrawalSize.OneThirdOfDeposited
+      WithdrawalSize.OneThirdOfDeposited,
+      "custom program error: 0xbc4"
+    );
+  });
+
+  it("Fails to withdraw the start unlock amount + 1 tokens from a Start-Unlock SPL Token LL Stream - as recipient - at start time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForFailureToWithdraw(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsJustStart(),
+      milestones.startTime,
+      WithdrawalSize.StartUnlockPlusOne,
+      "custom program error: 0x1775"
+    );
+  });
+
+  it("Fails to withdraw the cliff unlock amount + 1 tokens from a Cliff-Unlock SPL Token LL Stream - as recipient - at cliff time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForFailureToWithdraw(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsJustCliff(),
+      milestones.cliffTime,
+      WithdrawalSize.CliffUnlockPlusOne,
+      "custom program error: 0x1775"
+    );
+  });
+
+  it("Fails to withdraw the start+cliff unlock amount + 1 tokens from a StartCliff-Unlock SPL Token LL Stream - as recipient - at cliff time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForFailureToWithdraw(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsStartAndCliff(),
+      milestones.startTime,
+      WithdrawalSize.StartAndCliffUnlocksPlusOne,
+      "custom program error: 0x1775"
     );
   });
 
@@ -907,6 +1091,7 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
       WithdrawalSize.OneThirdOfDeposited
     );
@@ -919,6 +1104,7 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
       WithdrawalSize.OneThirdOfDeposited
     );
@@ -931,6 +1117,7 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.startTime.add(milestones.endTime).div(new BN(2)),
       WithdrawalSize.HalfOfDeposited
     );
@@ -957,6 +1144,84 @@ describe("SablierLockup", () => {
     );
   });
 
+  it("Withdraws from a Start-Unlock SPL Token LL Stream - as recipient - at start time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForWithdrawal(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsJustStart(),
+      milestones.startTime,
+      WithdrawalSize.StartUnlock
+    );
+  });
+
+  it("Withdraws from a Start-Unlock SPL Token LL Stream - as recipient - at half time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForWithdrawal(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsJustStart(),
+      milestones.startTime.add(milestones.endTime).div(new BN(2)),
+      WithdrawalSize.StreamedAmount
+    );
+  });
+
+  it("Withdraws from a Cliff-Unlock SPL Token LL Stream - as recipient - at cliff time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForWithdrawal(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsJustCliff(),
+      milestones.cliffTime,
+      WithdrawalSize.CliffUnlock
+    );
+  });
+
+  it("Withdraws cliff unlock from a Cliff-Unlock SPL Token LL Stream - as a non-recipient & to the recipient ATA - at half time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForWithdrawal(
+      thirdPartyKeys,
+      recipientKeys.publicKey,
+      TOKEN_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsJustCliff(),
+      milestones.startTime.add(milestones.endTime).div(new BN(2)),
+      WithdrawalSize.CliffUnlock
+    );
+  });
+
+  it("Withdraws from a StartCliff-Unlock SPL Token LL Stream - as recipient - at cliff time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForWithdrawal(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsStartAndCliff(),
+      milestones.cliffTime,
+      WithdrawalSize.StartAndCliffUnlocks
+    );
+  });
+
+  it("Withdraws from a StartCliff-Unlock SPL Token LL Stream - as recipient - at end time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForWithdrawal(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsStartAndCliff(),
+      milestones.endTime,
+      WithdrawalSize.EntireDeposit
+    );
+  });
+
   // Withdraw Tests (Token2022)
 
   it("Fails to withdraw from a Token2022 LL Stream - as recipient - an amount > streamed amount", async () => {
@@ -966,9 +1231,10 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_2022_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime.sub(new BN(1)),
-      "custom program error: 0x1773",
-      WithdrawalSize.WholeDeposit
+      WithdrawalSize.EntireDeposit,
+      "custom program error: 0x1775"
     );
   });
 
@@ -979,9 +1245,10 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_2022_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
-      "custom program error: 0x1776",
-      WithdrawalSize.ZERO
+      WithdrawalSize.ZERO,
+      "custom program error: 0x1778"
     );
   });
 
@@ -992,9 +1259,10 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_2022_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.cliffTime.sub(new BN(1)),
-      "custom program error: 0x1773",
-      WithdrawalSize.OneToken
+      WithdrawalSize.OneToken,
+      "custom program error: 0x1775"
     );
   });
 
@@ -1005,9 +1273,52 @@ describe("SablierLockup", () => {
       senderKeys.publicKey,
       TOKEN_2022_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
-      "custom program error: 0xbc4",
-      WithdrawalSize.OneThirdOfDeposited
+      WithdrawalSize.OneThirdOfDeposited,
+      "custom program error: 0xbc4"
+    );
+  });
+
+  it("Fails to withdraw the start unlock amount + 1 tokens from a Start-Unlock Token2022 LL Stream - as recipient - at start time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForFailureToWithdraw(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_2022_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsJustStart(),
+      milestones.startTime,
+      WithdrawalSize.StartUnlockPlusOne,
+      "custom program error: 0x1775"
+    );
+  });
+
+  it("Fails to withdraw the cliff unlock amount + 1 tokens from a Cliff-Unlock Token2022 LL Stream - as recipient - at cliff time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForFailureToWithdraw(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_2022_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsJustCliff(),
+      milestones.cliffTime,
+      WithdrawalSize.CliffUnlockPlusOne,
+      "custom program error: 0x1775"
+    );
+  });
+
+  it("Fails to withdraw the start+cliff unlock amount + 1 tokens from a StartCliff-Unlock Token2022 LL Stream - as recipient - at cliff time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForFailureToWithdraw(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_2022_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsStartAndCliff(),
+      milestones.startTime,
+      WithdrawalSize.StartAndCliffUnlocksPlusOne,
+      "custom program error: 0x1775"
     );
   });
 
@@ -1018,6 +1329,7 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_2022_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
       WithdrawalSize.OneThirdOfDeposited
     );
@@ -1030,6 +1342,7 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_2022_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
       WithdrawalSize.OneThirdOfDeposited
     );
@@ -1042,6 +1355,7 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_2022_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.startTime.add(milestones.endTime).div(new BN(2)),
       WithdrawalSize.HalfOfDeposited
     );
@@ -1068,6 +1382,84 @@ describe("SablierLockup", () => {
     );
   });
 
+  it("Withdraws from a Start-Unlock Token2022 LL Stream - as recipient - at start time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForWithdrawal(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_2022_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsJustStart(),
+      milestones.startTime,
+      WithdrawalSize.StartUnlock
+    );
+  });
+
+  it("Withdraws from a Start-Unlock Token2022 LL Stream - as recipient - at half time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForWithdrawal(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_2022_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsJustStart(),
+      milestones.startTime.add(milestones.endTime).div(new BN(2)),
+      WithdrawalSize.StreamedAmount
+    );
+  });
+
+  it("Withdraws from a Cliff-Unlock Token2022 LL Stream - as recipient - at cliff time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForWithdrawal(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_2022_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsJustCliff(),
+      milestones.cliffTime,
+      WithdrawalSize.CliffUnlock
+    );
+  });
+
+  it("Withdraws cliff unlock from a Cliff-Unlock Token2022 LL Stream - as a non-recipient & to the recipient ATA - at half time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForWithdrawal(
+      thirdPartyKeys,
+      recipientKeys.publicKey,
+      TOKEN_2022_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsJustCliff(),
+      milestones.startTime.add(milestones.endTime).div(new BN(2)),
+      WithdrawalSize.CliffUnlock
+    );
+  });
+
+  it("Withdraws from a StartCliff-Unlock Token2022 LL Stream - as recipient - at cliff time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForWithdrawal(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_2022_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsStartAndCliff(),
+      milestones.cliffTime,
+      WithdrawalSize.StartAndCliffUnlocks
+    );
+  });
+
+  it("Withdraws from a StartCliff-Unlock Token2022 LL Stream - as recipient - at end time", async () => {
+    const milestones = getDefaultMilestones();
+    await testForWithdrawal(
+      recipientKeys,
+      recipientKeys.publicKey,
+      TOKEN_2022_PROGRAM_ID,
+      milestones,
+      getUnlockAmountsStartAndCliff(),
+      milestones.endTime,
+      WithdrawalSize.EntireDeposit
+    );
+  });
+
   // Withdraw Max Tests (SPL Token)
 
   it("Fails to withdraw max from an SPL Token LL Stream - as a non-recipient & to a non-recipient ATA - at endTime", async () => {
@@ -1077,9 +1469,10 @@ describe("SablierLockup", () => {
       senderKeys.publicKey,
       TOKEN_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
-      "custom program error: 0xbc4",
-      WithdrawalSize.MAX
+      WithdrawalSize.MAX,
+      "custom program error: 0xbc4"
     );
   });
 
@@ -1090,6 +1483,7 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
       WithdrawalSize.MAX
     );
@@ -1102,9 +1496,10 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.cliffTime.sub(new BN(1)),
-      "custom program error: 0x1776",
-      WithdrawalSize.MAX
+      WithdrawalSize.MAX,
+      "custom program error: 0x1778"
     );
   });
 
@@ -1115,6 +1510,7 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
       WithdrawalSize.HalfOfDeposited
     );
@@ -1141,6 +1537,7 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
       WithdrawalSize.MAX
     );
@@ -1159,9 +1556,10 @@ describe("SablierLockup", () => {
       senderKeys.publicKey,
       TOKEN_2022_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
-      "custom program error: 0xbc4",
-      WithdrawalSize.MAX
+      WithdrawalSize.MAX,
+      "custom program error: 0xbc4"
     );
   });
 
@@ -1172,6 +1570,7 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_2022_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
       WithdrawalSize.MAX
     );
@@ -1184,9 +1583,10 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_2022_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.cliffTime.sub(new BN(1)),
-      "custom program error: 0x1776",
-      WithdrawalSize.MAX
+      WithdrawalSize.MAX,
+      "custom program error: 0x1778"
     );
   });
 
@@ -1197,6 +1597,7 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_2022_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
       WithdrawalSize.HalfOfDeposited
     );
@@ -1223,6 +1624,7 @@ describe("SablierLockup", () => {
       recipientKeys.publicKey,
       TOKEN_2022_PROGRAM_ID,
       milestones,
+      getDefaultUnlockAmounts(),
       milestones.endTime,
       WithdrawalSize.MAX
     );
@@ -1240,6 +1642,7 @@ describe("SablierLockup", () => {
   async function assertStreamCreationFailure(
     assetMint: PublicKey,
     depositedAmount: BN,
+    unlockAmounts: UnlockAmounts,
     milestones: StreamMilestones,
     isCancelable: boolean,
     assetTokenProgram: PublicKey,
@@ -1253,6 +1656,7 @@ describe("SablierLockup", () => {
         assetTokenProgram,
         milestones,
         depositedAmount,
+        unlockAmounts,
         isCancelable,
       });
       assert.fail("The Stream creation should've failed, but it didn't.");
@@ -1331,6 +1735,7 @@ describe("SablierLockup", () => {
     } = await createMintATAsAndStream(
       true,
       getDefaultMilestones(),
+      getDefaultUnlockAmounts(),
       assetTokenProgram
     );
 
@@ -1468,6 +1873,7 @@ describe("SablierLockup", () => {
   async function createMintATAsAndStream(
     isStreamCancelable: boolean,
     milestones: StreamMilestones,
+    unlockAmounts: UnlockAmounts,
     assetTokenProgram: PublicKey
   ): Promise<{
     streamData: any;
@@ -1481,7 +1887,8 @@ describe("SablierLockup", () => {
     depositedAmount: BN;
   }> {
     const { assetMint, senderATA } = await createTokenAndMintToSender(
-      assetTokenProgram
+      assetTokenProgram,
+      unlockAmounts
     );
     const streamId = await deduceCurrentStreamId();
 
@@ -1499,6 +1906,7 @@ describe("SablierLockup", () => {
       assetTokenProgram,
       milestones,
       depositedAmount,
+      unlockAmounts,
       isCancelable: isStreamCancelable,
     });
 
@@ -1525,11 +1933,17 @@ describe("SablierLockup", () => {
 
   async function createStreamAndTestCancelability(
     milestones: StreamMilestones,
+    unlockAmounts: UnlockAmounts,
     assetTokenProgram: PublicKey,
     cancelTime: CancelTime = CancelTime.Start
   ) {
     const { streamData, senderATA, assetMint, depositedAmount, treasuryATA } =
-      await createMintATAsAndStream(true, milestones, assetTokenProgram);
+      await createMintATAsAndStream(
+        true,
+        milestones,
+        unlockAmounts,
+        assetTokenProgram
+      );
 
     // Get the initial token balance of the sender
     const senderInitialTokenBalance = await getTokenBalanceByATAKey(senderATA);
@@ -1563,9 +1977,10 @@ describe("SablierLockup", () => {
           }
 
           // Calculate the streamed amount at the cancel time
-          const streamedAmount = getStreamedAmountAtCancelTime(
-            cancelTimeHalfish,
+          const streamedAmount = getStreamedAmountAt(
+            Number(cancelTimeHalfish),
             milestones,
+            unlockAmounts,
             depositedAmount
           );
 
@@ -1609,12 +2024,14 @@ describe("SablierLockup", () => {
   async function createStreamAndTestTransferability(
     assetTokenProgram: PublicKey,
     milestones: StreamMilestones,
+    unlockAmounts: UnlockAmounts,
     isCancelable: boolean
   ) {
     const { streamNftMint, recipientsStreamNftATA, nftTokenProgram } =
       await createMintATAsAndStream(
         isCancelable,
         milestones,
+        unlockAmounts,
         assetTokenProgram
       );
 
@@ -1749,10 +2166,12 @@ describe("SablierLockup", () => {
   async function testStreamCreation(
     assetTokenProgram: PublicKey,
     isCancelable: boolean,
-    milestones: StreamMilestones
+    milestones: StreamMilestones,
+    unlockAmounts: UnlockAmounts
   ) {
     const { assetMint, senderATA } = await createTokenAndMintToSender(
-      assetTokenProgram
+      assetTokenProgram,
+      unlockAmounts
     );
 
     const streamId = await deduceCurrentStreamId();
@@ -1769,6 +2188,7 @@ describe("SablierLockup", () => {
       assetTokenProgram,
       milestones,
       depositedAmount,
+      unlockAmounts,
       isCancelable,
     });
 
@@ -1807,7 +2227,9 @@ describe("SablierLockup", () => {
     assert(
       streamData.amounts.deposited.eq(depositedAmount) &&
         streamData.amounts.withdrawn.eq(new BN(0)) &&
-        streamData.amounts.refunded.eq(new BN(0)),
+        streamData.amounts.refunded.eq(new BN(0)) &&
+        streamData.amounts.startUnlock.eq(unlockAmounts.startUnlock) &&
+        streamData.amounts.cliffUnlock.eq(unlockAmounts.cliffUnlock),
       "The created Stream's amounts are incorrect"
     );
 
@@ -1827,10 +2249,17 @@ describe("SablierLockup", () => {
   const WithdrawalSize = {
     ZERO: 0,
     OneToken: 1,
-    OneThirdOfDeposited: 2,
-    HalfOfDeposited: 3,
-    WholeDeposit: 4,
-    MAX: 5,
+    StartUnlock: 2,
+    StartUnlockPlusOne: 3,
+    CliffUnlock: 4,
+    CliffUnlockPlusOne: 5,
+    StartAndCliffUnlocks: 6,
+    StartAndCliffUnlocksPlusOne: 7,
+    OneThirdOfDeposited: 8,
+    HalfOfDeposited: 9,
+    EntireDeposit: 10,
+    StreamedAmount: 11,
+    MAX: 12,
   } as const;
 
   type WithdrawalSize = (typeof WithdrawalSize)[keyof typeof WithdrawalSize];
@@ -1840,6 +2269,7 @@ describe("SablierLockup", () => {
     assetTokenProgram: PublicKey
   ) {
     const milestones = getDefaultMilestones();
+    const unlockAmounts = getDefaultUnlockAmounts();
 
     const {
       assetMint,
@@ -1849,7 +2279,12 @@ describe("SablierLockup", () => {
       recipientsStreamNftATA,
       streamData,
       streamNftMint,
-    } = await createMintATAsAndStream(true, milestones, assetTokenProgram);
+    } = await createMintATAsAndStream(
+      true,
+      milestones,
+      unlockAmounts,
+      assetTokenProgram
+    );
 
     await timeTravelForwardTo(BigInt(milestones.endTime.toString()));
 
@@ -1886,6 +2321,7 @@ describe("SablierLockup", () => {
 
     let withdrawalAmount = withdrawalSizeToWithdrawalAmount(
       withdrawalSize,
+      unlockAmounts,
       depositedAmount
     );
 
@@ -1943,12 +2379,18 @@ describe("SablierLockup", () => {
     destination: PublicKey,
     assetTokenProgram: PublicKey,
     milestones: StreamMilestones,
+    unlockAmounts: UnlockAmounts,
     withdrawalTime: BN,
-    expectedError: string,
-    withdrawalSize: WithdrawalSize
+    withdrawalSize: WithdrawalSize,
+    expectedError: string
   ) {
     const { nftTokenProgram, streamData, assetMint, depositedAmount } =
-      await createMintATAsAndStream(true, milestones, assetTokenProgram);
+      await createMintATAsAndStream(
+        true,
+        milestones,
+        unlockAmounts,
+        assetTokenProgram
+      );
 
     await timeTravelForwardTo(BigInt(withdrawalTime.toString()));
 
@@ -1967,6 +2409,7 @@ describe("SablierLockup", () => {
 
     let withdrawalAmount = withdrawalSizeToWithdrawalAmount(
       withdrawalSize,
+      unlockAmounts,
       depositedAmount
     );
 
@@ -1987,8 +2430,9 @@ describe("SablierLockup", () => {
     destination: PublicKey,
     assetTokenProgram: PublicKey,
     milestones: StreamMilestones,
+    unlockAmounts: UnlockAmounts,
     withdrawalTime: BN,
-    withdrawalSize: WithdrawalSize
+    withdrawalSize: WithdrawalSize | BN
   ) {
     const {
       streamData,
@@ -1996,7 +2440,12 @@ describe("SablierLockup", () => {
       depositedAmount,
       nftTokenProgram,
       treasuryATA,
-    } = await createMintATAsAndStream(true, milestones, assetTokenProgram);
+    } = await createMintATAsAndStream(
+      true,
+      milestones,
+      unlockAmounts,
+      assetTokenProgram
+    );
 
     await timeTravelForwardTo(BigInt(withdrawalTime.toString()));
 
@@ -2027,10 +2476,23 @@ describe("SablierLockup", () => {
       return;
     }
 
-    withdrawalAmount = withdrawalSizeToWithdrawalAmount(
-      withdrawalSize,
-      depositedAmount
-    );
+    if (withdrawalSize === WithdrawalSize.StreamedAmount) {
+      withdrawalAmount = getStreamedAmountAt(
+        withdrawalTime,
+        milestones,
+        unlockAmounts,
+        depositedAmount
+      );
+    } else if (BN.isBN(withdrawalSize)) {
+      // If a specific amount has been passed, use it
+      withdrawalAmount = withdrawalSize;
+    } else {
+      withdrawalAmount = withdrawalSizeToWithdrawalAmount(
+        withdrawalSize,
+        unlockAmounts,
+        depositedAmount
+      );
+    }
 
     await withdraw(
       streamData.id,
@@ -2055,6 +2517,7 @@ describe("SablierLockup", () => {
 
   function withdrawalSizeToWithdrawalAmount(
     withdrawalSize: WithdrawalSize,
+    unlockAmounts: UnlockAmounts,
     depositedAmount: BN
   ): BN {
     switch (withdrawalSize) {
@@ -2062,14 +2525,28 @@ describe("SablierLockup", () => {
         return new BN(0);
       case WithdrawalSize.OneToken:
         return new BN(1);
+      case WithdrawalSize.StartUnlock:
+        return unlockAmounts.startUnlock;
+      case WithdrawalSize.StartUnlockPlusOne:
+        return unlockAmounts.startUnlock.add(new BN(1));
+      case WithdrawalSize.CliffUnlock:
+        return unlockAmounts.cliffUnlock;
+      case WithdrawalSize.CliffUnlockPlusOne:
+        return unlockAmounts.cliffUnlock.add(new BN(1));
+      case WithdrawalSize.StartAndCliffUnlocks:
+        return unlockAmounts.startUnlock.add(unlockAmounts.cliffUnlock);
+      case WithdrawalSize.StartAndCliffUnlocksPlusOne:
+        return unlockAmounts.startUnlock
+          .add(unlockAmounts.cliffUnlock)
+          .add(new BN(1));
       case WithdrawalSize.OneThirdOfDeposited:
         return depositedAmount.div(new BN(3));
       case WithdrawalSize.HalfOfDeposited:
         return depositedAmount.div(new BN(2));
-      case WithdrawalSize.WholeDeposit:
+      case WithdrawalSize.EntireDeposit:
         return depositedAmount;
       default:
-        throw new Error("Invalid withdrawal size");
+        throw new Error("Invalid WithdrawalSize passed in for conversion!");
     }
   }
 
@@ -2085,6 +2562,7 @@ describe("SablierLockup", () => {
     withdrawalKind: WithdrawalKind
   ) {
     const milestones = getDefaultMilestones();
+    const unlockAmounts = getDefaultUnlockAmounts();
     const {
       nftTokenProgram,
       streamData,
@@ -2092,7 +2570,12 @@ describe("SablierLockup", () => {
       senderATA,
       assetMint,
       depositedAmount,
-    } = await createMintATAsAndStream(true, milestones, assetTokenProgram);
+    } = await createMintATAsAndStream(
+      true,
+      milestones,
+      unlockAmounts,
+      assetTokenProgram
+    );
 
     // Get the initial token balance of the sender
     const senderInitialTokenBalance = await getTokenBalanceByATAKey(senderATA);
@@ -2203,6 +2686,7 @@ describe("SablierLockup", () => {
     withdrawalKind: WithdrawalKind
   ) {
     const milestones = getDefaultMilestones();
+    const unlockAmounts = getDefaultUnlockAmounts();
     const {
       nftTokenProgram,
       streamData,
@@ -2210,7 +2694,12 @@ describe("SablierLockup", () => {
       senderATA,
       assetMint,
       depositedAmount,
-    } = await createMintATAsAndStream(true, milestones, assetTokenProgram);
+    } = await createMintATAsAndStream(
+      true,
+      milestones,
+      unlockAmounts,
+      assetTokenProgram
+    );
 
     // Time travel to half time
     await timeTravelForwardTo(
@@ -2271,6 +2760,7 @@ describe("SablierLockup", () => {
     const { streamData } = await createMintATAsAndStream(
       isCancelable,
       milestones,
+      getDefaultUnlockAmounts(),
       assetTokenProgram
     );
     const streamId = streamData.id;
@@ -2384,11 +2874,13 @@ describe("SablierLockup", () => {
     assetTokenProgram: PublicKey;
     milestones: StreamMilestones;
     depositedAmount: BN;
+    unlockAmounts: UnlockAmounts;
     isCancelable: boolean;
   }
 
   async function createTokenAndMintToSender(
-    assetTokenProgram: PublicKey
+    assetTokenProgram: PublicKey,
+    unlockAmounts: UnlockAmounts
   ): Promise<{
     assetMint: PublicKey;
     senderATA: PublicKey;
@@ -2416,7 +2908,11 @@ describe("SablierLockup", () => {
     );
     console.log(`Sender's ATA: ${senderATA}`);
 
-    const MINOR_UNITS_PER_MAJOR_UNITS = Math.pow(10, TOKEN_DECIMALS);
+    // Determine the number of tokens to mint
+    const tokenAmount = Number(
+      unlockAmounts.startUnlock.add(unlockAmounts.cliffUnlock).add(new BN(1000))
+    );
+
     const signers: anchor.web3.Signer[] = [];
     await mintTo(
       banksClient,
@@ -2424,13 +2920,11 @@ describe("SablierLockup", () => {
       assetMint,
       senderATA,
       senderKeys,
-      10 * MINOR_UNITS_PER_MAJOR_UNITS,
+      tokenAmount,
       signers,
       assetTokenProgram
     );
-    console.log(
-      `Minted ${10 * MINOR_UNITS_PER_MAJOR_UNITS} tokens to the Sender ATA`
-    );
+    console.log(`Minted ${tokenAmount} tokens to the Sender ATA`);
 
     return { assetMint, senderATA };
   }
@@ -2448,6 +2942,7 @@ describe("SablierLockup", () => {
       assetTokenProgram,
       milestones,
       depositedAmount,
+      unlockAmounts,
       isCancelable,
     } = args;
 
@@ -2479,7 +2974,9 @@ describe("SablierLockup", () => {
     let createStreamIx = await lockupProgram.methods
       .createWithTimestamps(
         milestones.startTime,
+        unlockAmounts.startUnlock,
         milestones.cliffTime,
+        unlockAmounts.cliffUnlock,
         milestones.endTime,
         depositedAmount,
         isCancelable

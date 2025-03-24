@@ -21,7 +21,9 @@ pub mod sablier_lockup {
     pub fn create_with_timestamps(
         ctx: Context<CreateWithTimestamps>,
         start_time: i64,
+        start_unlock: u64,
         cliff_time: i64,
+        cliff_unlock: u64,
         end_time: i64,
         deposited_amount: u64,
         is_cancelable: bool,
@@ -29,7 +31,9 @@ pub mod sablier_lockup {
         instructions::create_with_timestamps::handler(
             ctx,
             start_time,
+            start_unlock,
             cliff_time,
+            cliff_unlock,
             end_time,
             deposited_amount,
             is_cancelable,

@@ -77,7 +77,7 @@ pub fn handler(ctx: Context<Cancel>, _stream_id: u64) -> Result<()> {
     let stream_amounts = &mut ctx.accounts.stream_data.amounts;
 
     // Calculate the refundable amount
-    let refundable_amount = get_refundable_amount(&milestones, stream_amounts.deposited);
+    let refundable_amount = get_refundable_amount(&milestones, stream_amounts);
 
     if refundable_amount > 0 {
         // Prepare the instruction to transfer the refundable SPL tokens back to the sender

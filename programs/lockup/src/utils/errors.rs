@@ -2,8 +2,12 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum ErrorCode {
+    #[msg("Deposit amount is less than the unlock amounts!")]
+    DepositAmountLessThanUnlockAmounts,
     #[msg("Invalid cliff time of the Stream!")]
     InvalidCliffTime,
+    #[msg("Invalid cliff unlock amount!")]
+    InvalidCliffUnlockAmount,
     #[msg("Invalid deposit amount!")]
     InvalidDepositAmount,
     #[msg("Stream end time cannot be in the past!")]

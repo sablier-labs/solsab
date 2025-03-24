@@ -1,4 +1,4 @@
-use anchor_lang::{prelude::*, solana_program::sysvar::clock::Clock};
+use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     metadata::{
@@ -149,7 +149,9 @@ pub struct CreateWithTimestamps<'info> {
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,
     start_time: i64,
+    start_unlock: u64,
     cliff_time: i64,
+    cliff_unlock: u64,
     end_time: i64,
     deposited_amount: u64,
     is_cancelable: bool,
@@ -170,9 +172,17 @@ pub fn handler(
         return Err(ErrorCode::InvalidDepositAmount.into());
     }
 
-    // Assert that the cliff time is strictly between the start and end times
-    if cliff_time <= start_time || cliff_time >= end_time {
-        return Err(ErrorCode::InvalidCliffTime.into());
+    if cliff_time > 0 {
+        // Assert that the cliff time is strictly between the start and end times
+        if cliff_time <= start_time || cliff_time >= end_time {
+            return Err(ErrorCode::InvalidCliffTime.into());
+        }
+    } else if cliff_unlock == 0 {
+        return Err(ErrorCode::InvalidCliffUnlockAmount.into());
+    }
+
+    if start_unlock + cliff_unlock > deposited_amount {
+        return Err(ErrorCode::DepositAmountLessThanUnlockAmounts.into());
     }
 
     // Prepare the instruction to transfer the SPL tokens to the Treasury's ATA
@@ -274,7 +284,7 @@ pub fn handler(
     // Initialize the fields of the newly created StreamData account
 
     let milestones: Milestones = Milestones { start_time, cliff_time, end_time };
-    let amounts = Amounts { deposited: deposited_amount, withdrawn: 0, refunded: 0 };
+    let amounts = Amounts { deposited: deposited_amount, start_unlock, cliff_unlock, withdrawn: 0, refunded: 0 };
 
     **ctx.accounts.stream_data = StreamData {
         id: stream_id,
