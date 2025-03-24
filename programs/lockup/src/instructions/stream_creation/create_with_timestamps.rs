@@ -299,7 +299,7 @@ pub fn handler(
 
     // Increment the Total Supply of the NFT Collection
     let total_supply = &mut ctx.accounts.nft_collection_data.total_supply;
-    *total_supply = total_supply.checked_add(1).expect("The Total Supply of the NFT Collection has overflowed");
+    *total_supply = total_supply.checked_add(1).ok_or(ErrorCode::NftCollectionTotalSupplyOverflow)?;
 
     Ok(())
 }

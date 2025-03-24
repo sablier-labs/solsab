@@ -14,6 +14,8 @@ pub enum ErrorCode {
     InvalidEndTime,
     #[msg("Invalid withdrawal amount!")]
     InvalidWithdrawalAmount,
+    #[msg("The Total Supply of the NFT Collection has overflowed!")]
+    NftCollectionTotalSupplyOverflow,
     #[msg("Can't cancel a non-cancelable Stream!")]
     StreamIsNotCancelable,
     #[msg("Can't renounce an already-renounced Stream!")]
