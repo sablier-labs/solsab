@@ -11,14 +11,11 @@ use anchor_spl::{
 
 use crate::{
     state::{lockup::*, nft_collection_data::NftCollectionData, treasury::Treasury},
-    utils::errors::ErrorCode,
+    utils::{constants::*, errors::ErrorCode, events::StreamCreation},
 };
 
-#[constant]
 pub const NFT_NAME: &str = "Sablier Lockup Linear Stream #";
-#[constant]
 pub const NFT_METADATA_URI: &str = "https://ipfs.io/ipfs/bafkreiaidfetl2iedxjzbh2hof7dj3hdrs5l7sr643ggtjh7sb42jcj5nq";
-#[constant]
 pub const NFT_SYMBOL: &str = "LL_STREAM";
 
 #[derive(Accounts)]
@@ -41,7 +38,7 @@ pub struct CreateWithTimestamps<'info> {
     pub recipient: UncheckedAccount<'info>,
 
     #[account(
-        seeds = [b"treasury"],
+        seeds = [TREASURY_SEED],
         bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
@@ -56,21 +53,21 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
         mut,
-        seeds = [b"nft_collection_data"],
+        seeds = [NFT_COLLECTION_DATA_SEED],
         bump = nft_collection_data.bump
     )]
     pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
 
     #[account(
         mut,
-        seeds = [b"nft_collection_mint"],
+        seeds = [NFT_COLLECTION_MINT_SEED],
         bump,
     )]
     pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         mut,
-        seeds = [b"metadata",
+        seeds = [METADATA_SEED,
                  token_metadata_program.key().as_ref(),
                  nft_collection_mint.key().as_ref()],
         seeds::program = token_metadata_program.key(),
@@ -81,10 +78,10 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
         mut,
-        seeds = [b"metadata",
+        seeds = [METADATA_SEED,
                  token_metadata_program.key().as_ref(),
                  nft_collection_mint.key().as_ref(),
-                 b"edition"],
+                 EDITION_SEED],
         seeds::program = token_metadata_program.key(),
         bump,
     )]
@@ -93,7 +90,7 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
         mut,
-        seeds = [b"stream_nft_mint",
+        seeds = [STREAM_NFT_MINT_SEED,
                  nft_collection_data.total_supply.to_le_bytes().as_ref()],
         bump,
     )]
@@ -101,7 +98,7 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
         mut,
-        seeds = [b"LL_stream", stream_nft_mint.key().as_ref()],
+        seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
         bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
@@ -117,7 +114,7 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
         mut,
-        seeds = [b"metadata",
+        seeds = [METADATA_SEED,
                  token_metadata_program.key().as_ref(),
                  stream_nft_mint.key().as_ref()],
         seeds::program = token_metadata_program.key(),
@@ -128,10 +125,10 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
         mut,
-        seeds = [b"metadata",
+        seeds = [METADATA_SEED,
                  token_metadata_program.key().as_ref(),
                  stream_nft_mint.key().as_ref(),
-                 b"edition"],
+                 EDITION_SEED],
         seeds::program = token_metadata_program.key(),
         bump,
     )]
@@ -200,7 +197,8 @@ pub fn handler(
     let stream_id = ctx.accounts.nft_collection_data.total_supply;
     let stream_nft_name = NFT_NAME.to_owned() + stream_id.to_string().as_str();
 
-    let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[b"nft_collection_mint", &[ctx.bumps.nft_collection_mint]]];
+    let nft_collection_mint_signer_seeds: &[&[&[u8]]] =
+        &[&[NFT_COLLECTION_MINT_SEED, &[ctx.bumps.nft_collection_mint]]];
 
     // Mint Stream NFT Token
     mint_to(
@@ -300,6 +298,10 @@ pub fn handler(
     // Increment the Total Supply of the NFT Collection
     let total_supply = &mut ctx.accounts.nft_collection_data.total_supply;
     *total_supply = total_supply.checked_add(1).ok_or(ErrorCode::NftCollectionTotalSupplyOverflow)?;
+
+    // Emit an event indicating the creation of the Stream
+    msg!("{} created a Stream id {} and token {}", sender.key(), stream_id, asset_mint.key());
+    emit!(StreamCreation { stream_id, recipient: ctx.accounts.recipient.key() });
 
     Ok(())
 }

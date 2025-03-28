@@ -14,8 +14,8 @@ declare_id!("D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF"); // Localnet Program
 pub mod sablier_lockup {
     use super::*;
 
-    pub fn cancel(ctx: Context<Cancel>, stream_id: u64) -> Result<()> {
-        instructions::cancel::handler(ctx, stream_id)
+    pub fn cancel(ctx: Context<Cancel>, _stream_id: u64) -> Result<()> {
+        instructions::cancel::handler(ctx)
     }
 
     pub fn collect_fees(ctx: Context<CollectFees>, lamports_amount: u64) -> Result<()> {
@@ -56,15 +56,15 @@ pub mod sablier_lockup {
         instructions::prepare_for_stream_creation::handler(ctx)
     }
 
-    pub fn renounce(ctx: Context<Renounce>, stream_id: u64) -> Result<()> {
-        instructions::renounce::handler(ctx, stream_id)
+    pub fn renounce(ctx: Context<Renounce>, _stream_id: u64) -> Result<()> {
+        instructions::renounce::handler(ctx)
     }
 
-    pub fn withdraw(ctx: Context<Withdraw>, stream_id: u64, amount: u64) -> Result<()> {
-        instructions::withdraw::handler(ctx, stream_id, amount)
+    pub fn withdraw(ctx: Context<Withdraw>, _stream_id: u64, amount: u64) -> Result<()> {
+        instructions::withdraw::handler(ctx, amount)
     }
 
-    pub fn withdraw_max(ctx: Context<Withdraw>, stream_id: u64) -> Result<()> {
-        instructions::withdraw_max::handler(ctx, stream_id)
+    pub fn withdraw_max(ctx: Context<Withdraw>, _stream_id: u64) -> Result<()> {
+        instructions::withdraw_max::handler(ctx)
     }
 }

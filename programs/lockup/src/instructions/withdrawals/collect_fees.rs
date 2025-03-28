@@ -2,20 +2,22 @@ use anchor_lang::prelude::*;
 
 use crate::{
     state::{fee_collector::FeeCollectorData, treasury::Treasury},
-    utils::errors::ErrorCode,
+    utils::{constants::*, errors::ErrorCode, events::FeeCollection},
 };
 
 #[derive(Accounts)]
 pub struct CollectFees<'info> {
-    #[account(mut,
-    constraint = signer.key() == fee_collector.address)]
-    pub signer: Signer<'info>,
+    #[account(
+        mut,
+        address = fee_collector_data.address
+    )]
+    pub fee_collector: Signer<'info>,
 
     #[account(
-        seeds = [b"fee_collector_data"],
-        bump = fee_collector.bump
+        seeds = [FEE_COLLECTOR_DATA_SEED],
+        bump = fee_collector_data.bump
     )]
-    pub fee_collector: Box<Account<'info, FeeCollectorData>>,
+    pub fee_collector_data: Box<Account<'info, FeeCollectorData>>,
 
     #[account(mut)]
     /// CHECK: May be any account
@@ -23,7 +25,7 @@ pub struct CollectFees<'info> {
 
     #[account(
         mut,
-        seeds = [b"treasury"],
+        seeds = [TREASURY_SEED],
         bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
@@ -44,6 +46,18 @@ pub fn handler(ctx: Context<CollectFees>, lamports_amount: u64) -> Result<()> {
     // Debit from the Treasury and credit to the recipient
     ctx.accounts.treasury.sub_lamports(lamports_amount)?;
     ctx.accounts.recipient.add_lamports(lamports_amount)?;
+
+    msg!(
+        "The Fee Collector {} has collected {} lamports, transferring them to {}",
+        ctx.accounts.fee_collector_data.address,
+        lamports_amount,
+        ctx.accounts.recipient.key()
+    );
+    emit!(FeeCollection {
+        fee_collector: ctx.accounts.fee_collector.key(),
+        fee_recipient: ctx.accounts.recipient.key(),
+        lamports_amount
+    });
 
     Ok(())
 }

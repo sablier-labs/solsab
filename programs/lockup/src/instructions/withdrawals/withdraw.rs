@@ -6,7 +6,7 @@ use anchor_spl::{
 
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
-    utils::{errors::ErrorCode, streaming_math::get_withdrawable_amount},
+    utils::{constants::*, errors::ErrorCode, events::StreamWithdrawal, streaming_math::get_withdrawable_amount},
 };
 
 const WITHDRAWAL_FEE_LAMPORTS: u64 = 10_000_000; // 0.01 SOL
@@ -17,9 +17,7 @@ pub struct Withdraw<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
-    #[account(
-        constraint = asset_mint.key() == stream_data.asset_mint,
-    )]
+    #[account(address = stream_data.asset_mint)]
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account()]
@@ -27,7 +25,7 @@ pub struct Withdraw<'info> {
     pub recipient: UncheckedAccount<'info>,
 
     #[account(
-        seeds = [b"stream_nft_mint",
+        seeds = [STREAM_NFT_MINT_SEED,
                  stream_id.to_le_bytes().as_ref()],
         bump,
     )]
@@ -35,7 +33,7 @@ pub struct Withdraw<'info> {
 
     #[account(
         mut,
-        seeds = [b"LL_stream",
+        seeds = [STREAM_DATA_SEED,
                  stream_nft_mint.key().as_ref()],
         bump = stream_data.bump,
     )]
@@ -63,7 +61,7 @@ pub struct Withdraw<'info> {
 
     #[account(
         mut,
-        seeds = [b"treasury"],
+        seeds = [TREASURY_SEED],
         bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
@@ -82,7 +80,7 @@ pub struct Withdraw<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-pub fn handler(ctx: Context<Withdraw>, _stream_id: u64, amount: u64) -> Result<()> {
+pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Assert that the withdrawn amount is not zero
     if amount == 0 {
         return Err(ErrorCode::WithdrawalAmountCannotBeZero.into());
@@ -117,7 +115,7 @@ pub fn handler(ctx: Context<Withdraw>, _stream_id: u64, amount: u64) -> Result<(
     };
 
     // Wrap the Treasury PDA's seeds in the appropriate structure
-    let signer_seeds: &[&[&[u8]]] = &[&[b"treasury", &[treasury.bump]]];
+    let signer_seeds: &[&[&[u8]]] = &[&[TREASURY_SEED, &[treasury.bump]]];
 
     // Execute the transfer
     let cpi_ctx =
@@ -136,6 +134,10 @@ pub fn handler(ctx: Context<Withdraw>, _stream_id: u64, amount: u64) -> Result<(
     if stream_amounts.withdrawn >= stream_amounts.deposited - stream_amounts.refunded {
         ctx.accounts.stream_data.is_cancelable = false;
     }
+
+    // Emit an event indicating the withdrawal
+    msg!("{} tokens have been withdrawn from the Stream with ID {}", amount, ctx.accounts.stream_data.id);
+    emit!(StreamWithdrawal { stream_id: ctx.accounts.stream_data.id, withdrawn_amount: amount });
 
     Ok(())
 }

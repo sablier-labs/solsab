@@ -1,19 +1,22 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::Mint;
 
-use crate::{state::lockup::StreamData, utils::errors::ErrorCode};
+use crate::{
+    state::lockup::StreamData,
+    utils::{constants::*, errors::ErrorCode, events::StreamRenouncement},
+};
 
 #[derive(Accounts)]
 #[instruction(stream_id: u64)]
 pub struct Renounce<'info> {
     #[account(
         mut,
-        constraint = sender.key() == stream_data.sender,
+        address = stream_data.sender,
     )]
     pub sender: Signer<'info>,
 
     #[account(
-        seeds = [b"stream_nft_mint",
+        seeds = [STREAM_NFT_MINT_SEED,
                  stream_id.to_le_bytes().as_ref()],
         bump,
     )]
@@ -21,13 +24,13 @@ pub struct Renounce<'info> {
 
     #[account(
         mut,
-        seeds = [b"LL_stream", stream_nft_mint.key().as_ref()],
+        seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
         bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 }
 
-pub fn handler(ctx: Context<Renounce>, _stream_id: u64) -> Result<()> {
+pub fn handler(ctx: Context<Renounce>) -> Result<()> {
     let stream_data = &mut ctx.accounts.stream_data;
 
     // Assert that the Stream is cancelable
@@ -37,6 +40,10 @@ pub fn handler(ctx: Context<Renounce>, _stream_id: u64) -> Result<()> {
 
     // Mark the Stream as non-cancelable
     stream_data.is_cancelable = false;
+
+    // Emit an event indicating that the sender has renounced the cancelability of the Stream
+    msg!("The Stream with ID {} has been renounced", stream_data.id);
+    emit!(StreamRenouncement { stream_id: stream_data.id });
 
     Ok(())
 }
