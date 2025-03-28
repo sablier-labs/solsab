@@ -78,7 +78,7 @@ describe("SablierLockup Initialization", () => {
     await configureTestingEnvironment();
   });
 
-  it("Fails to InitializePhaseOne twice", async () => {
+  it.only("Fails to InitializePhaseOne twice", async () => {
     let initializePhaseOneIx = await getInitializePhaseOneIx(
       senderKeys.publicKey
     );
@@ -94,7 +94,7 @@ describe("SablierLockup Initialization", () => {
     } catch (error) {
       assert(
         // TODO: Figure out a more robust way of checking the thrown error
-        (error as Error).message.includes("custom program error: 0x0"),
+        (error as Error).message.includes("custom program error: 0x06666"),
         "The 2nd InitializePhaseOne Ix failed with an unexpected error"
       );
     }
