@@ -6,7 +6,7 @@ use anchor_spl::{
 
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
-    utils::{errors::ErrorCode, streaming_math::get_refundable_amount},
+    utils::{constants::*, errors::ErrorCode, events::StreamCancelation, streaming_math::get_refundable_amount},
 };
 
 #[derive(Accounts)]
@@ -14,17 +14,15 @@ use crate::{
 pub struct Cancel<'info> {
     #[account(
         mut,
-        constraint = sender.key() == stream_data.sender,
+        address = stream_data.sender,
     )]
     pub sender: Signer<'info>,
 
-    #[account(
-        constraint = asset_mint.key() == stream_data.asset_mint,
-    )]
+    #[account(address = stream_data.asset_mint)]
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        seeds = [b"stream_nft_mint",
+        seeds = [STREAM_NFT_MINT_SEED,
                  stream_id.to_le_bytes().as_ref()],
         bump,
     )]
@@ -32,7 +30,7 @@ pub struct Cancel<'info> {
 
     #[account(
         mut,
-        seeds = [b"LL_stream", stream_nft_mint.key().as_ref()],
+        seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
         bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
@@ -47,7 +45,7 @@ pub struct Cancel<'info> {
 
     #[account(
         mut,
-        seeds = [b"treasury"],
+        seeds = [TREASURY_SEED],
         bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
@@ -64,7 +62,7 @@ pub struct Cancel<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-pub fn handler(ctx: Context<Cancel>, _stream_id: u64) -> Result<()> {
+pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     // Assert that the Stream is cancelable
     if !ctx.accounts.stream_data.is_cancelable {
         return Err(ErrorCode::StreamIsNotCancelable.into());
@@ -89,7 +87,7 @@ pub fn handler(ctx: Context<Cancel>, _stream_id: u64) -> Result<()> {
         };
 
         // Wrap the Treasury PDA's seeds in the appropriate structure
-        let signer_seeds: &[&[&[u8]]] = &[&[b"treasury", &[ctx.accounts.treasury.bump]]];
+        let signer_seeds: &[&[&[u8]]] = &[&[TREASURY_SEED, &[ctx.accounts.treasury.bump]]];
 
         // Execute the transfer
         let cpi_ctx =
@@ -105,6 +103,14 @@ pub fn handler(ctx: Context<Cancel>, _stream_id: u64) -> Result<()> {
 
     // Mark the Stream as non-cancelable
     ctx.accounts.stream_data.is_cancelable = false;
+
+    // Emit an event indicating the cancellation
+    msg!(
+        "The Stream {} has been canceled, refunding {} tokens to the sender",
+        ctx.accounts.stream_data.id,
+        refundable_amount
+    );
+    emit!(StreamCancelation { stream_id: ctx.accounts.stream_data.id, refunded_amount: refundable_amount });
 
     Ok(())
 }

@@ -6,7 +6,7 @@ use anchor_spl::{
 
 use crate::{
     state::{lockup::StreamData, nft_collection_data::NftCollectionData, treasury::Treasury},
-    utils::constants::ANCHOR_DISCRIMINATOR_SIZE,
+    utils::constants::*,
 };
 
 #[derive(Accounts)]
@@ -20,7 +20,7 @@ pub struct PrepareForStreamCreation<'info> {
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        seeds = [b"treasury"],
+        seeds = [TREASURY_SEED],
         bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
@@ -35,13 +35,13 @@ pub struct PrepareForStreamCreation<'info> {
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-        seeds = [b"nft_collection_data"],
+        seeds = [NFT_COLLECTION_DATA_SEED],
         bump = nft_collection_data.bump
     )]
     pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
 
     #[account(
-        seeds = [b"nft_collection_mint"],
+        seeds = [NFT_COLLECTION_MINT_SEED],
         bump,
     )]
     pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
@@ -49,7 +49,7 @@ pub struct PrepareForStreamCreation<'info> {
     #[account(
         init_if_needed,
         payer = sender,
-        seeds = [b"stream_nft_mint",
+        seeds = [STREAM_NFT_MINT_SEED,
                  nft_collection_data.total_supply.to_le_bytes().as_ref()],
         bump,
         mint::decimals = 0,
@@ -63,7 +63,7 @@ pub struct PrepareForStreamCreation<'info> {
         init_if_needed,
         payer = sender,
         space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
-        seeds = [b"LL_stream", stream_nft_mint.key().as_ref()],
+        seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
         bump
     )]
     pub stream_data: Box<Account<'info, StreamData>>,

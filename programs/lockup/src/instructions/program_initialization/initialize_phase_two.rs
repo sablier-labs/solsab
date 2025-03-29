@@ -10,30 +10,27 @@ use anchor_spl::{
     token_interface::{mint_to, Mint, MintTo, TokenAccount, TokenInterface},
 };
 
-use crate::state::treasury::Treasury;
+use crate::{state::treasury::Treasury, utils::constants::*};
 
-#[constant]
 pub const NFT_NAME: &str = "Sablier LockupLinear Streams";
-#[constant]
 pub const NFT_METADATA_URI: &str = "https://ipfs.io/ipfs/bafkreiak467qbqncgpkmgqmu7hynjnqb5j33jjnkk6bcdda63m3lf7czca";
-#[constant]
 pub const NFT_SYMBOL: &str = "LL_STREAMS";
 
 #[derive(Accounts)]
 pub struct InitializePhaseTwo<'info> {
     #[account(mut)]
-    pub signer: Signer<'info>,
+    pub deployer: Signer<'info>,
 
     #[account(
-        seeds = [b"treasury"],
+        seeds = [TREASURY_SEED],
         bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
     #[account(
         init,
-        payer = signer,
-        seeds = [b"nft_collection_mint"],
+        payer = deployer,
+        seeds = [NFT_COLLECTION_MINT_SEED],
         bump,
         mint::decimals = 0,
         mint::authority = nft_collection_mint, // TODO: make Treasury the authority, instead?
@@ -44,16 +41,16 @@ pub struct InitializePhaseTwo<'info> {
 
     #[account(
         init,
-        payer = signer,
+        payer = deployer,
         associated_token::mint = nft_collection_mint,
         associated_token::authority = treasury,
         associated_token::token_program = nft_token_program
     )]
-    pub nft_collection_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub nft_collection_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
-        seeds = [b"metadata", 
+        seeds = [METADATA_SEED, 
                  token_metadata_program.key().as_ref(), 
                  nft_collection_mint.key().as_ref()],
         bump,
@@ -64,10 +61,10 @@ pub struct InitializePhaseTwo<'info> {
 
     #[account(
         mut,
-        seeds = [b"metadata", 
+        seeds = [METADATA_SEED, 
                  token_metadata_program.key().as_ref(), 
                  nft_collection_mint.key().as_ref(),
-                 b"edition"],
+                 EDITION_SEED],
         seeds::program = token_metadata_program.key(),
         bump,
     )]
@@ -82,7 +79,7 @@ pub struct InitializePhaseTwo<'info> {
 }
 
 pub fn handler(ctx: Context<InitializePhaseTwo>) -> Result<()> {
-    let signer = &ctx.accounts.signer;
+    let deployer = &ctx.accounts.deployer;
     let nft_collection_mint = &ctx.accounts.nft_collection_mint;
     let nft_collection_metadata = &ctx.accounts.nft_collection_metadata;
     let token_metadata_program = &ctx.accounts.token_metadata_program;
@@ -90,7 +87,7 @@ pub fn handler(ctx: Context<InitializePhaseTwo>) -> Result<()> {
     let system_program = &ctx.accounts.system_program;
     let rent = &ctx.accounts.rent;
     
-    let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[b"nft_collection_mint", &[ctx.bumps.nft_collection_mint]]];
+    let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[NFT_COLLECTION_MINT_SEED, &[ctx.bumps.nft_collection_mint]]];
 
     // Mint the Collection NFT
     mint_to(
@@ -98,7 +95,7 @@ pub fn handler(ctx: Context<InitializePhaseTwo>) -> Result<()> {
             nft_token_program.to_account_info(),
             MintTo {
                 mint: nft_collection_mint.to_account_info(),
-                to: ctx.accounts.nft_collection_token_account.to_account_info(),
+                to: ctx.accounts.nft_collection_ata.to_account_info(),
                 authority: nft_collection_mint.to_account_info(),
             },
             nft_collection_mint_signer_seeds,
@@ -115,7 +112,7 @@ pub fn handler(ctx: Context<InitializePhaseTwo>) -> Result<()> {
                 mint: nft_collection_mint.to_account_info(),
                 mint_authority: nft_collection_mint.to_account_info(),
                 update_authority: nft_collection_mint.to_account_info(),
-                payer: signer.to_account_info(),
+                payer: deployer.to_account_info(),
                 system_program: system_program.to_account_info(),
                 rent: rent.to_account_info(),
             },
@@ -144,7 +141,7 @@ pub fn handler(ctx: Context<InitializePhaseTwo>) -> Result<()> {
         CpiContext::new_with_signer(
             token_metadata_program.to_account_info(),
             CreateMasterEditionV3 {
-                payer: signer.to_account_info(),
+                payer: deployer.to_account_info(),
                 mint: nft_collection_mint.to_account_info(),
                 edition: ctx.accounts.nft_collection_master_edition.to_account_info(),
                 mint_authority: nft_collection_mint.to_account_info(),

@@ -191,22 +191,20 @@ describe("SablierLockup Initialization", () => {
     // Assert that the Total Supply of the NFT Collection Mint is 1
     assert((await getMintTotalSupplyOf(nftCollectionMint)).eq(new BN(1)));
 
-    const nftCollectionTokenAccount = deriveATAAddress(
+    const nftCollectionATA = deriveATAAddress(
       nftCollectionMint,
       treasuryAddress,
       TOKEN_PROGRAM_ID
     );
 
-    // Confirm that the NFT Collection Token Account has been initialized
+    // Confirm that the NFT Collection ATA has been initialized
     assert(
-      await accountExists(nftCollectionTokenAccount),
-      "NFT Collection Token Account not initialized"
+      await accountExists(nftCollectionATA),
+      "NFT Collection ATA not initialized"
     );
 
-    // Assert that the NFT Collection Token Account balance is 1
-    assert(
-      (await getTokenBalanceByATAKey(nftCollectionTokenAccount)).eq(new BN(1))
-    );
+    // Assert that the NFT Collection ATA balance is 1
+    assert((await getTokenBalanceByATAKey(nftCollectionATA)).eq(new BN(1)));
 
     const nftCollectionMintAsBuffer = nftCollectionMint.toBuffer();
 
@@ -868,6 +866,54 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
+    it("Fails to cancel an SPL Token LL Stream when a wrong asset mint is submitted", async () => {
+      const assetTokenProgram = TOKEN_PROGRAM_ID;
+
+      const { streamData, assetMint } = await createMintATAsAndStream(
+        false,
+        await getDefaultMilestones(banksClient),
+        getDefaultUnlockAmounts(),
+        assetTokenProgram
+      );
+
+      // Create a wrong asset mint
+      const wrongAssetMint = await createMint(
+        banksClient,
+        senderKeys,
+        senderKeys.publicKey,
+        null,
+        2,
+        Keypair.generate(),
+        assetTokenProgram
+      );
+
+      // Create the Sender's ATA for the wrong assetMint (so that the Tx doesn't fail because of this)
+      await createAssociatedTokenAccount(
+        banksClient,
+        senderKeys,
+        wrongAssetMint,
+        senderKeys.publicKey,
+        assetTokenProgram
+      );
+
+      // Create the Treasury's ATA for the wrong assetMint (so that the Tx doesn't fail because of this)
+      await createAssociatedTokenAccount(
+        banksClient,
+        senderKeys,
+        wrongAssetMint,
+        treasuryAddress,
+        assetTokenProgram
+      );
+
+      await assertStreamCancelationFailure(
+        senderKeys,
+        streamData.id,
+        wrongAssetMint,
+        assetTokenProgram,
+        "custom program error: 0x7dc"
+      );
+    });
+
     it("Cancels an SPL Token LL Stream immediately after creating it", async () => {
       await createStreamAndTestCancelability(
         await getDefaultMilestones(banksClient),
@@ -1090,6 +1136,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         milestones.endTime.sub(new BN(1)),
         WithdrawalSize.EntireDeposit,
+        AssetMintKind.Correct,
         "custom program error: 0x1776"
       );
     });
@@ -1104,6 +1151,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         milestones.endTime,
         WithdrawalSize.ZERO,
+        AssetMintKind.Correct,
         "custom program error: 0x177b"
       );
     });
@@ -1118,6 +1166,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         milestones.cliffTime.sub(new BN(1)),
         WithdrawalSize.OneToken,
+        AssetMintKind.Correct,
         "custom program error: 0x1776"
       );
     });
@@ -1132,6 +1181,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         milestones.endTime,
         WithdrawalSize.OneThirdOfDeposited,
+        AssetMintKind.Correct,
         "custom program error: 0xbc4"
       );
     });
@@ -1146,6 +1196,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getUnlockAmountsJustStart(),
         milestones.startTime,
         WithdrawalSize.StartUnlockPlusOne,
+        AssetMintKind.Correct,
         "custom program error: 0x1776"
       );
     });
@@ -1160,6 +1211,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getUnlockAmountsJustCliff(),
         milestones.cliffTime,
         WithdrawalSize.CliffUnlockPlusOne,
+        AssetMintKind.Correct,
         "custom program error: 0x1776"
       );
     });
@@ -1174,7 +1226,23 @@ describe("SablierLockup user-callable Ixs", () => {
         getUnlockAmountsStartAndCliff(),
         milestones.startTime,
         WithdrawalSize.StartAndCliffUnlocksPlusOne,
+        AssetMintKind.Correct,
         "custom program error: 0x1776"
+      );
+    });
+
+    it("Fails to withdraw from an SPL Token LL Stream - as recipient - when a wrong asset mint is submitted", async () => {
+      const milestones = await getDefaultMilestones(banksClient);
+      await testForFailureToWithdraw(
+        recipientKeys,
+        recipientKeys.publicKey,
+        TOKEN_PROGRAM_ID,
+        milestones,
+        getUnlockAmountsStartAndCliff(),
+        milestones.startTime,
+        WithdrawalSize.OneToken,
+        AssetMintKind.Wrong,
+        "custom program error: 0x7dc"
       );
     });
 
@@ -1328,6 +1396,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         milestones.endTime.sub(new BN(1)),
         WithdrawalSize.EntireDeposit,
+        AssetMintKind.Correct,
         "custom program error: 0x1776"
       );
     });
@@ -1342,6 +1411,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         milestones.endTime,
         WithdrawalSize.ZERO,
+        AssetMintKind.Correct,
         "custom program error: 0x177b"
       );
     });
@@ -1356,6 +1426,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         milestones.cliffTime.sub(new BN(1)),
         WithdrawalSize.OneToken,
+        AssetMintKind.Correct,
         "custom program error: 0x1776"
       );
     });
@@ -1370,6 +1441,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         milestones.endTime,
         WithdrawalSize.OneThirdOfDeposited,
+        AssetMintKind.Correct,
         "custom program error: 0xbc4"
       );
     });
@@ -1384,6 +1456,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getUnlockAmountsJustStart(),
         milestones.startTime,
         WithdrawalSize.StartUnlockPlusOne,
+        AssetMintKind.Correct,
         "custom program error: 0x1776"
       );
     });
@@ -1398,6 +1471,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getUnlockAmountsJustCliff(),
         milestones.cliffTime,
         WithdrawalSize.CliffUnlockPlusOne,
+        AssetMintKind.Correct,
         "custom program error: 0x1776"
       );
     });
@@ -1412,7 +1486,23 @@ describe("SablierLockup user-callable Ixs", () => {
         getUnlockAmountsStartAndCliff(),
         milestones.startTime,
         WithdrawalSize.StartAndCliffUnlocksPlusOne,
+        AssetMintKind.Correct,
         "custom program error: 0x1776"
+      );
+    });
+
+    it("Fails to withdraw from a Token2022 LL Stream - as recipient - when a wrong asset mint is submitted", async () => {
+      const milestones = await getDefaultMilestones(banksClient);
+      await testForFailureToWithdraw(
+        recipientKeys,
+        recipientKeys.publicKey,
+        TOKEN_2022_PROGRAM_ID,
+        milestones,
+        getUnlockAmountsStartAndCliff(),
+        milestones.startTime,
+        WithdrawalSize.OneToken,
+        AssetMintKind.Wrong,
+        "custom program error: 0x7dc"
       );
     });
 
@@ -1566,6 +1656,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         milestones.endTime,
         WithdrawalSize.MAX,
+        AssetMintKind.Correct,
         "custom program error: 0xbc4"
       );
     });
@@ -1593,6 +1684,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         milestones.cliffTime.sub(new BN(1)),
         WithdrawalSize.MAX,
+        AssetMintKind.Correct,
         "custom program error: 0x177b"
       );
     });
@@ -1656,6 +1748,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         milestones.endTime,
         WithdrawalSize.MAX,
+        AssetMintKind.Correct,
         "custom program error: 0xbc4"
       );
     });
@@ -1683,6 +1776,7 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         milestones.cliffTime.sub(new BN(1)),
         WithdrawalSize.MAX,
+        AssetMintKind.Correct,
         "custom program error: 0x177b"
       );
     });
@@ -1798,7 +1892,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.All,
         TOKEN_PROGRAM_ID,
-        "0x7d3"
+        "0x7dc"
       );
     });
 
@@ -1871,7 +1965,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.All,
         TOKEN_2022_PROGRAM_ID,
-        "0x7d3"
+        "0x7dc"
       );
     });
 
@@ -1999,7 +2093,7 @@ async function getInitializePhaseOneIx(txSigner: PublicKey): Promise<TxIx> {
   return await lockupProgram.methods
     .initializePhaseOne(feeCollectorKeys.publicKey)
     .accounts({
-      signer: txSigner,
+      deployer: txSigner,
     })
     .instruction();
 }
@@ -2008,7 +2102,7 @@ async function getInitializePhaseTwoIx(txSigner: PublicKey): Promise<TxIx> {
   return await lockupProgram.methods
     .initializePhaseTwo()
     .accounts({
-      signer: txSigner,
+      deployer: txSigner,
       nftTokenProgram: TOKEN_PROGRAM_ID,
     })
     .instruction();
@@ -2929,7 +3023,7 @@ async function collectFees(
   let collectFeesIx = await lockupProgram.methods
     .collectFees(new BN(lamportsToCollect.toString()))
     .accounts({
-      signer: txSigner.publicKey,
+      feeCollector: txSigner.publicKey,
       recipient: feesRecipient,
     })
     .instruction();
@@ -3277,6 +3371,13 @@ async function testForFailureToCollectFees(
   );
 }
 
+const AssetMintKind = {
+  Correct: 0,
+  Wrong: 1,
+} as const;
+
+type AssetMintKind = (typeof AssetMintKind)[keyof typeof AssetMintKind];
+
 async function testForFailureToWithdraw(
   txSigner: Keypair,
   destination: PublicKey,
@@ -3285,6 +3386,7 @@ async function testForFailureToWithdraw(
   unlockAmounts: UnlockAmounts,
   withdrawalTime: BN,
   withdrawalSize: WithdrawalSize,
+  assetMintKind: AssetMintKind,
   expectedError: string
 ) {
   const { nftTokenProgram, streamData, assetMint, depositedAmount } =
@@ -3297,10 +3399,32 @@ async function testForFailureToWithdraw(
 
   await timeTravelForwardTo(BigInt(withdrawalTime.toString()));
 
+  let assetMintToUse = assetMint;
+  if (assetMintKind === AssetMintKind.Wrong) {
+    assetMintToUse = await createMint(
+      banksClient,
+      txSigner,
+      txSigner.publicKey,
+      null,
+      2,
+      Keypair.generate(),
+      assetTokenProgram
+    );
+
+    // Create a Treasury ATA for the wrong assetMint (so that the Tx doesn't fail because of this)
+    await createAssociatedTokenAccount(
+      banksClient,
+      txSigner,
+      assetMintToUse,
+      treasuryAddress,
+      assetTokenProgram
+    );
+  }
+
   if (withdrawalSize === WithdrawalSize.MAX) {
     await assertWithdrawMaxFailure(
       txSigner,
-      assetMint,
+      assetMintToUse,
       streamData.id,
       destination,
       assetTokenProgram,
@@ -3318,7 +3442,7 @@ async function testForFailureToWithdraw(
 
   await assertWithdrawFailure(
     txSigner,
-    assetMint,
+    assetMintToUse,
     streamData.id,
     destination,
     withdrawalAmount,

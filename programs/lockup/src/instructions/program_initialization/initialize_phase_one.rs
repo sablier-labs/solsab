@@ -2,18 +2,18 @@ use anchor_lang::prelude::*;
 
 use crate::{
     state::{fee_collector::FeeCollectorData, nft_collection_data::NftCollectionData, treasury::Treasury},
-    utils::constants::ANCHOR_DISCRIMINATOR_SIZE,
+    utils::constants::*,
 };
 
 #[derive(Accounts)]
 pub struct InitializePhaseOne<'info> {
     #[account(mut)]
-    pub signer: Signer<'info>,
+    pub deployer: Signer<'info>,
 
     #[account(
         init,
-        payer = signer,
-        seeds = [b"treasury"],
+        payer = deployer,
+        seeds = [TREASURY_SEED],
         space = ANCHOR_DISCRIMINATOR_SIZE + Treasury::INIT_SPACE,
         bump
     )]
@@ -22,8 +22,8 @@ pub struct InitializePhaseOne<'info> {
 
     #[account(
         init,
-        payer = signer,
-        seeds = [b"fee_collector_data"],
+        payer = deployer,
+        seeds = [FEE_COLLECTOR_DATA_SEED],
         space = ANCHOR_DISCRIMINATOR_SIZE + FeeCollectorData::INIT_SPACE,
         bump
     )]
@@ -31,8 +31,8 @@ pub struct InitializePhaseOne<'info> {
 
     #[account(
         init,
-        payer = signer,
-        seeds = [b"nft_collection_data"],
+        payer = deployer,
+        seeds = [NFT_COLLECTION_DATA_SEED],
         space = ANCHOR_DISCRIMINATOR_SIZE + NftCollectionData::INIT_SPACE,
         bump
     )]
