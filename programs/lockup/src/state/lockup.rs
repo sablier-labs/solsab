@@ -8,6 +8,7 @@ pub struct StreamData {
     pub bump: u8,
     pub id: u64,
     pub is_cancelable: bool,
+    pub is_depleted: bool,
     pub milestones: Milestones,
     pub sender: Pubkey,
     pub was_canceled: bool,

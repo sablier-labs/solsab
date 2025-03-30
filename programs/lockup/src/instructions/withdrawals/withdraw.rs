@@ -6,7 +6,10 @@ use anchor_spl::{
 
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
-    utils::{constants::*, errors::ErrorCode, events::StreamWithdrawal, streaming_math::get_withdrawable_amount},
+    utils::{
+        constants::*, errors::ErrorCode, events::StreamWithdrawal, misc::mark_stream_as_depleted,
+        streaming_math::get_withdrawable_amount,
+    },
 };
 
 const WITHDRAWAL_FEE_LAMPORTS: u64 = 10_000_000; // 0.01 SOL
@@ -86,6 +89,11 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         return Err(ErrorCode::WithdrawalAmountCannotBeZero.into());
     }
 
+    // Assert that the Stream is not depleted
+    if ctx.accounts.stream_data.is_depleted {
+        return Err(ErrorCode::CantWithdrawFromADepletedStream.into());
+    }
+
     // Calculate the withdrawable amount
     let withdrawable_amount =
         get_withdrawable_amount(&ctx.accounts.stream_data.milestones, &ctx.accounts.stream_data.amounts);
@@ -122,17 +130,22 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         CpiContext::new_with_signer(ctx.accounts.asset_token_program.to_account_info(), transfer_ix, signer_seeds);
     transfer_checked(cpi_ctx, amount, ctx.accounts.asset_mint.decimals)?;
 
-    let stream_amounts = &mut ctx.accounts.stream_data.amounts;
+    // Mutably borrow the StreamData account
+    let stream_data = &mut ctx.accounts.stream_data;
 
     // Update the Stream's withdrawn amount
-    stream_amounts.withdrawn = stream_amounts.withdrawn.checked_add(amount).expect("Withdrawn amount overflow");
+    stream_data.amounts.withdrawn =
+        stream_data.amounts.withdrawn.checked_add(amount).expect("Withdrawn amount overflow");
 
-    // Mark the Stream as non-cancelable if it has been depleted
+    // Mutably borrow the Stream's amounts
+    let stream_amounts = &mut stream_data.amounts;
+
+    // If the Stream has been depleted, mark it as such
     //
     // Note: the `>=` operator is used as an extra safety measure for the case when the withdrawn amount is bigger than
-    // expected, for one reason or the other
+    // expected (for one reason or the other)
     if stream_amounts.withdrawn >= stream_amounts.deposited - stream_amounts.refunded {
-        ctx.accounts.stream_data.is_cancelable = false;
+        mark_stream_as_depleted(stream_data);
     }
 
     // Emit an event indicating the withdrawal

@@ -6,7 +6,13 @@ use anchor_spl::{
 
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
-    utils::{constants::*, errors::ErrorCode, events::StreamCancelation, streaming_math::get_refundable_amount},
+    utils::{
+        constants::*,
+        errors::ErrorCode,
+        events::StreamCancelation,
+        misc::mark_stream_as_depleted,
+        streaming_math::{get_refundable_amount, get_withdrawable_amount},
+    },
 };
 
 #[derive(Accounts)]
@@ -71,11 +77,11 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     // Clone the milestones to avoid immutable borrow conflicts
     let milestones = ctx.accounts.stream_data.milestones.clone();
 
-    // Mutably borrow the stream amounts
-    let stream_amounts = &mut ctx.accounts.stream_data.amounts;
+    // Mutably borrow the stream data
+    let stream_data = &mut ctx.accounts.stream_data;
 
     // Calculate the refundable amount
-    let refundable_amount = get_refundable_amount(&milestones, stream_amounts);
+    let refundable_amount = get_refundable_amount(&milestones, &stream_data.amounts);
 
     if refundable_amount > 0 {
         // Prepare the instruction to transfer the refundable SPL tokens back to the sender
@@ -95,14 +101,19 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
         transfer_checked(cpi_ctx, refundable_amount, ctx.accounts.asset_mint.decimals)?;
 
         // Update the Stream field tracking the refunded amount
-        stream_amounts.refunded = refundable_amount;
+        stream_data.amounts.refunded = refundable_amount;
     }
 
     // Mark the Stream as canceled
-    ctx.accounts.stream_data.was_canceled = true;
+    stream_data.was_canceled = true;
 
     // Mark the Stream as non-cancelable
-    ctx.accounts.stream_data.is_cancelable = false;
+    stream_data.is_cancelable = false;
+
+    // If there are no tokens left for the recipient to withdraw, mark the stream as depleted.
+    if get_withdrawable_amount(&milestones, &stream_data.amounts) == 0 {
+        mark_stream_as_depleted(stream_data);
+    }
 
     // Emit an event indicating the cancellation
     msg!(

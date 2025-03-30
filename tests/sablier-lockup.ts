@@ -340,7 +340,7 @@ describe("SablierLockup user-callable Ixs", () => {
         await getDefaultMilestones(banksClient),
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1774"
+        "0x1776"
       );
     });
 
@@ -393,7 +393,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1772"
+        "0x1774"
       );
     });
 
@@ -416,7 +416,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1772"
+        "0x1774"
       );
     });
 
@@ -439,7 +439,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1772"
+        "0x1774"
       );
     });
 
@@ -462,7 +462,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1772"
+        "0x1774"
       );
     });
 
@@ -485,7 +485,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1772"
+        "0x1774"
       );
     });
 
@@ -732,7 +732,7 @@ describe("SablierLockup user-callable Ixs", () => {
 
       await assertCancelabilityRenouncementFailure(
         streamData.id,
-        "custom program error: 0x177a"
+        "custom program error: 0x1771"
       );
     });
 
@@ -862,7 +862,7 @@ describe("SablierLockup user-callable Ixs", () => {
         streamData.id,
         assetMint,
         assetTokenProgram,
-        "custom program error: 0x1779"
+        "custom program error: 0x177c"
       );
     });
 
@@ -1135,9 +1135,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getDefaultUnlockAmounts(),
         milestones.endTime.sub(new BN(1)),
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.EntireDeposit,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x1778"
       );
     });
 
@@ -1150,9 +1151,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getDefaultUnlockAmounts(),
         milestones.endTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.ZERO,
         AssetMintKind.Correct,
-        "custom program error: 0x177b"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1165,9 +1167,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getDefaultUnlockAmounts(),
         milestones.cliffTime.sub(new BN(1)),
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.OneToken,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x1778"
       );
     });
 
@@ -1180,6 +1183,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getDefaultUnlockAmounts(),
         milestones.endTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.OneThirdOfDeposited,
         AssetMintKind.Correct,
         "custom program error: 0xbc4"
@@ -1195,9 +1199,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getUnlockAmountsJustStart(),
         milestones.startTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.StartUnlockPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x1778"
       );
     });
 
@@ -1210,9 +1215,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getUnlockAmountsJustCliff(),
         milestones.cliffTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.CliffUnlockPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x1778"
       );
     });
 
@@ -1225,9 +1231,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getUnlockAmountsStartAndCliff(),
         milestones.startTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.StartAndCliffUnlocksPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x1778"
       );
     });
 
@@ -1240,9 +1247,26 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getUnlockAmountsStartAndCliff(),
         milestones.startTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.OneToken,
         AssetMintKind.Wrong,
         "custom program error: 0x7dc"
+      );
+    });
+
+    it("Fails to withdraw from a depleted SPL Token LL Stream - as recipient - at end time", async () => {
+      const milestones = await getDefaultMilestones(banksClient);
+      testForFailureToWithdraw(
+        recipientKeys,
+        recipientKeys.publicKey,
+        TOKEN_PROGRAM_ID,
+        milestones,
+        getDefaultUnlockAmounts(),
+        milestones.endTime,
+        BeforeWithdrawal.WithdrawMax,
+        WithdrawalSize.OneToken,
+        AssetMintKind.Correct,
+        "custom program error: 0x1772"
       );
     });
 
@@ -1395,9 +1419,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getDefaultUnlockAmounts(),
         milestones.endTime.sub(new BN(1)),
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.EntireDeposit,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x1778"
       );
     });
 
@@ -1410,9 +1435,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getDefaultUnlockAmounts(),
         milestones.endTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.ZERO,
         AssetMintKind.Correct,
-        "custom program error: 0x177b"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1425,9 +1451,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getDefaultUnlockAmounts(),
         milestones.cliffTime.sub(new BN(1)),
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.OneToken,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x1778"
       );
     });
 
@@ -1440,6 +1467,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getDefaultUnlockAmounts(),
         milestones.endTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.OneThirdOfDeposited,
         AssetMintKind.Correct,
         "custom program error: 0xbc4"
@@ -1455,9 +1483,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getUnlockAmountsJustStart(),
         milestones.startTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.StartUnlockPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x1778"
       );
     });
 
@@ -1470,9 +1499,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getUnlockAmountsJustCliff(),
         milestones.cliffTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.CliffUnlockPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x1778"
       );
     });
 
@@ -1485,9 +1515,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getUnlockAmountsStartAndCliff(),
         milestones.startTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.StartAndCliffUnlocksPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x1778"
       );
     });
 
@@ -1500,9 +1531,26 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getUnlockAmountsStartAndCliff(),
         milestones.startTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.OneToken,
         AssetMintKind.Wrong,
         "custom program error: 0x7dc"
+      );
+    });
+
+    it("Fails to withdraw from a depleted Token2022 LL Stream - as recipient - at end time", async () => {
+      const milestones = await getDefaultMilestones(banksClient);
+      testForFailureToWithdraw(
+        recipientKeys,
+        recipientKeys.publicKey,
+        TOKEN_2022_PROGRAM_ID,
+        milestones,
+        getDefaultUnlockAmounts(),
+        milestones.endTime,
+        BeforeWithdrawal.WithdrawMax,
+        WithdrawalSize.OneToken,
+        AssetMintKind.Correct,
+        "custom program error: 0x1772"
       );
     });
 
@@ -1655,6 +1703,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getDefaultUnlockAmounts(),
         milestones.endTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.MAX,
         AssetMintKind.Correct,
         "custom program error: 0xbc4"
@@ -1683,9 +1732,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getDefaultUnlockAmounts(),
         milestones.cliffTime.sub(new BN(1)),
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.MAX,
         AssetMintKind.Correct,
-        "custom program error: 0x177b"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1747,6 +1797,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getDefaultUnlockAmounts(),
         milestones.endTime,
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.MAX,
         AssetMintKind.Correct,
         "custom program error: 0xbc4"
@@ -1775,9 +1826,10 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         getDefaultUnlockAmounts(),
         milestones.cliffTime.sub(new BN(1)),
+        BeforeWithdrawal.DoNothing,
         WithdrawalSize.MAX,
         AssetMintKind.Correct,
-        "custom program error: 0x177b"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1837,7 +1889,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.OneUnit,
         TOKEN_PROGRAM_ID,
-        "0x1778"
+        "0x177a"
       );
     });
 
@@ -1848,7 +1900,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.OneUnit,
         TOKEN_PROGRAM_ID,
-        "0x1778"
+        "0x177a"
       );
     });
 
@@ -1859,7 +1911,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.TwoUnits,
         TOKEN_PROGRAM_ID,
-        "0x1778"
+        "0x177a"
       );
     });
 
@@ -1881,7 +1933,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.OneUnit,
         TOKEN_PROGRAM_ID,
-        "0x1778"
+        "0x177a"
       );
     });
 
@@ -1921,7 +1973,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.OneUnit,
         TOKEN_2022_PROGRAM_ID,
-        "0x1778"
+        "0x177a"
       );
     });
 
@@ -1932,7 +1984,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.TwoUnits,
         TOKEN_2022_PROGRAM_ID,
-        "0x1778"
+        "0x177a"
       );
     });
 
@@ -1954,7 +2006,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.OneUnit,
         TOKEN_2022_PROGRAM_ID,
-        "0x1778"
+        "0x177a"
       );
     });
 
@@ -2389,6 +2441,45 @@ async function cancelStreamAtSpecificTime(
   await cancelStream(streamId, assetMint, assetTokenProgram);
 }
 
+async function checkStreamDataState(
+  streamId: BN,
+  assetMint: PublicKey,
+  isCancelable: boolean,
+  depositedAmount: BN,
+  unlockAmounts: UnlockAmounts,
+  milestones: StreamMilestones
+) {
+  // Fetch the created Stream
+  const streamData = await fetchStreamData(streamId);
+
+  // Assert that the state of the created Stream is correct
+  assert(
+    streamData.id.eq(streamId) &&
+      streamData.sender.equals(senderKeys.publicKey) &&
+      streamData.assetMint.equals(assetMint) &&
+      streamData.isCancelable === isCancelable &&
+      streamData.wasCanceled === false &&
+      streamData.isDepleted === false,
+    "The state of the created Stream is wrong"
+  );
+
+  assert(
+    streamData.amounts.deposited.eq(depositedAmount) &&
+      streamData.amounts.withdrawn.eq(new BN(0)) &&
+      streamData.amounts.refunded.eq(new BN(0)) &&
+      streamData.amounts.startUnlock.eq(unlockAmounts.startUnlock) &&
+      streamData.amounts.cliffUnlock.eq(unlockAmounts.cliffUnlock),
+    "The created Stream's amounts are incorrect"
+  );
+
+  assert(
+    streamData.milestones.startTime.eq(milestones.startTime) &&
+      streamData.milestones.cliffTime.eq(milestones.cliffTime) &&
+      streamData.milestones.endTime.eq(milestones.endTime),
+    "The created Stream's milestones are incorrect"
+  );
+}
+
 async function createMintATAsAndStream(
   isStreamCancelable: boolean,
   milestones: StreamMilestones,
@@ -2643,6 +2734,12 @@ async function performPostCancelAssertions(
     fetchedStream.amounts.withdrawn.eq(expectedWithdrawnAmount),
     "The Stream's withdrawn amount is incorrect"
   );
+
+  // Given that no tokens have been withdrawn, the Stream must remain not depleted
+  assert(
+    fetchedStream.isDepleted === false,
+    "The Stream isnt't supposed to be depleted"
+  );
 }
 
 interface PerformPostCreateAssertionsArgs {
@@ -2744,33 +2841,14 @@ async function performPostCreateAssertions(
     "Treasury hasn't received the sender's tokens"
   );
 
-  // Fetch the created Stream
-  const streamData = await fetchStreamData(streamId);
-
-  // Assert that the state of the created Stream is correct
-  assert(
-    streamData.id.eq(streamId) &&
-      streamData.sender.equals(senderKeys.publicKey) &&
-      streamData.assetMint.equals(assetMint) &&
-      streamData.isCancelable === isCancelable &&
-      streamData.wasCanceled === false,
-    "The state of the created Stream is wrong"
-  );
-
-  assert(
-    streamData.amounts.deposited.eq(depositedAmount) &&
-      streamData.amounts.withdrawn.eq(new BN(0)) &&
-      streamData.amounts.refunded.eq(new BN(0)) &&
-      streamData.amounts.startUnlock.eq(unlockAmounts.startUnlock) &&
-      streamData.amounts.cliffUnlock.eq(unlockAmounts.cliffUnlock),
-    "The created Stream's amounts are incorrect"
-  );
-
-  assert(
-    streamData.milestones.startTime.eq(milestones.startTime) &&
-      streamData.milestones.cliffTime.eq(milestones.cliffTime) &&
-      streamData.milestones.endTime.eq(milestones.endTime),
-    "The created Stream's milestones are incorrect"
+  // Make sure that the StreamData state is correct
+  await checkStreamDataState(
+    streamId,
+    assetMint,
+    isCancelable,
+    depositedAmount,
+    unlockAmounts,
+    milestones
   );
 
   // Assert that the NFT Collection Data account has been updated correctly
@@ -2823,6 +2901,14 @@ async function performPostWithdrawAssertions(
     fetchedStream.amounts.withdrawn.eq(expectedWithdrawnAmount),
     "The Stream's withdrawn amount is incorrect"
   );
+
+  // If the Stream has been depleted, the Stream must be marked as such
+  if (fetchedStream.amounts.withdrawn.eq(fetchedStream.amounts.deposited)) {
+    assert(
+      fetchedStream.isDepleted === true,
+      "The Stream is supposed to be depleted"
+    );
+  }
 }
 
 async function testStreamCreation(
@@ -3134,7 +3220,7 @@ async function testMultiStreamCreationInOneTx(
   }
 
   // Build, sign and process the transaction
-  await buildSignAndProcessTx(ixs, senderKeys, 600_000);
+  await buildSignAndProcessTx(ixs, senderKeys, 700_000);
 
   // Get the final token balance of the sender
   const senderFinalTokenBalance = await getTokenBalanceByATAKey(senderATA);
@@ -3159,33 +3245,14 @@ async function testMultiStreamCreationInOneTx(
   );
 
   for (let i = 0; i < 2; i++) {
-    const streamId = new BN(i);
-
-    // Fetch the created Stream
-    const streamData = await fetchStreamData(streamId);
-
-    // Assert that the state of the created Stream is correct
-    assert(
-      streamData.id.eq(streamId) &&
-        streamData.sender.equals(senderKeys.publicKey) &&
-        streamData.assetMint.equals(assetMint) &&
-        streamData.isCancelable === isCancelable &&
-        streamData.wasCanceled === false,
-      "The state of the created Stream is wrong"
-    );
-
-    assert(
-      streamData.amounts.deposited.eq(depositedAmountPerStream) &&
-        streamData.amounts.withdrawn.eq(new BN(0)) &&
-        streamData.amounts.refunded.eq(new BN(0)),
-      "The created Stream's amounts are incorrect"
-    );
-
-    assert(
-      streamData.milestones.startTime.eq(milestones.startTime) &&
-        streamData.milestones.cliffTime.eq(milestones.cliffTime) &&
-        streamData.milestones.endTime.eq(milestones.endTime),
-      "The created Stream's milestones are incorrect"
+    // Make sure that the StreamData state is correct
+    await checkStreamDataState(
+      new BN(i),
+      assetMint,
+      isCancelable,
+      depositedAmountPerStream,
+      unlockAmounts,
+      milestones
     );
   }
 
@@ -3371,6 +3438,14 @@ async function testForFailureToCollectFees(
   );
 }
 
+const BeforeWithdrawal = {
+  DoNothing: 0,
+  WithdrawMax: 1,
+} as const;
+
+type BeforeWithdrawal =
+  (typeof BeforeWithdrawal)[keyof typeof BeforeWithdrawal];
+
 const AssetMintKind = {
   Correct: 0,
   Wrong: 1,
@@ -3385,6 +3460,7 @@ async function testForFailureToWithdraw(
   milestones: StreamMilestones,
   unlockAmounts: UnlockAmounts,
   withdrawalTime: BN,
+  beforeWithdrawal: BeforeWithdrawal,
   withdrawalSize: WithdrawalSize,
   assetMintKind: AssetMintKind,
   expectedError: string
@@ -3432,6 +3508,17 @@ async function testForFailureToWithdraw(
       expectedError
     );
     return;
+  }
+
+  if (beforeWithdrawal === BeforeWithdrawal.WithdrawMax) {
+    await withdrawMax(
+      streamData.id,
+      txSigner,
+      destination,
+      assetMintToUse,
+      assetTokenProgram,
+      nftTokenProgram
+    );
   }
 
   let withdrawalAmount = withdrawalSizeToWithdrawalAmount(
@@ -4014,7 +4101,7 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
 
   const nftTokenProgram = TOKEN_PROGRAM_ID;
   let createStreamIx = await getCreateWithTimestampsIx(args);
-  await buildSignAndProcessTx(createStreamIx, senderKeys, 270_000);
+  await buildSignAndProcessTx(createStreamIx, senderKeys, 300_000);
 
   const streamNftMint = getStreamNftMintAddress(expectedStreamId);
   const recipientsStreamNftATA = deriveATAAddress(

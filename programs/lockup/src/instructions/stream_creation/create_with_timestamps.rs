@@ -166,7 +166,7 @@ pub fn handler(
 
     // Assert that the deposited amount is not zero
     if deposited_amount == 0 {
-        return Err(ErrorCode::InvalidDepositAmount.into());
+        return Err(ErrorCode::DepositAmountCantBeZero.into());
     }
 
     if cliff_time > 0 {
@@ -291,6 +291,7 @@ pub fn handler(
         amounts,
         milestones,
         is_cancelable,
+        is_depleted: false,
         was_canceled: false,
         bump: ctx.accounts.stream_data.bump,
     };

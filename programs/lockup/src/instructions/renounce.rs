@@ -35,7 +35,7 @@ pub fn handler(ctx: Context<Renounce>) -> Result<()> {
 
     // Assert that the Stream is cancelable
     if !stream_data.is_cancelable {
-        return Err(ErrorCode::StreamCancelabilityIsAlreadyRenounced.into());
+        return Err(ErrorCode::CantRenounceANonCancelableStream.into());
     }
 
     // Mark the Stream as non-cancelable

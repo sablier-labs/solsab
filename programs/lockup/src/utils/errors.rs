@@ -4,6 +4,10 @@ use anchor_lang::prelude::*;
 pub enum ErrorCode {
     #[msg("Can't collect zero fees!")]
     CantCollectZeroFees,
+    #[msg("Can't renounce a non-cancelable Stream!")]
+    CantRenounceANonCancelableStream,
+    #[msg("Can't withdraw from a depleted Stream!")]
+    CantWithdrawFromADepletedStream,
     #[msg("Deposit amount is less than the unlock amounts!")]
     DepositAmountLessThanUnlockAmounts,
     #[msg("Invalid cliff time of the Stream!")]
@@ -11,7 +15,7 @@ pub enum ErrorCode {
     #[msg("Invalid cliff unlock amount!")]
     InvalidCliffUnlockAmount,
     #[msg("Invalid deposit amount!")]
-    InvalidDepositAmount,
+    DepositAmountCantBeZero,
     #[msg("Stream end time cannot be in the past!")]
     InvalidEndTime,
     #[msg("Invalid withdrawal amount!")]
@@ -20,12 +24,10 @@ pub enum ErrorCode {
     NftCollectionTotalSupplyOverflow,
     #[msg("Not enough fees for withdrawal!")]
     NotEnoughFeesForWithdrawal,
-    #[msg("Can't cancel a non-cancelable Stream!")]
-    StreamIsNotCancelable,
-    #[msg("Can't renounce an already-renounced Stream!")]
-    StreamCancelabilityIsAlreadyRenounced,
-    #[msg("Can't withdraw a zero amount!")]
-    WithdrawalAmountCannotBeZero,
     #[msg("Rent exemption doubling has failed!")]
     RentExemptionDoublingFailed,
+    #[msg("Can't cancel a non-cancelable Stream!")]
+    StreamIsNotCancelable,
+    #[msg("Can't withdraw a zero amount!")]
+    WithdrawalAmountCannotBeZero,
 }
