@@ -22,6 +22,26 @@ pub mod sablier_lockup {
         instructions::collect_fees::handler(ctx, lamports_amount)
     }
 
+    pub fn create_with_durations(
+        ctx: Context<CreateWithTimestamps>,
+        cliff_duration: i64,
+        total_duration: i64,
+        deposited_amount: u64,
+        start_unlock: u64,
+        cliff_unlock: u64,
+        is_cancelable: bool,
+    ) -> Result<()> {
+        instructions::create_with_durations::handler(
+            ctx,
+            cliff_duration,
+            total_duration,
+            deposited_amount,
+            start_unlock,
+            cliff_unlock,
+            is_cancelable,
+        )
+    }
+
     pub fn create_with_timestamps(
         ctx: Context<CreateWithTimestamps>,
         start_time: i64,

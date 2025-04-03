@@ -1,0 +1,33 @@
+use anchor_lang::{prelude::*, solana_program::sysvar::clock::Clock};
+
+use crate::instructions::create_with_timestamps;
+
+pub fn handler(
+    ctx: Context<create_with_timestamps::CreateWithTimestamps>,
+    cliff_duration: i64,
+    total_duration: i64,
+    deposited_amount: u64,
+    start_unlock: u64,
+    cliff_unlock: u64,
+    is_cancelable: bool,
+) -> Result<()> {
+    // Declare the start time as the current unix timestamp.
+    let start_time = Clock::get().unwrap().unix_timestamp;
+
+    // Calculate the cliff time by adding the cliff duration to the start time using checked math.
+    let cliff_time = start_time.checked_add(cliff_duration).unwrap();
+
+    // Calculate the end time by adding the total duration to the start time using checked math.
+    let end_time = start_time.checked_add(total_duration).unwrap();
+
+    create_with_timestamps::handler(
+        ctx,
+        start_time,
+        start_unlock,
+        cliff_time,
+        cliff_unlock,
+        end_time,
+        deposited_amount,
+        is_cancelable,
+    )
+}
