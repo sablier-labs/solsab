@@ -143,6 +143,7 @@ pub struct CreateWithTimestamps<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,
     start_time: i64,

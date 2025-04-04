@@ -22,6 +22,7 @@ pub mod sablier_lockup {
         instructions::collect_fees::handler(ctx, lamports_amount)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn create_with_timestamps(
         ctx: Context<CreateWithTimestamps>,
         start_time: i64,
