@@ -3,7 +3,7 @@ use anchor_spl::token_interface::Mint;
 
 use crate::{
     state::lockup::StreamData,
-    utils::{constants::*, errors::ErrorCode, events::StreamRenouncement},
+    utils::{constants::*, events::RenounceLockupStream, validations::check_renounce},
 };
 
 #[derive(Accounts)]
@@ -31,18 +31,14 @@ pub struct Renounce<'info> {
 }
 
 pub fn handler(ctx: Context<Renounce>) -> Result<()> {
-    let stream_data = &mut ctx.accounts.stream_data;
+    // Check: validate the renounce.
+    check_renounce(ctx.accounts.stream_data.is_cancelable)?;
 
-    // Assert that the Stream is cancelable
-    if !stream_data.is_cancelable {
-        return Err(ErrorCode::StreamCancelabilityIsAlreadyRenounced.into());
-    }
+    // Effect: update the stream data state.
+    ctx.accounts.stream_data.renounce()?;
 
-    // Mark the Stream as non-cancelable
-    stream_data.is_cancelable = false;
-
-    // Emit an event indicating that the sender has renounced the cancelability of the Stream
-    emit!(StreamRenouncement { stream_id: stream_data.id });
+    // Log the renouncement.
+    emit!(RenounceLockupStream { stream_id: ctx.accounts.stream_data.id });
 
     Ok(())
 }

@@ -3,7 +3,7 @@ use anchor_spl::token_interface::Mint;
 
 use crate::{
     state::lockup::StreamData,
-    utils::{constants::*, events::*, streaming_math::get_withdrawable_amount},
+    utils::{constants::*, events::*, lockup_math::get_withdrawable_amount},
 };
 
 #[derive(Accounts)]

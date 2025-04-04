@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    state::{fee_collector::FeeCollectorData, nft_collection_data::NftCollectionData, treasury::Treasury},
+    state::{nft_collection_data::NftCollectionData, treasury::Treasury},
     utils::constants::*,
 };
 
@@ -23,15 +23,6 @@ pub struct InitializePhaseOne<'info> {
     #[account(
         init,
         payer = deployer,
-        seeds = [FEE_COLLECTOR_DATA_SEED],
-        space = ANCHOR_DISCRIMINATOR_SIZE + FeeCollectorData::INIT_SPACE,
-        bump
-    )]
-    pub fee_collector_data: Box<Account<'info, FeeCollectorData>>,
-
-    #[account(
-        init,
-        payer = deployer,
         seeds = [NFT_COLLECTION_DATA_SEED],
         space = ANCHOR_DISCRIMINATOR_SIZE + NftCollectionData::INIT_SPACE,
         bump
@@ -42,13 +33,8 @@ pub struct InitializePhaseOne<'info> {
 }
 
 pub fn handler(ctx: Context<InitializePhaseOne>, fee_collector: Pubkey) -> Result<()> {
-    ctx.accounts.treasury.bump = ctx.bumps.treasury;
-
-    ctx.accounts.fee_collector_data.bump = ctx.bumps.fee_collector_data;
-    ctx.accounts.fee_collector_data.address = fee_collector;
-
-    ctx.accounts.nft_collection_data.bump = ctx.bumps.nft_collection_data;
-    ctx.accounts.nft_collection_data.total_supply = 0;
+    ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector)?;
+    ctx.accounts.nft_collection_data.initialize(ctx.bumps.nft_collection_data)?;
 
     Ok(())
 }

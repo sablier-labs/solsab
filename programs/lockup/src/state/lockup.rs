@@ -28,3 +28,70 @@ pub struct Milestones {
     pub end_time: i64,
     pub start_time: i64,
 }
+
+impl StreamData {
+    /// State update for the `cancel` instruction.
+    pub fn cancel(&mut self, sender_amount: u64) -> Result<()> {
+        self.amounts.refunded = sender_amount;
+        self.is_cancelable = false;
+        self.was_canceled = true;
+
+        Ok(())
+    }
+
+    /// State update for the `create_with_timestamps` instruction.
+    #[allow(clippy::too_many_arguments)]
+    pub fn create(
+        &mut self,
+        id: u64,
+        sender: Pubkey,
+        asset_mint: Pubkey,
+        start_time: i64,
+        cliff_time: i64,
+        end_time: i64,
+        start_unlock: u64,
+        cliff_unlock: u64,
+        deposited: u64,
+        is_cancelable: bool,
+        bump: u8,
+    ) -> Result<()> {
+        self.id = id;
+        self.sender = sender;
+        self.asset_mint = asset_mint;
+        self.bump = bump;
+        self.was_canceled = false;
+        self.is_cancelable = is_cancelable;
+        self.milestones.start_time = start_time;
+        self.milestones.cliff_time = cliff_time;
+        self.milestones.end_time = end_time;
+        self.amounts.start_unlock = start_unlock;
+        self.amounts.cliff_unlock = cliff_unlock;
+        self.amounts.deposited = deposited;
+        self.amounts.withdrawn = 0;
+        self.amounts.refunded = 0;
+
+        Ok(())
+    }
+
+    /// State update for the `renounce` instruction.
+    pub fn renounce(&mut self) -> Result<()> {
+        self.is_cancelable = false;
+
+        Ok(())
+    }
+
+    /// State update for the `withdraw` instruction.
+    pub fn withdraw(&mut self, amount: u64) -> Result<()> {
+        self.amounts.withdrawn = self.amounts.withdrawn.checked_add(amount).expect("Withdrawn amount overflow");
+
+        // Mark the Stream as non-cancelable if it has been depleted
+        //
+        // Note: the `>=` operator is used as an extra safety measure for the case when the withdrawn amount is bigger
+        // than expected, for one reason or the other
+        if self.amounts.withdrawn >= self.amounts.deposited - self.amounts.refunded {
+            self.is_cancelable = false;
+        }
+
+        Ok(())
+    }
+}

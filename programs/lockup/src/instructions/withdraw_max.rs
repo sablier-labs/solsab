@@ -1,4 +1,4 @@
-use crate::{instructions::withdraw, utils::streaming_math::get_withdrawable_amount};
+use crate::{instructions::withdraw, utils::lockup_math::get_withdrawable_amount};
 use anchor_lang::prelude::*;
 
 pub fn handler(ctx: Context<withdraw::Withdraw>) -> Result<()> {

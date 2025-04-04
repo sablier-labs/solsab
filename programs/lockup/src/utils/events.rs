@@ -1,32 +1,30 @@
 use anchor_lang::prelude::*;
 
 #[event]
-pub struct FeeCollection {
+pub struct CancelLockupStream {
+    pub stream_id: u64,
+    pub refunded_amount: u64,
+}
+
+#[event]
+pub struct CreateLockupLinearStream {
+    pub stream_id: u64,
+    pub recipient: Pubkey,
+}
+#[event]
+pub struct FeesCollected {
     pub fee_collector: Pubkey,
     pub fee_recipient: Pubkey,
     pub lamports_amount: u64,
 }
 
 #[event]
-pub struct StreamCancelation {
-    pub stream_id: u64,
-    pub refunded_amount: u64,
-}
-
-#[event]
-pub struct StreamCreation {
-    pub stream_id: u64,
-    pub asset_decimals: u8,
-    pub recipient: Pubkey,
-}
-
-#[event]
-pub struct StreamRenouncement {
+pub struct RenounceLockupStream {
     pub stream_id: u64,
 }
 
 #[event]
-pub struct StreamWithdrawal {
+pub struct WithdrawFromLockupStream {
     pub stream_id: u64,
     pub withdrawn_amount: u64,
 }

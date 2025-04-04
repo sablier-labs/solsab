@@ -52,7 +52,7 @@ pub mod sablier_lockup {
         deposited_amount: u64,
         is_cancelable: bool,
     ) -> Result<()> {
-        instructions::stream_creation::create_with_timestamps::handler(
+        instructions::create_with_timestamps::handler(
             ctx,
             start_time,
             start_unlock,

@@ -1,12 +1,15 @@
 use anchor_lang::{prelude::*, solana_program::program::invoke};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
-    utils::{constants::*, errors::ErrorCode, events::StreamWithdrawal, streaming_math::get_withdrawable_amount},
+    utils::{
+        constants::*, events::WithdrawFromLockupStream, lockup_math::get_withdrawable_amount,
+        transfer_helper::transfer_tokens, validations::check_withdraw,
+    },
 };
 
 const WITHDRAWAL_FEE_LAMPORTS: u64 = 10_000_000; // 0.01 SOL
@@ -81,21 +84,16 @@ pub struct Withdraw<'info> {
 }
 
 pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
-    // Assert that the withdrawn amount is not zero
-    if amount == 0 {
-        return Err(ErrorCode::WithdrawalAmountCannotBeZero.into());
-    }
+    // Check: validate the withdraw.
+    check_withdraw(
+        amount,
+        get_withdrawable_amount(&ctx.accounts.stream_data.milestones, &ctx.accounts.stream_data.amounts),
+    )?;
 
-    // Calculate the withdrawable amount
-    let withdrawable_amount =
-        get_withdrawable_amount(&ctx.accounts.stream_data.milestones, &ctx.accounts.stream_data.amounts);
+    // Effect: update the stream data state.
+    ctx.accounts.stream_data.withdraw(amount)?;
 
-    // Assert that the withdrawable amount is not too big
-    if amount > withdrawable_amount {
-        return Err(ErrorCode::InvalidWithdrawalAmount.into());
-    }
-
-    // Collect the withdrawal fee from the tx signer
+    // Interaction: transfer the fee from the signer to the treasury.
     let fee_collection_ix = anchor_lang::solana_program::system_instruction::transfer(
         &ctx.accounts.signer.key(),
         &ctx.accounts.treasury.key(),
@@ -103,40 +101,23 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     );
     invoke(&fee_collection_ix, &[ctx.accounts.signer.to_account_info(), ctx.accounts.treasury.to_account_info()])?;
 
-    let treasury = &mut ctx.accounts.treasury;
+    // Avoid unnecessary mutable borrow.
+    let treasury_bump = ctx.accounts.treasury.bump;
 
-    // Transfer the withdrawable SPL tokens to the recipient
-    // Prepare the transfer instruction
-    let transfer_ix = TransferChecked {
-        from: ctx.accounts.treasury_ata.to_account_info().clone(),
-        mint: ctx.accounts.asset_mint.to_account_info(),
-        to: ctx.accounts.recipient_ata.to_account_info(),
-        authority: treasury.to_account_info(),
-    };
+    // Interaction: transfer the tokens from the Treasury ATA to the recipient
+    transfer_tokens(
+        ctx.accounts.treasury_ata.to_account_info(),
+        ctx.accounts.recipient_ata.to_account_info(),
+        ctx.accounts.treasury.to_account_info(),
+        ctx.accounts.asset_mint.to_account_info(),
+        ctx.accounts.asset_token_program.to_account_info(),
+        amount,
+        ctx.accounts.asset_mint.decimals,
+        &[&[TREASURY_SEED, &[treasury_bump]]],
+    )?;
 
-    // Wrap the Treasury PDA's seeds in the appropriate structure
-    let signer_seeds: &[&[&[u8]]] = &[&[TREASURY_SEED, &[treasury.bump]]];
-
-    // Execute the transfer
-    let cpi_ctx =
-        CpiContext::new_with_signer(ctx.accounts.asset_token_program.to_account_info(), transfer_ix, signer_seeds);
-    transfer_checked(cpi_ctx, amount, ctx.accounts.asset_mint.decimals)?;
-
-    let stream_amounts = &mut ctx.accounts.stream_data.amounts;
-
-    // Update the Stream's withdrawn amount
-    stream_amounts.withdrawn = stream_amounts.withdrawn.checked_add(amount).expect("Withdrawn amount overflow");
-
-    // Mark the Stream as non-cancelable if it has been depleted
-    //
-    // Note: the `>=` operator is used as an extra safety measure for the case when the withdrawn amount is bigger than
-    // expected, for one reason or the other
-    if stream_amounts.withdrawn >= stream_amounts.deposited - stream_amounts.refunded {
-        ctx.accounts.stream_data.is_cancelable = false;
-    }
-
-    // Emit an event indicating the withdrawal
-    emit!(StreamWithdrawal { stream_id: ctx.accounts.stream_data.id, withdrawn_amount: amount });
+    // Log the withdrawal.
+    emit!(WithdrawFromLockupStream { stream_id: ctx.accounts.stream_data.id, withdrawn_amount: amount });
 
     Ok(())
 }
