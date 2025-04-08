@@ -864,6 +864,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForFailureToWithdraw(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
         getDefaultUnlockAmounts(),
@@ -878,6 +879,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForFailureToWithdraw(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
@@ -894,6 +896,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForFailureToWithdraw(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
         getDefaultUnlockAmounts(),
@@ -908,6 +911,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForFailureToWithdraw(
         senderKeys,
+        recipientKeys.publicKey,
         senderKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
@@ -915,7 +919,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.endTime,
         WithdrawalSize.OneThirdOfDeposited,
         AssetMintKind.Correct,
-        "custom program error: 0xbc4"
+        "custom program error: 0x7d3"
       );
     });
 
@@ -923,6 +927,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForFailureToWithdraw(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
@@ -939,6 +944,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForFailureToWithdraw(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
         getUnlockAmountsJustCliff(),
@@ -953,6 +959,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForFailureToWithdraw(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
@@ -969,6 +976,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForFailureToWithdraw(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
         getUnlockAmountsStartAndCliff(),
@@ -984,6 +992,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         thirdPartyKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
         getDefaultUnlockAmounts(),
@@ -996,6 +1005,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForWithdrawal(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
@@ -1010,6 +1020,21 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
+        TOKEN_PROGRAM_ID,
+        milestones,
+        getDefaultUnlockAmounts(),
+        milestones.startTime.add(milestones.endTime).div(new BN(2)),
+        WithdrawalSize.HalfOfDeposited
+      );
+    });
+
+    it("Withdraws from an SPL Token LL Stream - as recipient & to a non-recipient address - at half time", async () => {
+      const milestones = await getDefaultMilestones(banksClient);
+      await testForWithdrawal(
+        recipientKeys,
+        recipientKeys.publicKey,
+        senderKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
         getDefaultUnlockAmounts(),
@@ -1044,6 +1069,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
         getUnlockAmountsJustStart(),
@@ -1056,6 +1082,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForWithdrawal(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
@@ -1070,6 +1097,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
         getUnlockAmountsJustCliff(),
@@ -1082,6 +1110,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForWithdrawal(
         thirdPartyKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
@@ -1096,6 +1125,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
         getUnlockAmountsStartAndCliff(),
@@ -1108,6 +1138,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForWithdrawal(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
@@ -1124,6 +1155,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForFailureToWithdraw(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
         getDefaultUnlockAmounts(),
@@ -1138,6 +1170,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForFailureToWithdraw(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
@@ -1154,6 +1187,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForFailureToWithdraw(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
         getDefaultUnlockAmounts(),
@@ -1168,6 +1202,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForFailureToWithdraw(
         senderKeys,
+        recipientKeys.publicKey,
         senderKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
@@ -1175,7 +1210,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.endTime,
         WithdrawalSize.OneThirdOfDeposited,
         AssetMintKind.Correct,
-        "custom program error: 0xbc4"
+        "custom program error: 0x7d3"
       );
     });
 
@@ -1183,6 +1218,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForFailureToWithdraw(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
@@ -1199,6 +1235,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForFailureToWithdraw(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
         getUnlockAmountsJustCliff(),
@@ -1213,6 +1250,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForFailureToWithdraw(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
@@ -1229,6 +1267,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForFailureToWithdraw(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
         getUnlockAmountsStartAndCliff(),
@@ -1244,6 +1283,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         thirdPartyKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
         getDefaultUnlockAmounts(),
@@ -1257,6 +1297,21 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
+        TOKEN_2022_PROGRAM_ID,
+        milestones,
+        getDefaultUnlockAmounts(),
+        milestones.endTime,
+        WithdrawalSize.OneThirdOfDeposited
+      );
+    });
+
+    it("Withdraws from a Token2022 LL Stream - as recipient & to a non-recipient address - a third of the streamed tokens at endTime", async () => {
+      const milestones = await getDefaultMilestones(banksClient);
+      await testForWithdrawal(
+        recipientKeys,
+        recipientKeys.publicKey,
+        senderKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
         getDefaultUnlockAmounts(),
@@ -1269,6 +1324,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForWithdrawal(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
@@ -1304,6 +1360,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
         getUnlockAmountsJustStart(),
@@ -1316,6 +1373,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForWithdrawal(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
@@ -1330,6 +1388,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
         getUnlockAmountsJustCliff(),
@@ -1342,6 +1401,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForWithdrawal(
         thirdPartyKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
@@ -1356,6 +1416,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
         getUnlockAmountsStartAndCliff(),
@@ -1368,6 +1429,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForWithdrawal(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
@@ -1383,6 +1445,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForFailureToWithdraw(
         senderKeys,
+        recipientKeys.publicKey,
         senderKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
@@ -1390,7 +1453,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.endTime,
         WithdrawalSize.MAX,
         AssetMintKind.Correct,
-        "custom program error: 0xbc4"
+        "custom program error: 0x7d3"
       );
     });
 
@@ -1398,6 +1461,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForWithdrawal(
         thirdPartyKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
@@ -1411,6 +1475,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForFailureToWithdraw(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
@@ -1427,6 +1492,21 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
+        TOKEN_PROGRAM_ID,
+        milestones,
+        getDefaultUnlockAmounts(),
+        milestones.endTime,
+        WithdrawalSize.HalfOfDeposited
+      );
+    });
+
+    it("Withdraws max from an SPL Token LL Stream - as recipient & to a non-recipient address - when half of the tokens have been streamed", async () => {
+      const milestones = await getDefaultMilestones(banksClient);
+      await testForWithdrawal(
+        recipientKeys,
+        recipientKeys.publicKey,
+        senderKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
         getDefaultUnlockAmounts(),
@@ -1454,6 +1534,7 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
         TOKEN_PROGRAM_ID,
         milestones,
         getDefaultUnlockAmounts(),
@@ -1475,6 +1556,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForFailureToWithdraw(
         senderKeys,
+        recipientKeys.publicKey,
         senderKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
@@ -1482,7 +1564,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.endTime,
         WithdrawalSize.MAX,
         AssetMintKind.Correct,
-        "custom program error: 0xbc4"
+        "custom program error: 0x7d3"
       );
     });
 
@@ -1490,6 +1572,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForWithdrawal(
         thirdPartyKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
@@ -1503,6 +1586,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForFailureToWithdraw(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
@@ -1518,6 +1602,7 @@ describe("SablierLockup user-callable Ixs", () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForWithdrawal(
         recipientKeys,
+        recipientKeys.publicKey,
         recipientKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
@@ -1546,6 +1631,21 @@ describe("SablierLockup user-callable Ixs", () => {
       await testForWithdrawal(
         recipientKeys,
         recipientKeys.publicKey,
+        recipientKeys.publicKey,
+        TOKEN_2022_PROGRAM_ID,
+        milestones,
+        getDefaultUnlockAmounts(),
+        milestones.endTime,
+        WithdrawalSize.MAX
+      );
+    });
+
+    it("Withdraws max from a Token2022 LL Stream - as recipient & to a non-recipient address - at endTime", async () => {
+      const milestones = await getDefaultMilestones(banksClient);
+      await testForWithdrawal(
+        recipientKeys,
+        recipientKeys.publicKey,
+        senderKeys.publicKey,
         TOKEN_2022_PROGRAM_ID,
         milestones,
         getDefaultUnlockAmounts(),
@@ -1868,7 +1968,8 @@ async function assertWithdrawFailure(
   txSigner: Keypair,
   assetMint: PublicKey,
   streamId: BN,
-  recipient: PublicKey,
+  streamRecipient: PublicKey,
+  withdrawalRecipient: PublicKey,
   amount: BN,
   depositTokenProgram: PublicKey,
   nftTokenProgram: PublicKey,
@@ -1879,7 +1980,8 @@ async function assertWithdrawFailure(
     .accounts({
       signer: txSigner.publicKey,
       assetMint,
-      recipient,
+      streamRecipient,
+      withdrawalRecipient,
       depositTokenProgram,
       nftTokenProgram,
     })
@@ -1892,7 +1994,8 @@ async function assertWithdrawMaxFailure(
   txSigner: Keypair,
   assetMint: PublicKey,
   streamId: BN,
-  recipient: PublicKey,
+  streamRecipient: PublicKey,
+  withdrawalRecipient: PublicKey,
   depositTokenProgram: PublicKey,
   nftTokenProgram: PublicKey,
   expectedError: string
@@ -1902,7 +2005,8 @@ async function assertWithdrawMaxFailure(
     .accounts({
       signer: txSigner.publicKey,
       assetMint,
-      recipient,
+      streamRecipient,
+      withdrawalRecipient,
       depositTokenProgram,
       nftTokenProgram,
     })
@@ -2320,6 +2424,7 @@ async function performPostCreateAssertions(
 async function performPostWithdrawAssertions(
   streamId: BN,
   assetMint: PublicKey,
+  withdrawalRecipient: PublicKey,
   depositTokenProgram: PublicKey,
   depositedAmount: BN,
   expectedWithdrawnAmount: BN,
@@ -2335,16 +2440,22 @@ async function performPostWithdrawAssertions(
     "The Treasury's Lamports balance hasn't been credited correctly"
   );
 
-  // Derive the recipient's ATA address
-  const recipientATA = deriveRecipientATA(assetMint, depositTokenProgram);
+  // Derive the withdrawal recipient's ATA address
+  const withdrawalRecipientATA = deriveATAAddress(
+    assetMint,
+    withdrawalRecipient,
+    depositTokenProgram
+  );
 
-  // Get the recipient's token balance
-  const recipientTokenBalance = await getTokenBalanceByATAKey(recipientATA);
+  // Get the withdrawal recipient's token balance
+  const withdrawalRecipientTokenBalance = await getTokenBalanceByATAKey(
+    withdrawalRecipientATA
+  );
 
-  // Assert that the recipient's token balance has been changed correctly
+  // Assert that the withdrawal recipient's token balance has been changed correctly
   assert(
-    recipientTokenBalance.eq(expectedWithdrawnAmount),
-    "The amount withdrawn to the recipient is incorrect"
+    withdrawalRecipientTokenBalance.eq(expectedWithdrawnAmount),
+    "The amount withdrawn to the withdrawal recipient is incorrect"
   );
 
   // Assert that the Treasury ATA has been changed correctly
@@ -2490,6 +2601,7 @@ async function createStreamAndWithdrawMax(depositTokenProgram: PublicKey) {
   await withdrawMax(
     streamData.id,
     recipientKeys,
+    recipientKeys.publicKey,
     recipientKeys.publicKey,
     assetMint,
     depositTokenProgram,
@@ -2658,6 +2770,7 @@ async function testForWithdrawalAfterStreamTransfer(
       assetMint,
       streamData.id,
       recipient,
+      recipient,
       depositTokenProgram,
       nftTokenProgram,
       "custom program error: 0x7d3"
@@ -2666,6 +2779,7 @@ async function testForWithdrawalAfterStreamTransfer(
     await withdrawMax(
       streamData.id,
       thirdPartyKeys,
+      thirdPartyKeys.publicKey,
       thirdPartyKeys.publicKey,
       assetMint,
       depositTokenProgram,
@@ -2686,6 +2800,7 @@ async function testForWithdrawalAfterStreamTransfer(
     assetMint,
     streamData.id,
     recipient,
+    recipient,
     withdrawalAmount,
     depositTokenProgram,
     nftTokenProgram,
@@ -2696,6 +2811,7 @@ async function testForWithdrawalAfterStreamTransfer(
     streamData.id,
     withdrawalAmount,
     thirdPartyKeys,
+    thirdPartyKeys.publicKey,
     thirdPartyKeys.publicKey,
     assetMint,
     depositTokenProgram,
@@ -2783,7 +2899,8 @@ type AssetMintKind = (typeof AssetMintKind)[keyof typeof AssetMintKind];
 
 async function testForFailureToWithdraw(
   txSigner: Keypair,
-  destination: PublicKey,
+  streamRecipient: PublicKey,
+  withdrawalRecipient: PublicKey,
   depositTokenProgram: PublicKey,
   milestones: StreamMilestones,
   unlockAmounts: UnlockAmounts,
@@ -2829,7 +2946,8 @@ async function testForFailureToWithdraw(
       txSigner,
       assetMintToUse,
       streamData.id,
-      destination,
+      streamRecipient,
+      withdrawalRecipient,
       depositTokenProgram,
       nftTokenProgram,
       expectedError
@@ -2847,7 +2965,8 @@ async function testForFailureToWithdraw(
     txSigner,
     assetMintToUse,
     streamData.id,
-    destination,
+    streamRecipient,
+    withdrawalRecipient,
     withdrawalAmount,
     depositTokenProgram,
     nftTokenProgram,
@@ -2857,7 +2976,8 @@ async function testForFailureToWithdraw(
 
 async function testForWithdrawal(
   txSigner: Keypair,
-  destination: PublicKey,
+  streamRecipient: PublicKey,
+  withdrawalRecipient: PublicKey,
   depositTokenProgram: PublicKey,
   milestones: StreamMilestones,
   unlockAmounts: UnlockAmounts,
@@ -2891,7 +3011,8 @@ async function testForWithdrawal(
     await withdrawMax(
       streamData.id,
       txSigner,
-      destination,
+      streamRecipient,
+      withdrawalRecipient,
       assetMint,
       depositTokenProgram,
       nftTokenProgram
@@ -2901,6 +3022,7 @@ async function testForWithdrawal(
     await performPostWithdrawAssertions(
       streamData.id,
       assetMint,
+      withdrawalRecipient,
       depositTokenProgram,
       depositedAmount,
       withdrawalAmount,
@@ -2932,7 +3054,8 @@ async function testForWithdrawal(
     streamData.id,
     withdrawalAmount,
     txSigner,
-    destination,
+    streamRecipient,
+    withdrawalRecipient,
     assetMint,
     depositTokenProgram,
     nftTokenProgram
@@ -2942,6 +3065,7 @@ async function testForWithdrawal(
   await performPostWithdrawAssertions(
     streamData.id,
     assetMint,
+    withdrawalRecipient,
     depositTokenProgram,
     depositedAmount,
     withdrawalAmount,
@@ -3034,6 +3158,7 @@ async function testForWithdrawalPostCancelAtHalfTime(
     expectedWithdrawnAmount,
     recipientKeys,
     recipient,
+    recipient,
     assetMint,
     depositTokenProgram,
     nftTokenProgram
@@ -3084,7 +3209,8 @@ async function actDependingOnWithdrawalKind(
   streamId: BN,
   expectedWithdrawnAmount: BN,
   recipientKeys: Keypair,
-  recipient: PublicKey,
+  streamRecipient: PublicKey,
+  withdrawalRecipient: PublicKey,
   assetMint: PublicKey,
   depositTokenProgram: PublicKey,
   nftTokenProgram: PublicKey
@@ -3095,7 +3221,8 @@ async function actDependingOnWithdrawalKind(
         streamId,
         expectedWithdrawnAmount,
         recipientKeys,
-        recipient,
+        streamRecipient,
+        withdrawalRecipient,
         assetMint,
         depositTokenProgram,
         nftTokenProgram
@@ -3106,7 +3233,8 @@ async function actDependingOnWithdrawalKind(
       await withdrawMax(
         streamId,
         recipientKeys,
-        recipient,
+        streamRecipient,
+        withdrawalRecipient,
         assetMint,
         depositTokenProgram,
         nftTokenProgram
@@ -3152,6 +3280,7 @@ async function testForWithdrawalPostRenounceAtHalfTime(
     streamData.id,
     expectedWithdrawnAmount,
     recipientKeys,
+    recipient,
     recipient,
     assetMint,
     depositTokenProgram,
@@ -3258,7 +3387,8 @@ async function withdraw(
   streamId: BN,
   withdrawalAmount: BN,
   txSigner: Keypair,
-  recipient: PublicKey,
+  streamRecipient: PublicKey,
+  withdrawalRecipient: PublicKey,
   assetMint: PublicKey,
   depositTokenProgram: PublicKey,
   nftTokenProgram: PublicKey
@@ -3267,7 +3397,8 @@ async function withdraw(
     .withdraw(streamId, withdrawalAmount)
     .accounts({
       signer: txSigner.publicKey,
-      recipient,
+      streamRecipient,
+      withdrawalRecipient,
       assetMint,
       depositTokenProgram,
       nftTokenProgram,
@@ -3280,7 +3411,8 @@ async function withdraw(
 async function withdrawMax(
   streamId: BN,
   txSigner: Keypair,
-  recipient: PublicKey,
+  streamRecipient: PublicKey,
+  withdrawalRecipient: PublicKey,
   assetMint: PublicKey,
   depositTokenProgram: PublicKey,
   nftTokenProgram: PublicKey
@@ -3289,7 +3421,8 @@ async function withdrawMax(
     .withdrawMax(streamId)
     .accounts({
       signer: txSigner.publicKey,
-      recipient,
+      streamRecipient,
+      withdrawalRecipient,
       assetMint,
       depositTokenProgram,
       nftTokenProgram,
