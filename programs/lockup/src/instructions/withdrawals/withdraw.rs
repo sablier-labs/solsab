@@ -136,7 +136,6 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     }
 
     // Emit an event indicating the withdrawal
-    msg!("{} tokens have been withdrawn from the Stream with ID {}", amount, ctx.accounts.stream_data.id);
     emit!(StreamWithdrawal { stream_id: ctx.accounts.stream_data.id, withdrawn_amount: amount });
 
     Ok(())

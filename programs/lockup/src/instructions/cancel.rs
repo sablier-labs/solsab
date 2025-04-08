@@ -105,11 +105,6 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     ctx.accounts.stream_data.is_cancelable = false;
 
     // Emit an event indicating the cancellation
-    msg!(
-        "The Stream {} has been canceled, refunding {} tokens to the sender",
-        ctx.accounts.stream_data.id,
-        refundable_amount
-    );
     emit!(StreamCancelation { stream_id: ctx.accounts.stream_data.id, refunded_amount: refundable_amount });
 
     Ok(())

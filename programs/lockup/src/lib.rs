@@ -6,9 +6,7 @@ pub mod utils;
 
 use crate::instructions::*;
 
-declare_id!("D66QHFxwZynfc2NfxTogm8M62T6SUBcuASPcxqMoTjgF"); // Localnet Program ID
-
-// declare_id!("uwuJk35aCL3z2FzfPr8fQE1U19A8N18qdA5YfdfUbPt"); // Devnet Program ID
+declare_id!("7KaQU8kYWDPcr9tbuMZWnWiVPUxQLjrjZ6jUU8rY1wqn"); // Localnet & Devnet Program ID
 
 #[program]
 pub mod sablier_lockup {
@@ -84,6 +82,10 @@ pub mod sablier_lockup {
 
     pub fn withdraw(ctx: Context<Withdraw>, _stream_id: u64, amount: u64) -> Result<()> {
         instructions::withdraw::handler(ctx, amount)
+    }
+
+    pub fn withdrawable_amount_of(ctx: Context<WithdrawableAmountOf>, stream_id: u64) -> Result<u64> {
+        instructions::withdrawable_amount_of::handler(ctx, stream_id)
     }
 
     pub fn withdraw_max(ctx: Context<Withdraw>, _stream_id: u64) -> Result<()> {

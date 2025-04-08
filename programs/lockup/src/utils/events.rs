@@ -16,6 +16,7 @@ pub struct StreamCancelation {
 #[event]
 pub struct StreamCreation {
     pub stream_id: u64,
+    pub asset_decimals: u8,
     pub recipient: Pubkey,
 }
 
@@ -28,4 +29,10 @@ pub struct StreamRenouncement {
 pub struct StreamWithdrawal {
     pub stream_id: u64,
     pub withdrawn_amount: u64,
+}
+
+#[event]
+pub struct WithdrawableAmountQueried {
+    pub stream_id: u64,
+    pub withdrawable_amount: u64,
 }
