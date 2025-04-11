@@ -107,12 +107,12 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     // Mark the Stream as canceled
     stream_data.was_canceled = true;
 
-    // Mark the Stream as non-cancelable
-    stream_data.is_cancelable = false;
-
     // If there are no tokens left for the recipient to withdraw, mark the stream as depleted.
     if get_withdrawable_amount(&milestones, &stream_data.amounts) == 0 {
         mark_stream_as_depleted(stream_data);
+    } else {
+        // Mark the Stream as non-cancelable
+        stream_data.is_cancelable = false;
     }
 
     // Emit an event indicating the cancellation
