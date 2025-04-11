@@ -47,12 +47,7 @@ pub fn handler(ctx: Context<CollectFees>, lamports_amount: u64) -> Result<()> {
     ctx.accounts.treasury.sub_lamports(lamports_amount)?;
     ctx.accounts.recipient.add_lamports(lamports_amount)?;
 
-    msg!(
-        "The Fee Collector {} has collected {} lamports, transferring them to {}",
-        ctx.accounts.fee_collector_data.address,
-        lamports_amount,
-        ctx.accounts.recipient.key()
-    );
+    // Emit an event indicating that the fees have been collected
     emit!(FeeCollection {
         fee_collector: ctx.accounts.fee_collector.key(),
         fee_recipient: ctx.accounts.recipient.key(),

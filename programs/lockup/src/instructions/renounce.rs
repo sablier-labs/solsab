@@ -42,7 +42,6 @@ pub fn handler(ctx: Context<Renounce>) -> Result<()> {
     stream_data.is_cancelable = false;
 
     // Emit an event indicating that the sender has renounced the cancelability of the Stream
-    msg!("The Stream with ID {} has been renounced", stream_data.id);
     emit!(StreamRenouncement { stream_id: stream_data.id });
 
     Ok(())

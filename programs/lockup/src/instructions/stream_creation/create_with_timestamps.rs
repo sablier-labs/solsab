@@ -297,8 +297,7 @@ pub fn handler(
     *total_supply = total_supply.checked_add(1).ok_or(ErrorCode::NftCollectionTotalSupplyOverflow)?;
 
     // Emit an event indicating the creation of the Stream
-    msg!("{} created a Stream id {} and token {}", sender.key(), stream_id, asset_mint.key());
-    emit!(StreamCreation { stream_id, recipient: ctx.accounts.recipient.key() });
+    emit!(StreamCreation { stream_id, asset_decimals: asset_mint.decimals, recipient: ctx.accounts.recipient.key() });
 
     Ok(())
 }
