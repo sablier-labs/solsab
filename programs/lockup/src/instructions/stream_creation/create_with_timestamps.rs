@@ -14,10 +14,6 @@ use crate::{
     utils::{constants::*, errors::ErrorCode, events::StreamCreation},
 };
 
-pub const NFT_NAME: &str = "Sablier Lockup Linear Stream #";
-pub const NFT_METADATA_URI: &str = "https://ipfs.io/ipfs/bafkreiaidfetl2iedxjzbh2hof7dj3hdrs5l7sr643ggtjh7sb42jcj5nq";
-pub const NFT_SYMBOL: &str = "LL_STREAM";
-
 #[derive(Accounts)]
 pub struct CreateWithTimestamps<'info> {
     #[account(mut)]

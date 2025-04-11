@@ -12,9 +12,6 @@ use anchor_spl::{
 
 use crate::{state::treasury::Treasury, utils::constants::*};
 
-pub const NFT_NAME: &str = "Sablier LockupLinear Streams";
-pub const NFT_METADATA_URI: &str = "https://ipfs.io/ipfs/bafkreiak467qbqncgpkmgqmu7hynjnqb5j33jjnkk6bcdda63m3lf7czca";
-pub const NFT_SYMBOL: &str = "LL_STREAMS";
 
 #[derive(Accounts)]
 pub struct InitializePhaseTwo<'info> {
@@ -119,9 +116,9 @@ pub fn handler(ctx: Context<InitializePhaseTwo>) -> Result<()> {
             nft_collection_mint_signer_seeds,
         ),
         DataV2 {
-            name: NFT_NAME.to_string(),
-            symbol: NFT_SYMBOL.to_string(),
-            uri: NFT_METADATA_URI.to_string(),
+            name: COLLECTION_NAME.to_string(),
+            symbol: COLLECTION_SYMBOL.to_string(),
+            uri: COLLECTION_METADATA_URI.to_string(),
             seller_fee_basis_points: 0,
             creators: Some(vec![Creator {
                 address: nft_collection_mint.key(),
