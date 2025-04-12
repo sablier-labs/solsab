@@ -10,14 +10,14 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
         return 0;
     }
 
-    // If the end time is in the past or right now, return the deposited amount.
-    if timestamps.end_time <= now {
-        return amounts.deposited;
-    }
-
     // If the cliff time is in the future, return the start unlock amount.
     if timestamps.cliff_time > now {
         return amounts.start_unlock;
+    }
+
+    // If the end time is in the past or right now, return the deposited amount.
+    if timestamps.end_time <= now {
+        return amounts.deposited;
     }
 
     // Calculate the sum of the unlock amounts.
@@ -43,20 +43,17 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
     // Calculate the streamable amount.
     let streamable_amount = (amounts.deposited - unlock_amounts_sum) as u128;
 
-    // Calculate the streamed amount.
-    let unlock_amounts_sum_scaled = unlock_amounts_sum as u128 * SCALING_FACTOR;
-    let streamed_amount = unlock_amounts_sum_scaled + streamed_percentage * streamable_amount;
+    // Calculate the streamed amount. After dividing by SCALING_FACTOR, casting down to u64 is safe.
+    let streamed_amount = unlock_amounts_sum + ((streamed_percentage * streamable_amount) / SCALING_FACTOR) as u64;
 
     // Although the streamed amount should never exceed the deposited amount, this condition is checked
     // without asserting to avoid locking assets in case of a bug. If this situation occurs, the withdrawn
     // amount is considered to be the streamed amount, and the stream is effectively frozen.
-    if streamed_amount > amounts.deposited as u128 * SCALING_FACTOR {
+    if streamed_amount > amounts.deposited {
         return amounts.deposited;
     }
 
-    // De-scale the streamed amount to the token's decimals. After dividing by SCALING_FACTOR, casting
-    // down to u64 is safe.
-    (streamed_amount / SCALING_FACTOR) as u64
+    streamed_amount
 }
 
 pub fn get_withdrawable_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
