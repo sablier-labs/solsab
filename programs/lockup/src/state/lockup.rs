@@ -8,7 +8,7 @@ pub struct StreamData {
     pub bump: u8,
     pub id: u64,
     pub is_cancelable: bool,
-    pub milestones: Milestones,
+    pub timestamps: Timestamps,
     pub sender: Pubkey,
     pub was_canceled: bool,
 }
@@ -23,7 +23,7 @@ pub struct Amounts {
 }
 
 #[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
-pub struct Milestones {
+pub struct Timestamps {
     pub cliff_time: i64,
     pub end_time: i64,
     pub start_time: i64,
@@ -61,9 +61,9 @@ impl StreamData {
         self.bump = bump;
         self.was_canceled = false;
         self.is_cancelable = is_cancelable;
-        self.milestones.start_time = start_time;
-        self.milestones.cliff_time = cliff_time;
-        self.milestones.end_time = end_time;
+        self.timestamps.start_time = start_time;
+        self.timestamps.cliff_time = cliff_time;
+        self.timestamps.end_time = end_time;
         self.amounts.start_unlock = start_unlock;
         self.amounts.cliff_unlock = cliff_unlock;
         self.amounts.deposited = deposited;

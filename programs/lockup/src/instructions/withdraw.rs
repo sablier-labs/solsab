@@ -87,7 +87,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Check: validate the withdraw.
     check_withdraw(
         amount,
-        get_withdrawable_amount(&ctx.accounts.stream_data.milestones, &ctx.accounts.stream_data.amounts),
+        get_withdrawable_amount(&ctx.accounts.stream_data.timestamps, &ctx.accounts.stream_data.amounts),
     )?;
 
     // Effect: update the stream data state.

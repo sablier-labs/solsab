@@ -70,7 +70,7 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     let stream_amounts = ctx.accounts.stream_data.amounts.clone();
 
     // Calculate the streamed amount.
-    let streamed_amount = get_streamed_amount(&ctx.accounts.stream_data.milestones, &stream_amounts);
+    let streamed_amount = get_streamed_amount(&ctx.accounts.stream_data.timestamps, &stream_amounts);
 
     // Check: validate the cancellation.
     check_cancel(
