@@ -8,8 +8,8 @@ Ensure you have the following software installed and configured on your machine:
 
 - **[Git](https://git-scm.com/downloads)**
 - **[Rust](https://rust-lang.org/tools/install)**
-- **[Solana CLI](https://www.anchor-lang.com/docs/installation#solana-cli-basics/)**
-- **[Anchor CLI](https://www.anchor-lang.com/docs/installation#quick-installation/)**
+- **[Solana CLI](https://www.anchor-lang.com/docs/installation#solana-cli-basics)**
+- **[Anchor CLI](https://www.anchor-lang.com/docs/installation#install-anchor-cli)**
 
 ## Set Up
 
