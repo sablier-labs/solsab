@@ -6,25 +6,29 @@ Sablier programs on Solana
 
 Ensure you have the following software installed and configured on your machine:
 
-- **[Git](https://git-scm.com/downloads)** (has to be installed manually)
-- **[Rust](https://www.rust-lang.org/)**
-- **[Solana CLI](https://solana.com/)**
-- **[Anchor CLI](https://www.anchor-lang.com/)**
-
-**Tip**: Follow the _[Quick Installation](https://www.anchor-lang.com/docs/installation#quick-installation)_ guide from Anchor to install the above dependencies, and the _[Solana CLI Basics](https://www.anchor-lang.com/docs/installation#solana-cli-basics)_ section - to configure the Solana CLI upon installation.
+- **[Git](https://git-scm.com/downloads)**
+- **[Rust](https://rust-lang.org/tools/install)**
+- **[Solana CLI](https://www.anchor-lang.com/docs/installation#solana-cli-basics/)**
+- **[Anchor CLI](https://www.anchor-lang.com/docs/installation#quick-installation/)**
 
 ## Set Up
 
-Clone the SolSab repository:
+### Clone the SolSab repository:
 
 ```bash
 git clone https://github.com/sablier-labs/solsab.git
 ```
 
-Navigate to the project’s directory:
+### Navigate to the project’s directory:
 
 ```bash
 cd solsab
+```
+
+### Install dependencies
+
+```bash
+yarn install
 ```
 
 ## Building & Testing
@@ -35,22 +39,10 @@ Build the project with:
 anchor build
 ```
 
-or the shortcut:
-
-```bash
-anchor b
-```
-
 Test it with:
 
 ```bash
 anchor test
-```
-
-or the shortcut:
-
-```bash
-anchor t
 ```
 
 ## Recommended VS Code Extensions
