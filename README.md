@@ -1,4 +1,4 @@
-## SolSab
+# SolSab
 
 Sablier programs on Solana
 
