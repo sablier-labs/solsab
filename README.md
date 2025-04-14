@@ -8,10 +8,14 @@ Ensure you have the following software installed and configured on your machine:
 
 - **[Git](https://git-scm.com/downloads)**
 - **[Rust](https://rust-lang.org/tools/install)**
-- **[Solana CLI](https://www.anchor-lang.com/docs/installation#solana-cli-basics)**
+- **[Solana CLI](https://solana.com/docs/intro/installation#quick-installation)**
 - **[Anchor CLI](https://www.anchor-lang.com/docs/installation#install-anchor-cli)**
 
 ## Set Up
+
+### Solana config
+
+Make sure to configure your local [Solana wallet](https://www.anchor-lang.com/docs/installation#solana-cli-basics).
 
 ### Clone the SolSab repository:
 
