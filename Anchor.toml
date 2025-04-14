@@ -10,15 +10,7 @@ sablier_lockup = "7KaQU8kYWDPcr9tbuMZWnWiVPUxQLjrjZ6jUU8rY1wqn"
 [programs.localnet]
 sablier_lockup = "7KaQU8kYWDPcr9tbuMZWnWiVPUxQLjrjZ6jUU8rY1wqn"
 
-[registry]
-url = "https://api.apr.dev"
-
 [provider]
-cluster = "localnet"
-# cluster = "devnet"
+cluster_dev = "devnet"
+cluster_local = "localnet"
 wallet = "~/.config/solana/id.json"
-
-[scripts]
-# test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
-# test = "RUST_LOG=debug yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
-test = "RUST_LOG=off yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

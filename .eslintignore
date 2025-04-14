@@ -1,0 +1,17 @@
+# directories
+node_modules
+programs
+target
+
+# files
+*.env
+*.log
+*.tsbuildinfo
+.DS_Store
+.pnp.*
+bun.lock
+bun.lockb
+npm-debug.log
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
