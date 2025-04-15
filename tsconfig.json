@@ -7,6 +7,10 @@
     "target": "es2020",
     "esModuleInterop": true,
     "strict": true,
-    "resolveJsonModule": true
-  }
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "exclude": ["node_modules", "dist", "**/*.d.ts"],
+  "include": ["migrations", "tests"]
 }

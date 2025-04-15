@@ -69,6 +69,8 @@ const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey(
 function configureConsoleLogs() {
   // Suppress console logs by default
   // Dev: comment the line below to see the logs in the console (useful when debugging)
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   console.log = () => {};
 }
 
@@ -79,13 +81,13 @@ describe("SablierLockup Initialization", () => {
   });
 
   it("Fails to InitializePhaseOne twice", async () => {
-    let initializePhaseOneIx = await getInitializePhaseOneIx(
+    const initializePhaseOneIx = await getInitializePhaseOneIx(
       senderKeys.publicKey
     );
     await buildSignAndProcessTx(initializePhaseOneIx, senderKeys);
 
     try {
-      let secondInitializePhaseOneIx = await getInitializePhaseOneIx(
+      const secondInitializePhaseOneIx = await getInitializePhaseOneIx(
         thirdPartyKeys.publicKey
       );
       await buildSignAndProcessTx(secondInitializePhaseOneIx, thirdPartyKeys);
@@ -101,7 +103,7 @@ describe("SablierLockup Initialization", () => {
   });
 
   it("Fails to InitializePhaseTwo before InitializePhaseOne", async () => {
-    let initializePhaseTwoIx = await getInitializePhaseTwoIx(
+    const initializePhaseTwoIx = await getInitializePhaseTwoIx(
       senderKeys.publicKey
     );
 
@@ -118,18 +120,18 @@ describe("SablierLockup Initialization", () => {
   });
 
   it("Fails to InitializePhaseTwo twice", async () => {
-    let initializePhaseOneIx = await getInitializePhaseOneIx(
+    const initializePhaseOneIx = await getInitializePhaseOneIx(
       senderKeys.publicKey
     );
     await buildSignAndProcessTx(initializePhaseOneIx, senderKeys);
 
-    let initializePhaseTwoIx = await getInitializePhaseTwoIx(
+    const initializePhaseTwoIx = await getInitializePhaseTwoIx(
       senderKeys.publicKey
     );
     await buildSignAndProcessTx(initializePhaseTwoIx, senderKeys);
 
     try {
-      let secondInitializePhaseTwoIx = await getInitializePhaseTwoIx(
+      const secondInitializePhaseTwoIx = await getInitializePhaseTwoIx(
         thirdPartyKeys.publicKey
       );
       await buildSignAndProcessTx(secondInitializePhaseTwoIx, thirdPartyKeys);
@@ -145,7 +147,7 @@ describe("SablierLockup Initialization", () => {
   });
 
   it("Initializes the program", async () => {
-    let initializePhaseOneIx = await getInitializePhaseOneIx(
+    const initializePhaseOneIx = await getInitializePhaseOneIx(
       senderKeys.publicKey
     );
     await buildSignAndProcessTx(initializePhaseOneIx, senderKeys);
@@ -167,7 +169,7 @@ describe("SablierLockup Initialization", () => {
       "NFT Collection Data not initialized"
     );
 
-    let initializePhaseTwoIx = await getInitializePhaseTwoIx(
+    const initializePhaseTwoIx = await getInitializePhaseTwoIx(
       senderKeys.publicKey
     );
     await buildSignAndProcessTx(initializePhaseTwoIx, senderKeys);
@@ -677,7 +679,7 @@ describe("SablierLockup user-callable Ixs", () => {
     });
 
     it("Transfers a cancelable SPL Token LL Stream to a third party", async () => {
-      createStreamAndTestTransferability(
+      await createStreamAndTestTransferability(
         TOKEN_PROGRAM_ID,
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
@@ -686,7 +688,7 @@ describe("SablierLockup user-callable Ixs", () => {
     });
 
     it("Transfers a non-cancelable SPL Token LL Stream to a third party", async () => {
-      createStreamAndTestTransferability(
+      await createStreamAndTestTransferability(
         TOKEN_PROGRAM_ID,
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
@@ -703,7 +705,7 @@ describe("SablierLockup user-callable Ixs", () => {
     });
 
     it("Transfers a cancelable Token2022 LL Stream to a third party", async () => {
-      createStreamAndTestTransferability(
+      await createStreamAndTestTransferability(
         TOKEN_2022_PROGRAM_ID,
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
@@ -712,7 +714,7 @@ describe("SablierLockup user-callable Ixs", () => {
     });
 
     it("Transfers a non-cancelable SPL Token LL Stream to a third party", async () => {
-      createStreamAndTestTransferability(
+      await createStreamAndTestTransferability(
         TOKEN_2022_PROGRAM_ID,
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
@@ -837,7 +839,7 @@ describe("SablierLockup user-callable Ixs", () => {
         assetTokenProgram
       );
 
-      let wrongStreamId = streamData.id.add(new BN(1));
+      const wrongStreamId = streamData.id.add(new BN(1));
       await assertStreamCancelationFailure(
         recipientKeys,
         wrongStreamId,
@@ -869,7 +871,7 @@ describe("SablierLockup user-callable Ixs", () => {
     it("Fails to cancel an SPL Token LL Stream when a wrong asset mint is submitted", async () => {
       const assetTokenProgram = TOKEN_PROGRAM_ID;
 
-      const { streamData, assetMint } = await createMintATAsAndStream(
+      const { streamData /* assetMint */ } = await createMintATAsAndStream(
         false,
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
@@ -2053,7 +2055,7 @@ function logInfoAboutImportantAccounts() {
   console.log(`Fee collector: ${feeCollectorKeys.publicKey}`);
 
   // Output the fee collector's SOL balance
-  const feeCollectorsBalance = getSOLBalanceOf(feeCollectorKeys.publicKey);
+  // const feeCollectorsBalance = getSOLBalanceOf(feeCollectorKeys.publicKey);
 
   // Output the third party's public key
   console.log(`Third party: ${thirdPartyKeys.publicKey}`);
@@ -2076,10 +2078,10 @@ function logInfoAboutImportantAccounts() {
 }
 
 async function initializeSablierLockup() {
-  let initializePhaseOneIx = await getInitializePhaseOneIx(
+  const initializePhaseOneIx = await getInitializePhaseOneIx(
     senderKeys.publicKey
   );
-  let initializePhaseTwoIx = await getInitializePhaseTwoIx(
+  const initializePhaseTwoIx = await getInitializePhaseTwoIx(
     senderKeys.publicKey
   );
 
@@ -2114,7 +2116,7 @@ async function assertFeeCollectionFailure(
   feesAmountToCollect: FeesAmount,
   expectedErrorCode: string
 ) {
-  let lamportsAmount = await interpretFeesAmount(feesAmountToCollect);
+  const lamportsAmount = await interpretFeesAmount(feesAmountToCollect);
   try {
     await collectFees(txSigner, feesRecipient, lamportsAmount);
     assert.fail("The Fee Collection should've failed, but it didn't.");
@@ -2202,7 +2204,7 @@ async function assertCancelabilityRenouncementFailure(
   expectedError: string,
   txSigner: Keypair = senderKeys
 ) {
-  let renounceStreamIx = await lockupProgram.methods
+  const renounceStreamIx = await lockupProgram.methods
     .renounce(streamId)
     .accounts({
       sender: senderKeys.publicKey,
@@ -2228,7 +2230,7 @@ async function assertStreamCancelationFailure(
   assetTokenProgram: PublicKey,
   expectedError: string
 ) {
-  let cancelStreamIx = await lockupProgram.methods
+  const cancelStreamIx = await lockupProgram.methods
     .cancel(streamId)
     .accounts({
       sender: streamSender.publicKey,
@@ -2292,7 +2294,7 @@ async function assertWithdrawFailure(
   nftTokenProgram: PublicKey,
   expectedError: string
 ) {
-  let withdrawIx = await lockupProgram.methods
+  const withdrawIx = await lockupProgram.methods
     .withdraw(streamId, amount)
     .accounts({
       signer: txSigner.publicKey,
@@ -2315,7 +2317,7 @@ async function assertWithdrawMaxFailure(
   nftTokenProgram: PublicKey,
   expectedError: string
 ) {
-  let withdrawMaxIx = await lockupProgram.methods
+  const withdrawMaxIx = await lockupProgram.methods
     .withdrawMax(streamId)
     .accounts({
       signer: txSigner.publicKey,
@@ -2351,7 +2353,7 @@ async function buildSignAndProcessTx(
   signerKeys: Keypair,
   cuLimit?: number
 ) {
-  let tx = await initializeTx(ixs, cuLimit);
+  const tx = await initializeTx(ixs, cuLimit);
   tx.sign(signerKeys);
 
   const txMeta = await banksClient.processTransaction(tx);
@@ -2367,7 +2369,7 @@ async function cancelStream(
   assetMint: PublicKey,
   assetTokenProgram: PublicKey
 ) {
-  let cancelStreamIx = await lockupProgram.methods
+  const cancelStreamIx = await lockupProgram.methods
     .cancel(streamId)
     .accounts({
       sender: senderKeys.publicKey,
@@ -2475,7 +2477,7 @@ async function createStreamAndTestCancelability(
 
   if (cancelTime !== CancelTime.Start) {
     switch (cancelTime) {
-      case CancelTime.Halfish:
+      case CancelTime.Halfish: {
         const cancelTimeHalfish = BigInt(
           milestones.startTime.add(milestones.endTime).div(new BN(2)).toString()
         );
@@ -2489,7 +2491,7 @@ async function createStreamAndTestCancelability(
           );
         } else {
           // Just cancel (w/o time-traveling) if Cancel Time is in the past (e.g. when the Stream has been created with a past half-/endTime)
-          cancelStream(streamData.id, assetMint, assetTokenProgram);
+          await cancelStream(streamData.id, assetMint, assetTokenProgram);
         }
 
         // Calculate the streamed amount at the cancel time
@@ -2503,9 +2505,10 @@ async function createStreamAndTestCancelability(
         // Calculate the expected refunded amount as a function of the deposited amount and the start & cancel times
         expectedRefundedAmount = depositedAmount.sub(streamedAmount);
         break;
+      }
 
-      case CancelTime.Endish:
-        let cancelTimeEndish = BigInt(milestones.endTime.toString());
+      case CancelTime.Endish: {
+        const cancelTimeEndish = BigInt(milestones.endTime.toString());
 
         if (cancelTimeEndish >= currentTimestamp) {
           await cancelStreamAtSpecificTime(
@@ -2516,16 +2519,17 @@ async function createStreamAndTestCancelability(
           );
         } else {
           // Just cancel (w/o time-traveling) if Cancel Time is in the past (e.g. when the Stream has been created with a past half-/endTime)
-          cancelStream(streamData.id, assetMint, assetTokenProgram);
+          await cancelStream(streamData.id, assetMint, assetTokenProgram);
         }
 
         expectedRefundedAmount = new BN(0);
         break;
+      }
     }
   }
 
   // Perform the post-cancellation assertions
-  performPostCancelAssertions(
+  await performPostCancelAssertions(
     streamData.id,
     assetMint,
     assetTokenProgram,
@@ -3020,7 +3024,7 @@ async function collectFees(
   feesRecipient: PublicKey,
   lamportsToCollect: bigint
 ) {
-  let collectFeesIx = await lockupProgram.methods
+  const collectFeesIx = await lockupProgram.methods
     .collectFees(new BN(lamportsToCollect.toString()))
     .accounts({
       feeCollector: txSigner.publicKey,
@@ -3106,7 +3110,7 @@ async function testMultiStreamCreationInOneTx(
   const senderInitialTokenBalance = await getTokenBalanceByATAKey(senderATA);
   const depositedAmountPerStream = senderInitialTokenBalance.div(new BN(2));
 
-  let ixs: TxIx[] = [];
+  const ixs: TxIx[] = [];
 
   // Create two Streams in one transaction
   // Note: due to Solana's 1232-byte tx size limit, we can only create up to 2 Streams in one transaction
@@ -3266,7 +3270,7 @@ async function testForWithdrawalAfterStreamTransfer(
     return;
   }
 
-  let withdrawalAmount = withdrawalSizeToWithdrawalAmount(
+  const withdrawalAmount = withdrawalSizeToWithdrawalAmount(
     withdrawalSize,
     unlockAmounts,
     depositedAmount
@@ -3434,7 +3438,7 @@ async function testForFailureToWithdraw(
     return;
   }
 
-  let withdrawalAmount = withdrawalSizeToWithdrawalAmount(
+  const withdrawalAmount = withdrawalSizeToWithdrawalAmount(
     withdrawalSize,
     unlockAmounts,
     depositedAmount
@@ -3794,7 +3798,7 @@ async function testForWithdrawalPostRenounceAtHalfTime(
   const recipientATA = deriveRecipientATA(assetMint, assetTokenProgram);
 
   // Get the final token balances of the sender and recipient
-  const [senderFinalTokenBalance, recipientFinalTokenBalance] =
+  const [, /* senderFinalTokenBalance */ recipientFinalTokenBalance] =
     await getTokenBalancesByATAKeys(senderATA, recipientATA);
 
   // Assert that the sender's and recipient's token balances have been changed correctly
@@ -3843,7 +3847,7 @@ async function createStreamAndTestRenouncement(
 }
 
 async function renounceStream(streamId: BN, txSigner: Keypair) {
-  let renounceStreamIx = await lockupProgram.methods
+  const renounceStreamIx = await lockupProgram.methods
     .renounce(streamId)
     .accounts({
       sender: txSigner.publicKey,
@@ -3894,7 +3898,7 @@ async function withdraw(
   assetTokenProgram: PublicKey,
   nftTokenProgram: PublicKey
 ) {
-  let withdrawIx = await lockupProgram.methods
+  const withdrawIx = await lockupProgram.methods
     .withdraw(streamId, withdrawalAmount)
     .accounts({
       signer: txSigner.publicKey,
@@ -3916,7 +3920,7 @@ async function withdrawMax(
   assetTokenProgram: PublicKey,
   nftTokenProgram: PublicKey
 ) {
-  let withdrawIx = await lockupProgram.methods
+  const withdrawIx = await lockupProgram.methods
     .withdrawMax(streamId)
     .accounts({
       signer: txSigner.publicKey,
@@ -4013,7 +4017,7 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
   const { senderKeys, expectedStreamId } = args;
 
   const nftTokenProgram = TOKEN_PROGRAM_ID;
-  let createStreamIx = await getCreateWithTimestampsIx(args);
+  const createStreamIx = await getCreateWithTimestampsIx(args);
   await buildSignAndProcessTx(createStreamIx, senderKeys, 270_000);
 
   const streamNftMint = getStreamNftMintAddress(expectedStreamId);
@@ -4177,7 +4181,7 @@ async function generateAccWithSOL(
 
 async function getAccountDataOf(
   address: PublicKey
-): Promise<Uint8Array<ArrayBufferLike> | undefined> {
+): Promise<Uint8Array | undefined> {
   return (await banksClient.getAccount(address))?.data;
 }
 
@@ -4230,7 +4234,7 @@ async function initializeTx(
   const res = await banksClient.getLatestBlockhash();
   if (!res) throw new Error("Couldn't get the latest blockhash");
 
-  let tx = new Transaction();
+  const tx = new Transaction();
   tx.recentBlockhash = res[0];
 
   if (cuLimit !== undefined) {
@@ -4240,7 +4244,7 @@ async function initializeTx(
     tx.add(cuLimitIx);
   }
 
-  let internal_ixs: TxIx[] = Array.isArray(ixs) ? ixs : [ixs];
+  const internal_ixs: TxIx[] = Array.isArray(ixs) ? ixs : [ixs];
   internal_ixs.forEach((ix) => tx.add(ix));
 
   return tx;
@@ -4257,7 +4261,7 @@ async function prepareForStreamCreation(
   expectedStreamId: BN,
   assetTokenProgram: PublicKey
 ): Promise<{ treasuryATA: PublicKey }> {
-  let ix = await getPrepareForStreamCreationIx(
+  const ix = await getPrepareForStreamCreationIx(
     signerKeys,
     expectedStreamId,
     assetMint,
