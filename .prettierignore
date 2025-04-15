@@ -1,7 +1,20 @@
+# directories
 .anchor
-.DS_Store
-target
-node_modules
-dist
 build
+dist
+node_modules
+target
 test-ledger
+
+# files
+*.env
+*.log
+*.tsbuildinfo
+.DS_Store
+.pnp.*
+bun.lock
+bun.lockb
+npm-debug.log
+package-lock.json
+pnpm-lock.yaml
+yarn.lock

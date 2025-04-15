@@ -14,15 +14,15 @@ plugins:
   - "@typescript-eslint"
 root: true
 rules:
+  "@typescript-eslint/no-empty-interface": "off"
+  "@typescript-eslint/no-explicit-any": "off"
   "@typescript-eslint/no-floating-promises":
     - error
     - ignoreIIFE: true
       ignoreVoid: true
-  "@typescript-eslint/no-empty-interface": "off"
-  "@typescript-eslint/no-explicit-any": "off"
   "@typescript-eslint/no-inferrable-types": "off"
+  "@typescript-eslint/no-non-null-assertion": "off"
   "@typescript-eslint/no-unused-vars":
     - error
     - argsIgnorePattern: ^_
       varsIgnorePattern: ^_
-  "@typescript-eslint/no-non-null-assertion": "off"
