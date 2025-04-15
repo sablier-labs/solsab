@@ -8,6 +8,7 @@ Ensure you have the following software installed and configured on your machine:
 
 - **[Git](https://git-scm.com/downloads)**
 - **[Rust](https://rust-lang.org/tools/install)**
+- **[Bun](https://bun.sh/docs/installation)**
 - **[Solana CLI](https://solana.com/docs/intro/installation#quick-installation)**
 - **[Anchor CLI](https://www.anchor-lang.com/docs/installation#install-anchor-cli)**
 
@@ -32,7 +33,7 @@ cd solsab
 ### Install dependencies
 
 ```bash
-yarn install
+bun install
 ```
 
 ## Building & Testing
@@ -40,13 +41,13 @@ yarn install
 Build the project with:
 
 ```bash
-anchor build
+bun build
 ```
 
 Test it with:
 
 ```bash
-anchor test
+bun test
 ```
 
 ## Recommended VS Code Extensions
