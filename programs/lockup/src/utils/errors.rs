@@ -24,21 +24,21 @@ pub enum ErrorCode {
     #[msg("Invalid deposit amount!")]
     InvalidDepositAmount, // 0x1777
     #[msg("Start time can't be zero!")]
-    StartTimeZero, // 0x1778 // Fixed from 0x177a
+    StartTimeZero, // 0x1778
     #[msg("Start time must be less than cliff time!")]
-    StartTimeNotLessThanCliffTime, // 0x1779 // Fixed from 0x177b
+    StartTimeNotLessThanCliffTime, // 0x1779
     #[msg("Start time must be less than end time!")]
-    StartTimeNotLessThanEndTime, // 0x177a // Fixed from 0x177c
+    StartTimeNotLessThanEndTime, // 0x177a
     #[msg("Unlock amounts sum is greater than deposit amount!")]
-    UnlockAmountsSumTooHigh, // 0x177b // Fixed from 0x177d
+    UnlockAmountsSumTooHigh, // 0x177b
 
     // Renounce
     #[msg("Can't renounce an already non cancelable Stream!")]
-    StreamAlreadyNonCancelable, // 0x177c // Fixed from 0x177f
+    StreamAlreadyNonCancelable, // 0x177c
 
     // Withdraw
     #[msg("Withdraw zero tokens from a stream!")]
-    Overdraw, // 0x177d // Fixed from 0x1780
+    Overdraw, // 0x177d
     #[msg("Can't withdraw a zero amount!")]
-    WithdrawAmountZero, // 0x177e // Fixed from 0x1781
+    WithdrawAmountZero, // 0x177e
 }
