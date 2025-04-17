@@ -198,7 +198,8 @@ pub fn handler(
         ctx.bumps.stream_nft_mint,
     )?;
 
-    // Effect: increment the total supply of the NFT Collection.
+    // Effect: increment the total supply of the NFT collection. Safe math operation, as it would take many years to
+    // overflow 2^64.
     ctx.accounts.nft_collection_data.total_supply += 1;
 
     // Interaction: transfer tokens from the sender's ATA to the Treasury ATA.
