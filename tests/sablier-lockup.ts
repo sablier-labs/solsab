@@ -333,7 +333,7 @@ describe("SablierLockup user-callable Ixs", () => {
         await getDefaultMilestones(banksClient),
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1777"
+        "0x1776"
       );
     });
 
@@ -386,7 +386,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1779"
+        "0x1778"
       );
     });
 
@@ -409,7 +409,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1779"
+        "0x1778"
       );
     });
 
@@ -432,7 +432,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1776"
+        "0x1775"
       );
     });
 
@@ -455,7 +455,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1776"
+        "0x1775"
       );
     });
 
@@ -478,7 +478,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x177a"
+        "0x1779"
       );
     });
 
@@ -725,7 +725,7 @@ describe("SablierLockup user-callable Ixs", () => {
 
       await assertCancelabilityRenouncementFailure(
         streamData.id,
-        "custom program error: 0x177c"
+        "custom program error: 0x177b"
       );
     });
 
@@ -1051,7 +1051,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.endTime.sub(new BN(1)),
         WithdrawalSize.EntireDeposit,
         AssetMintKind.Correct,
-        "custom program error: 0x177d"
+        "custom program error: 0x177c"
       );
     });
 
@@ -1066,7 +1066,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.endTime,
         WithdrawalSize.ZERO,
         AssetMintKind.Correct,
-        "custom program error: 0x177e"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1081,7 +1081,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.cliffTime.sub(new BN(1)),
         WithdrawalSize.OneToken,
         AssetMintKind.Correct,
-        "custom program error: 0x177d"
+        "custom program error: 0x177c"
       );
     });
 
@@ -1111,7 +1111,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.startTime,
         WithdrawalSize.StartUnlockPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x177d"
+        "custom program error: 0x177c"
       );
     });
 
@@ -1126,7 +1126,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.cliffTime,
         WithdrawalSize.CliffUnlockPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x177d"
+        "custom program error: 0x177c"
       );
     });
 
@@ -1141,7 +1141,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.startTime,
         WithdrawalSize.StartAndCliffUnlocksPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x177d"
+        "custom program error: 0x177c"
       );
     });
 
@@ -1311,7 +1311,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.endTime.sub(new BN(1)),
         WithdrawalSize.EntireDeposit,
         AssetMintKind.Correct,
-        "custom program error: 0x177d"
+        "custom program error: 0x177c"
       );
     });
 
@@ -1326,7 +1326,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.endTime,
         WithdrawalSize.ZERO,
         AssetMintKind.Correct,
-        "custom program error: 0x177e"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1341,7 +1341,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.cliffTime.sub(new BN(1)),
         WithdrawalSize.OneToken,
         AssetMintKind.Correct,
-        "custom program error: 0x177d"
+        "custom program error: 0x177c"
       );
     });
 
@@ -1371,7 +1371,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.startTime,
         WithdrawalSize.StartUnlockPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x177d"
+        "custom program error: 0x177c"
       );
     });
 
@@ -1386,7 +1386,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.cliffTime,
         WithdrawalSize.CliffUnlockPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x177d"
+        "custom program error: 0x177c"
       );
     });
 
@@ -1401,7 +1401,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.startTime,
         WithdrawalSize.StartAndCliffUnlocksPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x177d"
+        "custom program error: 0x177c"
       );
     });
 
@@ -1599,7 +1599,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.cliffTime.sub(new BN(1)),
         WithdrawalSize.MAX,
         AssetMintKind.Correct,
-        "custom program error: 0x177e"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1691,7 +1691,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.cliffTime.sub(new BN(1)),
         WithdrawalSize.MAX,
         AssetMintKind.Correct,
-        "custom program error: 0x177e"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1766,17 +1766,6 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
-    it("Fails to collect more fees than what's accumulated - as the fee collector - after a withdrawal from an SPL Token Stream", async () => {
-      await testForFailureToCollectFees(
-        BeforeFeeCollection.CreateStreamAndWithdrawMax,
-        feeCollectorKeys,
-        thirdPartyKeys.publicKey,
-        FeesAmount.TwoUnits,
-        TOKEN_PROGRAM_ID,
-        "0x1774"
-      );
-    });
-
     it("Fails to collect 0 fees - as the fee collector - after a withdrawal from an SPL Token Stream", async () => {
       await testForFailureToCollectFees(
         BeforeFeeCollection.CreateStreamAndWithdrawMax,
@@ -1835,18 +1824,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.OneUnit,
         TOKEN_2022_PROGRAM_ID,
-        "0x1774"
-      );
-    });
-
-    it("Fails to collect more fees than what's accumulated - as the fee collector - after a withdrawal from a Token2022 Stream", async () => {
-      await testForFailureToCollectFees(
-        BeforeFeeCollection.CreateStreamAndWithdrawMax,
-        feeCollectorKeys,
-        thirdPartyKeys.publicKey,
-        FeesAmount.TwoUnits,
-        TOKEN_2022_PROGRAM_ID,
-        "0x1774"
+        "0x1773"
       );
     });
 
@@ -2014,12 +1992,10 @@ async function getInitializePhaseTwoIx(txSigner: PublicKey): Promise<TxIx> {
 async function assertFeeCollectionFailure(
   txSigner: Keypair,
   feesRecipient: PublicKey,
-  feesAmountToCollect: FeesAmount,
   expectedErrorCode: string
 ) {
-  const lamportsAmount = await interpretFeesAmount(feesAmountToCollect);
   try {
-    await collectFees(txSigner, feesRecipient, lamportsAmount);
+    await collectFees(txSigner, feesRecipient);
     assert.fail("The Fee Collection should've failed, but it didn't.");
   } catch (error) {
     assert(
@@ -2900,15 +2876,16 @@ async function testForFeeCollection(
   const feesRecipientBalanceBefore = await getLamportsBalanceOf(feesRecipient);
 
   // Collect the fees
-  const amountToCollect = await interpretFeesAmount(feesAmount);
-  await collectFees(feeCollectorKeys, feesRecipient, amountToCollect);
+  await collectFees(feeCollectorKeys, feesRecipient);
 
   // Get the fees recipient's balance after the fee collection
   const feesRecipientBalanceAfter = await getLamportsBalanceOf(feesRecipient);
 
   // Assert that the fee recipient's balance has increased by the correct amount
+  const expectedFeesAmount = await interpretFeesAmount(feesAmount);
   assert(
-    feesRecipientBalanceAfter == feesRecipientBalanceBefore + amountToCollect,
+    feesRecipientBalanceAfter ==
+      feesRecipientBalanceBefore + expectedFeesAmount,
     "The fee collection failed"
   );
 
@@ -2920,16 +2897,12 @@ async function testForFeeCollection(
   );
 }
 
-async function collectFees(
-  txSigner: Keypair,
-  feesRecipient: PublicKey,
-  lamportsToCollect: bigint
-) {
+async function collectFees(txSigner: Keypair, feesRecipient: PublicKey) {
   const collectFeesIx = await lockupProgram.methods
-    .collectFees(new BN(lamportsToCollect.toString()))
+    .collectFees()
     .accounts({
       feeCollector: txSigner.publicKey,
-      recipient: feesRecipient,
+      feeRecipient: feesRecipient,
     })
     .instruction();
 
@@ -2989,11 +2962,7 @@ async function createStreamWithdrawMaxAndCollectAllFees(
   await createStreamAndWithdrawMax(assetTokenProgram);
 
   // Collect all the withdrawable fees
-  await collectFees(
-    feeCollectorKeys,
-    thirdPartyKeys.publicKey,
-    await getWithdrawableBalanceOf(treasuryAddress)
-  );
+  await collectFees(feeCollectorKeys, thirdPartyKeys.publicKey);
 }
 
 async function testMultiStreamCreationInOneTx(
@@ -3268,12 +3237,7 @@ async function testForFailureToCollectFees(
   }
 
   // Assert the failure to collect the fees
-  await assertFeeCollectionFailure(
-    txSigner,
-    feesRecipient,
-    feesAmountToCollect,
-    expectedErrorCode
-  );
+  await assertFeeCollectionFailure(txSigner, feesRecipient, expectedErrorCode);
 }
 
 const AssetMintKind = {

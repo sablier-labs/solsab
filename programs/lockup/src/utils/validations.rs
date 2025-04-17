@@ -26,15 +26,10 @@ pub fn check_cancel(
     Ok(())
 }
 
-pub fn check_collect_fees(lamports_amount: u64, collectable_amount: u64) -> Result<()> {
-    // Check: the withdraw amount is not zero.
-    if lamports_amount == 0 {
+pub fn check_collect_fees(collectable_amount: u64) -> Result<()> {
+    // Check: the collectable amount is not zero.
+    if collectable_amount == 0 {
         return Err(ErrorCode::CantCollectZeroFees.into());
-    }
-
-    // Check: the collect amount is not greater than the Treasury's collectable amount.
-    if collectable_amount < lamports_amount {
-        return Err(ErrorCode::NotEnoughFeesForWithdrawal.into());
     }
 
     Ok(())

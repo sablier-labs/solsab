@@ -13,32 +13,30 @@ pub enum ErrorCode {
     // Collect Fees
     #[msg("Can't collect zero fees!")]
     CantCollectZeroFees, // 0x1773
-    #[msg("Not enough fees for withdrawal!")]
-    NotEnoughFeesForWithdrawal, // 0x1774
 
     // Create Stream
     #[msg("Cliff time zero but unlock amount not zero!")]
-    CliffTimeZeroUnlockAmountNotZero, // 0x1775
+    CliffTimeZeroUnlockAmountNotZero, // 0x1774
     #[msg("Invalid cliff time of the Stream!")]
-    CliffTimeNotLessThanEndTime, // 0x1776
+    CliffTimeNotLessThanEndTime, // 0x1775
     #[msg("Invalid deposit amount!")]
-    DepositAmountZero, // 0x1777
+    DepositAmountZero, // 0x1776
     #[msg("Start time can't be zero!")]
-    StartTimeZero, // 0x1778
+    StartTimeZero, // 0x1777
     #[msg("Start time must be less than cliff time!")]
-    StartTimeNotLessThanCliffTime, // 0x1779
+    StartTimeNotLessThanCliffTime, // 0x1778
     #[msg("Start time must be less than end time!")]
-    StartTimeNotLessThanEndTime, // 0x177a
+    StartTimeNotLessThanEndTime, // 0x1779
     #[msg("Unlock amounts sum is greater than deposit amount!")]
-    UnlockAmountsSumTooHigh, // 0x177b
+    UnlockAmountsSumTooHigh, // 0x177a
 
     // Renounce
     #[msg("Can't renounce an already non cancelable Stream!")]
-    StreamAlreadyNonCancelable, // 0x177c
+    StreamAlreadyNonCancelable, // 0x177b
 
     // Withdraw
-    #[msg("Withdraw zero tokens from a stream!")]
-    Overdraw, // 0x177d
+    #[msg("Attempting to withdraw more than available in the stream!")]
+    Overdraw, // 0x177c
     #[msg("Can't withdraw a zero amount!")]
-    WithdrawAmountZero, // 0x177e
+    WithdrawAmountZero, // 0x177d
 }

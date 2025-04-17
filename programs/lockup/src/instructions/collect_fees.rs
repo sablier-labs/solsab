@@ -15,7 +15,7 @@ pub struct CollectFees<'info> {
 
     #[account(mut)]
     /// CHECK: May be any account
-    pub recipient: UncheckedAccount<'info>,
+    pub fee_recipient: UncheckedAccount<'info>,
 
     #[account(
         mut,
@@ -25,35 +25,34 @@ pub struct CollectFees<'info> {
     pub treasury: Box<Account<'info, Treasury>>,
 }
 
-pub fn handler(ctx: Context<CollectFees>, lamports_amount: u64) -> Result<()> {
-    check_collect_fees(lamports_amount, withdrawable_lamports(&ctx.accounts.treasury.to_account_info())?)?;
+pub fn handler(ctx: Context<CollectFees>) -> Result<()> {
+    // Calculate the amount collectable from the treasury in lamport units.
+    let collectable_amount = collectable_amount(&ctx.accounts.treasury.to_account_info())?;
+
+    // Check: validate the collectable amount.
+    check_collect_fees(collectable_amount)?;
 
     // Interaction: transfer the collect amount from the treasury to the fee recipient.
-    ctx.accounts.treasury.sub_lamports(lamports_amount)?;
-    ctx.accounts.recipient.add_lamports(lamports_amount)?;
+    ctx.accounts.treasury.sub_lamports(collectable_amount)?;
+    ctx.accounts.fee_recipient.add_lamports(collectable_amount)?;
 
     // Log the fee withdrawal.
     emit!(FeesCollected {
         fee_collector: ctx.accounts.fee_collector.key(),
-        fee_recipient: ctx.accounts.recipient.key(),
-        lamports_amount
+        fee_recipient: ctx.accounts.fee_recipient.key(),
+        fee_amount: collectable_amount
     });
 
     Ok(())
 }
 
-pub fn withdrawable_lamports(account: &AccountInfo) -> Result<u64> {
-    // Get the current balance of the account
+/// Helper function to calculate the collectable amount from an account. It takes an extra-safe approach by doubling
+/// the rent exemption, ensuring that the account balance does not fall below the rent-exempt minimum, which
+/// could otherwise make the program unusable.
+pub fn collectable_amount(account: &AccountInfo) -> Result<u64> {
+    // Retrieve the current balance of the account.
     let current_balance = account.lamports();
 
-    // Get the safe rent exempt minimum
-    let safe_rent_exempt_minimum = safe_rent_exempt_minimum(account)?;
-
-    // Return the withdrawable amount
-    Ok(current_balance.saturating_sub(safe_rent_exempt_minimum))
-}
-
-pub fn safe_rent_exempt_minimum(account: &AccountInfo) -> Result<u64> {
     // Determine the size of the account’s data.
     let data_len = account.data_len();
 
@@ -63,11 +62,9 @@ pub fn safe_rent_exempt_minimum(account: &AccountInfo) -> Result<u64> {
     // Calculate the minimum balance needed for rent exemption.
     let rent_exempt_minimum = rent.minimum_balance(data_len);
 
-    // To be extra safe, double the rent exempt minimum
-    //
-    // Note: this step is critical, because if the account balance goes below the rent exempt minimum, it may get
-    // deleted by the runtime (effectively making the whole program unusable)!
+    // Double the minimum to ensure the account stays rent-exempt.
     let safe_rent_exempt_minimum = rent_exempt_minimum.checked_mul(2).unwrap();
 
-    Ok(safe_rent_exempt_minimum)
+    // Return the collectable amount
+    Ok(current_balance.saturating_sub(safe_rent_exempt_minimum))
 }
