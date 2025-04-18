@@ -18,7 +18,7 @@ export async function createMint(
   mintKeypair = web3.Keypair.generate(),
   programId = token.TOKEN_PROGRAM_ID
 ): Promise<web3.PublicKey> {
-  let rent = await banksClient.getRent();
+  const rent = await banksClient.getRent();
 
   const mint = mintKeypair.publicKey;
   const tx = new web3.Transaction().add(
@@ -54,7 +54,7 @@ export async function createAccount(
   confirmOptions?: web3.ConfirmOptions,
   programId = token.TOKEN_PROGRAM_ID
 ): Promise<web3.PublicKey> {
-  let rent = await banksClient.getRent();
+  const rent = await banksClient.getRent();
   // If a keypair isn't provided, create the associated token account and return its address
   if (!keypair)
     return await createAssociatedTokenAccount(

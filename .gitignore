@@ -1,17 +1,18 @@
 # Anchor
 .anchor
-target
 docker-target
 **/*.rs.bk
+target
 test-ledger
 
 # Misc
-.DS_Store
 *.env
+.DS_Store
 
 # Node.js
 .npm
 .pnp.*
+bun.lockb
 node_modules
 package-lock.json
 pnpm-lock.yaml
