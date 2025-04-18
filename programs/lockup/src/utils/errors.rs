@@ -22,7 +22,7 @@ pub enum ErrorCode {
     #[msg("Invalid cliff time of the Stream!")]
     CliffTimeNotLessThanEndTime, // 0x1776
     #[msg("Invalid deposit amount!")]
-    InvalidDepositAmount, // 0x1777
+    DepositAmountZero, // 0x1777
     #[msg("Start time can't be zero!")]
     StartTimeZero, // 0x1778
     #[msg("Start time must be less than cliff time!")]

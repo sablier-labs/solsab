@@ -51,7 +51,7 @@ pub fn check_create(
 ) -> Result<()> {
     // Check: the deposit amount is not zero.
     if deposited_amount == 0 {
-        return Err(ErrorCode::InvalidDepositAmount.into());
+        return Err(ErrorCode::DepositAmountZero.into());
     }
 
     // Check: the start time is not zero.
