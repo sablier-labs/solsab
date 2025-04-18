@@ -68,5 +68,5 @@ jobs:
       - run: avm use latest
         shell: bash
 
-      - run: anchor build
+      - run: RUSTUP_TOOLCHAIN=nightly-2025-04-01 anchor build
         shell: bash
