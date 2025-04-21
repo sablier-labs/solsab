@@ -69,7 +69,6 @@ const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey(
 function configureConsoleLogs() {
   // Suppress console logs by default
   // Dev: comment the line below to see the logs in the console (useful when debugging)
-
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   console.log = () => {};
 }
@@ -1001,24 +1000,6 @@ describe("SablierLockup user-callable Ixs", () => {
         TOKEN_PROGRAM_ID
       );
     });
-
-    it("Cancels an SPL Token LL Stream with a past endTime at half time", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Halfish
-      );
-    });
-
-    it("Cancels an SPL Token LL Stream with a past endTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Endish
-      );
-    });
   });
 
   describe("Cancel Tests (Token2022)", () => {
@@ -1105,24 +1086,6 @@ describe("SablierLockup user-callable Ixs", () => {
         await getMilestonesWithPastEndTime(banksClient),
         getDefaultUnlockAmounts(),
         TOKEN_2022_PROGRAM_ID
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past endTime at half time", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Halfish
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past endTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Endish
       );
     });
   });
@@ -2475,56 +2438,69 @@ async function createStreamAndTestCancelability(
   // Get the current timestamp from Bankrun
   const currentTimestamp = (await banksClient.getClock()).unixTimestamp;
 
-  if (cancelTime !== CancelTime.Start) {
-    switch (cancelTime) {
-      case CancelTime.Halfish: {
-        const cancelTimeHalfish = BigInt(
-          milestones.startTime.add(milestones.endTime).div(new BN(2)).toString()
+  switch (cancelTime) {
+    case CancelTime.Start: {
+      await cancelStream(streamData.id, assetMint, assetTokenProgram);
+
+      // Calculate the streamed amount at the cancel time
+      const streamedAmount = getStreamedAmountAt(
+        Number(currentTimestamp),
+        milestones,
+        unlockAmounts,
+        depositedAmount
+      );
+
+      // Calculate the expected refunded amount as a function of the deposited amount and the start & cancel times
+      expectedRefundedAmount = depositedAmount.sub(streamedAmount);
+      break;
+    }
+    case CancelTime.Halfish: {
+      const cancelTimeHalfish = BigInt(
+        milestones.startTime.add(milestones.endTime).div(new BN(2)).toString()
+      );
+
+      if (cancelTimeHalfish >= currentTimestamp) {
+        await cancelStreamAtSpecificTime(
+          streamData.id,
+          assetMint,
+          cancelTimeHalfish,
+          assetTokenProgram
         );
-
-        if (cancelTimeHalfish >= currentTimestamp) {
-          await cancelStreamAtSpecificTime(
-            streamData.id,
-            assetMint,
-            cancelTimeHalfish,
-            assetTokenProgram
-          );
-        } else {
-          // Just cancel (w/o time-traveling) if Cancel Time is in the past (e.g. when the Stream has been created with a past half-/endTime)
-          await cancelStream(streamData.id, assetMint, assetTokenProgram);
-        }
-
-        // Calculate the streamed amount at the cancel time
-        const streamedAmount = getStreamedAmountAt(
-          Number(cancelTimeHalfish),
-          milestones,
-          unlockAmounts,
-          depositedAmount
-        );
-
-        // Calculate the expected refunded amount as a function of the deposited amount and the start & cancel times
-        expectedRefundedAmount = depositedAmount.sub(streamedAmount);
-        break;
+      } else {
+        // Just cancel (w/o time-traveling) if Cancel Time is in the past (e.g. when the Stream has been created with a past half-/endTime)
+        await cancelStream(streamData.id, assetMint, assetTokenProgram);
       }
 
-      case CancelTime.Endish: {
-        const cancelTimeEndish = BigInt(milestones.endTime.toString());
+      // Calculate the streamed amount at the cancel time
+      const streamedAmount = getStreamedAmountAt(
+        Number(cancelTimeHalfish),
+        milestones,
+        unlockAmounts,
+        depositedAmount
+      );
 
-        if (cancelTimeEndish >= currentTimestamp) {
-          await cancelStreamAtSpecificTime(
-            streamData.id,
-            assetMint,
-            cancelTimeEndish,
-            assetTokenProgram
-          );
-        } else {
-          // Just cancel (w/o time-traveling) if Cancel Time is in the past (e.g. when the Stream has been created with a past half-/endTime)
-          await cancelStream(streamData.id, assetMint, assetTokenProgram);
-        }
+      // Calculate the expected refunded amount as a function of the deposited amount and the start & cancel times
+      expectedRefundedAmount = depositedAmount.sub(streamedAmount);
+      break;
+    }
 
-        expectedRefundedAmount = new BN(0);
-        break;
+    case CancelTime.Endish: {
+      const cancelTimeEndish = BigInt(milestones.endTime.toString());
+
+      if (cancelTimeEndish >= currentTimestamp) {
+        await cancelStreamAtSpecificTime(
+          streamData.id,
+          assetMint,
+          cancelTimeEndish,
+          assetTokenProgram
+        );
+      } else {
+        // Just cancel (w/o time-traveling) if Cancel Time is in the past (e.g. when the Stream has been created with a past half-/endTime)
+        await cancelStream(streamData.id, assetMint, assetTokenProgram);
       }
+
+      expectedRefundedAmount = new BN(0);
+      break;
     }
   }
 
