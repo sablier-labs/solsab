@@ -1,14 +1,18 @@
+[toolchain]
+
 [features]
 resolution = true
 skip-lint = false
 
 [programs.devnet]
-sablier_lockup = "7KaQU8kYWDPcr9tbuMZWnWiVPUxQLjrjZ6jUU8rY1wqn"
+sablier_lockup = "CCbf8DjzYCUgSTRGDiTiff6LkeMgt9q1XkbLMByMFtgc"
 
 [programs.localnet]
 sablier_lockup = "7KaQU8kYWDPcr9tbuMZWnWiVPUxQLjrjZ6jUU8rY1wqn"
 
+[registry]
+url = "https://api.apr.dev"
+
 [provider]
 cluster = "devnet"
-# cluster = "localnet"
 wallet = "~/.config/solana/id.json"
