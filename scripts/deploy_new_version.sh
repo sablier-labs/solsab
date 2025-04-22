@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+# Strict mode: https://gist.github.com/vncsna/64825d5609c146e80de8b1fd623011ca
+set -euo pipefail
 
 # Config
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -20,8 +21,6 @@ anchor clean
 # Update the program id in Anchor.toml & lib.rs
 anchor keys sync
 
-# Build
-# anchor build
 # Build verifiably
 anchor build -v
 
@@ -40,6 +39,6 @@ anchor deploy -v
 echo ""
 echo "✅ Deployment complete!"
 echo "Program ID: $(solana address -k "$PROGRAM_KEYPAIR_PATH")"
-echo "Commit: $(git rev-parse HEAD)"
+echo "Commit: $(git rev-parse HEAD) (⚠️ Don't forget to create a PR for it! ⚠️)"
 echo "IDL Path: target/idl/${PROGRAM_NAME}.json"
 echo "Types Path: target/types/${PROGRAM_NAME}.ts"
