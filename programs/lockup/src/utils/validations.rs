@@ -59,6 +59,11 @@ pub fn check_create(
         return Err(ErrorCode::StartTimeZero.into());
     }
 
+    // Check: the start time is strictly less than the end time.
+    if start_time >= end_time {
+        return Err(ErrorCode::StartTimeNotLessThanEndTime.into());
+    }
+
     // Since a cliff time of zero means there is no cliff, the following checks are performed only if it's not zero.
     if cliff_time > 0 {
         // Check: the start time is strictly less than the cliff time.
@@ -74,11 +79,6 @@ pub fn check_create(
     // Check: the cliff unlock amount is zero when the cliff time is zero.
     else if cliff_unlock > 0 {
         return Err(ErrorCode::CliffTimeZeroUnlockAmountNotZero.into());
-    }
-
-    // Check: the start time is strictly less than the end time.
-    if start_time >= end_time {
-        return Err(ErrorCode::StartTimeNotLessThanEndTime.into());
     }
 
     // Check: the sum of the start and cliff unlock amounts is not greater than the deposit amount.

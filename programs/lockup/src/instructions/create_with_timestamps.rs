@@ -195,7 +195,7 @@ pub fn handler(
         &ctx.accounts.system_program,
         &ctx.accounts.rent,
         stream_id,
-        ctx.bumps.stream_nft_mint,
+        ctx.bumps.nft_collection_mint,
     )?;
 
     // Effect: increment the total supply of the NFT collection. Safe math operation, as it would take many years to
