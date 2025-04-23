@@ -1,9 +1,4 @@
-import {
-  PublicKey,
-  Keypair,
-  LAMPORTS_PER_SOL,
-  ComputeBudgetProgram,
-} from "@solana/web3.js";
+import { PublicKey, Keypair, ComputeBudgetProgram } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { BN } from "@coral-xyz/anchor";
 
@@ -19,9 +14,9 @@ import {
   StreamMilestones,
   UnlockAmounts,
   getDefaultUnlockAmounts,
-} from "./utils";
+} from "../../tests/utils";
 
-import { SablierLockup } from "../target/types/sablier_lockup";
+import { SablierLockup } from "../../target/types/sablier_lockup";
 
 let anchorProvider: any;
 let senderKeys: Keypair;

@@ -12,5 +12,5 @@
     "noEmit": true
   },
   "exclude": ["node_modules", "dist", "**/*.d.ts"],
-  "include": ["migrations", "tests"]
+  "include": ["migrations", "tests", "scripts/ts/post-deployment-initialization.ts"]
 }

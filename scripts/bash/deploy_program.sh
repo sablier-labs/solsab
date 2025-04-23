@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# This script deploys a new SolSab version to Devnet
+
 # Strict mode: https://gist.github.com/vncsna/64825d5609c146e80de8b1fd623011ca
 set -euo pipefail
 
@@ -39,6 +41,9 @@ solana program close --buffers
 
 # Deploy verifiably
 anchor deploy -v
+
+# Initialize SolSab on Devnet - and populate it with a bunch of Streams
+bun run ts-mocha -p ../.././tsconfig.json -t 1000000 ts/**/*.ts
 
 # Output summary
 echo ""
