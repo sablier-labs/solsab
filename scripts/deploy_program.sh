@@ -3,14 +3,19 @@
 # Strict mode: https://gist.github.com/vncsna/64825d5609c146e80de8b1fd623011ca
 set -euo pipefail
 
-# Config
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROGRAM_NAME=$(awk '/\[programs\.devnet\]/ {getline; print $1}' "$REPO_DIR/Anchor.toml")
-CLUSTER="devnet"
-PROGRAM_KEYPAIR_PATH="target/deploy/sablier_lockup-keypair.json"
+# Pre-requisites:
+# - see README.md
 
-# Go to the repo
-cd "$REPO_DIR" || { echo "Repo not found"; exit 1; }
+# Check prerequisites
+check_prereq() { command -v "$1" >/dev/null 2>&1 || error "$1 is required but not installed"; }
+check_prereq solana
+check_prereq anchor
+check_prereq git
+
+# Config
+CLUSTER="devnet"
+PROGRAM_NAME=$(awk '/\[programs\.devnet\]/ {getline; print $1}' "./Anchor.toml") || error "Could not find program name in Anchor.toml"
+PROGRAM_KEYPAIR_PATH="target/deploy/sablier_lockup-keypair.json"
 
 # Create or replace the program keypair file
 solana-keygen new --outfile "$PROGRAM_KEYPAIR_PATH" --no-bip39-passphrase --force
