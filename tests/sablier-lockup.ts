@@ -859,6 +859,25 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
+    it("Fails to cancel SETTLED Stream", async () => {
+      const assetTokenProgram = TOKEN_PROGRAM_ID;
+
+      const { streamData, assetMint } = await createMintATAsAndStream(
+        true,
+        await getMilestonesWithPastEndTime(banksClient),
+        getDefaultUnlockAmounts(),
+        assetTokenProgram
+      );
+
+      await assertStreamCancelationFailure(
+        senderKeys,
+        streamData.id,
+        assetMint,
+        assetTokenProgram,
+        "custom program error: 0x1772"
+      );
+    });
+
     it("Fails to cancel an SPL Token LL Stream when a wrong asset mint is submitted", async () => {
       const assetTokenProgram = TOKEN_PROGRAM_ID;
 
@@ -924,15 +943,6 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
-    it("Cancels an SPL Token LL Stream after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getDefaultMilestones(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Endish
-      );
-    });
-
     it("Cancels an SPL Token LL Stream with a past startTime immediately after creating it", async () => {
       await createStreamAndTestCancelability(
         await getMilestonesWithPastStartTime(banksClient),
@@ -947,15 +957,6 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         TOKEN_PROGRAM_ID,
         CancelTime.Halfish
-      );
-    });
-
-    it("Cancels an SPL Token LL Stream with a past startTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastStartTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Endish
       );
     });
 
@@ -976,38 +977,11 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
-    it("Cancels an SPL Token LL Stream with a past cliffTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastCliffTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Endish
-      );
-    });
-
     it("Cancels an SPL Token LL Stream with a past endTime immediately after creating it", async () => {
       await createStreamAndTestCancelability(
         await getMilestonesWithPastEndTime(banksClient),
         getDefaultUnlockAmounts(),
         TOKEN_PROGRAM_ID
-      );
-    });
-
-    it("Cancels an SPL Token LL Stream with a past endTime at half time", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Halfish
-      );
-    });
-
-    it("Cancels an SPL Token LL Stream with a past endTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Endish
       );
     });
   });
@@ -1030,15 +1004,6 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
-    it("Cancels a Token2022 LL Stream after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getDefaultMilestones(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Endish
-      );
-    });
-
     it("Cancels a Token2022 LL Stream with a past startTime immediately after creating it", async () => {
       await createStreamAndTestCancelability(
         await getMilestonesWithPastStartTime(banksClient),
@@ -1056,15 +1021,6 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
-    it("Cancels a Token2022 LL Stream with a past startTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastStartTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Endish
-      );
-    });
-
     it("Cancels a Token2022 LL Stream with a past cliffTime immediately after creating it", async () => {
       await createStreamAndTestCancelability(
         await getMilestonesWithPastCliffTime(banksClient),
@@ -1079,41 +1035,6 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         TOKEN_2022_PROGRAM_ID,
         CancelTime.Halfish
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past cliffTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastCliffTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Endish
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past endTime immediately after creating it", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past endTime at half time", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Halfish
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past endTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Endish
       );
     });
   });
