@@ -78,77 +78,24 @@ describe("SablierLockup Initialization", () => {
     await configureTestingEnvironment();
   });
 
-  it("Fails to InitializePhaseOne twice", async () => {
-    const initializePhaseOneIx = await getInitializePhaseOneIx(
-      senderKeys.publicKey
-    );
-    await buildSignAndProcessTx(initializePhaseOneIx, senderKeys);
+  it("Fails to Initialize twice", async () => {
+    await initializeSablierLockup(senderKeys);
 
     try {
-      const secondInitializePhaseOneIx = await getInitializePhaseOneIx(
-        thirdPartyKeys.publicKey
-      );
-      await buildSignAndProcessTx(secondInitializePhaseOneIx, thirdPartyKeys);
+      await initializeSablierLockup(thirdPartyKeys);
 
-      assert.fail("The 2nd InitializePhaseOne Ix should've failed");
+      assert.fail("The 2nd Initialize Ix should've failed");
     } catch (error) {
       assert(
         // TODO: Figure out a more robust way of checking the thrown error
         (error as Error).message.includes("custom program error: 0x0"),
-        "The 2nd InitializePhaseOne Ix failed with an unexpected error"
-      );
-    }
-  });
-
-  it("Fails to InitializePhaseTwo before InitializePhaseOne", async () => {
-    const initializePhaseTwoIx = await getInitializePhaseTwoIx(
-      senderKeys.publicKey
-    );
-
-    try {
-      await buildSignAndProcessTx(initializePhaseTwoIx, senderKeys);
-      assert.fail("The InitializePhaseTwo Ix should've failed");
-    } catch (error) {
-      assert(
-        // TODO: Figure out a more robust way of checking the thrown error
-        (error as Error).message.includes("custom program error: 0xbc4"),
-        "The InitializePhaseTwo Ix failed with an unexpected error"
-      );
-    }
-  });
-
-  it("Fails to InitializePhaseTwo twice", async () => {
-    const initializePhaseOneIx = await getInitializePhaseOneIx(
-      senderKeys.publicKey
-    );
-    await buildSignAndProcessTx(initializePhaseOneIx, senderKeys);
-
-    const initializePhaseTwoIx = await getInitializePhaseTwoIx(
-      senderKeys.publicKey
-    );
-    await buildSignAndProcessTx(initializePhaseTwoIx, senderKeys);
-
-    try {
-      const secondInitializePhaseTwoIx = await getInitializePhaseTwoIx(
-        thirdPartyKeys.publicKey
-      );
-      await buildSignAndProcessTx(secondInitializePhaseTwoIx, thirdPartyKeys);
-
-      assert.fail("The 2nd InitializePhaseTwo Ix should've failed");
-    } catch (error) {
-      assert(
-        // TODO: Figure out a more robust way of checking the thrown error
-        (error as Error).message.includes("custom program error: 0x0"),
-        "The 2nd InitializePhaseTwo Ix failed with an unexpected error"
+        "The 2nd Initialize Ix failed with an unexpected error"
       );
     }
   });
 
   it("Initializes the program", async () => {
-    const initializePhaseOneIx = await getInitializePhaseOneIx(
-      senderKeys.publicKey
-    );
-    await buildSignAndProcessTx(initializePhaseOneIx, senderKeys);
+    await initializeSablierLockup(senderKeys);
 
     // Confirm that the Treasury account has been initialized
     assert(await accountExists(treasuryAddress), "Treasury not initialized");
@@ -158,11 +105,6 @@ describe("SablierLockup Initialization", () => {
       await accountExists(nftCollectionDataAddress),
       "NFT Collection Data not initialized"
     );
-
-    const initializePhaseTwoIx = await getInitializePhaseTwoIx(
-      senderKeys.publicKey
-    );
-    await buildSignAndProcessTx(initializePhaseTwoIx, senderKeys);
 
     const nftCollectionMint = getPDAAddress(
       [Buffer.from("nft_collection_mint")],
@@ -248,47 +190,7 @@ describe("SablierLockup user-callable Ixs", () => {
     configureConsoleLogs();
     await configureTestingEnvironment();
     await logInfoAboutImportantAccounts();
-    await initializeSablierLockup();
-  });
-
-  describe("PrepareForStreamCreation Tests (SPL Token)", () => {
-    it("Prepares for the creation of an SPL Token Stream", async () => {
-      await testPrepareForStreamCreation(senderKeys, TOKEN_PROGRAM_ID);
-    });
-
-    it("Concurrently/sequencially prepares for the creation of 2 SPL Token Streams w/ different Asset Mints", async () => {
-      await testPrepareForStreamCreation(senderKeys, TOKEN_PROGRAM_ID);
-      await testPrepareForStreamCreation(thirdPartyKeys, TOKEN_PROGRAM_ID);
-    });
-
-    it("Concurrently/sequencially prepares for the creation of 2 SPL Token Streams w/ the same Asset Mint", async () => {
-      const { assetMint } = await createTokenAndMintToSender(
-        TOKEN_PROGRAM_ID,
-        getDefaultUnlockAmounts()
-      );
-
-      await testPrepareForStreamCreation(
-        senderKeys,
-        TOKEN_PROGRAM_ID,
-        assetMint
-      );
-      await testPrepareForStreamCreation(
-        thirdPartyKeys,
-        TOKEN_PROGRAM_ID,
-        assetMint
-      );
-    });
-  });
-
-  describe("PrepareForStreamCreation Tests (Token2022)", () => {
-    it("Prepares for the creation of a Token2022 Stream", async () => {
-      await testPrepareForStreamCreation(senderKeys, TOKEN_2022_PROGRAM_ID);
-    });
-
-    it("Concurrently/sequencially prepares for the creation of 2 Token2022 Streams w/ different Asset Mints", async () => {
-      await testPrepareForStreamCreation(senderKeys, TOKEN_2022_PROGRAM_ID);
-      await testPrepareForStreamCreation(thirdPartyKeys, TOKEN_2022_PROGRAM_ID);
-    });
+    await initializeSablierLockup(senderKeys);
   });
 
   describe("Stream Creation Tests (SPL Token)", () => {
@@ -304,8 +206,9 @@ describe("SablierLockup user-callable Ixs", () => {
       );
       const isCancelable = true;
 
-      await assertPrepareAndCreateWithTimestampsFailure(
+      await assertCreateWithTimestampsFailure(
         assetMint,
+        await deduceCurrentStreamId(),
         depositedAmount,
         getDefaultUnlockAmounts(),
         await getDefaultMilestones(banksClient),
@@ -325,8 +228,9 @@ describe("SablierLockup user-callable Ixs", () => {
       const depositedAmount = new BN(0);
       const isCancelable = true;
 
-      await assertPrepareAndCreateWithTimestampsFailure(
+      await assertCreateWithTimestampsFailure(
         assetMint,
+        await deduceCurrentStreamId(),
         depositedAmount,
         getDefaultUnlockAmounts(),
         await getDefaultMilestones(banksClient),
@@ -355,8 +259,9 @@ describe("SablierLockup user-callable Ixs", () => {
       const depositedAmount = await getTokenBalanceByATAKey(senderATA);
       const isCancelable = true;
 
-      await assertPrepareAndCreateWithTimestampsFailure(
+      await assertCreateWithTimestampsFailure(
         invalidAssetMint,
+        await deduceCurrentStreamId(),
         depositedAmount,
         getDefaultUnlockAmounts(),
         await getDefaultMilestones(banksClient),
@@ -378,8 +283,9 @@ describe("SablierLockup user-callable Ixs", () => {
       const depositedAmount = await getTokenBalanceByATAKey(senderATA);
       const isCancelable = true;
 
-      await assertPrepareAndCreateWithTimestampsFailure(
+      await assertCreateWithTimestampsFailure(
         assetMint,
+        await deduceCurrentStreamId(),
         depositedAmount,
         getDefaultUnlockAmounts(),
         milestones,
@@ -401,8 +307,9 @@ describe("SablierLockup user-callable Ixs", () => {
       const depositedAmount = await getTokenBalanceByATAKey(senderATA);
       const isCancelable = true;
 
-      await assertPrepareAndCreateWithTimestampsFailure(
+      await assertCreateWithTimestampsFailure(
         assetMint,
+        await deduceCurrentStreamId(),
         depositedAmount,
         getDefaultUnlockAmounts(),
         milestones,
@@ -424,8 +331,9 @@ describe("SablierLockup user-callable Ixs", () => {
       const depositedAmount = await getTokenBalanceByATAKey(senderATA);
       const isCancelable = true;
 
-      await assertPrepareAndCreateWithTimestampsFailure(
+      await assertCreateWithTimestampsFailure(
         assetMint,
+        await deduceCurrentStreamId(),
         depositedAmount,
         getDefaultUnlockAmounts(),
         milestones,
@@ -447,8 +355,9 @@ describe("SablierLockup user-callable Ixs", () => {
       const depositedAmount = await getTokenBalanceByATAKey(senderATA);
       const isCancelable = true;
 
-      await assertPrepareAndCreateWithTimestampsFailure(
+      await assertCreateWithTimestampsFailure(
         assetMint,
+        await deduceCurrentStreamId(),
         depositedAmount,
         getDefaultUnlockAmounts(),
         milestones,
@@ -470,8 +379,9 @@ describe("SablierLockup user-callable Ixs", () => {
       const depositedAmount = await getTokenBalanceByATAKey(senderATA);
       const isCancelable = true;
 
-      await assertPrepareAndCreateWithTimestampsFailure(
+      await assertCreateWithTimestampsFailure(
         assetMint,
+        await deduceCurrentStreamId(),
         depositedAmount,
         getDefaultUnlockAmounts(),
         milestones,
@@ -479,10 +389,6 @@ describe("SablierLockup user-callable Ixs", () => {
         TOKEN_PROGRAM_ID,
         "0x1779"
       );
-    });
-
-    it("Fails to create an SPL Token Stream with a different Asset Mint than the one passed to PrepareForStreamCreation", async () => {
-      await testStreamCreationWithMismatchedAssetMint(TOKEN_PROGRAM_ID);
     });
 
     it("Creates a cancelable SPL Token LL Stream", async () => {
@@ -576,19 +482,9 @@ describe("SablierLockup user-callable Ixs", () => {
         getUnlockAmountsStartAndCliff()
       );
     });
-
-    it("Creates a cancelable SPL Token Stream after a concurrent PrepareForStreamCreation Tx is executed", async () => {
-      await testStreamCreationAfterAConcurrentPrepareForStreamCreationTx(
-        TOKEN_PROGRAM_ID
-      );
-    });
   });
 
   describe("Stream Creation Tests (Token2022)", () => {
-    it("Fails to create an SPL Token Stream with a different Asset Mint than the one passed to PrepareForStreamCreation", async () => {
-      await testStreamCreationWithMismatchedAssetMint(TOKEN_2022_PROGRAM_ID);
-    });
-
     it("Creates a cancelable Token2022 LL Stream", async () => {
       await testStreamCreation(
         TOKEN_2022_PROGRAM_ID,
@@ -643,12 +539,6 @@ describe("SablierLockup user-callable Ixs", () => {
         true,
         await getDefaultMilestones(banksClient),
         getUnlockAmountsStartAndCliff()
-      );
-    });
-
-    it("Creates a cancelable Token2022 Stream after a concurrent PrepareForStreamCreation Tx is executed", async () => {
-      await testStreamCreationAfterAConcurrentPrepareForStreamCreationTx(
-        TOKEN_2022_PROGRAM_ID
       );
     });
 
@@ -1890,32 +1780,15 @@ async function logInfoAboutImportantAccounts() {
   );
 }
 
-async function initializeSablierLockup() {
-  const initializePhaseOneIx = await getInitializePhaseOneIx(
-    senderKeys.publicKey
-  );
-  const initializePhaseTwoIx = await getInitializePhaseTwoIx(
-    senderKeys.publicKey
-  );
+async function initializeSablierLockup(txSigner: Keypair) {
+  const initializeIx = await getInitializeIx(txSigner.publicKey);
 
-  await buildSignAndProcessTx(
-    [initializePhaseOneIx, initializePhaseTwoIx],
-    senderKeys
-  );
+  await buildSignAndProcessTx(initializeIx, txSigner);
 }
 
-async function getInitializePhaseOneIx(txSigner: PublicKey): Promise<TxIx> {
+async function getInitializeIx(txSigner: PublicKey): Promise<TxIx> {
   return await lockupProgram.methods
-    .initializePhaseOne(feeCollectorKeys.publicKey)
-    .accounts({
-      deployer: txSigner,
-    })
-    .instruction();
-}
-
-async function getInitializePhaseTwoIx(txSigner: PublicKey): Promise<TxIx> {
-  return await lockupProgram.methods
-    .initializePhaseTwo()
+    .initialize(feeCollectorKeys.publicKey)
     .accounts({
       deployer: txSigner,
       nftTokenProgram: TOKEN_PROGRAM_ID,
@@ -1972,40 +1845,6 @@ async function assertCreateWithTimestampsFailure(
         `custom program error: ${expectedErrorCode}`
       ),
       "CreateWithTimestamps failed with an unexpected error"
-    );
-  }
-}
-
-async function assertPrepareAndCreateWithTimestampsFailure(
-  assetMint: PublicKey,
-  depositedAmount: BN,
-  unlockAmounts: UnlockAmounts,
-  milestones: StreamMilestones,
-  isCancelable: boolean,
-  assetTokenProgram: PublicKey,
-  expectedErrorCode: string
-) {
-  try {
-    await prepareAndCreateWithTimestamps({
-      senderKeys,
-      recipient: recipientKeys.publicKey,
-      assetMint,
-      assetTokenProgram,
-      milestones,
-      depositedAmount,
-      unlockAmounts,
-      isCancelable,
-    });
-    assert.fail(
-      "PrepareAndCreateWithTimestamps should've failed, but it didn't."
-    );
-  } catch (error) {
-    assert(
-      // TODO: Figure out a more robust way of checking the thrown error
-      (error as Error).message.includes(
-        `custom program error: ${expectedErrorCode}`
-      ),
-      "PrepareAndCreateWithTimestamps failed with an unexpected error"
     );
   }
 }
@@ -2231,10 +2070,11 @@ async function createMintATAsAndStream(
     recipientsStreamNftATA,
     streamNftMint,
     treasuryATA,
-  } = await prepareAndCreateWithTimestamps({
+  } = await createWithTimestamps({
     senderKeys,
     recipient,
     assetMint,
+    expectedStreamId: streamId,
     assetTokenProgram,
     milestones,
     depositedAmount,
@@ -2469,7 +2309,6 @@ interface PerformPostCreateAssertionsArgs {
   milestones: StreamMilestones;
   isCancelable: boolean;
   senderATA: PublicKey;
-  streamNftMint: PublicKey;
   treasuryATA: PublicKey;
   recipientsStreamNftATA: PublicKey;
   senderInitialTokenBalance: BN;
@@ -2486,11 +2325,23 @@ async function performPostCreateAssertions(
     milestones,
     isCancelable,
     senderATA,
-    streamNftMint,
     treasuryATA,
     recipientsStreamNftATA,
     senderInitialTokenBalance,
   } = args;
+
+  // Assert that the Treasury ATA for the assetMint has been created
+  assert(await accountExists(treasuryATA), "Treasury ATA hasn't been created");
+
+  // Confirm that the Stream NFT Mint account has been initialized
+  const streamNftMint = getStreamNftMintAddress(streamId);
+  assert(await accountExists(streamNftMint), "Stream NFT Mint not initialized");
+
+  // Confirm that the StreamData account has been initialized
+  assert(
+    await accountExists(getStreamDataAddress(streamId)),
+    "StreamData not initialized"
+  );
 
   const streamNftMintToBuffer = streamNftMint.toBuffer();
   const streamNftMetadata = getPDAAddress(
@@ -2659,10 +2510,11 @@ async function testStreamCreation(
   const depositedAmount = senderInitialTokenBalance;
 
   const { treasuryATA, recipientsStreamNftATA, streamNftMint } =
-    await prepareAndCreateWithTimestamps({
+    await createWithTimestamps({
       senderKeys,
       recipient: recipientKeys.publicKey,
       assetMint,
+      expectedStreamId: streamId,
       assetTokenProgram,
       milestones,
       depositedAmount,
@@ -2679,110 +2531,10 @@ async function testStreamCreation(
     milestones,
     isCancelable,
     senderATA,
-    streamNftMint,
     treasuryATA,
     recipientsStreamNftATA,
     senderInitialTokenBalance,
   });
-}
-
-async function testStreamCreationAfterAConcurrentPrepareForStreamCreationTx(
-  assetTokenProgram: PublicKey
-) {
-  const unlockAmounts1 = getDefaultUnlockAmounts();
-  const { assetMint: assetMint1, senderATA: senderATA1 } =
-    await createTokenAndMintToSender(assetTokenProgram, unlockAmounts1);
-
-  // Get the balance of the sender's ATA
-  const senderInitialTokenBalance = await getTokenBalanceByATAKey(senderATA1);
-  const depositedAmount = senderInitialTokenBalance;
-
-  const expectedStreamId = await deduceCurrentStreamId();
-  const { treasuryATA: treasuryATA1 } = await prepareForStreamCreation(
-    senderKeys,
-    assetMint1,
-    expectedStreamId,
-    assetTokenProgram
-  );
-
-  const { assetMint: assetMint2 } = await createTokenAndMintToSender(
-    assetTokenProgram,
-    getDefaultUnlockAmounts()
-  );
-
-  await prepareForStreamCreation(
-    thirdPartyKeys,
-    assetMint2,
-    expectedStreamId,
-    assetTokenProgram
-  );
-
-  const milestones = await getDefaultMilestones(banksClient);
-  const isCancelable = true;
-  const { streamNftMint, recipientsStreamNftATA } = await createWithTimestamps({
-    senderKeys,
-    recipient: recipientKeys.publicKey,
-    assetMint: assetMint1,
-    expectedStreamId,
-    assetTokenProgram: assetTokenProgram,
-    milestones,
-    depositedAmount,
-    unlockAmounts: unlockAmounts1,
-    isCancelable,
-  });
-
-  await performPostCreateAssertions({
-    streamId: expectedStreamId,
-    assetMint: assetMint1,
-    assetTokenProgram: assetTokenProgram,
-    depositedAmount,
-    unlockAmounts: unlockAmounts1,
-    milestones,
-    isCancelable,
-    senderATA: senderATA1,
-    streamNftMint,
-    treasuryATA: treasuryATA1,
-    recipientsStreamNftATA,
-    senderInitialTokenBalance,
-  });
-}
-
-async function testStreamCreationWithMismatchedAssetMint(
-  assetTokenProgram: PublicKey
-) {
-  const { assetMint: assetMint1 } = await createTokenAndMintToSender(
-    assetTokenProgram,
-    getDefaultUnlockAmounts()
-  );
-
-  const expectedStreamId = await deduceCurrentStreamId();
-  await prepareForStreamCreation(
-    senderKeys,
-    assetMint1,
-    expectedStreamId,
-    assetTokenProgram
-  );
-
-  const { assetMint: assetMint2, senderATA: senderATA2 } =
-    await createTokenAndMintToSender(
-      assetTokenProgram,
-      getDefaultUnlockAmounts()
-    );
-
-  // Attempt to create a Stream with a mismatched Asset Mint
-  const depositedAmount = await getTokenBalanceByATAKey(senderATA2);
-  const isCancelable = true;
-
-  await assertCreateWithTimestampsFailure(
-    assetMint2,
-    depositedAmount,
-    expectedStreamId,
-    getDefaultUnlockAmounts(),
-    await getDefaultMilestones(banksClient),
-    isCancelable,
-    assetTokenProgram,
-    "0xbc4"
-  );
 }
 
 async function testForFeeCollection(
@@ -2903,13 +2655,6 @@ async function testMultiStreamCreationInOneTx(
   // Create two Streams in one transaction
   // Note: due to Solana's 1232-byte tx size limit, we can only create up to 2 Streams in one transaction
   for (let i = 0; i < 2; i++) {
-    const prepareForCreationIx = await getPrepareForStreamCreationIx(
-      senderKeys,
-      new BN(i),
-      assetMint,
-      assetTokenProgram
-    );
-
     const createStreamIx = await getCreateWithTimestampsIx({
       senderKeys,
       recipient: recipientKeys.publicKey,
@@ -2922,7 +2667,7 @@ async function testMultiStreamCreationInOneTx(
       isCancelable,
     });
 
-    ixs.push(prepareForCreationIx, createStreamIx);
+    ixs.push(createStreamIx);
   }
 
   // Build, sign and process the transaction
@@ -3368,41 +3113,6 @@ function withdrawalSizeToWithdrawalAmount(
   }
 }
 
-async function testPrepareForStreamCreation(
-  txSigner: Keypair,
-  assetTokenProgram: PublicKey,
-  assetMint?: PublicKey
-) {
-  if (!assetMint) {
-    assetMint = (
-      await createTokenAndMintToSender(
-        assetTokenProgram,
-        getDefaultUnlockAmounts()
-      )
-    ).assetMint;
-  }
-  const streamId = await deduceCurrentStreamId();
-  const { treasuryATA } = await prepareForStreamCreation(
-    txSigner,
-    assetMint,
-    streamId,
-    assetTokenProgram
-  );
-
-  // Assert that the Treasury ATA for the assetMint has been created
-  assert(await accountExists(treasuryATA), "Treasury ATA hasn't been created");
-
-  // Confirm that the Stream NFT Mint account has been initialized
-  const streamNftMint = getStreamNftMintAddress(streamId);
-  assert(await accountExists(streamNftMint), "Stream NFT Mint not initialized");
-
-  // Confirm that the StreamData account has been initialized
-  assert(
-    await accountExists(getStreamDataAddress(streamId)),
-    "StreamData not initialized"
-  );
-}
-
 const WithdrawalKind = {
   Withdraw: 0,
   WithdrawMax: 1,
@@ -3716,17 +3426,6 @@ async function withdrawMax(
   await buildSignAndProcessTx(withdrawIx, txSigner);
 }
 
-interface PrepareAndCreateWithTimestampsArgs {
-  senderKeys: Keypair;
-  recipient: PublicKey;
-  assetMint: PublicKey;
-  assetTokenProgram: PublicKey;
-  milestones: StreamMilestones;
-  depositedAmount: BN;
-  unlockAmounts: UnlockAmounts;
-  isCancelable: boolean;
-}
-
 interface CreateWithTimestampsArgs {
   senderKeys: Keypair;
   recipient: PublicKey;
@@ -3792,6 +3491,7 @@ async function createTokenAndMintToSender(
 
 async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
   streamId: BN;
+  treasuryATA: PublicKey;
   streamNftMint: PublicKey;
   recipientsStreamNftATA: PublicKey;
   nftTokenProgram: PublicKey;
@@ -3809,59 +3509,18 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
     nftTokenProgram
   );
 
-  return {
-    streamId: expectedStreamId,
-    streamNftMint,
-    recipientsStreamNftATA,
-    nftTokenProgram,
-  };
-}
-
-async function prepareAndCreateWithTimestamps(
-  args: PrepareAndCreateWithTimestampsArgs
-): Promise<{
-  nftTokenProgram: PublicKey;
-  recipientsStreamNftATA: PublicKey;
-  streamNftMint: PublicKey;
-  treasuryATA: PublicKey;
-}> {
-  const {
-    senderKeys,
-    recipient,
-    assetMint,
-    assetTokenProgram,
-    milestones,
-    depositedAmount,
-    unlockAmounts,
-    isCancelable,
-  } = args;
-
-  const expectedStreamId = await deduceCurrentStreamId();
-  const { treasuryATA } = await prepareForStreamCreation(
-    senderKeys,
-    assetMint,
-    expectedStreamId,
-    assetTokenProgram
+  const treasuryATA = deriveATAAddress(
+    args.assetMint,
+    treasuryAddress,
+    args.assetTokenProgram
   );
 
-  const { streamNftMint, recipientsStreamNftATA, nftTokenProgram } =
-    await createWithTimestamps({
-      senderKeys,
-      recipient,
-      assetMint,
-      expectedStreamId,
-      assetTokenProgram,
-      milestones,
-      depositedAmount,
-      unlockAmounts,
-      isCancelable,
-    });
-
   return {
-    nftTokenProgram,
-    recipientsStreamNftATA,
-    streamNftMint,
+    streamId: expectedStreamId,
     treasuryATA,
+    streamNftMint,
+    recipientsStreamNftATA,
+    nftTokenProgram,
   };
 }
 
@@ -4019,48 +3678,6 @@ async function initializeTx(
 async function accountExists(address: PublicKey): Promise<boolean> {
   const account = await banksClient.getAccount(address);
   return account != null;
-}
-
-async function prepareForStreamCreation(
-  signerKeys: Keypair,
-  assetMint: PublicKey,
-  expectedStreamId: BN,
-  assetTokenProgram: PublicKey
-): Promise<{ treasuryATA: PublicKey }> {
-  const ix = await getPrepareForStreamCreationIx(
-    signerKeys,
-    expectedStreamId,
-    assetMint,
-    assetTokenProgram
-  );
-
-  await buildSignAndProcessTx(ix, signerKeys);
-
-  return {
-    treasuryATA: deriveATAAddress(
-      assetMint,
-      treasuryAddress,
-      assetTokenProgram
-    ),
-  };
-}
-
-async function getPrepareForStreamCreationIx(
-  signerKeys: Keypair,
-  expectedStreamId: BN,
-  assetMint: PublicKey,
-  assetTokenProgram: PublicKey
-): Promise<TxIx> {
-  return await lockupProgram.methods
-    .prepareForStreamCreation()
-    .accountsPartial({
-      sender: signerKeys.publicKey,
-      assetMint,
-      streamNftMint: getStreamNftMintAddress(expectedStreamId),
-      assetTokenProgram,
-      nftTokenProgram: TOKEN_PROGRAM_ID,
-    })
-    .instruction();
 }
 
 async function timeTravelForwardTo(timestamp: bigint) {

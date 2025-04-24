@@ -64,16 +64,8 @@ pub mod sablier_lockup {
         )
     }
 
-    pub fn initialize_phase_one(ctx: Context<InitializePhaseOne>, fee_collector: Pubkey) -> Result<()> {
-        instructions::initialize_phase_one::handler(ctx, fee_collector)
-    }
-
-    pub fn initialize_phase_two(ctx: Context<InitializePhaseTwo>) -> Result<()> {
-        instructions::initialize_phase_two::handler(ctx)
-    }
-
-    pub fn prepare_for_stream_creation(ctx: Context<PrepareForStreamCreation>) -> Result<()> {
-        instructions::prepare_for_stream_creation::handler(ctx)
+    pub fn initialize(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
+        instructions::initialize::handler(ctx, fee_collector)
     }
 
     pub fn renounce(ctx: Context<Renounce>, _stream_id: u64) -> Result<()> {
