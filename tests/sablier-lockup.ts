@@ -55,7 +55,6 @@ let feeCollectorKeys: Keypair;
 let thirdPartyKeys: Keypair;
 let bankrunProvider: BankrunProvider;
 let treasuryAddress: PublicKey;
-let feeCollectorDataAddress: PublicKey;
 let nftCollectionDataAddress: PublicKey;
 let lockupProgram: anchor.Program<SablierLockup>;
 let lockupProgramId: PublicKey;
@@ -155,14 +154,6 @@ describe("SablierLockup Initialization", () => {
     // Confirm that the Treasury account has been initialized
     assert(await accountExists(treasuryAddress), "Treasury not initialized");
 
-    // Confirm that the Fee Collector Data account has been initialized & set properly
-    assert(
-      (await fetchFeeCollectorData()).address.equals(
-        feeCollectorKeys.publicKey,
-        "Fee Collector not set properly"
-      )
-    );
-
     // Confirm that the NFT Collection Data account has been initialized
     assert(
       await accountExists(nftCollectionDataAddress),
@@ -257,7 +248,7 @@ describe("SablierLockup user-callable Ixs", () => {
   beforeEach(async () => {
     configureConsoleLogs();
     await configureTestingEnvironment();
-    logInfoAboutImportantAccounts();
+    await logInfoAboutImportantAccounts();
     await initializeSablierLockup();
   });
 
@@ -342,7 +333,7 @@ describe("SablierLockup user-callable Ixs", () => {
         await getDefaultMilestones(banksClient),
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1774"
+        "0x1777"
       );
     });
 
@@ -395,7 +386,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1772"
+        "0x1779"
       );
     });
 
@@ -418,7 +409,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1772"
+        "0x1779"
       );
     });
 
@@ -441,7 +432,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1772"
+        "0x1776"
       );
     });
 
@@ -464,7 +455,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1772"
+        "0x1776"
       );
     });
 
@@ -487,7 +478,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones,
         isCancelable,
         TOKEN_PROGRAM_ID,
-        "0x1772"
+        "0x177a"
       );
     });
 
@@ -734,7 +725,7 @@ describe("SablierLockup user-callable Ixs", () => {
 
       await assertCancelabilityRenouncementFailure(
         streamData.id,
-        "custom program error: 0x177a"
+        "custom program error: 0x177c"
       );
     });
 
@@ -864,7 +855,26 @@ describe("SablierLockup user-callable Ixs", () => {
         streamData.id,
         assetMint,
         assetTokenProgram,
-        "custom program error: 0x1779"
+        "custom program error: 0x1771"
+      );
+    });
+
+    it("Fails to cancel SETTLED Stream", async () => {
+      const assetTokenProgram = TOKEN_PROGRAM_ID;
+
+      const { streamData, assetMint } = await createMintATAsAndStream(
+        true,
+        await getMilestonesWithPastEndTime(banksClient),
+        getDefaultUnlockAmounts(),
+        assetTokenProgram
+      );
+
+      await assertStreamCancelationFailure(
+        senderKeys,
+        streamData.id,
+        assetMint,
+        assetTokenProgram,
+        "custom program error: 0x1772"
       );
     });
 
@@ -933,15 +943,6 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
-    it("Cancels an SPL Token LL Stream after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getDefaultMilestones(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Endish
-      );
-    });
-
     it("Cancels an SPL Token LL Stream with a past startTime immediately after creating it", async () => {
       await createStreamAndTestCancelability(
         await getMilestonesWithPastStartTime(banksClient),
@@ -956,15 +957,6 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         TOKEN_PROGRAM_ID,
         CancelTime.Halfish
-      );
-    });
-
-    it("Cancels an SPL Token LL Stream with a past startTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastStartTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Endish
       );
     });
 
@@ -985,38 +977,11 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
-    it("Cancels an SPL Token LL Stream with a past cliffTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastCliffTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Endish
-      );
-    });
-
     it("Cancels an SPL Token LL Stream with a past endTime immediately after creating it", async () => {
       await createStreamAndTestCancelability(
         await getMilestonesWithPastEndTime(banksClient),
         getDefaultUnlockAmounts(),
         TOKEN_PROGRAM_ID
-      );
-    });
-
-    it("Cancels an SPL Token LL Stream with a past endTime at half time", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Halfish
-      );
-    });
-
-    it("Cancels an SPL Token LL Stream with a past endTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Endish
       );
     });
   });
@@ -1039,15 +1004,6 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
-    it("Cancels a Token2022 LL Stream after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getDefaultMilestones(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Endish
-      );
-    });
-
     it("Cancels a Token2022 LL Stream with a past startTime immediately after creating it", async () => {
       await createStreamAndTestCancelability(
         await getMilestonesWithPastStartTime(banksClient),
@@ -1062,15 +1018,6 @@ describe("SablierLockup user-callable Ixs", () => {
         getDefaultUnlockAmounts(),
         TOKEN_2022_PROGRAM_ID,
         CancelTime.Halfish
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past startTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastStartTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Endish
       );
     });
 
@@ -1090,41 +1037,6 @@ describe("SablierLockup user-callable Ixs", () => {
         CancelTime.Halfish
       );
     });
-
-    it("Cancels a Token2022 LL Stream with a past cliffTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastCliffTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Endish
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past endTime immediately after creating it", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past endTime at half time", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Halfish
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past endTime after the tokens have been fully streamed", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Endish
-      );
-    });
   });
 
   describe("Withdraw Tests (SPL Token)", () => {
@@ -1139,7 +1051,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.endTime.sub(new BN(1)),
         WithdrawalSize.EntireDeposit,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1154,7 +1066,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.endTime,
         WithdrawalSize.ZERO,
         AssetMintKind.Correct,
-        "custom program error: 0x177b"
+        "custom program error: 0x177e"
       );
     });
 
@@ -1169,7 +1081,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.cliffTime.sub(new BN(1)),
         WithdrawalSize.OneToken,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1199,7 +1111,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.startTime,
         WithdrawalSize.StartUnlockPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1214,7 +1126,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.cliffTime,
         WithdrawalSize.CliffUnlockPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1229,7 +1141,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.startTime,
         WithdrawalSize.StartAndCliffUnlocksPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1399,7 +1311,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.endTime.sub(new BN(1)),
         WithdrawalSize.EntireDeposit,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1414,7 +1326,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.endTime,
         WithdrawalSize.ZERO,
         AssetMintKind.Correct,
-        "custom program error: 0x177b"
+        "custom program error: 0x177e"
       );
     });
 
@@ -1429,7 +1341,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.cliffTime.sub(new BN(1)),
         WithdrawalSize.OneToken,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1459,7 +1371,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.startTime,
         WithdrawalSize.StartUnlockPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1474,7 +1386,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.cliffTime,
         WithdrawalSize.CliffUnlockPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1489,7 +1401,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.startTime,
         WithdrawalSize.StartAndCliffUnlocksPlusOne,
         AssetMintKind.Correct,
-        "custom program error: 0x1776"
+        "custom program error: 0x177d"
       );
     });
 
@@ -1687,7 +1599,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.cliffTime.sub(new BN(1)),
         WithdrawalSize.MAX,
         AssetMintKind.Correct,
-        "custom program error: 0x177b"
+        "custom program error: 0x177e"
       );
     });
 
@@ -1779,7 +1691,7 @@ describe("SablierLockup user-callable Ixs", () => {
         milestones.cliffTime.sub(new BN(1)),
         WithdrawalSize.MAX,
         AssetMintKind.Correct,
-        "custom program error: 0x177b"
+        "custom program error: 0x177e"
       );
     });
 
@@ -1839,7 +1751,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.OneUnit,
         TOKEN_PROGRAM_ID,
-        "0x1778"
+        "0x1774"
       );
     });
 
@@ -1850,7 +1762,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.OneUnit,
         TOKEN_PROGRAM_ID,
-        "0x1778"
+        "0x1774"
       );
     });
 
@@ -1861,7 +1773,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.TwoUnits,
         TOKEN_PROGRAM_ID,
-        "0x1778"
+        "0x1774"
       );
     });
 
@@ -1872,7 +1784,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.Zero,
         TOKEN_PROGRAM_ID,
-        "0x1770"
+        "0x1773"
       );
     });
 
@@ -1883,7 +1795,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.OneUnit,
         TOKEN_PROGRAM_ID,
-        "0x1778"
+        "0x1774"
       );
     });
 
@@ -1923,7 +1835,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.OneUnit,
         TOKEN_2022_PROGRAM_ID,
-        "0x1778"
+        "0x1774"
       );
     });
 
@@ -1934,7 +1846,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.TwoUnits,
         TOKEN_2022_PROGRAM_ID,
-        "0x1778"
+        "0x1774"
       );
     });
 
@@ -1945,7 +1857,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.Zero,
         TOKEN_2022_PROGRAM_ID,
-        "0x1770"
+        "0x1773"
       );
     });
 
@@ -1956,7 +1868,7 @@ describe("SablierLockup user-callable Ixs", () => {
         thirdPartyKeys.publicKey,
         FeesAmount.OneUnit,
         TOKEN_2022_PROGRAM_ID,
-        "0x1778"
+        "0x1774"
       );
     });
 
@@ -2023,12 +1935,6 @@ async function configureTestingEnvironment() {
   treasuryAddress = getPDAAddress([Buffer.from("treasury")], lockupProgramId);
   console.log("Treasury's address: ", treasuryAddress.toBase58());
 
-  // Pre-calculate the address of the Fee Collector Data account
-  feeCollectorDataAddress = getPDAAddress(
-    [Buffer.from("fee_collector_data")],
-    lockupProgramId
-  );
-
   // Pre-calculate the address of the NFT Collection Data
   nftCollectionDataAddress = getPDAAddress(
     [Buffer.from("nft_collection_data")],
@@ -2036,19 +1942,19 @@ async function configureTestingEnvironment() {
   );
 }
 
-function logInfoAboutImportantAccounts() {
+async function logInfoAboutImportantAccounts() {
   // Output the sender's public key
   console.log(`Sender: ${senderKeys.publicKey}`);
 
   // Output the sender's SOL balance
-  const sendersBalance = getSOLBalanceOf(senderKeys.publicKey);
+  const sendersBalance = await getSOLBalanceOf(senderKeys.publicKey);
   console.log(`Sender's balance: ${sendersBalance.toString()} SOL`);
 
   // Output the recipient's public key
   console.log(`Recipient: ${recipientKeys.publicKey}`);
 
   // Output the recipient's SOL balance
-  const recipientsBalance = getSOLBalanceOf(recipientKeys.publicKey);
+  const recipientsBalance = await getSOLBalanceOf(recipientKeys.publicKey);
   console.log(`Recipient's balance: ${recipientsBalance.toString()} SOL`);
 
   // Output the fee collector's public key
@@ -2061,7 +1967,7 @@ function logInfoAboutImportantAccounts() {
   console.log(`Third party: ${thirdPartyKeys.publicKey}`);
 
   // Output the third party's SOL balance
-  const thirdPartyBalance = getSOLBalanceOf(thirdPartyKeys.publicKey);
+  const thirdPartyBalance = await getSOLBalanceOf(thirdPartyKeys.publicKey);
   console.log(`Third party's balance: ${thirdPartyBalance.toString()} SOL`);
 
   console.log("Treasury's address: ", treasuryAddress.toBase58());
@@ -2069,11 +1975,6 @@ function logInfoAboutImportantAccounts() {
   console.log(
     "NFT Collection Data's address: ",
     nftCollectionDataAddress.toBase58()
-  );
-
-  console.log(
-    "Fee Collector Data address: ",
-    feeCollectorDataAddress.toBase58()
   );
 }
 
@@ -2771,9 +2672,9 @@ async function performPostCreateAssertions(
   );
 
   assert(
-    streamData.milestones.startTime.eq(milestones.startTime) &&
-      streamData.milestones.cliffTime.eq(milestones.cliffTime) &&
-      streamData.milestones.endTime.eq(milestones.endTime),
+    streamData.timestamps.startTime.eq(milestones.startTime) &&
+      streamData.timestamps.cliffTime.eq(milestones.cliffTime) &&
+      streamData.timestamps.endTime.eq(milestones.endTime),
     "The created Stream's milestones are incorrect"
   );
 
@@ -3186,9 +3087,9 @@ async function testMultiStreamCreationInOneTx(
     );
 
     assert(
-      streamData.milestones.startTime.eq(milestones.startTime) &&
-        streamData.milestones.cliffTime.eq(milestones.cliffTime) &&
-        streamData.milestones.endTime.eq(milestones.endTime),
+      streamData.timestamps.startTime.eq(milestones.startTime) &&
+        streamData.timestamps.cliffTime.eq(milestones.cliffTime) &&
+        streamData.timestamps.endTime.eq(milestones.endTime),
       "The created Stream's milestones are incorrect"
     );
   }
@@ -4150,22 +4051,6 @@ async function fetchStreamData(streamId: BN): Promise<any> {
   return streamLayout.coder.accounts.decode(
     "streamData",
     Buffer.from(streamDataAccount.data)
-  );
-}
-
-async function fetchFeeCollectorData(): Promise<any> {
-  const feeCollectorDataAccount = await banksClient.getAccount(
-    feeCollectorDataAddress
-  );
-  if (!feeCollectorDataAccount) {
-    throw new Error("Fee Collector Data account is undefined");
-  }
-
-  // Return the Fee Collector Data decoded via the Anchor account layout
-  const feeCollectorDataLayout = lockupProgram.account.feeCollectorData;
-  return feeCollectorDataLayout.coder.accounts.decode(
-    "feeCollectorData",
-    Buffer.from(feeCollectorDataAccount.data)
   );
 }
 

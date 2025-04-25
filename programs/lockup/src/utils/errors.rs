@@ -2,30 +2,43 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum ErrorCode {
-    #[msg("Can't collect zero fees!")]
-    CantCollectZeroFees,
-    #[msg("Deposit amount is less than the unlock amounts!")]
-    DepositAmountLessThanUnlockAmounts,
-    #[msg("Invalid cliff time of the Stream!")]
-    InvalidCliffTime,
-    #[msg("Invalid cliff unlock amount!")]
-    InvalidCliffUnlockAmount,
-    #[msg("Invalid deposit amount!")]
-    InvalidDepositAmount,
-    #[msg("Stream end time cannot be in the past!")]
-    InvalidEndTime,
-    #[msg("Invalid withdrawal amount!")]
-    InvalidWithdrawalAmount,
-    #[msg("The Total Supply of the NFT Collection has overflowed!")]
-    NftCollectionTotalSupplyOverflow,
-    #[msg("Not enough fees for withdrawal!")]
-    NotEnoughFeesForWithdrawal,
-    #[msg("Can't cancel a non-cancelable Stream!")]
-    StreamIsNotCancelable,
+    // Cancel Stream
     #[msg("Can't renounce an already-renounced Stream!")]
-    StreamCancelabilityIsAlreadyRenounced,
+    StreamCanceled, // 0x1770
+    #[msg("Can't cancel a non-cancelable Stream!")]
+    StreamIsNotCancelable, // 0x1771
+    #[msg("Can't cancel a settled Stream!")]
+    StreamSettled, // 0x1772
+
+    // Collect Fees
+    #[msg("Can't collect zero fees!")]
+    CantCollectZeroFees, // 0x1773
+    #[msg("Not enough fees for withdrawal!")]
+    NotEnoughFeesForWithdrawal, // 0x1774
+
+    // Create Stream
+    #[msg("Cliff time zero but unlock amount not zero!")]
+    CliffTimeZeroUnlockAmountNotZero, // 0x1775
+    #[msg("Invalid cliff time of the Stream!")]
+    CliffTimeNotLessThanEndTime, // 0x1776
+    #[msg("Invalid deposit amount!")]
+    DepositAmountZero, // 0x1777
+    #[msg("Start time can't be zero!")]
+    StartTimeZero, // 0x1778
+    #[msg("Start time must be less than cliff time!")]
+    StartTimeNotLessThanCliffTime, // 0x1779
+    #[msg("Start time must be less than end time!")]
+    StartTimeNotLessThanEndTime, // 0x177a
+    #[msg("Unlock amounts sum is greater than deposit amount!")]
+    UnlockAmountsSumTooHigh, // 0x177b
+
+    // Renounce
+    #[msg("Can't renounce an already non cancelable Stream!")]
+    StreamAlreadyNonCancelable, // 0x177c
+
+    // Withdraw
+    #[msg("Withdraw zero tokens from a stream!")]
+    Overdraw, // 0x177d
     #[msg("Can't withdraw a zero amount!")]
-    WithdrawalAmountCannotBeZero,
-    #[msg("Rent exemption doubling has failed!")]
-    RentExemptionDoublingFailed,
+    WithdrawAmountZero, // 0x177e
 }

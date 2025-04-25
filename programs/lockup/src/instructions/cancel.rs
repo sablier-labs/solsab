@@ -1,12 +1,15 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
-    utils::{constants::*, errors::ErrorCode, events::StreamCancelation, streaming_math::get_refundable_amount},
+    utils::{
+        constants::*, events::CancelLockupStream, lockup_math::get_streamed_amount, transfer_helper::transfer_tokens,
+        validations::check_cancel,
+    },
 };
 
 #[derive(Accounts)]
@@ -63,49 +66,40 @@ pub struct Cancel<'info> {
 }
 
 pub fn handler(ctx: Context<Cancel>) -> Result<()> {
-    // Assert that the Stream is cancelable
-    if !ctx.accounts.stream_data.is_cancelable {
-        return Err(ErrorCode::StreamIsNotCancelable.into());
-    }
+    // Retrieve the stream amounts from storage.
+    let stream_amounts = ctx.accounts.stream_data.amounts.clone();
 
-    // Clone the milestones to avoid immutable borrow conflicts
-    let milestones = ctx.accounts.stream_data.milestones.clone();
+    // Calculate the streamed amount.
+    let streamed_amount = get_streamed_amount(&ctx.accounts.stream_data.timestamps, &stream_amounts);
 
-    // Mutably borrow the stream amounts
-    let stream_amounts = &mut ctx.accounts.stream_data.amounts;
+    // Check: validate the cancellation.
+    check_cancel(
+        ctx.accounts.stream_data.is_cancelable,
+        ctx.accounts.stream_data.was_canceled,
+        streamed_amount,
+        stream_amounts.deposited,
+    )?;
 
-    // Calculate the refundable amount
-    let refundable_amount = get_refundable_amount(&milestones, stream_amounts);
+    // Calculate the sender's amount.
+    let sender_amount = stream_amounts.deposited - streamed_amount;
 
-    if refundable_amount > 0 {
-        // Prepare the instruction to transfer the refundable SPL tokens back to the sender
-        let transfer_ix = TransferChecked {
-            from: ctx.accounts.treasury_ata.to_account_info(),
-            mint: ctx.accounts.asset_mint.to_account_info(),
-            to: ctx.accounts.sender_asset_ata.to_account_info(),
-            authority: ctx.accounts.treasury.to_account_info(),
-        };
+    // Effect: update the stream data state.
+    ctx.accounts.stream_data.cancel(sender_amount)?;
 
-        // Wrap the Treasury PDA's seeds in the appropriate structure
-        let signer_seeds: &[&[&[u8]]] = &[&[TREASURY_SEED, &[ctx.accounts.treasury.bump]]];
+    // Interaction: transfer the tokens from the Treasury ATA to the sender.
+    transfer_tokens(
+        ctx.accounts.treasury_ata.to_account_info(),
+        ctx.accounts.sender_asset_ata.to_account_info(),
+        ctx.accounts.treasury.to_account_info(),
+        ctx.accounts.asset_mint.to_account_info(),
+        ctx.accounts.asset_token_program.to_account_info(),
+        sender_amount,
+        ctx.accounts.asset_mint.decimals,
+        &[&[TREASURY_SEED, &[ctx.accounts.treasury.bump]]],
+    )?;
 
-        // Execute the transfer
-        let cpi_ctx =
-            CpiContext::new_with_signer(ctx.accounts.asset_token_program.to_account_info(), transfer_ix, signer_seeds);
-        transfer_checked(cpi_ctx, refundable_amount, ctx.accounts.asset_mint.decimals)?;
-
-        // Update the Stream field tracking the refunded amount
-        stream_amounts.refunded = refundable_amount;
-    }
-
-    // Mark the Stream as canceled
-    ctx.accounts.stream_data.was_canceled = true;
-
-    // Mark the Stream as non-cancelable
-    ctx.accounts.stream_data.is_cancelable = false;
-
-    // Emit an event indicating the cancellation
-    emit!(StreamCancelation { stream_id: ctx.accounts.stream_data.id, refunded_amount: refundable_amount });
+    // Log the cancellation.
+    emit!(CancelLockupStream { stream_id: ctx.accounts.stream_data.id, refunded_amount: sender_amount });
 
     Ok(())
 }

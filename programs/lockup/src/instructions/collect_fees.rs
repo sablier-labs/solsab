@@ -1,23 +1,17 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    state::{fee_collector::FeeCollectorData, treasury::Treasury},
-    utils::{constants::*, errors::ErrorCode, events::FeeCollection},
+    state::treasury::Treasury,
+    utils::{constants::*, events::FeesCollected, validations::check_collect_fees},
 };
 
 #[derive(Accounts)]
 pub struct CollectFees<'info> {
     #[account(
         mut,
-        address = fee_collector_data.address
+        address = treasury.fee_collector,
     )]
     pub fee_collector: Signer<'info>,
-
-    #[account(
-        seeds = [FEE_COLLECTOR_DATA_SEED],
-        bump = fee_collector_data.bump
-    )]
-    pub fee_collector_data: Box<Account<'info, FeeCollectorData>>,
 
     #[account(mut)]
     /// CHECK: May be any account
@@ -32,23 +26,14 @@ pub struct CollectFees<'info> {
 }
 
 pub fn handler(ctx: Context<CollectFees>, lamports_amount: u64) -> Result<()> {
-    // Assert that the collected amount is not zero
-    if lamports_amount == 0 {
-        return Err(ErrorCode::CantCollectZeroFees.into());
-    }
+    check_collect_fees(lamports_amount, withdrawable_lamports(&ctx.accounts.treasury.to_account_info())?)?;
 
-    // Assert that the Treasury has enough lamports
-    let treasury_acc_info = &ctx.accounts.treasury.to_account_info();
-    if withdrawable_lamports(treasury_acc_info)? < lamports_amount {
-        return Err(ErrorCode::NotEnoughFeesForWithdrawal.into());
-    }
-
-    // Debit from the Treasury and credit to the recipient
+    // Interaction: transfer the collect amount from the treasury to the fee recipient.
     ctx.accounts.treasury.sub_lamports(lamports_amount)?;
     ctx.accounts.recipient.add_lamports(lamports_amount)?;
 
-    // Emit an event indicating that the fees have been collected
-    emit!(FeeCollection {
+    // Log the fee withdrawal.
+    emit!(FeesCollected {
         fee_collector: ctx.accounts.fee_collector.key(),
         fee_recipient: ctx.accounts.recipient.key(),
         lamports_amount
@@ -82,7 +67,7 @@ pub fn safe_rent_exempt_minimum(account: &AccountInfo) -> Result<u64> {
     //
     // Note: this step is critical, because if the account balance goes below the rent exempt minimum, it may get
     // deleted by the runtime (effectively making the whole program unusable)!
-    let safe_rent_exempt_minimum = rent_exempt_minimum.checked_mul(2).ok_or(ErrorCode::RentExemptionDoublingFailed)?;
+    let safe_rent_exempt_minimum = rent_exempt_minimum.checked_mul(2).unwrap();
 
     Ok(safe_rent_exempt_minimum)
 }

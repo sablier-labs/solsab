@@ -20,6 +20,7 @@ pub fn handler(
     // Calculate the end time by adding the total duration to the start time using checked math.
     let end_time = start_time.checked_add(total_duration).unwrap();
 
+    // Checks, Effects, Interactions: create the stream.
     create_with_timestamps::handler(
         ctx,
         start_time,

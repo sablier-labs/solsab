@@ -3,7 +3,7 @@ use anchor_spl::token_interface::Mint;
 
 use crate::{
     state::lockup::StreamData,
-    utils::{constants::*, events::*, streaming_math::get_withdrawable_amount},
+    utils::{constants::*, events::*, lockup_math::get_withdrawable_amount},
 };
 
 #[derive(Accounts)]
@@ -27,7 +27,7 @@ pub struct WithdrawableAmountOf<'info> {
 }
 
 pub fn handler(ctx: Context<WithdrawableAmountOf>, stream_id: u64) -> Result<u64> {
-    let amount = get_withdrawable_amount(&ctx.accounts.stream_data.milestones, &ctx.accounts.stream_data.amounts);
+    let amount = get_withdrawable_amount(&ctx.accounts.stream_data.timestamps, &ctx.accounts.stream_data.amounts);
 
     // Emit an event indicating that the withdrawable amount has been queried
     emit!(WithdrawableAmountQueried { stream_id, withdrawable_amount: amount });
