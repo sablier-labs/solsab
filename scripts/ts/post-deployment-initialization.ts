@@ -41,22 +41,12 @@ describe("SablierLockup post-deployment initialization", () => {
     // await initializeSablierLockup();
   });
 
-  it.only("Creates a cancelable SPL Token LL Stream", async () => {
-    await testStreamCreation(
-      true,
-      await generateDefaultMilestones(),
-      getDefaultUnlockAmounts()
-    );
-
-    //   await new Promise((resolve) => setTimeout(resolve, 6000));
-
-    //   const amount = await lockupProgram.methods
-    //     .withdrawableAmountOf(new BN(0))
-    //     .simulate();
-
-    //   console.log("Withdrawable amount: ", amount);
-    //   console.log("Withdrawable amount (events): ", amount.events);
-    //   console.log("Withdrawable amount (raw): ", amount.raw);
+  it("Creates a cancelable SPL Token LL Stream", async () => {
+    // await testStreamCreation(
+    //   true,
+    //   await generateDefaultMilestones(),
+    //   getDefaultUnlockAmounts()
+    // );
   });
 });
 
@@ -281,7 +271,7 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
       assetMint,
       recipient,
       nftTokenProgram: TOKEN_PROGRAM_ID,
-      assetTokenProgram: TOKEN_PROGRAM_ID,
+      depositTokenProgram: TOKEN_PROGRAM_ID,
     })
     .preInstructions([increaseCULimitIx])
     .rpc();
@@ -377,7 +367,7 @@ async function prepareForStreamCreation(
         assetMint,
         streamNftMint: getStreamNftMintAddress(expectedStreamId),
         nftTokenProgram: TOKEN_PROGRAM_ID,
-        assetTokenProgram: TOKEN_PROGRAM_ID,
+        depositTokenProgram: TOKEN_PROGRAM_ID,
       })
       .rpc();
   } catch (err: any) {
