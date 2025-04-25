@@ -24,7 +24,7 @@ pub struct Withdraw<'info> {
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account()]
-    /// CHECK: This account must be the Stream's recipient (checked in recipients_stream_nft_ata's constraints)
+    /// CHECK: This account must be the Stream's recipient (checked in recipient_stream_nft_ata's constraints)
     pub recipient: UncheckedAccount<'info>,
 
     #[account(
@@ -48,17 +48,17 @@ pub struct Withdraw<'info> {
         associated_token::authority = recipient,
         associated_token::token_program = nft_token_program,
         // Dev: the below constraint is vital for making sure that the assets are only withdrawn to the legit recipient
-        constraint = recipients_stream_nft_ata.amount == 1,
+        constraint = recipient_stream_nft_ata.amount == 1,
         // TODO: are there any other ways in which one could "fake" the recipient's authority (and that need to be checked in this Ix)?
     )]
-    pub recipients_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         init_if_needed,
         payer = signer,
         associated_token::mint = asset_mint,
         associated_token::authority = recipient,
-        associated_token::token_program = asset_token_program,
+        associated_token::token_program = deposit_token_program,
     )]
     pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -73,12 +73,12 @@ pub struct Withdraw<'info> {
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = treasury,
-        associated_token::token_program = asset_token_program
+        associated_token::token_program = deposit_token_program
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub system_program: Program<'info, System>,
-    pub asset_token_program: Interface<'info, TokenInterface>,
+    pub deposit_token_program: Interface<'info, TokenInterface>,
     pub nft_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
@@ -110,7 +110,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         ctx.accounts.recipient_ata.to_account_info(),
         ctx.accounts.treasury.to_account_info(),
         ctx.accounts.asset_mint.to_account_info(),
-        ctx.accounts.asset_token_program.to_account_info(),
+        ctx.accounts.deposit_token_program.to_account_info(),
         amount,
         ctx.accounts.asset_mint.decimals,
         &[&[TREASURY_SEED, &[treasury_bump]]],

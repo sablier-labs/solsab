@@ -18,14 +18,14 @@ pub struct CreateWithTimestamps<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
 
-    #[account(mint::token_program = asset_token_program)]
+    #[account(mint::token_program = deposit_token_program)]
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = sender,
-        associated_token::token_program = asset_token_program
+        associated_token::token_program = deposit_token_program
     )]
     pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -45,7 +45,7 @@ pub struct CreateWithTimestamps<'info> {
         payer = sender,
         associated_token::mint = asset_mint,
         associated_token::authority = treasury,
-        associated_token::token_program = asset_token_program
+        associated_token::token_program = deposit_token_program
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -115,7 +115,7 @@ pub struct CreateWithTimestamps<'info> {
         associated_token::authority = recipient,
         associated_token::token_program = nft_token_program,
     )]
-    pub recipients_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
@@ -141,7 +141,7 @@ pub struct CreateWithTimestamps<'info> {
     pub stream_nft_master_edition: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
-    pub asset_token_program: Interface<'info, TokenInterface>,
+    pub deposit_token_program: Interface<'info, TokenInterface>,
     pub nft_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_metadata_program: Program<'info, Metadata>,
@@ -191,7 +191,7 @@ pub fn handler(
         &ctx.accounts.stream_nft_master_edition,
         &ctx.accounts.nft_collection_metadata,
         &ctx.accounts.nft_collection_master_edition,
-        &ctx.accounts.recipients_stream_nft_ata,
+        &ctx.accounts.recipient_stream_nft_ata,
         &ctx.accounts.sender,
         &ctx.accounts.token_metadata_program,
         &ctx.accounts.nft_token_program,
@@ -211,7 +211,7 @@ pub fn handler(
         ctx.accounts.treasury_ata.to_account_info(),
         sender.to_account_info(),
         asset_mint.to_account_info(),
-        ctx.accounts.asset_token_program.to_account_info(),
+        ctx.accounts.deposit_token_program.to_account_info(),
         deposited_amount,
         asset_mint.decimals,
         &[],

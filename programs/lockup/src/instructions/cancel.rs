@@ -42,7 +42,7 @@ pub struct Cancel<'info> {
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = sender,
-        associated_token::token_program = asset_token_program,
+        associated_token::token_program = deposit_token_program,
     )]
     pub sender_asset_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -57,11 +57,11 @@ pub struct Cancel<'info> {
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = treasury,
-        associated_token::token_program = asset_token_program,
+        associated_token::token_program = deposit_token_program,
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    pub asset_token_program: Interface<'info, TokenInterface>,
+    pub deposit_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
@@ -92,7 +92,7 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
         ctx.accounts.sender_asset_ata.to_account_info(),
         ctx.accounts.treasury.to_account_info(),
         ctx.accounts.asset_mint.to_account_info(),
-        ctx.accounts.asset_token_program.to_account_info(),
+        ctx.accounts.deposit_token_program.to_account_info(),
         sender_amount,
         ctx.accounts.asset_mint.decimals,
         &[&[TREASURY_SEED, &[ctx.accounts.treasury.bump]]],
