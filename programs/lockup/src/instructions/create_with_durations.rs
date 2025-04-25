@@ -12,7 +12,7 @@ pub fn handler(
     is_cancelable: bool,
 ) -> Result<()> {
     // Declare the start time as the current unix timestamp.
-    let start_time = Clock::get().unwrap().unix_timestamp;
+    let start_time = Clock::get()?.unix_timestamp;
 
     // Calculate the cliff time by adding the cliff duration to the start time using checked math.
     let cliff_time = if cliff_duration > 0 { start_time.checked_add(cliff_duration).unwrap() } else { 0 };

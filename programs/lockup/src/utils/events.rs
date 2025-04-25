@@ -30,9 +30,3 @@ pub struct WithdrawFromLockupStream {
     pub stream_id: u64,
     pub withdrawn_amount: u64,
 }
-
-#[event]
-pub struct WithdrawableAmountQueried {
-    pub stream_id: u64,
-    pub withdrawable_amount: u64,
-}
