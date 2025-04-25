@@ -68,7 +68,6 @@ const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey(
 function configureConsoleLogs() {
   // Suppress console logs by default
   // Dev: comment the line below to see the logs in the console (useful when debugging)
-
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   console.log = () => {};
 }
@@ -1749,9 +1748,8 @@ describe("SablierLockup user-callable Ixs", () => {
         BeforeFeeCollection.DoNothing,
         feeCollectorKeys,
         thirdPartyKeys.publicKey,
-        FeesAmount.OneUnit,
         TOKEN_PROGRAM_ID,
-        "0x1774"
+        "0x1773"
       );
     });
 
@@ -1760,31 +1758,8 @@ describe("SablierLockup user-callable Ixs", () => {
         BeforeFeeCollection.CreateStream,
         feeCollectorKeys,
         thirdPartyKeys.publicKey,
-        FeesAmount.OneUnit,
-        TOKEN_PROGRAM_ID,
-        "0x1774"
-      );
-    });
-
-    it("Fails to collect 0 fees - as the fee collector - after a withdrawal from an SPL Token Stream", async () => {
-      await testForFailureToCollectFees(
-        BeforeFeeCollection.CreateStreamAndWithdrawMax,
-        feeCollectorKeys,
-        thirdPartyKeys.publicKey,
-        FeesAmount.Zero,
         TOKEN_PROGRAM_ID,
         "0x1773"
-      );
-    });
-
-    it("Fails to collect the fees - as the fee collector - when there are no more fees to collect", async () => {
-      await testForFailureToCollectFees(
-        BeforeFeeCollection.CreateStreamWithdrawMaxAndCollectAllFees,
-        feeCollectorKeys,
-        thirdPartyKeys.publicKey,
-        FeesAmount.OneUnit,
-        TOKEN_PROGRAM_ID,
-        "0x1774"
       );
     });
 
@@ -1793,26 +1768,17 @@ describe("SablierLockup user-callable Ixs", () => {
         BeforeFeeCollection.CreateStreamAndWithdrawMax,
         thirdPartyKeys,
         thirdPartyKeys.publicKey,
-        FeesAmount.All,
         TOKEN_PROGRAM_ID,
         "0x7dc"
       );
     });
 
     it("Collects all fees - as the fee collector - after a withdrawal from an SPL Token Stream", async () => {
-      await testForFeeCollection(FeesAmount.All, 1, TOKEN_PROGRAM_ID);
-    });
-
-    it("Collects a part of the fees - as the fee collector - after a withdrawal from an SPL Token Stream", async () => {
-      await testForFeeCollection(FeesAmount.OneUnit, 1, TOKEN_PROGRAM_ID);
+      await testForFeeCollection(1, TOKEN_PROGRAM_ID);
     });
 
     it("Collects all fees - as the fee collector - after multiple withdrawals from SPL Token Streams", async () => {
-      await testForFeeCollection(FeesAmount.All, 3, TOKEN_PROGRAM_ID);
-    });
-
-    it("Collects a part of the fees - as the fee collector - after multiple withdrawals from SPL Token Streams", async () => {
-      await testForFeeCollection(FeesAmount.OneUnit, 3, TOKEN_PROGRAM_ID);
+      await testForFeeCollection(3, TOKEN_PROGRAM_ID);
     });
   });
 
@@ -1822,31 +1788,8 @@ describe("SablierLockup user-callable Ixs", () => {
         BeforeFeeCollection.CreateStream,
         feeCollectorKeys,
         thirdPartyKeys.publicKey,
-        FeesAmount.OneUnit,
         TOKEN_2022_PROGRAM_ID,
         "0x1773"
-      );
-    });
-
-    it("Fails to collect 0 fees - as the fee collector - after a withdrawal from a Token2022 Stream", async () => {
-      await testForFailureToCollectFees(
-        BeforeFeeCollection.CreateStreamAndWithdrawMax,
-        feeCollectorKeys,
-        thirdPartyKeys.publicKey,
-        FeesAmount.Zero,
-        TOKEN_2022_PROGRAM_ID,
-        "0x1773"
-      );
-    });
-
-    it("Fails to collect the fees - as the fee collector - when there are no more fees to collect", async () => {
-      await testForFailureToCollectFees(
-        BeforeFeeCollection.CreateStreamWithdrawMaxAndCollectAllFees,
-        feeCollectorKeys,
-        thirdPartyKeys.publicKey,
-        FeesAmount.OneUnit,
-        TOKEN_2022_PROGRAM_ID,
-        "0x1774"
       );
     });
 
@@ -1855,26 +1798,17 @@ describe("SablierLockup user-callable Ixs", () => {
         BeforeFeeCollection.CreateStreamAndWithdrawMax,
         thirdPartyKeys,
         thirdPartyKeys.publicKey,
-        FeesAmount.All,
         TOKEN_2022_PROGRAM_ID,
         "0x7dc"
       );
     });
 
     it("Collects all fees - as the fee collector - after a withdrawal from a Token2022 Stream", async () => {
-      await testForFeeCollection(FeesAmount.All, 1, TOKEN_2022_PROGRAM_ID);
-    });
-
-    it("Collects a part of the fees - as the fee collector - after a withdrawal from a Token2022 Stream", async () => {
-      await testForFeeCollection(FeesAmount.OneUnit, 1, TOKEN_2022_PROGRAM_ID);
+      await testForFeeCollection(1, TOKEN_2022_PROGRAM_ID);
     });
 
     it("Collects all fees - as the fee collector - after multiple withdrawals from Token2022 Streams", async () => {
-      await testForFeeCollection(FeesAmount.All, 3, TOKEN_2022_PROGRAM_ID);
-    });
-
-    it("Collects a part of the fees - as the fee collector - after multiple withdrawals from Token2022 Streams", async () => {
-      await testForFeeCollection(FeesAmount.OneUnit, 3, TOKEN_2022_PROGRAM_ID);
+      await testForFeeCollection(3, TOKEN_2022_PROGRAM_ID);
     });
   });
 });
@@ -2851,17 +2785,7 @@ async function testStreamCreationWithMismatchedAssetMint(
   );
 }
 
-const FeesAmount = {
-  Zero: 0,
-  OneUnit: 1,
-  TwoUnits: 2,
-  All: 3,
-} as const;
-
-type FeesAmount = (typeof FeesAmount)[keyof typeof FeesAmount];
-
 async function testForFeeCollection(
-  feesAmount: FeesAmount,
   noOfPreceedingWithdrawals: number,
   assetTokenProgram: PublicKey
 ) {
@@ -2875,6 +2799,9 @@ async function testForFeeCollection(
   // Get the fees recipient's balance before the fee collection
   const feesRecipientBalanceBefore = await getLamportsBalanceOf(feesRecipient);
 
+  // Get the Treasury's withdrawable balance
+  const expectedFeesAmount = await getWithdrawableBalanceOf(treasuryAddress);
+
   // Collect the fees
   await collectFees(feeCollectorKeys, feesRecipient);
 
@@ -2882,7 +2809,20 @@ async function testForFeeCollection(
   const feesRecipientBalanceAfter = await getLamportsBalanceOf(feesRecipient);
 
   // Assert that the fee recipient's balance has increased by the correct amount
-  const expectedFeesAmount = await interpretFeesAmount(feesAmount);
+
+  console.log(
+    `Fees recipient's balance before: ${feesRecipientBalanceBefore.toString()}`
+  );
+  console.log(
+    `Fees recipient's balance after: ${feesRecipientBalanceAfter.toString()}`
+  );
+  console.log(`Expected fees amount: ${expectedFeesAmount.toString()}`);
+  console.log(
+    `Fees recipient's balance change: ${(
+      feesRecipientBalanceAfter - feesRecipientBalanceBefore
+    ).toString()}`
+  );
+
   assert(
     feesRecipientBalanceAfter ==
       feesRecipientBalanceBefore + expectedFeesAmount,
@@ -2907,28 +2847,6 @@ async function collectFees(txSigner: Keypair, feesRecipient: PublicKey) {
     .instruction();
 
   await buildSignAndProcessTx(collectFeesIx, txSigner);
-}
-
-async function interpretFeesAmount(feesAmount: FeesAmount): Promise<bigint> {
-  const safeRentExemptAmount = await getSafeRentExemptBalanceFor(
-    treasuryAddress
-  );
-  switch (feesAmount) {
-    case FeesAmount.Zero:
-      return 0n;
-
-    case FeesAmount.OneUnit:
-      return WITHDRAWAL_FEE_LAMPORTS - safeRentExemptAmount;
-
-    case FeesAmount.TwoUnits:
-      return WITHDRAWAL_FEE_LAMPORTS * 2n - safeRentExemptAmount;
-
-    case FeesAmount.All:
-      return await getWithdrawableBalanceOf(treasuryAddress);
-
-    default:
-      throw new Error("Invalid FeesAmountToCollect value");
-  }
 }
 
 async function createStreamAndWithdrawMax(assetTokenProgram: PublicKey) {
@@ -3209,7 +3127,6 @@ async function testForFailureToCollectFees(
   preCollectionAction: BeforeFeeCollection,
   txSigner: Keypair,
   feesRecipient: PublicKey,
-  feesAmountToCollect: FeesAmount,
   assetTokenProgram: PublicKey,
   expectedErrorCode: string
 ) {
