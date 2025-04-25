@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-const WITHDRAWAL_FEE_LAMPORTS: u64 = 10_000_000; // 0.01 SOL
+const WITHDRAWAL_FEE: u64 = 10_000_000; // The fee for withdrawing from the stream, in lamports.
 
 #[derive(Accounts)]
 #[instruction(stream_id: u64)]
@@ -97,7 +97,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     let fee_collection_ix = anchor_lang::solana_program::system_instruction::transfer(
         &ctx.accounts.signer.key(),
         &ctx.accounts.treasury.key(),
-        WITHDRAWAL_FEE_LAMPORTS,
+        WITHDRAWAL_FEE,
     );
     invoke(&fee_collection_ix, &[ctx.accounts.signer.to_account_info(), ctx.accounts.treasury.to_account_info()])?;
 

@@ -15,7 +15,7 @@ pub struct CreateLockupLinearStream {
 pub struct FeesCollected {
     pub fee_collector: Pubkey,
     pub fee_recipient: Pubkey,
-    pub lamports_amount: u64,
+    pub fee_amount: u64,
 }
 
 #[event]

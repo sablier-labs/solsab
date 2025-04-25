@@ -16,8 +16,8 @@ pub mod sablier_lockup {
         instructions::cancel::handler(ctx)
     }
 
-    pub fn collect_fees(ctx: Context<CollectFees>, lamports_amount: u64) -> Result<()> {
-        instructions::collect_fees::handler(ctx, lamports_amount)
+    pub fn collect_fees(ctx: Context<CollectFees>) -> Result<()> {
+        instructions::collect_fees::handler(ctx)
     }
 
     #[allow(clippy::too_many_arguments)]
