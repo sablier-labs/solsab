@@ -43,7 +43,7 @@ solana program close --buffers
 anchor deploy -v
 
 # Initialize SolSab on Devnet - and populate it with a bunch of Streams
-bun run ts-mocha -t 1000000 scripts/ts/post-deployment-initialization.ts
+bun run ts-mocha -p ../.././tsconfig.json -t 1000000 ts/**/*.ts
 
 # Output summary
 echo ""
