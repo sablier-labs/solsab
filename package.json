@@ -32,10 +32,12 @@
     "typescript": "^4.3.5"
   },
   "scripts": {
-    "build": "anchor build",
+    "build": "RUSTUP_TOOLCHAIN=nightly-2025-04-01 anchor build",
     "clean": "rm -rf .anchor target",
-    "lint": "bun run lint:ts && bun run prettier:check",
-    "lint:fix": "bun run lint:ts:fix && bun run prettier:write",
+    "fmt:rust": "RUSTUP_TOOLCHAIN=nightly-2025-04-01 cargo fmt",
+    "fmt:rust:check": "RUSTUP_TOOLCHAIN=nightly-2025-04-01 cargo fmt --check",
+    "lint": "bun run fmt:rust:check && bun run lint:ts && bun run prettier:check",
+    "lint:fix": "bun run fmt:rust && bun run lint:ts:fix && bun run prettier:write",
     "lint:ts": "eslint \"migrations/**/*.ts\" \"tests/**/*.ts\"",
     "lint:ts:fix": "eslint --ext \"migrations/**/*.ts\" \"tests/**/*.ts\" --fix",
     "prettier:check": "prettier --check \"**/*.{json,md,svg,ts,yml}\"",
