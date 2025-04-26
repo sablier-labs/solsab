@@ -3,22 +3,37 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     metadata::Metadata,
-    token_interface::{Mint , TokenAccount, TokenInterface},
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
-use crate::{state::treasury::Treasury, utils::{constants::*,nft}};
-
+use crate::{
+    state::{nft_collection_data::NftCollectionData, treasury::Treasury},
+    utils::{constants::*, nft},
+};
 
 #[derive(Accounts)]
-pub struct InitializePhaseTwo<'info> {
+pub struct Initialize<'info> {
     #[account(mut)]
     pub deployer: Signer<'info>,
 
     #[account(
+        init,
+        payer = deployer,
         seeds = [TREASURY_SEED],
-        bump = treasury.bump
+        space = ANCHOR_DISCRIMINATOR_SIZE + Treasury::INIT_SPACE,
+        bump
     )]
+    // TODO: merge the treasury with nft_collection_data?
     pub treasury: Box<Account<'info, Treasury>>,
+
+    #[account(
+        init,
+        payer = deployer,
+        seeds = [NFT_COLLECTION_DATA_SEED],
+        space = ANCHOR_DISCRIMINATOR_SIZE + NftCollectionData::INIT_SPACE,
+        bump
+    )]
+    pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
 
     #[account(
         init,
@@ -43,8 +58,8 @@ pub struct InitializePhaseTwo<'info> {
 
     #[account(
         mut,
-        seeds = [METADATA_SEED, 
-                 token_metadata_program.key().as_ref(), 
+        seeds = [METADATA_SEED,
+                 token_metadata_program.key().as_ref(),
                  nft_collection_mint.key().as_ref()],
         bump,
         seeds::program = token_metadata_program.key(), // TODO: why is this necessary if the program key is already added to the seeds?
@@ -54,8 +69,8 @@ pub struct InitializePhaseTwo<'info> {
 
     #[account(
         mut,
-        seeds = [METADATA_SEED, 
-                 token_metadata_program.key().as_ref(), 
+        seeds = [METADATA_SEED,
+                 token_metadata_program.key().as_ref(),
                  nft_collection_mint.key().as_ref(),
                  EDITION_SEED],
         seeds::program = token_metadata_program.key(),
@@ -71,8 +86,10 @@ pub struct InitializePhaseTwo<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
+pub fn handler(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
+    ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector)?;
+    ctx.accounts.nft_collection_data.initialize(ctx.bumps.nft_collection_data)?;
 
-pub fn handler(ctx: Context<InitializePhaseTwo>) -> Result<()> {
     nft::initialize_collection(
         &ctx.accounts.nft_collection_mint,
         &ctx.accounts.nft_collection_ata,

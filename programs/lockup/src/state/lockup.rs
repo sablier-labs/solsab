@@ -55,10 +55,10 @@ impl StreamData {
         is_cancelable: bool,
         bump: u8,
     ) -> Result<()> {
+        self.bump = bump;
         self.id = id;
         self.sender = sender;
         self.asset_mint = asset_mint;
-        self.bump = bump;
         self.was_canceled = false;
         self.is_cancelable = is_cancelable;
         self.timestamps.start_time = start_time;

@@ -8,13 +8,7 @@ use anchor_spl::{
 use crate::{
     state::{lockup::*, nft_collection_data::NftCollectionData, treasury::Treasury},
     utils::{
-        constants::{
-            EDITION_SEED, METADATA_SEED, NFT_COLLECTION_DATA_SEED, NFT_COLLECTION_MINT_SEED, STREAM_DATA_SEED,
-            STREAM_NFT_MINT_SEED, TREASURY_SEED,
-        },
-        events::CreateLockupLinearStream,
-        nft,
-        transfer_helper::transfer_tokens,
+        constants::*, events::CreateLockupLinearStream, nft, transfer_helper::transfer_tokens,
         validations::check_create,
     },
 };
@@ -44,8 +38,11 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
+    // Dev: `init_if_needed` is used to allow for a smooth Tx sequencing in case of a concurrency
+    // (i.e. multiple streams being created at the same time)
     #[account(
-        mut,
+        init_if_needed,
+        payer = sender,
         associated_token::mint = asset_mint,
         associated_token::authority = treasury,
         associated_token::token_program = asset_token_program
@@ -90,17 +87,24 @@ pub struct CreateWithTimestamps<'info> {
     pub nft_collection_master_edition: UncheckedAccount<'info>,
 
     #[account(
-        mut,
+        init_if_needed,
+        payer = sender,
         seeds = [STREAM_NFT_MINT_SEED,
                  nft_collection_data.total_supply.to_le_bytes().as_ref()],
         bump,
+        mint::decimals = 0,
+        mint::authority = nft_collection_mint, // TODO: make Treasury the authority, instead?
+        mint::freeze_authority = nft_collection_mint,
+        mint::token_program = nft_token_program,
     )]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        mut,
+        init_if_needed,
+        payer = sender,
+        space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
         seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
-        bump = stream_data.bump,
+        bump
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 
@@ -155,14 +159,13 @@ pub fn handler(
     deposited_amount: u64,
     is_cancelable: bool,
 ) -> Result<()> {
+    let asset_mint = &ctx.accounts.asset_mint;
     let sender = &ctx.accounts.sender;
     let sender_ata = &ctx.accounts.sender_ata;
-    let asset_mint = &ctx.accounts.asset_mint;
 
     // Validate parameters
     check_create(deposited_amount, start_time, cliff_time, end_time, start_unlock, cliff_unlock)?;
 
-    let bump = ctx.accounts.stream_data.bump;
     let stream_id = ctx.accounts.nft_collection_data.total_supply;
 
     // Effect: create the stream data.
@@ -177,7 +180,7 @@ pub fn handler(
         cliff_unlock,
         deposited_amount,
         is_cancelable,
-        bump,
+        ctx.bumps.stream_data,
     )?;
 
     // Effect: mint the NFT to the recipient.
