@@ -166,7 +166,6 @@ pub fn handler(
     // Validate parameters
     check_create(deposited_amount, start_time, cliff_time, end_time, start_unlock, cliff_unlock)?;
 
-    let bump = ctx.bumps.stream_data;
     let stream_id = ctx.accounts.nft_collection_data.total_supply;
 
     // Effect: create the stream data.
@@ -181,7 +180,7 @@ pub fn handler(
         cliff_unlock,
         deposited_amount,
         is_cancelable,
-        bump,
+        ctx.bumps.stream_data,
     )?;
 
     // Effect: mint the NFT to the recipient.

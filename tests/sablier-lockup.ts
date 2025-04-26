@@ -770,7 +770,7 @@ describe("SablierLockup user-callable Ixs", () => {
     it("Fails to cancel an SPL Token LL Stream when a wrong asset mint is submitted", async () => {
       const assetTokenProgram = TOKEN_PROGRAM_ID;
 
-      const { streamData /* assetMint */ } = await createMintATAsAndStream(
+      const { streamData } = await createMintATAsAndStream(
         false,
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
@@ -2509,18 +2509,17 @@ async function testStreamCreation(
 
   const depositedAmount = senderInitialTokenBalance;
 
-  const { treasuryATA, recipientsStreamNftATA /* streamNftMint */ } =
-    await createWithTimestamps({
-      senderKeys,
-      recipient: recipientKeys.publicKey,
-      assetMint,
-      expectedStreamId: streamId,
-      assetTokenProgram,
-      milestones,
-      depositedAmount,
-      unlockAmounts,
-      isCancelable,
-    });
+  const { treasuryATA, recipientsStreamNftATA } = await createWithTimestamps({
+    senderKeys,
+    recipient: recipientKeys.publicKey,
+    assetMint,
+    expectedStreamId: streamId,
+    assetTokenProgram,
+    milestones,
+    depositedAmount,
+    unlockAmounts,
+    isCancelable,
+  });
 
   await performPostCreateAssertions({
     streamId,
@@ -3289,9 +3288,10 @@ async function testForWithdrawalPostRenounceAtHalfTime(
   // Derive the recipient's ATA address
   const recipientATA = deriveRecipientATA(assetMint, assetTokenProgram);
 
-  // Get the final token balances of the sender and recipient
-  const [, /* senderFinalTokenBalance */ recipientFinalTokenBalance] =
-    await getTokenBalancesByATAKeys(senderATA, recipientATA);
+  // Get the final token balances of the recipient
+  const recipientFinalTokenBalance = await getTokenBalanceByATAKey(
+    recipientATA
+  );
 
   // Assert that the sender's and recipient's token balances have been changed correctly
   assert(
