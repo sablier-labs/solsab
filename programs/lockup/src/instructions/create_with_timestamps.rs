@@ -38,8 +38,10 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
+    // Dev: `init_if_needed` is used to allow for a smooth Tx sequencing in case of a concurrency
+    // (i.e. multiple streams being created at the same time)
     #[account(
-        init_if_needed, // Dev: `init_if_needed` is used to allow for a smooth Tx sequencing in case of a concurrency (i.e. multiple streams being created at the same time)
+        init_if_needed,
         payer = sender,
         associated_token::mint = asset_mint,
         associated_token::authority = treasury,
@@ -157,17 +159,14 @@ pub fn handler(
     deposited_amount: u64,
     is_cancelable: bool,
 ) -> Result<()> {
-    // Set the bump for the stream data account.
-    ctx.accounts.stream_data.bump = ctx.bumps.stream_data;
-
+    let asset_mint = &ctx.accounts.asset_mint;
     let sender = &ctx.accounts.sender;
     let sender_ata = &ctx.accounts.sender_ata;
-    let asset_mint = &ctx.accounts.asset_mint;
 
     // Validate parameters
     check_create(deposited_amount, start_time, cliff_time, end_time, start_unlock, cliff_unlock)?;
 
-    let bump = ctx.accounts.stream_data.bump;
+    let bump = ctx.bumps.stream_data;
     let stream_id = ctx.accounts.nft_collection_data.total_supply;
 
     // Effect: create the stream data.

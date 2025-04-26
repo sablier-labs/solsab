@@ -3,12 +3,12 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     metadata::Metadata,
-    token_interface::{Mint , TokenAccount, TokenInterface},
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
 use crate::{
     state::{nft_collection_data::NftCollectionData, treasury::Treasury},
-    utils::{constants::*,nft},
+    utils::{constants::*, nft},
 };
 
 #[derive(Accounts)]
@@ -58,8 +58,8 @@ pub struct Initialize<'info> {
 
     #[account(
         mut,
-        seeds = [METADATA_SEED, 
-                 token_metadata_program.key().as_ref(), 
+        seeds = [METADATA_SEED,
+                 token_metadata_program.key().as_ref(),
                  nft_collection_mint.key().as_ref()],
         bump,
         seeds::program = token_metadata_program.key(), // TODO: why is this necessary if the program key is already added to the seeds?
@@ -69,8 +69,8 @@ pub struct Initialize<'info> {
 
     #[account(
         mut,
-        seeds = [METADATA_SEED, 
-                 token_metadata_program.key().as_ref(), 
+        seeds = [METADATA_SEED,
+                 token_metadata_program.key().as_ref(),
                  nft_collection_mint.key().as_ref(),
                  EDITION_SEED],
         seeds::program = token_metadata_program.key(),

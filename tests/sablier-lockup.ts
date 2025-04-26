@@ -2509,7 +2509,7 @@ async function testStreamCreation(
 
   const depositedAmount = senderInitialTokenBalance;
 
-  const { treasuryATA, recipientsStreamNftATA, streamNftMint } =
+  const { treasuryATA, recipientsStreamNftATA /* streamNftMint */ } =
     await createWithTimestamps({
       senderKeys,
       recipient: recipientKeys.publicKey,
