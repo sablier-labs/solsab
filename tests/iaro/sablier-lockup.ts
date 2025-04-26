@@ -44,8 +44,8 @@ import {
   getUnlockAmountsStartAndCliff,
 } from "./utils";
 
-import { SablierLockup } from "../target/types/sablier_lockup";
-import IDL from "../target/idl/sablier_lockup.json";
+import { SablierLockup } from "../../target/types/sablier_lockup";
+import IDL from "../../target/idl/sablier_lockup.json";
 
 let context: ProgramTestContext;
 let banksClient: BanksClient;
