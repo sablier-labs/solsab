@@ -4,12 +4,15 @@ use crate::utils::errors::ErrorCode;
 
 pub fn check_cancel(
     is_cancelable: bool,
+    is_depleted: bool,
     was_canceled: bool,
     streamed_amount: u64,
     deposited_amount: u64,
 ) -> Result<()> {
-    // Check: the stream is not canceled.
-    if was_canceled {
+    // Check: the stream is neither depleted nor canceled.
+    if is_depleted {
+        return Err(ErrorCode::StreamDepleted.into());
+    } else if was_canceled {
         return Err(ErrorCode::StreamCanceled.into());
     }
 
@@ -95,7 +98,12 @@ pub fn check_renounce(is_cancelable: bool) -> Result<()> {
 }
 
 // Validate the withdraw
-pub fn check_withdraw(amount: u64, withdrawable_amount: u64) -> Result<()> {
+pub fn check_withdraw(is_depleted: bool, amount: u64, withdrawable_amount: u64) -> Result<()> {
+    // Check: the stream is not depleted.
+    if is_depleted {
+        return Err(ErrorCode::StreamDepleted.into());
+    }
+
     // Check: the withdraw amount is not zero.
     if amount == 0 {
         return Err(ErrorCode::WithdrawAmountZero.into());

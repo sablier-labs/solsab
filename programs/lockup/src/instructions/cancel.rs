@@ -75,6 +75,7 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     // Check: validate the cancellation.
     check_cancel(
         ctx.accounts.stream_data.is_cancelable,
+        ctx.accounts.stream_data.is_depleted,
         ctx.accounts.stream_data.was_canceled,
         streamed_amount,
         stream_amounts.deposited,
@@ -83,8 +84,11 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     // Calculate the sender's amount.
     let sender_amount = stream_amounts.deposited - streamed_amount;
 
+    // Calculate the recipient's amount.
+    let recipient_amount = streamed_amount - stream_amounts.withdrawn;
+
     // Effect: update the stream data state.
-    ctx.accounts.stream_data.cancel(sender_amount)?;
+    ctx.accounts.stream_data.cancel(sender_amount, recipient_amount)?;
 
     // Interaction: transfer the tokens from the Treasury ATA to the sender.
     transfer_tokens(
@@ -99,7 +103,12 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     )?;
 
     // Log the cancellation.
-    emit!(CancelLockupStream { stream_id: ctx.accounts.stream_data.id, refunded_amount: sender_amount });
+    emit!(CancelLockupStream {
+        stream_id: ctx.accounts.stream_data.id,
+        asset_mint: ctx.accounts.asset_mint.key(),
+        sender_amount,
+        recipient_amount
+    });
 
     Ok(())
 }

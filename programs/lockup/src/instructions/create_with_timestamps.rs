@@ -170,17 +170,17 @@ pub fn handler(
 
     // Effect: create the stream data.
     ctx.accounts.stream_data.create(
-        stream_id,
-        sender.key(),
         asset_mint.key(),
-        start_time,
+        ctx.bumps.stream_data,
         cliff_time,
-        end_time,
-        start_unlock,
         cliff_unlock,
         deposited_amount,
+        end_time,
+        stream_id,
         is_cancelable,
-        ctx.bumps.stream_data,
+        sender.key(),
+        start_time,
+        start_unlock,
     )?;
 
     // Effect: mint the NFT to the recipient.

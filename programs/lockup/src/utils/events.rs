@@ -3,7 +3,9 @@ use anchor_lang::prelude::*;
 #[event]
 pub struct CancelLockupStream {
     pub stream_id: u64,
-    pub refunded_amount: u64,
+    pub asset_mint: Pubkey,
+    pub sender_amount: u64,
+    pub recipient_amount: u64,
 }
 
 #[event]
