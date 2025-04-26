@@ -815,7 +815,7 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
-    it("Cancels an SPL Token LL Stream immediately after creating it", async () => {
+    it("Cancels a PENDING Stream, SPL Token", async () => {
       await createStreamAndTestCancelability(
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
@@ -823,52 +823,9 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
-    it("Cancels an SPL Token LL Stream at half time", async () => {
-      await createStreamAndTestCancelability(
-        await getDefaultMilestones(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Halfish
-      );
-    });
-
-    it("Cancels an SPL Token LL Stream with a past startTime immediately after creating it", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastStartTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID
-      );
-    });
-
-    it("Cancels an SPL Token LL Stream with a past startTime at half time", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastStartTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Halfish
-      );
-    });
-
-    it("Cancels an SPL Token LL Stream with a past cliffTime immediately after creating it", async () => {
+    it("Cancels a STREAMING Stream, SPL Token", async () => {
       await createStreamAndTestCancelability(
         await getMilestonesWithPastCliffTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID
-      );
-    });
-
-    it("Cancels an SPL Token LL Stream with a past cliffTime at half time", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastCliffTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID,
-        CancelTime.Halfish
-      );
-    });
-
-    it("Cancels an SPL Token LL Stream with a past endTime immediately after creating it", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
         getDefaultUnlockAmounts(),
         TOKEN_PROGRAM_ID
       );
@@ -876,7 +833,7 @@ describe("SablierLockup user-callable Ixs", () => {
   });
 
   describe("Cancel Tests (Token2022)", () => {
-    it("Cancels a Token2022 LL Stream immediately after creating it", async () => {
+    it("Cancels a PENDING Stream, Token2022", async () => {
       await createStreamAndTestCancelability(
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
@@ -884,46 +841,19 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
-    it("Cancels a Token2022 LL Stream at half time", async () => {
+    it("Cancels a SETTLED Stream, Token2022", async () => {
       await createStreamAndTestCancelability(
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Halfish
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past startTime immediately after creating it", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastStartTime(banksClient),
-        getDefaultUnlockAmounts(),
         TOKEN_2022_PROGRAM_ID
       );
     });
 
-    it("Cancels a Token2022 LL Stream with a past startTime at half time", async () => {
+    it("Cancels a STREAMING Stream, Token2022", async () => {
       await createStreamAndTestCancelability(
         await getMilestonesWithPastStartTime(banksClient),
         getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Halfish
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past cliffTime immediately after creating it", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastCliffTime(banksClient),
-        getDefaultUnlockAmounts(),
         TOKEN_2022_PROGRAM_ID
-      );
-    });
-
-    it("Cancels a Token2022 LL Stream with a past cliffTime at half time", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastCliffTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_2022_PROGRAM_ID,
-        CancelTime.Halfish
       );
     });
   });
@@ -2095,19 +2025,10 @@ async function createMintATAsAndStream(
   };
 }
 
-const CancelTime = {
-  Start: 0,
-  Halfish: 1,
-  Endish: 2,
-} as const;
-
-type CancelTime = (typeof CancelTime)[keyof typeof CancelTime];
-
 async function createStreamAndTestCancelability(
   milestones: StreamMilestones,
   unlockAmounts: UnlockAmounts,
-  assetTokenProgram: PublicKey,
-  cancelTime: CancelTime = CancelTime.Start
+  assetTokenProgram: PublicKey
 ) {
   const { streamData, senderATA, assetMint, depositedAmount, treasuryATA } =
     await createMintATAsAndStream(
@@ -2120,64 +2041,20 @@ async function createStreamAndTestCancelability(
   // Get the initial token balance of the sender
   const senderInitialTokenBalance = await getTokenBalanceByATAKey(senderATA);
 
-  // Default-initialize the expected refunded amount
-  let expectedRefundedAmount = depositedAmount;
-
   // Get the current timestamp from Bankrun
   const currentTimestamp = (await banksClient.getClock()).unixTimestamp;
 
-  if (cancelTime !== CancelTime.Start) {
-    switch (cancelTime) {
-      case CancelTime.Halfish: {
-        const cancelTimeHalfish = BigInt(
-          milestones.startTime.add(milestones.endTime).div(new BN(2)).toString()
-        );
+  // Default-initialize the expected refunded amount (full refund for Start)
+  const expectedRefundedAmount = depositedAmount.sub(
+    getStreamedAmountAt(
+      Number(currentTimestamp),
+      milestones,
+      unlockAmounts,
+      depositedAmount
+    )
+  );
 
-        if (cancelTimeHalfish >= currentTimestamp) {
-          await cancelStreamAtSpecificTime(
-            streamData.id,
-            assetMint,
-            cancelTimeHalfish,
-            assetTokenProgram
-          );
-        } else {
-          // Just cancel (w/o time-traveling) if Cancel Time is in the past (e.g. when the Stream has been created with a past half-/endTime)
-          await cancelStream(streamData.id, assetMint, assetTokenProgram);
-        }
-
-        // Calculate the streamed amount at the cancel time
-        const streamedAmount = getStreamedAmountAt(
-          Number(cancelTimeHalfish),
-          milestones,
-          unlockAmounts,
-          depositedAmount
-        );
-
-        // Calculate the expected refunded amount as a function of the deposited amount and the start & cancel times
-        expectedRefundedAmount = depositedAmount.sub(streamedAmount);
-        break;
-      }
-
-      case CancelTime.Endish: {
-        const cancelTimeEndish = BigInt(milestones.endTime.toString());
-
-        if (cancelTimeEndish >= currentTimestamp) {
-          await cancelStreamAtSpecificTime(
-            streamData.id,
-            assetMint,
-            cancelTimeEndish,
-            assetTokenProgram
-          );
-        } else {
-          // Just cancel (w/o time-traveling) if Cancel Time is in the past (e.g. when the Stream has been created with a past half-/endTime)
-          await cancelStream(streamData.id, assetMint, assetTokenProgram);
-        }
-
-        expectedRefundedAmount = new BN(0);
-        break;
-      }
-    }
-  }
+  await cancelStream(streamData.id, assetMint, assetTokenProgram);
 
   // Perform the post-cancellation assertions
   await performPostCancelAssertions(
