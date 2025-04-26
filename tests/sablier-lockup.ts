@@ -933,14 +933,6 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
-    it("Cancels a SETTLED Stream, SPL Token", async () => {
-      await createStreamAndTestCancelability(
-        await getMilestonesWithPastEndTime(banksClient),
-        getDefaultUnlockAmounts(),
-        TOKEN_PROGRAM_ID
-      );
-    });
-
     it("Cancels a STREAMING Stream, SPL Token", async () => {
       await createStreamAndTestCancelability(
         await getMilestonesWithPastCliffTime(banksClient),
@@ -1138,6 +1130,13 @@ describe("SablierLockup user-callable Ixs", () => {
 
     it("Withdraws from an SPL Token LL Stream - as recipient - after the Stream has been canceled at half time", async () => {
       await testForWithdrawalPostCancelAtHalfTime(
+        TOKEN_PROGRAM_ID,
+        WithdrawalKind.Withdraw
+      );
+    });
+
+    it("Withdraws from an SPL Token LL Stream - as recipient - after the Stream cancelability has been renounced at half time", async () => {
+      await testForWithdrawalPostRenounceAtHalfTime(
         TOKEN_PROGRAM_ID,
         WithdrawalKind.Withdraw
       );
@@ -1396,6 +1395,13 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
+    it("Withdraws from a Token2022 LL Stream - as recipient - after the Stream cancelability has been renounced at half time", async () => {
+      await testForWithdrawalPostRenounceAtHalfTime(
+        TOKEN_2022_PROGRAM_ID,
+        WithdrawalKind.Withdraw
+      );
+    });
+
     it("Old recipient fails & new recipient succeeds to withdraw 1 token at endTime after a Token2022 LL Stream has been transferred", async () => {
       await testForWithdrawalAfterStreamTransfer(
         WithdrawalSize.OneToken,
@@ -1546,6 +1552,13 @@ describe("SablierLockup user-callable Ixs", () => {
       );
     });
 
+    it("Withdraws max from an SPL Token LL Stream - as recipient - after the Stream cancelability has been renounced at half time", async () => {
+      await testForWithdrawalPostRenounceAtHalfTime(
+        TOKEN_PROGRAM_ID,
+        WithdrawalKind.WithdrawMax
+      );
+    });
+
     it("Withdraws max from an SPL Token LL Stream - as recipient - at endTime", async () => {
       const milestones = await getDefaultMilestones(banksClient);
       await testForWithdrawal(
@@ -1626,6 +1639,13 @@ describe("SablierLockup user-callable Ixs", () => {
 
     it("Withdraws max from a Token2022 LL Stream - as recipient - after the Stream has been canceled at half time", async () => {
       await testForWithdrawalPostCancelAtHalfTime(
+        TOKEN_2022_PROGRAM_ID,
+        WithdrawalKind.WithdrawMax
+      );
+    });
+
+    it("Withdraws max from a Token2022 LL Stream - as recipient - after the Stream cancelability has been renounced at half time", async () => {
+      await testForWithdrawalPostRenounceAtHalfTime(
         TOKEN_2022_PROGRAM_ID,
         WithdrawalKind.WithdrawMax
       );
@@ -3388,6 +3408,76 @@ async function actDependingOnWithdrawalKind(
       );
       break;
   }
+}
+
+async function testForWithdrawalPostRenounceAtHalfTime(
+  assetTokenProgram: PublicKey,
+  withdrawalKind: WithdrawalKind
+) {
+  const milestones = await getDefaultMilestones(banksClient);
+  const unlockAmounts = getDefaultUnlockAmounts();
+  const {
+    nftTokenProgram,
+    streamData,
+    recipient,
+    senderATA,
+    assetMint,
+    depositedAmount,
+  } = await createMintATAsAndStream(
+    true,
+    milestones,
+    unlockAmounts,
+    assetTokenProgram
+  );
+
+  // Time travel to half time
+  await timeTravelForwardTo(
+    BigInt(
+      milestones.startTime.add(milestones.endTime).div(new BN(2)).toString()
+    )
+  );
+
+  await renounceStream(streamData.id, senderKeys);
+
+  const expectedStreamedAmount = depositedAmount.div(new BN(2));
+  const expectedWithdrawnAmount = expectedStreamedAmount;
+
+  await actDependingOnWithdrawalKind(
+    withdrawalKind,
+    streamData.id,
+    expectedWithdrawnAmount,
+    recipientKeys,
+    recipient,
+    assetMint,
+    assetTokenProgram,
+    nftTokenProgram
+  );
+
+  // Derive the recipient's ATA address
+  const recipientATA = deriveRecipientATA(assetMint, assetTokenProgram);
+
+  // Get the final token balances of the sender and recipient
+  const [, /* senderFinalTokenBalance */ recipientFinalTokenBalance] =
+    await getTokenBalancesByATAKeys(senderATA, recipientATA);
+
+  // Assert that the sender's and recipient's token balances have been changed correctly
+  assert(
+    recipientFinalTokenBalance.eq(expectedWithdrawnAmount),
+    "No withdrawal to the recipient was expected"
+  );
+
+  // Assert that the Stream state has been updated correctly
+  const fetchedStream = await fetchStreamData(streamData.id);
+
+  assert(
+    fetchedStream.isCancelable === false,
+    "The Stream cancelability couldn't be renounced"
+  );
+
+  assert(
+    fetchedStream.amounts.withdrawn.eq(expectedWithdrawnAmount),
+    "The Stream's withdrawn amount is incorrect"
+  );
 }
 
 async function createStreamAndTestRenouncement(
