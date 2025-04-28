@@ -53,13 +53,14 @@ pub struct Withdraw<'info> {
     )]
     pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// CHECK: This can be any address if the tx signer is the Stream's Recipient -
+    /// and must be the Stream's Recipient if it's not
     #[account(
-      constraint = (
-          withdrawal_recipient.key() == stream_recipient.key() ||
-          (withdrawal_recipient.key() != stream_recipient.key() && signer.key() == stream_recipient.key())
-      ))]
-    /// CHECK: This can be any address if the tx signer is the Stream's Recipient - and must be the Stream's Recipient
-    /// if it's not
+        constraint = (
+            withdrawal_recipient.key() == stream_recipient.key() ||
+            (withdrawal_recipient.key() != stream_recipient.key() &&
+            signer.key() == stream_recipient.key())
+        ))]
     pub withdrawal_recipient: UncheckedAccount<'info>,
 
     #[account(
