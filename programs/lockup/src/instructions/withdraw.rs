@@ -25,7 +25,7 @@ pub struct Withdraw<'info> {
 
     #[account()]
     /// CHECK: This account must be the Stream's recipient (checked in recipient_stream_nft_ata's constraints)
-    pub recipient: UncheckedAccount<'info>,
+    pub stream_recipient: UncheckedAccount<'info>,
 
     #[account(
         seeds = [STREAM_NFT_MINT_SEED,
@@ -45,7 +45,7 @@ pub struct Withdraw<'info> {
     #[account(
         mut,
         associated_token::mint = stream_nft_mint,
-        associated_token::authority = recipient,
+        associated_token::authority = stream_recipient,
         associated_token::token_program = nft_token_program,
         // Dev: the below constraint is vital for making sure that the assets are only withdrawn to the legit recipient
         constraint = recipient_stream_nft_ata.amount == 1,
@@ -53,14 +53,24 @@ pub struct Withdraw<'info> {
     )]
     pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// CHECK: This can be any address if the tx signer is the Stream's Recipient -
+    /// and must be the Stream's Recipient if it's not
+    #[account(
+        constraint = (
+            withdrawal_recipient.key() == stream_recipient.key() ||
+            (withdrawal_recipient.key() != stream_recipient.key() &&
+            signer.key() == stream_recipient.key())
+        ))]
+    pub withdrawal_recipient: UncheckedAccount<'info>,
+
     #[account(
         init_if_needed,
         payer = signer,
         associated_token::mint = asset_mint,
-        associated_token::authority = recipient,
+        associated_token::authority = withdrawal_recipient,
         associated_token::token_program = deposit_token_program,
     )]
-    pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub withdrawal_recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
@@ -108,7 +118,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Interaction: transfer the tokens from the Treasury ATA to the recipient
     transfer_tokens(
         ctx.accounts.treasury_ata.to_account_info(),
-        ctx.accounts.recipient_ata.to_account_info(),
+        ctx.accounts.withdrawal_recipient_ata.to_account_info(),
         ctx.accounts.treasury.to_account_info(),
         ctx.accounts.asset_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
