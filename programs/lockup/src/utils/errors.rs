@@ -39,4 +39,8 @@ pub enum ErrorCode {
     Overdraw, // 0x177c
     #[msg("Can't withdraw a zero amount!")]
     WithdrawAmountZero, // 0x177d
+
+    // Common
+    #[msg("Can't perform the action on a depleted stream!")]
+    StreamDepleted, // 0x177e
 }

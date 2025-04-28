@@ -8,6 +8,7 @@ pub struct StreamData {
     pub bump: u8,
     pub id: u64,
     pub is_cancelable: bool,
+    pub is_depleted: bool,
     pub timestamps: Timestamps,
     pub sender: Pubkey,
     pub was_canceled: bool,
@@ -31,9 +32,12 @@ pub struct Timestamps {
 
 impl StreamData {
     /// State update for the `cancel` instruction.
-    pub fn cancel(&mut self, sender_amount: u64) -> Result<()> {
+    pub fn cancel(&mut self, sender_amount: u64, recipient_amount: u64) -> Result<()> {
         self.amounts.refunded = sender_amount;
         self.is_cancelable = false;
+        if recipient_amount == 0 {
+            self.is_depleted = true;
+        }
         self.was_canceled = true;
 
         Ok(())
@@ -43,32 +47,33 @@ impl StreamData {
     #[allow(clippy::too_many_arguments)]
     pub fn create(
         &mut self,
-        id: u64,
-        sender: Pubkey,
         asset_mint: Pubkey,
-        start_time: i64,
+        bump: u8,
         cliff_time: i64,
-        end_time: i64,
-        start_unlock: u64,
         cliff_unlock: u64,
         deposited: u64,
+        end_time: i64,
+        id: u64,
         is_cancelable: bool,
-        bump: u8,
+        sender: Pubkey,
+        start_time: i64,
+        start_unlock: u64,
     ) -> Result<()> {
         self.bump = bump;
-        self.id = id;
-        self.sender = sender;
-        self.asset_mint = asset_mint;
-        self.was_canceled = false;
-        self.is_cancelable = is_cancelable;
-        self.timestamps.start_time = start_time;
-        self.timestamps.cliff_time = cliff_time;
-        self.timestamps.end_time = end_time;
-        self.amounts.start_unlock = start_unlock;
         self.amounts.cliff_unlock = cliff_unlock;
         self.amounts.deposited = deposited;
-        self.amounts.withdrawn = 0;
         self.amounts.refunded = 0;
+        self.amounts.start_unlock = start_unlock;
+        self.amounts.withdrawn = 0;
+        self.asset_mint = asset_mint;
+        self.id = id;
+        self.is_cancelable = is_cancelable;
+        self.is_depleted = false;
+        self.sender = sender;
+        self.timestamps.cliff_time = cliff_time;
+        self.timestamps.end_time = end_time;
+        self.timestamps.start_time = start_time;
+        self.was_canceled = false;
 
         Ok(())
     }
@@ -90,6 +95,7 @@ impl StreamData {
         // than expected, for one reason or the other
         if self.amounts.withdrawn >= self.amounts.deposited - self.amounts.refunded {
             self.is_cancelable = false;
+            self.is_depleted = true;
         }
 
         Ok(())

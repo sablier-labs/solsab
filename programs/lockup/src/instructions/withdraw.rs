@@ -86,6 +86,7 @@ pub struct Withdraw<'info> {
 pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Check: validate the withdraw.
     check_withdraw(
+        ctx.accounts.stream_data.is_depleted,
         amount,
         get_withdrawable_amount(&ctx.accounts.stream_data.timestamps, &ctx.accounts.stream_data.amounts),
     )?;
