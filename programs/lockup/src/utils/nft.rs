@@ -23,7 +23,7 @@ pub fn create_stream<'info>(
     stream_nft_master_edition: &UncheckedAccount<'info>,
     nft_collection_metadata: &UncheckedAccount<'info>,
     nft_collection_master_edition: &UncheckedAccount<'info>,
-    recipients_stream_nft_ata: &InterfaceAccount<'info, TokenAccount>,
+    recipient_stream_nft_ata: &InterfaceAccount<'info, TokenAccount>,
     sender: &Signer<'info>,
     token_metadata_program: &Program<'info, Metadata>,
     nft_token_program: &Interface<'info, TokenInterface>,
@@ -41,7 +41,7 @@ pub fn create_stream<'info>(
             nft_token_program.to_account_info(),
             MintTo {
                 mint: stream_nft_mint.to_account_info(),
-                to: recipients_stream_nft_ata.to_account_info(),
+                to: recipient_stream_nft_ata.to_account_info(),
                 authority: nft_collection_mint.to_account_info(),
             },
             nft_collection_mint_signer_seeds,

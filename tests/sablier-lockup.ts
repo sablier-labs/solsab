@@ -710,13 +710,13 @@ describe("SablierLockup user-callable Ixs", () => {
 
   describe("Cancel Tests (SPL Token)", () => {
     it("Fails to cancel a Stream that doesn't exist", async () => {
-      const assetTokenProgram = TOKEN_PROGRAM_ID;
+      const depositTokenProgram = TOKEN_PROGRAM_ID;
 
       const { streamData, assetMint } = await createMintATAsAndStream(
         true,
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
-        assetTokenProgram
+        depositTokenProgram
       );
 
       const wrongStreamId = streamData.id.add(new BN(1));
@@ -724,57 +724,57 @@ describe("SablierLockup user-callable Ixs", () => {
         recipientKeys,
         wrongStreamId,
         assetMint,
-        assetTokenProgram,
+        depositTokenProgram,
         "custom program error: 0xbc4"
       );
     });
 
     it("Fails to cancel a non-cancelable Stream", async () => {
-      const assetTokenProgram = TOKEN_PROGRAM_ID;
+      const depositTokenProgram = TOKEN_PROGRAM_ID;
 
       const { streamData, assetMint } = await createMintATAsAndStream(
         false,
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
-        assetTokenProgram
+        depositTokenProgram
       );
 
       await assertStreamCancelationFailure(
         senderKeys,
         streamData.id,
         assetMint,
-        assetTokenProgram,
+        depositTokenProgram,
         "custom program error: 0x1771"
       );
     });
 
-    it("Fails to cancel SETTLED Stream", async () => {
-      const assetTokenProgram = TOKEN_PROGRAM_ID;
+    it("Fails to cancel a SETTLED Stream", async () => {
+      const depositTokenProgram = TOKEN_PROGRAM_ID;
 
       const { streamData, assetMint } = await createMintATAsAndStream(
         true,
         await getMilestonesWithPastEndTime(banksClient),
         getDefaultUnlockAmounts(),
-        assetTokenProgram
+        depositTokenProgram
       );
 
       await assertStreamCancelationFailure(
         senderKeys,
         streamData.id,
         assetMint,
-        assetTokenProgram,
+        depositTokenProgram,
         "custom program error: 0x1772"
       );
     });
 
     it("Fails to cancel an SPL Token LL Stream when a wrong asset mint is submitted", async () => {
-      const assetTokenProgram = TOKEN_PROGRAM_ID;
+      const depositTokenProgram = TOKEN_PROGRAM_ID;
 
       const { streamData } = await createMintATAsAndStream(
         false,
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
-        assetTokenProgram
+        depositTokenProgram
       );
 
       // Create a wrong asset mint
@@ -785,7 +785,7 @@ describe("SablierLockup user-callable Ixs", () => {
         null,
         2,
         Keypair.generate(),
-        assetTokenProgram
+        depositTokenProgram
       );
 
       // Create the Sender's ATA for the wrong assetMint (so that the Tx doesn't fail because of this)
@@ -794,7 +794,7 @@ describe("SablierLockup user-callable Ixs", () => {
         senderKeys,
         wrongAssetMint,
         senderKeys.publicKey,
-        assetTokenProgram
+        depositTokenProgram
       );
 
       // Create the Treasury's ATA for the wrong assetMint (so that the Tx doesn't fail because of this)
@@ -803,14 +803,14 @@ describe("SablierLockup user-callable Ixs", () => {
         senderKeys,
         wrongAssetMint,
         treasuryAddress,
-        assetTokenProgram
+        depositTokenProgram
       );
 
       await assertStreamCancelationFailure(
         senderKeys,
         streamData.id,
         wrongAssetMint,
-        assetTokenProgram,
+        depositTokenProgram,
         "custom program error: 0x7dc"
       );
     });
@@ -1752,7 +1752,7 @@ async function assertCreateWithTimestampsFailure(
   unlockAmounts: UnlockAmounts,
   milestones: StreamMilestones,
   isCancelable: boolean,
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   expectedErrorCode: string
 ) {
   try {
@@ -1761,7 +1761,7 @@ async function assertCreateWithTimestampsFailure(
       recipient: recipientKeys.publicKey,
       assetMint,
       expectedStreamId,
-      assetTokenProgram,
+      depositTokenProgram,
       milestones,
       depositedAmount,
       unlockAmounts,
@@ -1807,7 +1807,7 @@ async function assertStreamCancelationFailure(
   streamSender: Keypair,
   streamId: BN,
   assetMint: PublicKey,
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   expectedError: string
 ) {
   const cancelStreamIx = await lockupProgram.methods
@@ -1815,7 +1815,7 @@ async function assertStreamCancelationFailure(
     .accounts({
       sender: streamSender.publicKey,
       assetMint,
-      assetTokenProgram,
+      depositTokenProgram,
     })
     .instruction();
 
@@ -1832,17 +1832,17 @@ async function assertStreamCancelationFailure(
 }
 
 async function createStreamAndAssertThirdPartyStreamTransferFailure(
-  assetTokenProgram: PublicKey
+  depositTokenProgram: PublicKey
 ) {
   const {
-    recipientsStreamNftATA: streamNftATA,
+    recipientStreamNftATA: streamNftATA,
     streamNftMint,
     nftTokenProgram,
   } = await createMintATAsAndStream(
     true,
     await getDefaultMilestones(banksClient),
     getDefaultUnlockAmounts(),
-    assetTokenProgram
+    depositTokenProgram
   );
 
   try {
@@ -1870,7 +1870,7 @@ async function assertWithdrawFailure(
   streamId: BN,
   recipient: PublicKey,
   amount: BN,
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   nftTokenProgram: PublicKey,
   expectedError: string
 ) {
@@ -1880,7 +1880,7 @@ async function assertWithdrawFailure(
       signer: txSigner.publicKey,
       assetMint,
       recipient,
-      assetTokenProgram,
+      depositTokenProgram,
       nftTokenProgram,
     })
     .instruction();
@@ -1893,7 +1893,7 @@ async function assertWithdrawMaxFailure(
   assetMint: PublicKey,
   streamId: BN,
   recipient: PublicKey,
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   nftTokenProgram: PublicKey,
   expectedError: string
 ) {
@@ -1903,7 +1903,7 @@ async function assertWithdrawMaxFailure(
       signer: txSigner.publicKey,
       assetMint,
       recipient,
-      assetTokenProgram,
+      depositTokenProgram,
       nftTokenProgram,
     })
     .instruction();
@@ -1947,14 +1947,14 @@ async function buildSignAndProcessTx(
 async function cancelStream(
   streamId: BN,
   assetMint: PublicKey,
-  assetTokenProgram: PublicKey
+  depositTokenProgram: PublicKey
 ) {
   const cancelStreamIx = await lockupProgram.methods
     .cancel(streamId)
     .accounts({
       sender: senderKeys.publicKey,
       assetMint,
-      assetTokenProgram,
+      depositTokenProgram,
     })
     .instruction();
 
@@ -1965,17 +1965,17 @@ async function cancelStreamAtSpecificTime(
   streamId: BN,
   assetMint: PublicKey,
   timestamp: bigint,
-  assetTokenProgram: PublicKey
+  depositTokenProgram: PublicKey
 ) {
   await timeTravelForwardTo(timestamp);
-  await cancelStream(streamId, assetMint, assetTokenProgram);
+  await cancelStream(streamId, assetMint, depositTokenProgram);
 }
 
 async function createMintATAsAndStream(
   isStreamCancelable: boolean,
   milestones: StreamMilestones,
   unlockAmounts: UnlockAmounts,
-  assetTokenProgram: PublicKey
+  depositTokenProgram: PublicKey
 ): Promise<{
   streamData: any;
   senderATA: PublicKey;
@@ -1983,34 +1983,30 @@ async function createMintATAsAndStream(
   recipient: PublicKey;
   streamNftMint: PublicKey;
   nftTokenProgram: PublicKey;
-  recipientsStreamNftATA: PublicKey;
+  recipientStreamNftATA: PublicKey;
   assetMint: PublicKey;
   depositedAmount: BN;
 }> {
   const { assetMint, senderATA } = await createTokenAndMintToSender(
-    assetTokenProgram,
+    depositTokenProgram,
     unlockAmounts
   );
   const streamId = await deduceCurrentStreamId();
 
   const recipient = recipientKeys.publicKey;
   const depositedAmount = await getTokenBalanceByATAKey(senderATA);
-  const {
-    nftTokenProgram,
-    recipientsStreamNftATA,
-    streamNftMint,
-    treasuryATA,
-  } = await createWithTimestamps({
-    senderKeys,
-    recipient,
-    assetMint,
-    expectedStreamId: streamId,
-    assetTokenProgram,
-    milestones,
-    depositedAmount,
-    unlockAmounts,
-    isCancelable: isStreamCancelable,
-  });
+  const { nftTokenProgram, recipientStreamNftATA, streamNftMint, treasuryATA } =
+    await createWithTimestamps({
+      senderKeys,
+      recipient,
+      assetMint,
+      expectedStreamId: streamId,
+      depositTokenProgram,
+      milestones,
+      depositedAmount,
+      unlockAmounts,
+      isCancelable: isStreamCancelable,
+    });
 
   return {
     streamData: await fetchStreamData(streamId),
@@ -2018,7 +2014,7 @@ async function createMintATAsAndStream(
     treasuryATA,
     recipient,
     streamNftMint,
-    recipientsStreamNftATA,
+    recipientStreamNftATA,
     nftTokenProgram,
     assetMint,
     depositedAmount,
@@ -2028,14 +2024,14 @@ async function createMintATAsAndStream(
 async function createStreamAndTestCancelability(
   milestones: StreamMilestones,
   unlockAmounts: UnlockAmounts,
-  assetTokenProgram: PublicKey
+  depositTokenProgram: PublicKey
 ) {
   const { streamData, senderATA, assetMint, depositedAmount, treasuryATA } =
     await createMintATAsAndStream(
       true,
       milestones,
       unlockAmounts,
-      assetTokenProgram
+      depositTokenProgram
     );
 
   // Get the initial token balance of the sender
@@ -2054,13 +2050,13 @@ async function createStreamAndTestCancelability(
     )
   );
 
-  await cancelStream(streamData.id, assetMint, assetTokenProgram);
+  await cancelStream(streamData.id, assetMint, depositTokenProgram);
 
   // Perform the post-cancellation assertions
   await performPostCancelAssertions(
     streamData.id,
     assetMint,
-    assetTokenProgram,
+    depositTokenProgram,
     senderATA,
     treasuryATA,
     depositedAmount,
@@ -2070,23 +2066,23 @@ async function createStreamAndTestCancelability(
 }
 
 async function createStreamAndTestTransferability(
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   milestones: StreamMilestones,
   unlockAmounts: UnlockAmounts,
   isCancelable: boolean
 ) {
-  const { streamNftMint, recipientsStreamNftATA, nftTokenProgram } =
+  const { streamNftMint, recipientStreamNftATA, nftTokenProgram } =
     await createMintATAsAndStream(
       isCancelable,
       milestones,
       unlockAmounts,
-      assetTokenProgram
+      depositTokenProgram
     );
 
   const { recipientStreamNftATA: thirdPartyStreamNftATA } =
     await transferStreamNft(
       recipientKeys,
-      recipientsStreamNftATA,
+      recipientStreamNftATA,
       thirdPartyKeys.publicKey,
       streamNftMint,
       nftTokenProgram
@@ -2094,7 +2090,7 @@ async function createStreamAndTestTransferability(
 
   // Assert that the Stream NFT has been transferred correctly
   const recipientStreamNftBalance = await getTokenBalanceByATAKey(
-    recipientsStreamNftATA
+    recipientStreamNftATA
   );
   assert(
     recipientStreamNftBalance.eq(new BN(0)),
@@ -2121,7 +2117,7 @@ async function getSOLBalanceOf(address: PublicKey): Promise<bigint> {
 async function performPostCancelAssertions(
   streamId: BN,
   assetMint: PublicKey,
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   senderATA: PublicKey,
   treasuryATA: PublicKey,
   depositedAmount: BN,
@@ -2129,7 +2125,7 @@ async function performPostCancelAssertions(
   expectedRefundedAmount: BN
 ) {
   // Derive the recipient's ATA address
-  const recipientATA = deriveRecipientATA(assetMint, assetTokenProgram);
+  const recipientATA = deriveRecipientATA(assetMint, depositTokenProgram);
 
   // Assert that the recipient's ATA doesn't exist
   assert(
@@ -2180,14 +2176,14 @@ async function performPostCancelAssertions(
 interface PerformPostCreateAssertionsArgs {
   streamId: BN;
   assetMint: PublicKey;
-  assetTokenProgram: PublicKey;
+  depositTokenProgram: PublicKey;
   depositedAmount: BN;
   unlockAmounts: UnlockAmounts;
   milestones: StreamMilestones;
   isCancelable: boolean;
   senderATA: PublicKey;
   treasuryATA: PublicKey;
-  recipientsStreamNftATA: PublicKey;
+  recipientStreamNftATA: PublicKey;
   senderInitialTokenBalance: BN;
 }
 
@@ -2203,7 +2199,7 @@ async function performPostCreateAssertions(
     isCancelable,
     senderATA,
     treasuryATA,
-    recipientsStreamNftATA,
+    recipientStreamNftATA,
     senderInitialTokenBalance,
   } = args;
 
@@ -2254,13 +2250,13 @@ async function performPostCreateAssertions(
 
   // Confirm that the Recipient's Stream NFT ATA has been initialized
   assert(
-    await accountExists(recipientsStreamNftATA),
+    await accountExists(recipientStreamNftATA),
     "Recipient's Stream NFT ATA not initialized"
   );
 
   // Confirm that 1 NFT has been minted to the Recipient's Stream NFT ATA
   const recipientStreamNftBalance = await getTokenBalanceByATAKey(
-    recipientsStreamNftATA
+    recipientStreamNftATA
   );
   assert(recipientStreamNftBalance.eq(new BN(1)), "Stream NFT not minted");
 
@@ -2324,7 +2320,7 @@ async function performPostCreateAssertions(
 async function performPostWithdrawAssertions(
   streamId: BN,
   assetMint: PublicKey,
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   depositedAmount: BN,
   expectedWithdrawnAmount: BN,
   treasuryATA: PublicKey,
@@ -2340,7 +2336,7 @@ async function performPostWithdrawAssertions(
   );
 
   // Derive the recipient's ATA address
-  const recipientATA = deriveRecipientATA(assetMint, assetTokenProgram);
+  const recipientATA = deriveRecipientATA(assetMint, depositTokenProgram);
 
   // Get the recipient's token balance
   const recipientTokenBalance = await getTokenBalanceByATAKey(recipientATA);
@@ -2369,13 +2365,13 @@ async function performPostWithdrawAssertions(
 }
 
 async function testStreamCreation(
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   isCancelable: boolean,
   milestones: StreamMilestones,
   unlockAmounts: UnlockAmounts
 ) {
   const { assetMint, senderATA } = await createTokenAndMintToSender(
-    assetTokenProgram,
+    depositTokenProgram,
     unlockAmounts
   );
 
@@ -2386,12 +2382,12 @@ async function testStreamCreation(
 
   const depositedAmount = senderInitialTokenBalance;
 
-  const { treasuryATA, recipientsStreamNftATA } = await createWithTimestamps({
+  const { treasuryATA, recipientStreamNftATA } = await createWithTimestamps({
     senderKeys,
     recipient: recipientKeys.publicKey,
     assetMint,
     expectedStreamId: streamId,
-    assetTokenProgram,
+    depositTokenProgram,
     milestones,
     depositedAmount,
     unlockAmounts,
@@ -2401,25 +2397,25 @@ async function testStreamCreation(
   await performPostCreateAssertions({
     streamId,
     assetMint,
-    assetTokenProgram,
+    depositTokenProgram,
     depositedAmount,
     unlockAmounts,
     milestones,
     isCancelable,
     senderATA,
     treasuryATA,
-    recipientsStreamNftATA,
+    recipientStreamNftATA,
     senderInitialTokenBalance,
   });
 }
 
 async function testForFeeCollection(
   noOfPreceedingWithdrawals: number,
-  assetTokenProgram: PublicKey
+  depositTokenProgram: PublicKey
 ) {
   for (let i = 0; i < noOfPreceedingWithdrawals; i++) {
     // Create a stream - and withdraw from it (generating fees)
-    await createStreamAndWithdrawMax(assetTokenProgram);
+    await createStreamAndWithdrawMax(depositTokenProgram);
   }
 
   const feesRecipient = thirdPartyKeys.publicKey;
@@ -2477,7 +2473,7 @@ async function collectFees(txSigner: Keypair, feesRecipient: PublicKey) {
   await buildSignAndProcessTx(collectFeesIx, txSigner);
 }
 
-async function createStreamAndWithdrawMax(assetTokenProgram: PublicKey) {
+async function createStreamAndWithdrawMax(depositTokenProgram: PublicKey) {
   // Create the Stream
   const milestones = await getDefaultMilestones(banksClient);
   const { streamData, assetMint, nftTokenProgram } =
@@ -2485,7 +2481,7 @@ async function createStreamAndWithdrawMax(assetTokenProgram: PublicKey) {
       true,
       milestones,
       getDefaultUnlockAmounts(),
-      assetTokenProgram
+      depositTokenProgram
     );
 
   await timeTravelForwardTo(BigInt(milestones.endTime.toString()));
@@ -2496,29 +2492,29 @@ async function createStreamAndWithdrawMax(assetTokenProgram: PublicKey) {
     recipientKeys,
     recipientKeys.publicKey,
     assetMint,
-    assetTokenProgram,
+    depositTokenProgram,
     nftTokenProgram
   );
 }
 
 async function createStreamWithdrawMaxAndCollectAllFees(
-  assetTokenProgram: PublicKey
+  depositTokenProgram: PublicKey
 ) {
   // Create a stream - and withdraw from it (generating fees)
-  await createStreamAndWithdrawMax(assetTokenProgram);
+  await createStreamAndWithdrawMax(depositTokenProgram);
 
   // Collect all the withdrawable fees
   await collectFees(feeCollectorKeys, thirdPartyKeys.publicKey);
 }
 
 async function testMultiStreamCreationInOneTx(
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   isCancelable: boolean,
   milestones: StreamMilestones
 ) {
   const unlockAmounts = getDefaultUnlockAmounts();
   const { assetMint, senderATA } = await createTokenAndMintToSender(
-    assetTokenProgram,
+    depositTokenProgram,
     unlockAmounts
   );
 
@@ -2536,7 +2532,7 @@ async function testMultiStreamCreationInOneTx(
       recipient: recipientKeys.publicKey,
       assetMint,
       expectedStreamId: new BN(i),
-      assetTokenProgram,
+      depositTokenProgram,
       milestones,
       depositedAmount: depositedAmountPerStream,
       unlockAmounts,
@@ -2562,7 +2558,7 @@ async function testMultiStreamCreationInOneTx(
   const treasuryATA = deriveATAAddress(
     assetMint,
     treasuryAddress,
-    assetTokenProgram
+    depositTokenProgram
   );
   const treasuryBalance = await getTokenBalanceByATAKey(treasuryATA);
 
@@ -2626,7 +2622,7 @@ type WithdrawalSize = (typeof WithdrawalSize)[keyof typeof WithdrawalSize];
 
 async function testForWithdrawalAfterStreamTransfer(
   withdrawalSize: WithdrawalSize,
-  assetTokenProgram: PublicKey
+  depositTokenProgram: PublicKey
 ) {
   const milestones = await getDefaultMilestones(banksClient);
   const unlockAmounts = getDefaultUnlockAmounts();
@@ -2636,21 +2632,21 @@ async function testForWithdrawalAfterStreamTransfer(
     depositedAmount,
     nftTokenProgram,
     recipient,
-    recipientsStreamNftATA,
+    recipientStreamNftATA,
     streamData,
     streamNftMint,
   } = await createMintATAsAndStream(
     true,
     milestones,
     unlockAmounts,
-    assetTokenProgram
+    depositTokenProgram
   );
 
   await timeTravelForwardTo(BigInt(milestones.endTime.toString()));
 
   await transferStreamNft(
     recipientKeys,
-    recipientsStreamNftATA,
+    recipientStreamNftATA,
     thirdPartyKeys.publicKey,
     streamNftMint,
     nftTokenProgram
@@ -2662,7 +2658,7 @@ async function testForWithdrawalAfterStreamTransfer(
       assetMint,
       streamData.id,
       recipient,
-      assetTokenProgram,
+      depositTokenProgram,
       nftTokenProgram,
       "custom program error: 0x7d3"
     );
@@ -2672,7 +2668,7 @@ async function testForWithdrawalAfterStreamTransfer(
       thirdPartyKeys,
       thirdPartyKeys.publicKey,
       assetMint,
-      assetTokenProgram,
+      depositTokenProgram,
       nftTokenProgram
     );
 
@@ -2691,7 +2687,7 @@ async function testForWithdrawalAfterStreamTransfer(
     streamData.id,
     recipient,
     withdrawalAmount,
-    assetTokenProgram,
+    depositTokenProgram,
     nftTokenProgram,
     "custom program error: 0x7d3"
   );
@@ -2702,7 +2698,7 @@ async function testForWithdrawalAfterStreamTransfer(
     thirdPartyKeys,
     thirdPartyKeys.publicKey,
     assetMint,
-    assetTokenProgram,
+    depositTokenProgram,
     nftTokenProgram
   );
 
@@ -2710,7 +2706,7 @@ async function testForWithdrawalAfterStreamTransfer(
   const thirdPartyAssetATA = deriveATAAddress(
     assetMint,
     thirdPartyKeys.publicKey,
-    assetTokenProgram
+    depositTokenProgram
   );
 
   // Get the third party's token balance
@@ -2748,7 +2744,7 @@ async function testForFailureToCollectFees(
   preCollectionAction: BeforeFeeCollection,
   txSigner: Keypair,
   feesRecipient: PublicKey,
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   expectedErrorCode: string
 ) {
   // Perform the pre-collection action
@@ -2761,16 +2757,16 @@ async function testForFailureToCollectFees(
         true,
         await getDefaultMilestones(banksClient),
         getDefaultUnlockAmounts(),
-        assetTokenProgram
+        depositTokenProgram
       );
       break;
 
     case BeforeFeeCollection.CreateStreamAndWithdrawMax:
-      await createStreamAndWithdrawMax(assetTokenProgram);
+      await createStreamAndWithdrawMax(depositTokenProgram);
       break;
 
     case BeforeFeeCollection.CreateStreamWithdrawMaxAndCollectAllFees:
-      await createStreamWithdrawMaxAndCollectAllFees(assetTokenProgram);
+      await createStreamWithdrawMaxAndCollectAllFees(depositTokenProgram);
       break;
   }
 
@@ -2788,7 +2784,7 @@ type AssetMintKind = (typeof AssetMintKind)[keyof typeof AssetMintKind];
 async function testForFailureToWithdraw(
   txSigner: Keypair,
   destination: PublicKey,
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   milestones: StreamMilestones,
   unlockAmounts: UnlockAmounts,
   withdrawalTime: BN,
@@ -2801,7 +2797,7 @@ async function testForFailureToWithdraw(
       true,
       milestones,
       unlockAmounts,
-      assetTokenProgram
+      depositTokenProgram
     );
 
   await timeTravelForwardTo(BigInt(withdrawalTime.toString()));
@@ -2815,7 +2811,7 @@ async function testForFailureToWithdraw(
       null,
       2,
       Keypair.generate(),
-      assetTokenProgram
+      depositTokenProgram
     );
 
     // Create a Treasury ATA for the wrong assetMint (so that the Tx doesn't fail because of this)
@@ -2824,7 +2820,7 @@ async function testForFailureToWithdraw(
       txSigner,
       assetMintToUse,
       treasuryAddress,
-      assetTokenProgram
+      depositTokenProgram
     );
   }
 
@@ -2834,7 +2830,7 @@ async function testForFailureToWithdraw(
       assetMintToUse,
       streamData.id,
       destination,
-      assetTokenProgram,
+      depositTokenProgram,
       nftTokenProgram,
       expectedError
     );
@@ -2853,7 +2849,7 @@ async function testForFailureToWithdraw(
     streamData.id,
     destination,
     withdrawalAmount,
-    assetTokenProgram,
+    depositTokenProgram,
     nftTokenProgram,
     expectedError
   );
@@ -2862,7 +2858,7 @@ async function testForFailureToWithdraw(
 async function testForWithdrawal(
   txSigner: Keypair,
   destination: PublicKey,
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   milestones: StreamMilestones,
   unlockAmounts: UnlockAmounts,
   withdrawalTime: BN,
@@ -2878,7 +2874,7 @@ async function testForWithdrawal(
     true,
     milestones,
     unlockAmounts,
-    assetTokenProgram
+    depositTokenProgram
   );
 
   await timeTravelForwardTo(BigInt(withdrawalTime.toString()));
@@ -2897,7 +2893,7 @@ async function testForWithdrawal(
       txSigner,
       destination,
       assetMint,
-      assetTokenProgram,
+      depositTokenProgram,
       nftTokenProgram
     );
 
@@ -2905,7 +2901,7 @@ async function testForWithdrawal(
     await performPostWithdrawAssertions(
       streamData.id,
       assetMint,
-      assetTokenProgram,
+      depositTokenProgram,
       depositedAmount,
       withdrawalAmount,
       treasuryATA,
@@ -2938,7 +2934,7 @@ async function testForWithdrawal(
     txSigner,
     destination,
     assetMint,
-    assetTokenProgram,
+    depositTokenProgram,
     nftTokenProgram
   );
 
@@ -2946,7 +2942,7 @@ async function testForWithdrawal(
   await performPostWithdrawAssertions(
     streamData.id,
     assetMint,
-    assetTokenProgram,
+    depositTokenProgram,
     depositedAmount,
     withdrawalAmount,
     treasuryATA,
@@ -2997,7 +2993,7 @@ const WithdrawalKind = {
 type WithdrawalKind = (typeof WithdrawalKind)[keyof typeof WithdrawalKind];
 
 async function testForWithdrawalPostCancelAtHalfTime(
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   withdrawalKind: WithdrawalKind
 ) {
   const milestones = await getDefaultMilestones(banksClient);
@@ -3013,7 +3009,7 @@ async function testForWithdrawalPostCancelAtHalfTime(
     true,
     milestones,
     unlockAmounts,
-    assetTokenProgram
+    depositTokenProgram
   );
 
   // Get the initial token balance of the sender
@@ -3026,7 +3022,7 @@ async function testForWithdrawalPostCancelAtHalfTime(
     streamData.id,
     assetMint,
     cancelTime,
-    assetTokenProgram
+    depositTokenProgram
   );
 
   const expectedStreamedAmount = depositedAmount.div(new BN(2));
@@ -3039,12 +3035,12 @@ async function testForWithdrawalPostCancelAtHalfTime(
     recipientKeys,
     recipient,
     assetMint,
-    assetTokenProgram,
+    depositTokenProgram,
     nftTokenProgram
   );
 
   // Derive the recipient's ATA address
-  const recipientATA = deriveRecipientATA(assetMint, assetTokenProgram);
+  const recipientATA = deriveRecipientATA(assetMint, depositTokenProgram);
 
   // Get the final token balances of the sender and recipient
   const [senderFinalTokenBalance, recipientFinalTokenBalance] =
@@ -3090,7 +3086,7 @@ async function actDependingOnWithdrawalKind(
   recipientKeys: Keypair,
   recipient: PublicKey,
   assetMint: PublicKey,
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   nftTokenProgram: PublicKey
 ) {
   switch (withdrawalKind) {
@@ -3101,7 +3097,7 @@ async function actDependingOnWithdrawalKind(
         recipientKeys,
         recipient,
         assetMint,
-        assetTokenProgram,
+        depositTokenProgram,
         nftTokenProgram
       );
       break;
@@ -3112,7 +3108,7 @@ async function actDependingOnWithdrawalKind(
         recipientKeys,
         recipient,
         assetMint,
-        assetTokenProgram,
+        depositTokenProgram,
         nftTokenProgram
       );
       break;
@@ -3120,7 +3116,7 @@ async function actDependingOnWithdrawalKind(
 }
 
 async function testForWithdrawalPostRenounceAtHalfTime(
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   withdrawalKind: WithdrawalKind
 ) {
   const milestones = await getDefaultMilestones(banksClient);
@@ -3136,7 +3132,7 @@ async function testForWithdrawalPostRenounceAtHalfTime(
     true,
     milestones,
     unlockAmounts,
-    assetTokenProgram
+    depositTokenProgram
   );
 
   // Time travel to half time
@@ -3158,12 +3154,12 @@ async function testForWithdrawalPostRenounceAtHalfTime(
     recipientKeys,
     recipient,
     assetMint,
-    assetTokenProgram,
+    depositTokenProgram,
     nftTokenProgram
   );
 
   // Derive the recipient's ATA address
-  const recipientATA = deriveRecipientATA(assetMint, assetTokenProgram);
+  const recipientATA = deriveRecipientATA(assetMint, depositTokenProgram);
 
   // Get the final token balances of the recipient
   const recipientFinalTokenBalance = await getTokenBalanceByATAKey(
@@ -3194,13 +3190,13 @@ async function createStreamAndTestRenouncement(
   txSigner: Keypair,
   isCancelable: boolean,
   milestones: StreamMilestones,
-  assetTokenProgram: PublicKey
+  depositTokenProgram: PublicKey
 ) {
   const { streamData } = await createMintATAsAndStream(
     isCancelable,
     milestones,
     getDefaultUnlockAmounts(),
-    assetTokenProgram
+    depositTokenProgram
   );
   const streamId = streamData.id;
 
@@ -3264,7 +3260,7 @@ async function withdraw(
   txSigner: Keypair,
   recipient: PublicKey,
   assetMint: PublicKey,
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   nftTokenProgram: PublicKey
 ) {
   const withdrawIx = await lockupProgram.methods
@@ -3273,7 +3269,7 @@ async function withdraw(
       signer: txSigner.publicKey,
       recipient,
       assetMint,
-      assetTokenProgram,
+      depositTokenProgram,
       nftTokenProgram,
     })
     .instruction();
@@ -3286,7 +3282,7 @@ async function withdrawMax(
   txSigner: Keypair,
   recipient: PublicKey,
   assetMint: PublicKey,
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   nftTokenProgram: PublicKey
 ) {
   const withdrawIx = await lockupProgram.methods
@@ -3295,7 +3291,7 @@ async function withdrawMax(
       signer: txSigner.publicKey,
       recipient,
       assetMint,
-      assetTokenProgram,
+      depositTokenProgram,
       nftTokenProgram,
     })
     .instruction();
@@ -3308,7 +3304,7 @@ interface CreateWithTimestampsArgs {
   recipient: PublicKey;
   assetMint: PublicKey;
   expectedStreamId: BN;
-  assetTokenProgram: PublicKey;
+  depositTokenProgram: PublicKey;
   milestones: StreamMilestones;
   depositedAmount: BN;
   unlockAmounts: UnlockAmounts;
@@ -3316,7 +3312,7 @@ interface CreateWithTimestampsArgs {
 }
 
 async function createTokenAndMintToSender(
-  assetTokenProgram: PublicKey,
+  depositTokenProgram: PublicKey,
   unlockAmounts: UnlockAmounts
 ): Promise<{
   assetMint: PublicKey;
@@ -3332,7 +3328,7 @@ async function createTokenAndMintToSender(
     freezeAuthority,
     TOKEN_DECIMALS,
     Keypair.generate(),
-    assetTokenProgram
+    depositTokenProgram
   );
   console.log(`Created Token Mint: ${assetMint}`);
 
@@ -3341,7 +3337,7 @@ async function createTokenAndMintToSender(
     senderKeys,
     assetMint,
     senderKeys.publicKey,
-    assetTokenProgram
+    depositTokenProgram
   );
   console.log(`Sender's ATA: ${senderATA}`);
 
@@ -3359,7 +3355,7 @@ async function createTokenAndMintToSender(
     senderKeys,
     tokenAmount,
     signers,
-    assetTokenProgram
+    depositTokenProgram
   );
   console.log(`Minted ${tokenAmount} tokens to the Sender ATA`);
 
@@ -3370,7 +3366,7 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
   streamId: BN;
   treasuryATA: PublicKey;
   streamNftMint: PublicKey;
-  recipientsStreamNftATA: PublicKey;
+  recipientStreamNftATA: PublicKey;
   nftTokenProgram: PublicKey;
 }> {
   const { senderKeys, expectedStreamId } = args;
@@ -3380,7 +3376,7 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
   await buildSignAndProcessTx(createStreamIx, senderKeys, 270_000);
 
   const streamNftMint = getStreamNftMintAddress(expectedStreamId);
-  const recipientsStreamNftATA = deriveATAAddress(
+  const recipientStreamNftATA = deriveATAAddress(
     streamNftMint,
     recipientKeys.publicKey,
     nftTokenProgram
@@ -3389,14 +3385,14 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
   const treasuryATA = deriveATAAddress(
     args.assetMint,
     treasuryAddress,
-    args.assetTokenProgram
+    args.depositTokenProgram
   );
 
   return {
     streamId: expectedStreamId,
     treasuryATA,
     streamNftMint,
-    recipientsStreamNftATA,
+    recipientStreamNftATA,
     nftTokenProgram,
   };
 }
@@ -3409,7 +3405,7 @@ async function getCreateWithTimestampsIx(
     recipient,
     assetMint,
     expectedStreamId,
-    assetTokenProgram,
+    depositTokenProgram,
     milestones,
     depositedAmount,
     unlockAmounts,
@@ -3431,7 +3427,7 @@ async function getCreateWithTimestampsIx(
       streamNftMint: getStreamNftMintAddress(expectedStreamId),
       assetMint,
       recipient,
-      assetTokenProgram,
+      depositTokenProgram,
       nftTokenProgram: TOKEN_PROGRAM_ID,
     })
     .instruction();
