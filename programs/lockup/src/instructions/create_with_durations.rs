@@ -15,7 +15,7 @@ pub fn handler(
     let start_time = Clock::get().unwrap().unix_timestamp;
 
     // Calculate the cliff time by adding the cliff duration to the start time using checked math.
-    let cliff_time = start_time.checked_add(cliff_duration).unwrap();
+    let cliff_time = if cliff_duration > 0 { start_time.checked_add(cliff_duration).unwrap() } else { 0 };
 
     // Calculate the end time by adding the total duration to the start time using checked math.
     let end_time = start_time.checked_add(total_duration).unwrap();
