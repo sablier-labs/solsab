@@ -88,9 +88,9 @@ pub fn check_create(
 }
 
 // Validate the renounce
-pub fn check_renounce(is_cancelable: bool) -> Result<()> {
+pub fn check_renounce(is_cancelable: bool, deposited_amount: u64, streamed_amount: u64) -> Result<()> {
     // Check: the stream is cancelable.
-    if !is_cancelable {
+    if !is_cancelable || streamed_amount >= deposited_amount {
         return Err(ErrorCode::StreamAlreadyNonCancelable.into());
     }
 
