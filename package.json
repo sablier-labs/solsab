@@ -32,10 +32,10 @@
     "typescript": "^4.3.5"
   },
   "scripts": {
-    "build": "RUSTUP_TOOLCHAIN=nightly-2025-04-01 anchor build",
+    "build": "RUSTUP_TOOLCHAIN=nightly anchor build",
     "clean": "rm -rf .anchor target",
-    "fmt:rust": "RUSTUP_TOOLCHAIN=nightly-2025-04-01 cargo fmt",
-    "fmt:rust:check": "RUSTUP_TOOLCHAIN=nightly-2025-04-01 cargo fmt --check",
+    "fmt:rust": "RUSTUP_TOOLCHAIN=nightly cargo fmt",
+    "fmt:rust:check": "RUSTUP_TOOLCHAIN=nightly cargo fmt --check",
     "lint": "bun run fmt:rust:check && bun run lint:ts && bun run prettier:check",
     "lint:fix": "bun run fmt:rust && bun run lint:ts:fix && bun run prettier:write",
     "lint:ts": "eslint \"migrations/**/*.ts\" \"tests/**/*.ts\"",
