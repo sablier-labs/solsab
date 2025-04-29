@@ -17,12 +17,6 @@ no-log-ix-name = []
 idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 
 [dependencies]
-anchor-lang = { version = "0.31.0", features = ["init-if-needed"] }
-anchor-spl = { version = "0.31.0", features = ["metadata"] }
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.31.1", features = ["metadata"] }
 mpl-token-metadata = "5.1.0"
-
-# v1.9 specifies `rust-version = "1.84"`, which causes compatibility issues with Solana build
-# tools' Rust version (1.79.0 at the time of writing this comment).
-# TODO: Remove when the Solana version we use comes with Rust version >= 1.84
-# bytemuck_derive = ">1.0.0, <1.9"
-bytemuck_derive = "=1.8.1"
