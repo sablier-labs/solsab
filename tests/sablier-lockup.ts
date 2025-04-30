@@ -2655,7 +2655,7 @@ async function testMultiStreamCreationInOneTx(
   }
 
   // Build, sign and process the transaction
-  await buildSignAndProcessTx(ixs, senderKeys, 600_000);
+  await buildSignAndProcessTx(ixs, senderKeys, 700_000);
 
   // Get the final token balance of the sender
   const senderFinalTokenBalance = await getTokenBalanceByATAKey(senderATA);
@@ -3506,7 +3506,7 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
 
   const nftTokenProgram = TOKEN_PROGRAM_ID;
   const createStreamIx = await getCreateWithTimestampsIx(args);
-  await buildSignAndProcessTx(createStreamIx, senderKeys, 270_000);
+  await buildSignAndProcessTx(createStreamIx, senderKeys, 350_000);
 
   const streamNftMint = getStreamNftMintAddress(expectedStreamId);
   const recipientStreamNftATA = deriveATAAddress(
