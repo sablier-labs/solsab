@@ -72,15 +72,15 @@ pub mod sablier_lockup {
         instructions::renounce::handler(ctx)
     }
 
-    pub fn refundable_amount_of(ctx: Context<StreamViewContext>, stream_id: u64) -> Result<u64> {
+    pub fn refundable_amount_of(ctx: Context<StreamQuery>, stream_id: u64) -> Result<u64> {
         instructions::refundable_amount_of::handler(ctx, stream_id)
     }
 
-    pub fn status_of(ctx: Context<StreamViewContext>, stream_id: u64) -> Result<StreamStatus> {
+    pub fn status_of(ctx: Context<StreamQuery>, stream_id: u64) -> Result<StreamStatus> {
         instructions::status_of::handler(ctx, stream_id)
     }
 
-    pub fn streamed_amount_of(ctx: Context<StreamViewContext>, stream_id: u64) -> Result<u64> {
+    pub fn streamed_amount_of(ctx: Context<StreamQuery>, stream_id: u64) -> Result<u64> {
         instructions::streamed_amount_of::handler(ctx, stream_id)
     }
 
@@ -88,7 +88,7 @@ pub mod sablier_lockup {
         instructions::withdraw::handler(ctx, amount)
     }
 
-    pub fn withdrawable_amount_of(ctx: Context<StreamViewContext>, stream_id: u64) -> Result<u64> {
+    pub fn withdrawable_amount_of(ctx: Context<StreamQuery>, stream_id: u64) -> Result<u64> {
         instructions::withdrawable_amount_of::handler(ctx, stream_id)
     }
 

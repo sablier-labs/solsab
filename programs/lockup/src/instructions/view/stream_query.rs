@@ -3,10 +3,10 @@ use anchor_spl::token_interface::Mint;
 
 use crate::{state::lockup::StreamData, utils::constants::*};
 
-// Common context that can be used for multiple view instructions
+// Common context that is used by multiple view instructions
 #[derive(Accounts)]
 #[instruction(stream_id: u64)]
-pub struct StreamViewContext<'info> {
+pub struct StreamQuery<'info> {
     #[account(
         seeds = [STREAM_NFT_MINT_SEED,
                  stream_id.to_le_bytes().as_ref()],

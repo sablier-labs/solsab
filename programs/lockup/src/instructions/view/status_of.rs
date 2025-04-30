@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 
-use super::StreamViewContext;
+use super::StreamQuery;
 use crate::utils::lockup_math::get_streamed_amount;
 
-pub fn handler(ctx: Context<StreamViewContext>, _stream_id: u64) -> Result<StreamStatus> {
+pub fn handler(ctx: Context<StreamQuery>, _stream_id: u64) -> Result<StreamStatus> {
     let stream_data = &ctx.accounts.stream_data;
 
     if stream_data.is_depleted {
