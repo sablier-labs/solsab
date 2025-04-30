@@ -27,7 +27,9 @@ pub struct StatusOf<'info> {
 pub fn handler(ctx: Context<StatusOf>, _stream_id: u64) -> Result<StreamStatus> {
     let stream_data = &ctx.accounts.stream_data;
 
-    // TODO: also check for Stream Depletion
+    if stream_data.is_depleted {
+        return Ok(StreamStatus::Depleted);
+    }
 
     if stream_data.was_canceled {
         return Ok(StreamStatus::Canceled);
@@ -40,7 +42,7 @@ pub fn handler(ctx: Context<StatusOf>, _stream_id: u64) -> Result<StreamStatus> 
         return Ok(StreamStatus::Pending);
     }
 
-    // Get the streamed amount
+    // Calculate the streamed amount
     let streamed_amount = get_streamed_amount(&stream_data.timestamps, &stream_data.amounts);
 
     if streamed_amount < stream_data.amounts.deposited {
