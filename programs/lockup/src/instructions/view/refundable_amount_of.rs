@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 
-use super::StreamQuery;
+use super::StreamView;
 use crate::utils::lockup_math::get_refundable_amount;
 
-pub fn handler(ctx: Context<StreamQuery>, _stream_id: u64) -> Result<u64> {
+pub fn handler(ctx: Context<StreamView>, _stream_id: u64) -> Result<u64> {
     Ok(get_refundable_amount(&ctx.accounts.stream_data.timestamps, &ctx.accounts.stream_data.amounts))
 }
