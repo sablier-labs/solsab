@@ -151,12 +151,12 @@ pub struct CreateWithTimestamps<'info> {
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,
-    start_time: i64,
-    start_unlock: u64,
-    cliff_time: i64,
-    cliff_unlock: u64,
-    end_time: i64,
     deposited_amount: u64,
+    start_time: i64,
+    cliff_time: i64,
+    end_time: i64,
+    start_unlock: u64,
+    cliff_unlock: u64,
     is_cancelable: bool,
 ) -> Result<()> {
     let asset_mint = &ctx.accounts.asset_mint;
