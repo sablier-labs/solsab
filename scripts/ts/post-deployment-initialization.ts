@@ -38,19 +38,26 @@ describe("SablierLockup post-deployment initialization", () => {
     configureConsoleLogs();
     await configureTestingEnvironment();
     // await logInfoAboutImportantAccounts();
-    // await initializeSablierLockup();
+    await initializeSablierLockup();
   });
 
-  it("Creates a cancelable SPL Token LL Stream", async () => {
-    // await testStreamCreation(
-    //   true,
-    //   await generateDefaultMilestones(),
-    //   getDefaultUnlockAmounts()
-    // );
+  it("Creates 3 cancelable SPL Token LL Streams", async () => {
+    for (let i = 0; i < 3; i++) {
+      await createAStream(new BN(i));
+    }
   });
 });
 
 // HELPER FUNCTIONS AND DATA STRUCTS
+
+async function createAStream(expectedStreamId: BN) {
+  await testStreamCreation(
+    expectedStreamId,
+    true,
+    await generateDefaultMilestones(),
+    getDefaultUnlockAmounts()
+  );
+}
 
 async function configureTestingEnvironment() {
   anchorProvider = anchor.AnchorProvider.env();
@@ -109,15 +116,7 @@ async function logInfoAboutImportantAccounts() {
 
 async function initializeSablierLockup() {
   await lockupProgram.methods
-    .initializePhaseOne(senderKeys.publicKey)
-    .signers([senderKeys])
-    .accounts({
-      deployer: senderKeys.publicKey,
-    })
-    .rpc();
-
-  await lockupProgram.methods
-    .initializePhaseTwo()
+    .initialize(senderKeys.publicKey)
     .signers([senderKeys])
     .accounts({
       deployer: senderKeys.publicKey,
@@ -151,6 +150,7 @@ async function generateDefaultMilestones(): Promise<StreamMilestones> {
 }
 
 async function testStreamCreation(
+  expectedStreamId: BN,
   isCancelable: boolean,
   milestones: StreamMilestones,
   unlockAmounts: UnlockAmounts
@@ -158,10 +158,8 @@ async function testStreamCreation(
   const { assetMint, mintedAmount: depositedAmount } =
     await createTokenAndMintToSender();
 
-  // Get the initial token balance of the sender
-  // const senderInitialTokenBalance = await getTokenBalanceByATAKey(senderATA);
-
-  await prepareAndCreateWithTimestamps({
+  await createWithTimestamps({
+    expectedStreamId,
     senderKeys,
     recipient: recipientKeys.publicKey,
     assetMint,
@@ -291,52 +289,6 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
   };
 }
 
-async function prepareAndCreateWithTimestamps(
-  args: PrepareAndCreateWithTimestampsArgs
-): Promise<{
-  nftTokenProgram: PublicKey;
-  recipientsStreamNftATA: PublicKey;
-  streamNftMint: PublicKey;
-  treasuryATA: PublicKey;
-}> {
-  const {
-    senderKeys,
-    recipient,
-    assetMint,
-    milestones,
-    depositedAmount,
-    unlockAmounts,
-    isCancelable,
-  } = args;
-
-  // const expectedStreamId = await deduceCurrentStreamId();
-  const expectedStreamId = new BN(2);
-  const { treasuryATA } = await prepareForStreamCreation(
-    senderKeys,
-    assetMint,
-    expectedStreamId
-  );
-
-  const { streamNftMint, recipientsStreamNftATA, nftTokenProgram } =
-    await createWithTimestamps({
-      senderKeys,
-      recipient,
-      assetMint,
-      expectedStreamId,
-      milestones,
-      depositedAmount,
-      unlockAmounts,
-      isCancelable,
-    });
-
-  return {
-    nftTokenProgram,
-    recipientsStreamNftATA,
-    streamNftMint,
-    treasuryATA,
-  };
-}
-
 function getPDAAddress(
   seeds: Array<Buffer | Uint8Array>,
   programId: PublicKey
@@ -351,46 +303,6 @@ function getStreamNftMintAddress(streamId: BN): PublicKey {
     streamId.toBuffer("le", 8),
   ];
   return getPDAAddress(streamNftMintSeeds, lockupProgramId);
-}
-
-async function prepareForStreamCreation(
-  signerKeys: Keypair,
-  assetMint: PublicKey,
-  expectedStreamId: BN
-): Promise<{ treasuryATA: PublicKey }> {
-  try {
-    await lockupProgram.methods
-      .prepareForStreamCreation()
-      .signers([signerKeys])
-      .accountsPartial({
-        sender: signerKeys.publicKey,
-        assetMint,
-        streamNftMint: getStreamNftMintAddress(expectedStreamId),
-        nftTokenProgram: TOKEN_PROGRAM_ID,
-        depositTokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .rpc();
-  } catch (err: any) {
-    if (err instanceof anchor.web3.SendTransactionError) {
-      console.error(
-        "Transaction logs:",
-        await err.getLogs(anchorProvider.connection)
-      );
-    }
-
-    if (err.logs) {
-      console.error("Full logs:", err.logs);
-    } else if (typeof err.getLogs === "function") {
-      console.error("Full logs:", err.getLogs());
-    } else {
-      console.error("Error:", err);
-    }
-    throw err;
-  }
-
-  return {
-    treasuryATA: deriveATAAddress(assetMint, treasuryAddress, TOKEN_PROGRAM_ID),
-  };
 }
 
 export function deriveATAAddress(
