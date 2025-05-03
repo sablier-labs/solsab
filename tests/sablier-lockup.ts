@@ -3547,12 +3547,12 @@ async function getCreateWithTimestampsIx(
 
   return await lockupProgram.methods
     .createWithTimestamps(
-      milestones.startTime,
-      unlockAmounts.startUnlock,
-      milestones.cliffTime,
-      unlockAmounts.cliffUnlock,
-      milestones.endTime,
       depositedAmount,
+      milestones.startTime,
+      milestones.cliffTime,
+      milestones.endTime,
+      unlockAmounts.startUnlock,
+      unlockAmounts.cliffUnlock,
       isCancelable
     )
     .accountsPartial({
