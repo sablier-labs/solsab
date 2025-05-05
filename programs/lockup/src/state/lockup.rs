@@ -4,7 +4,7 @@ use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 #[derive(InitSpace)]
 pub struct StreamData {
     pub amounts: Amounts,
-    pub asset_mint: Pubkey,
+    pub deposit_token_mint: Pubkey,
     pub bump: u8,
     pub stream_id: u64,
     pub nft_id: u64,
@@ -48,7 +48,7 @@ impl StreamData {
     #[allow(clippy::too_many_arguments)]
     pub fn create(
         &mut self,
-        asset_mint: Pubkey,
+        deposit_token_mint: Pubkey,
         bump: u8,
         cliff_time: i64,
         cliff_unlock: u64,
@@ -67,7 +67,7 @@ impl StreamData {
         self.amounts.refunded = 0;
         self.amounts.start_unlock = start_unlock;
         self.amounts.withdrawn = 0;
-        self.asset_mint = asset_mint;
+        self.deposit_token_mint = deposit_token_mint;
         self.stream_id = stream_id;
         self.nft_id = nft_id;
         self.is_cancelable = is_cancelable;

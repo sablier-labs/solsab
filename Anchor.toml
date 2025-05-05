@@ -6,13 +6,15 @@ skip-lint = false
 
 [programs.devnet]
 sablier_lockup = "Cmo3bW9vDNiESzNVgqUGzbmJZ68ncJkBMgLACaRRjXyY"
+sablier_merkle_instant = "Cmo3bW9vDNiESzNVgqUGzbmJZ68ncJkBMgLACaRRjXyx"
 
 [programs.localnet]
-sablier_lockup = "7KaQU8kYWDPcr9tbuMZWnWiVPUxQLjrjZ6jUU8rY1wqn"
+sablier_lockup = "Cmo3bW9vDNiESzNVgqUGzbmJZ68ncJkBMgLACaRRjXyY"
+sablier_merkle_instant = "Cmo3bW9vDNiESzNVgqUGzbmJZ68ncJkBMgLACaRRjXyx"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"

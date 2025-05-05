@@ -20,8 +20,8 @@ pub struct Withdraw<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
-    #[account(address = stream_data.asset_mint)]
-    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
+    #[account(address = stream_data.deposit_token_mint)]
+    pub deposit_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account()]
     /// CHECK: This account must be the Stream's recipient (checked in recipient_stream_nft_ata's constraints)
@@ -38,55 +38,56 @@ pub struct Withdraw<'info> {
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        mut,
-        seeds = [STREAM_DATA_SEED,
-                 stream_nft_mint.key().as_ref()],
-        bump = stream_data.bump,
+      mut,
+      seeds = [STREAM_DATA_SEED,
+                stream_nft_mint.key().as_ref()],
+      bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 
     #[account(
-        mut,
-        associated_token::mint = stream_nft_mint,
-        associated_token::authority = stream_recipient,
-        associated_token::token_program = nft_token_program,
-        // Dev: the below constraint is vital for making sure that the assets are only withdrawn to the legit recipient
-        constraint = recipient_stream_nft_ata.amount == 1,
-        // TODO: are there any other ways in which one could "fake" the recipient's authority (and that need to be checked in this Ix)?
+      mut,
+      associated_token::mint = stream_nft_mint,
+      associated_token::authority = stream_recipient,
+      associated_token::token_program = nft_token_program,
+      // Dev: the below constraint is vital for making sure that the assets are only withdrawn to the legit recipient
+      constraint = recipient_stream_nft_ata.amount == 1,
+      // TODO: are there any other ways in which one could "fake" the recipient's authority (and that need to be checked in this Ix)?
     )]
     pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// CHECK: This can be any address if the tx signer is the Stream's Recipient -
     /// and must be the Stream's Recipient if it's not
     #[account(
-        constraint = (
-            withdrawal_recipient.key() == stream_recipient.key() ||
-            (withdrawal_recipient.key() != stream_recipient.key() &&
-            signer.key() == stream_recipient.key())
-        ))]
+      constraint = (
+          withdrawal_recipient.key() == stream_recipient.key() ||
+          (withdrawal_recipient.key() != stream_recipient.key() &&
+          signer.key() == stream_recipient.key())
+      )
+    )]
     pub withdrawal_recipient: UncheckedAccount<'info>,
 
     #[account(
-        init_if_needed,
-        payer = signer,
-        associated_token::mint = asset_mint,
-        associated_token::authority = withdrawal_recipient,
-        associated_token::token_program = deposit_token_program,
+      init_if_needed,
+      payer = signer,
+      associated_token::mint = deposit_token_mint,
+      associated_token::authority = withdrawal_recipient,
+      associated_token::token_program = deposit_token_program,
     )]
     pub withdrawal_recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-        mut,
-        seeds = [TREASURY_SEED],
-        bump = treasury.bump
+      mut,
+      seeds = [TREASURY_SEED],
+      bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
     #[account(
-        mut,
-        associated_token::mint = asset_mint,
-        associated_token::authority = treasury,
-        associated_token::token_program = deposit_token_program
+      mut,
+      associated_token::mint = deposit_token_mint,
+      associated_token::authority = treasury,
+      associated_token::token_program = deposit_token_program
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -123,10 +124,10 @@ pub fn handler(ctx: Context<Withdraw>, stream_id: u64, amount: u64) -> Result<()
         ctx.accounts.treasury_ata.to_account_info(),
         ctx.accounts.withdrawal_recipient_ata.to_account_info(),
         ctx.accounts.treasury.to_account_info(),
-        ctx.accounts.asset_mint.to_account_info(),
+        ctx.accounts.deposit_token_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
         amount,
-        ctx.accounts.asset_mint.decimals,
+        ctx.accounts.deposit_token_mint.decimals,
         &[&[TREASURY_SEED, &[treasury_bump]]],
     )?;
 

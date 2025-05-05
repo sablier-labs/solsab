@@ -1,8 +1,9 @@
 use anchor_lang::prelude::*;
+use anchor_spl::associated_token::AssociatedToken;
 
 use crate::{
     state::treasury::Treasury,
-    utils::{constants::*, events::FeesCollected, validations::check_collect_fees},
+    utils::{constants::*, events::*, validations::check_collect_fees},
 };
 
 #[derive(Accounts)]
@@ -20,9 +21,12 @@ pub struct CollectFees<'info> {
     #[account(
       mut,
       seeds = [TREASURY_SEED],
-      bump = treasury.bump
+      bump
     )]
-    pub treasury: Box<Account<'info, Treasury>>,
+    pub treasury: Account<'info, Treasury>,
+
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
 }
 
 pub fn handler(ctx: Context<CollectFees>) -> Result<()> {

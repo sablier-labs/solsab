@@ -16,13 +16,13 @@ use crate::{
 #[instruction(stream_id: u64)]
 pub struct Cancel<'info> {
     #[account(
-        mut,
-        address = stream_data.sender,
+      mut,
+      address = stream_data.sender,
     )]
     pub sender: Signer<'info>,
 
-    #[account(address = stream_data.asset_mint)]
-    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
+    #[account(address = stream_data.deposit_token_mint)]
+    pub deposit_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         seeds = [
@@ -35,32 +35,32 @@ pub struct Cancel<'info> {
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        mut,
-        seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
-        bump = stream_data.bump,
+      mut,
+      seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
+      bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 
     #[account(
-        mut,
-        associated_token::mint = asset_mint,
-        associated_token::authority = sender,
-        associated_token::token_program = deposit_token_program,
+      mut,
+      associated_token::mint = deposit_token_mint,
+      associated_token::authority = sender,
+      associated_token::token_program = deposit_token_program,
     )]
     pub sender_asset_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-        mut,
-        seeds = [TREASURY_SEED],
-        bump = treasury.bump
+      mut,
+      seeds = [TREASURY_SEED],
+      bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
     #[account(
-        mut,
-        associated_token::mint = asset_mint,
-        associated_token::authority = treasury,
-        associated_token::token_program = deposit_token_program,
+      mut,
+      associated_token::mint = deposit_token_mint,
+      associated_token::authority = treasury,
+      associated_token::token_program = deposit_token_program,
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -98,15 +98,20 @@ pub fn handler(ctx: Context<Cancel>, stream_id: u64) -> Result<()> {
         ctx.accounts.treasury_ata.to_account_info(),
         ctx.accounts.sender_asset_ata.to_account_info(),
         ctx.accounts.treasury.to_account_info(),
-        ctx.accounts.asset_mint.to_account_info(),
+        ctx.accounts.deposit_token_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
         sender_amount,
-        ctx.accounts.asset_mint.decimals,
+        ctx.accounts.deposit_token_mint.decimals,
         &[&[TREASURY_SEED, &[ctx.accounts.treasury.bump]]],
     )?;
 
     // Log the cancellation.
-    emit!(CancelLockupStream { stream_id, asset_mint: ctx.accounts.asset_mint.key(), sender_amount, recipient_amount });
+    emit!(CancelLockupStream {
+        stream_id,
+        deposit_token_mint: ctx.accounts.deposit_token_mint.key(),
+        sender_amount,
+        recipient_amount
+    });
 
     Ok(())
 }

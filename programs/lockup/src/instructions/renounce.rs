@@ -10,8 +10,8 @@ use crate::{
 #[instruction(stream_id: u64)]
 pub struct Renounce<'info> {
     #[account(
-        mut,
-        address = stream_data.sender,
+      mut,
+      address = stream_data.sender,
     )]
     pub sender: Signer<'info>,
 
@@ -26,9 +26,9 @@ pub struct Renounce<'info> {
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        mut,
-        seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
-        bump = stream_data.bump,
+      mut,
+      seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
+      bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 }
