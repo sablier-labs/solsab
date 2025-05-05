@@ -15,27 +15,27 @@ use crate::{
 #[derive(Accounts)]
 pub struct Cancel<'info> {
     #[account(
-        mut,
-        address = stream_data.sender,
+      mut,
+      address = stream_data.sender,
     )]
     pub sender: Signer<'info>,
 
-    #[account(address = stream_data.asset_mint)]
-    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
+    #[account(address = stream_data.deposit_token_mint)]
+    pub deposit_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account()]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        mut,
-        seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
-        bump = stream_data.bump,
+      mut,
+      seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
+      bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 
     #[account(
         mut,
-        associated_token::mint = asset_mint,
+        associated_token::mint = deposit_token_mint,
         associated_token::authority = stream_data,
         associated_token::token_program = deposit_token_program,
     )]
@@ -43,7 +43,7 @@ pub struct Cancel<'info> {
 
     #[account(
         mut,
-        associated_token::mint = asset_mint,
+        associated_token::mint = deposit_token_mint,
         associated_token::authority = sender,
         associated_token::token_program = deposit_token_program,
     )]
@@ -83,16 +83,16 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
         ctx.accounts.stream_data_ata.to_account_info(),
         ctx.accounts.sender_asset_ata.to_account_info(),
         ctx.accounts.stream_data.to_account_info(),
-        ctx.accounts.asset_mint.to_account_info(),
+        ctx.accounts.deposit_token_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
         sender_amount,
-        ctx.accounts.asset_mint.decimals,
+        ctx.accounts.deposit_token_mint.decimals,
         &[&[STREAM_DATA_SEED, ctx.accounts.stream_nft_mint.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
     )?;
 
     // Log the cancellation.
     emit!(CancelLockupStream {
-        asset_mint: ctx.accounts.asset_mint.key(),
+        deposit_token_mint: ctx.accounts.deposit_token_mint.key(),
         recipient_amount,
         sender_amount,
         stream_data: ctx.accounts.stream_data.key(),

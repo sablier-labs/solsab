@@ -20,13 +20,13 @@ pub struct CreateWithTimestamps<'info> {
     pub sender: Signer<'info>,
 
     #[account(mint::token_program = deposit_token_program)]
-    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
+    pub deposit_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        mut,
-        associated_token::mint = asset_mint,
-        associated_token::authority = sender,
-        associated_token::token_program = deposit_token_program
+      mut,
+      associated_token::mint = deposit_token_mint,
+      associated_token::authority = sender,
+      associated_token::token_program = deposit_token_program
     )]
     pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -41,31 +41,31 @@ pub struct CreateWithTimestamps<'info> {
     pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
 
     #[account(
-        mut,
-        seeds = [NFT_COLLECTION_MINT_SEED],
-        bump,
+      mut,
+      seeds = [NFT_COLLECTION_MINT_SEED],
+      bump,
     )]
     pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        mut,
-        seeds = [METADATA_SEED,
-                 token_metadata_program.key().as_ref(),
-                 nft_collection_mint.key().as_ref()],
-        seeds::program = token_metadata_program.key(),
-        bump,
+      mut,
+      seeds = [METADATA_SEED,
+                token_metadata_program.key().as_ref(),
+                nft_collection_mint.key().as_ref()],
+      seeds::program = token_metadata_program.key(),
+      bump,
     )]
     /// CHECK: This account will only be touched by the Metaplex program
     pub nft_collection_metadata: UncheckedAccount<'info>,
 
     #[account(
-        mut,
-        seeds = [METADATA_SEED,
-                 token_metadata_program.key().as_ref(),
-                 nft_collection_mint.key().as_ref(),
-                 EDITION_SEED],
-        seeds::program = token_metadata_program.key(),
-        bump,
+      mut,
+      seeds = [METADATA_SEED,
+                token_metadata_program.key().as_ref(),
+                nft_collection_mint.key().as_ref(),
+                EDITION_SEED],
+      seeds::program = token_metadata_program.key(),
+      bump,
     )]
     /// CHECK: This account will only be touched by the Metaplex program
     pub nft_collection_master_edition: UncheckedAccount<'info>,
@@ -81,7 +81,7 @@ pub struct CreateWithTimestamps<'info> {
         bump,
         mint::decimals = 0,
         mint::authority = nft_collection_mint,
-        mint::freeze_authority = nft_collection_mint,
+        mint::freeze_authority = nft_collection_mint,  // TODO: make Treasury the authority, instead?
         mint::token_program = nft_token_program,
     )]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
@@ -98,7 +98,7 @@ pub struct CreateWithTimestamps<'info> {
     #[account(
         init,
         payer = sender,
-        associated_token::mint = asset_mint,
+        associated_token::mint = deposit_token_mint,
         associated_token::authority = stream_data,
         associated_token::token_program = deposit_token_program
     )]
@@ -114,24 +114,24 @@ pub struct CreateWithTimestamps<'info> {
     pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-        mut,
-        seeds = [METADATA_SEED,
-                 token_metadata_program.key().as_ref(),
-                 stream_nft_mint.key().as_ref()],
-        seeds::program = token_metadata_program.key(),
-        bump,
+      mut,
+      seeds = [METADATA_SEED,
+                token_metadata_program.key().as_ref(),
+                stream_nft_mint.key().as_ref()],
+      seeds::program = token_metadata_program.key(),
+      bump,
     )]
     /// CHECK: This account will be initialized by the Metaplex program
     pub stream_nft_metadata: UncheckedAccount<'info>,
 
     #[account(
-        mut,
-        seeds = [METADATA_SEED,
-                 token_metadata_program.key().as_ref(),
-                 stream_nft_mint.key().as_ref(),
-                 EDITION_SEED],
-        seeds::program = token_metadata_program.key(),
-        bump,
+      mut,
+      seeds = [METADATA_SEED,
+                token_metadata_program.key().as_ref(),
+                stream_nft_mint.key().as_ref(),
+                EDITION_SEED],
+      seeds::program = token_metadata_program.key(),
+      bump,
     )]
     /// CHECK: This account will be initialized by the Metaplex program
     pub stream_nft_master_edition: UncheckedAccount<'info>,
@@ -156,7 +156,7 @@ pub fn handler(
     cliff_unlock: u64,
     is_cancelable: bool,
 ) -> Result<()> {
-    let asset_mint = &ctx.accounts.asset_mint;
+    let deposit_token_mint = &ctx.accounts.deposit_token_mint;
     let sender = &ctx.accounts.sender;
     let sender_ata = &ctx.accounts.sender_ata;
 
@@ -165,7 +165,7 @@ pub fn handler(
 
     // Effect: create the stream data.
     ctx.accounts.stream_data.create(
-        asset_mint.key(),
+        deposit_token_mint.key(),
         ctx.bumps.stream_data,
         cliff_time,
         cliff_unlock,
@@ -204,18 +204,18 @@ pub fn handler(
         sender_ata.to_account_info(),
         ctx.accounts.stream_data_ata.to_account_info(),
         sender.to_account_info(),
-        asset_mint.to_account_info(),
+        deposit_token_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
         deposited_amount,
-        asset_mint.decimals,
+        deposit_token_mint.decimals,
         &[],
     )?;
 
     // Log the newly created stream.
     emit!(CreateLockupLinearStream {
         salt,
-        asset_decimals: asset_mint.decimals,
-        asset_mint: ctx.accounts.asset_mint.key(),
+        asset_decimals: deposit_token_mint.decimals,
+        deposit_token_mint: ctx.accounts.deposit_token_mint.key(),
         recipient: ctx.accounts.recipient.key(),
         stream_data: ctx.accounts.stream_data.key(),
         stream_nft_mint: ctx.accounts.stream_nft_mint.key()
