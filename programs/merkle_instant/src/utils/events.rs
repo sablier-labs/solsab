@@ -15,9 +15,9 @@ pub struct CampaignCreated {
     pub creator: Pubkey,
     pub campaign_name: String,
     pub no_of_recipients: u32,
-    pub expiration: i64,
     pub merkle_tree_ipfs_id: String,
     pub merkle_root: [u8; 32],
+    pub expiration_time: i64,
 }
 
 #[event]

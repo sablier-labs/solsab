@@ -6,6 +6,7 @@ use crate::utils::constants::*;
 #[derive(InitSpace)]
 pub struct ClaimStatus {
     // TODO: what's the appropriate max length?
+    // TODO: does this negatively affect the size of the account if the actual number of recipients is low?
     #[max_len(CLAIM_STATUS_SIZE as usize)] // u32::MAX
     pub claimed_bitmap: Vec<bool>,
     pub bump: u8,

@@ -13,28 +13,28 @@ use crate::{
 #[instruction(amount: u64, merkle_root: [u8; 32])]
 pub struct FundCampaign<'info> {
     #[account(mut)]
-    pub signer: Signer<'info>,
+    pub funder: Signer<'info>,
 
     #[account(
       mut,
       seeds = [CAMPAIGN_SEED, &merkle_root],
-      bump
+      bump = campaign.bump,
     )]
-    pub campaign: Account<'info, Campaign>,
+    pub campaign: Box<Account<'info, Campaign>>,
 
     #[account(
+      address = campaign.airdrop_token_mint,
       mint::token_program = airdrop_token_program,
-      constraint = airdrop_token_mint.key() == campaign.airdrop_token_mint
     )]
     pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
       mut,
       associated_token::mint = airdrop_token_mint,
-      associated_token::authority = signer,
+      associated_token::authority = funder,
       associated_token::token_program = airdrop_token_program
     )]
-    pub signer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub funder_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
       mut,
@@ -49,11 +49,11 @@ pub struct FundCampaign<'info> {
 }
 
 pub fn handler(ctx: Context<FundCampaign>, _merkle_root: [u8; 32], amount: u64) -> Result<()> {
-    // Interaction: transfer tokens from the signer's ATA to the Campaign's ATA.
+    // Interaction: transfer tokens from the funder's ATA to the Campaign's ATA.
     transfer_tokens(
-        ctx.accounts.signer_ata.to_account_info(),
+        ctx.accounts.funder_ata.to_account_info(),
         ctx.accounts.campaign_ata.to_account_info(),
-        ctx.accounts.signer.to_account_info(),
+        ctx.accounts.funder.to_account_info(),
         ctx.accounts.airdrop_token_mint.to_account_info(),
         ctx.accounts.airdrop_token_program.to_account_info(),
         amount,
@@ -62,6 +62,6 @@ pub fn handler(ctx: Context<FundCampaign>, _merkle_root: [u8; 32], amount: u64) 
     )?;
 
     // Log the campaign funding.
-    emit!(CampaignFunded { campaign: ctx.accounts.campaign.key(), funder: ctx.accounts.signer.key(), amount });
+    emit!(CampaignFunded { campaign: ctx.accounts.campaign.key(), funder: ctx.accounts.funder.key(), amount });
     Ok(())
 }

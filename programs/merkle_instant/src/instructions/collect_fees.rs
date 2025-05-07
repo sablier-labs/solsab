@@ -21,9 +21,9 @@ pub struct CollectFees<'info> {
     #[account(
       mut,
       seeds = [TREASURY_SEED],
-      bump
+      bump = treasury.bump,
     )]
-    pub treasury: Account<'info, Treasury>,
+    pub treasury: Box<Account<'info, Treasury>>,
 
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
@@ -50,6 +50,7 @@ pub fn handler(ctx: Context<CollectFees>) -> Result<()> {
     Ok(())
 }
 
+// TODO: abstract this to a utils module used by both Lockup and Merkle Instant
 /// Helper function to calculate the collectable amount from an account. It takes an extra-safe approach by doubling
 /// the rent exemption, ensuring that the account balance does not fall below the rent-exempt minimum, which
 /// could otherwise make the program unusable.

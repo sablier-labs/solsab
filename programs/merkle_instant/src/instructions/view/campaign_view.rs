@@ -8,7 +8,7 @@ use crate::{state::campaign::*, utils::constants::*};
 pub struct CampaignView<'info> {
     #[account(
       seeds = [CAMPAIGN_SEED, &merkle_root],
-      bump
+      bump = campaign.bump,
     )]
-    pub campaign: Account<'info, Campaign>,
+    pub campaign: Box<Account<'info, Campaign>>,
 }

@@ -38,7 +38,7 @@ pub mod sablier_merkle_instant {
         ctx: Context<CreateCampaign>,
         name: String,
         no_of_recipients: u32,
-        expiration: i64,
+        expiration_time: i64,
         merkle_tree_ipfs_id: String,
         merkle_root: [u8; 32],
     ) -> Result<()> {
@@ -48,7 +48,7 @@ pub mod sablier_merkle_instant {
             no_of_recipients,
             merkle_tree_ipfs_id,
             merkle_root,
-            expiration,
+            expiration_time,
         )
     }
 
@@ -64,7 +64,7 @@ pub mod sablier_merkle_instant {
         instructions::has_expired::handler(ctx, merkle_root)
     }
 
-    pub fn initialize(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
-        instructions::initialize::handler(ctx, fee_collector)
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        instructions::initialize::handler(ctx)
     }
 }
