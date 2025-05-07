@@ -5,9 +5,12 @@ use anchor_spl::{
 };
 
 use crate::{
-    state::campaign::Campaign,
+    state::{campaign::Campaign, claim_status::ClaimStatus},
     utils::{
-        constants::CAMPAIGN_SEED, events::AirdropClaimed, transfer_helper::transfer_tokens, validations::check_claim,
+        constants::{CAMPAIGN_SEED, CLAIM_STATUS_SEED},
+        events::AirdropClaimed,
+        transfer_helper::transfer_tokens,
+        validations::check_claim,
     },
 };
 
@@ -20,13 +23,20 @@ pub struct Claim<'info> {
     #[account(
       mut,
       seeds = [CAMPAIGN_SEED, &merkle_root],
-      bump
+      bump = campaign.bump,
     )]
-    pub campaign: Account<'info, Campaign>,
+    pub campaign: Box<Account<'info, Campaign>>,
 
     #[account(
+      mut,
+      seeds = [CLAIM_STATUS_SEED, &campaign.key().to_bytes()],
+      bump = claim_status.bump,
+    )]
+    pub claim_status: Box<Account<'info, ClaimStatus>>,
+
+    #[account(
+      address = campaign.airdrop_token_mint,
       mint::token_program = airdrop_token_program,
-      constraint = airdrop_token_mint.key() == campaign.airdrop_token_mint
     )]
     pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
@@ -71,6 +81,9 @@ pub fn handler(
         ctx.accounts.airdrop_token_mint.decimals,
         &[&[CAMPAIGN_SEED, &[ctx.accounts.campaign.bump]]],
     )?;
+
+    // Effect: Update the campaign's claim status.
+    ctx.accounts.claim_status.claimed_bitmap[leaf_id as usize] = true;
 
     // Log the clawback.
     emit!(AirdropClaimed {

@@ -1,4 +1,4 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, solana_program::keccak::hashv as keccak_hashv};
 
 use crate::utils::errors::ErrorCode;
 
@@ -10,23 +10,25 @@ pub fn check_claim(
     proof: &[[u8; 32]],
 ) -> Result<()> {
     // Form the leaf
-    let mut leaf = Vec::from(leaf_id.to_le_bytes().as_ref());
-    leaf.extend_from_slice(claimer.to_bytes().as_ref());
-    leaf.extend_from_slice(&amount.to_le_bytes());
+    let leaf = [&leaf_id.to_le_bytes(), claimer.to_bytes().as_ref(), &amount.to_le_bytes()].concat();
 
-    // Compute the leaf hash
-    let leaf_hash = anchor_lang::solana_program::keccak::hashv(&[&leaf]).0; // TODO: hash twice?
+    // Compute the hash of the leaf
+    let mut leaf_hash = keccak_hashv(&[&leaf]).0;
+
+    // Hash one more time to protect against the second pre-image attacks
+    leaf_hash = keccak_hashv(&[&leaf_hash]).0;
 
     // Compute the root hash from the leaf hash and the proof
-    // Dev: the below algorithm has been inspired by https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/cryptography/MerkleProof.sol
+    // Dev: the below algorithm has been inspired by
+    // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/cryptography/MerkleProof.sol
     let mut computed_root = leaf_hash;
     for proof_element in proof.iter() {
         if computed_root <= *proof_element {
             // Hash(current computed hash + current element of the proof)
-            computed_root = anchor_lang::solana_program::keccak::hashv(&[&computed_root, proof_element]).0;
+            computed_root = keccak_hashv(&[&computed_root, proof_element]).0;
         } else {
             // Hash(current element of the proof + current computed hash)
-            computed_root = anchor_lang::solana_program::keccak::hashv(&[proof_element, &computed_root]).0;
+            computed_root = keccak_hashv(&[proof_element, &computed_root]).0;
         }
     }
     // Check if the computed hash (root) is equal to the provided root
@@ -46,7 +48,7 @@ pub fn check_create_campaign(expiration_time: i64) -> Result<()> {
     Ok(())
 }
 
-pub fn check_clawback(clawback_amount: u64, campaign_ata_amount: u64) -> Result<()> {
+pub fn check_clawback(clawback_amount: u64, campaign_ata_amount: u64, _expiration_time: i64) -> Result<()> {
     // Check: the clawback amount is not zero.
     if clawback_amount == 0 {
         return Err(ErrorCode::CantClawbackZeroAmount.into());
@@ -56,6 +58,8 @@ pub fn check_clawback(clawback_amount: u64, campaign_ata_amount: u64) -> Result<
     if clawback_amount > campaign_ata_amount {
         return Err(ErrorCode::CantClawbackMoreThanRemaining.into());
     }
+
+    // TODO: assert that the clawback is valid wrt the grace period and the expiration time
 
     Ok(())
 }

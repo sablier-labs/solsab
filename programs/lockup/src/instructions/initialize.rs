@@ -14,11 +14,11 @@ use crate::{
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     #[account(mut)]
-    pub deployer: Signer<'info>,
+    pub initializer: Signer<'info>,
 
     #[account(
       init,
-      payer = deployer,
+      payer = initializer,
       seeds = [TREASURY_SEED],
       space = ANCHOR_DISCRIMINATOR_SIZE + Treasury::INIT_SPACE,
       bump
@@ -26,9 +26,13 @@ pub struct Initialize<'info> {
     // TODO: merge the treasury with nft_collection_data?
     pub treasury: Box<Account<'info, Treasury>>,
 
+    #[account()]
+    /// CHECK: This account is used to collect fees from the treasury. May be any account.
+    pub fee_collector: UncheckedAccount<'info>,
+
     #[account(
       init,
-      payer = deployer,
+      payer = initializer,
       seeds = [NFT_COLLECTION_DATA_SEED],
       space = ANCHOR_DISCRIMINATOR_SIZE + NftCollectionData::INIT_SPACE,
       bump
@@ -37,7 +41,7 @@ pub struct Initialize<'info> {
 
     #[account(
       init,
-      payer = deployer,
+      payer = initializer,
       seeds = [NFT_COLLECTION_MINT_SEED],
       bump,
       mint::decimals = 0,
@@ -49,7 +53,7 @@ pub struct Initialize<'info> {
 
     #[account(
       init,
-      payer = deployer,
+      payer = initializer,
       associated_token::mint = nft_collection_mint,
       associated_token::authority = treasury,
       associated_token::token_program = nft_token_program
@@ -86,8 +90,8 @@ pub struct Initialize<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handler(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
-    ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector)?;
+pub fn handler(ctx: Context<Initialize>) -> Result<()> {
+    ctx.accounts.treasury.initialize(ctx.bumps.treasury, ctx.accounts.fee_collector.key())?;
     ctx.accounts.nft_collection_data.initialize(ctx.bumps.nft_collection_data)?;
 
     nft::initialize_collection(
@@ -95,7 +99,7 @@ pub fn handler(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
         &ctx.accounts.nft_collection_ata,
         &ctx.accounts.nft_collection_metadata,
         &ctx.accounts.nft_collection_master_edition,
-        &ctx.accounts.deployer,
+        &ctx.accounts.initializer,
         &ctx.accounts.token_metadata_program,
         &ctx.accounts.nft_token_program,
         &ctx.accounts.system_program,

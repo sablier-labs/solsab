@@ -12,7 +12,8 @@ pub struct Campaign {
     #[max_len(CAMPAIGN_IPFS_ID_SIZE as usize)]
     pub merkle_tree_ipfs_id: String,
     pub merkle_root: [u8; 32],
-    pub expiration: i64,
+    pub expiration_time: i64,
+    pub creator: Pubkey,
 }
 
 impl Campaign {
@@ -24,14 +25,16 @@ impl Campaign {
         airdrop_token_mint: Pubkey,
         merkle_tree_ipfs_id: String,
         merkle_root: [u8; 32],
-        expiration: i64,
+        expiration_time: i64,
+        creator: Pubkey,
     ) -> Result<()> {
         self.bump = bump;
         self.name = name;
         self.airdrop_token_mint = airdrop_token_mint;
         self.merkle_tree_ipfs_id = merkle_tree_ipfs_id;
         self.merkle_root = merkle_root;
-        self.expiration = expiration;
+        self.expiration_time = expiration_time;
+        self.creator = creator;
 
         Ok(())
     }

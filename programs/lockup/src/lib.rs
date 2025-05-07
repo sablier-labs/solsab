@@ -68,8 +68,8 @@ pub mod sablier_lockup {
         )
     }
 
-    pub fn initialize(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
-        instructions::initialize::handler(ctx, fee_collector)
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        instructions::initialize::handler(ctx)
     }
 
     pub fn renounce(ctx: Context<Renounce>, stream_id: u64) -> Result<()> {

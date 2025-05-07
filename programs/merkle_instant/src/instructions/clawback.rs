@@ -15,19 +15,21 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(amount: u64, merkle_root: [u8; 32])]
 pub struct Clawback<'info> {
-    #[account(mut)]
+    #[account(
+      mut,
+      address = campaign.creator)]
     pub campaign_creator: Signer<'info>,
 
     #[account(
       mut,
       seeds = [CAMPAIGN_SEED, &merkle_root],
-      bump
+      bump = campaign.bump,
     )]
-    pub campaign: Account<'info, Campaign>,
+    pub campaign: Box<Account<'info, Campaign>>,
 
     #[account(
+      address = campaign.airdrop_token_mint,
       mint::token_program = airdrop_token_program,
-      constraint = airdrop_token_mint.key() == campaign.airdrop_token_mint
     )]
     pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
@@ -51,9 +53,9 @@ pub struct Clawback<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-pub fn handler(ctx: Context<Clawback>, _merkle_root: [u8; 32], amount: u64) -> Result<()> {
+pub fn handler(ctx: Context<Clawback>, _merkle_root: [u8; 32], requested_amount: u64) -> Result<()> {
     // Check: validate the clawback.
-    check_clawback(amount, ctx.accounts.campaign_ata.amount)?;
+    check_clawback(requested_amount, ctx.accounts.campaign_ata.amount, ctx.accounts.campaign.expiration_time)?;
 
     // Interaction: transfer tokens from the Campaign's ATA to the campaign creator's ATA.
     transfer_tokens(
@@ -62,7 +64,7 @@ pub fn handler(ctx: Context<Clawback>, _merkle_root: [u8; 32], amount: u64) -> R
         ctx.accounts.campaign.to_account_info(),
         ctx.accounts.airdrop_token_mint.to_account_info(),
         ctx.accounts.airdrop_token_program.to_account_info(),
-        amount,
+        requested_amount,
         ctx.accounts.airdrop_token_mint.decimals,
         &[&[CAMPAIGN_SEED, &[ctx.accounts.campaign.bump]]],
     )?;
@@ -70,7 +72,7 @@ pub fn handler(ctx: Context<Clawback>, _merkle_root: [u8; 32], amount: u64) -> R
     // Log the clawback.
     emit!(FundsClawedBack {
         campaign: ctx.accounts.campaign.key(),
-        clawback_amount: amount,
+        clawback_amount: requested_amount,
         tx_signer: ctx.accounts.campaign_creator.key(),
     });
     Ok(())

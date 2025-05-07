@@ -26,7 +26,7 @@ pub struct CreateCampaign<'info> {
       space = ANCHOR_DISCRIMINATOR_SIZE + Campaign::INIT_SPACE,
       bump
     )]
-    pub campaign: Account<'info, Campaign>,
+    pub campaign: Box<Account<'info, Campaign>>,
 
     #[account(
       init,
@@ -47,7 +47,7 @@ pub struct CreateCampaign<'info> {
       space = ANCHOR_DISCRIMINATOR_SIZE + ClaimStatus::INIT_SPACE,
       bump
     )]
-    pub claim_status: Account<'info, ClaimStatus>,
+    pub claim_status: Box<Account<'info, ClaimStatus>>,
 
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -57,13 +57,18 @@ pub struct CreateCampaign<'info> {
 pub fn handler(
     ctx: Context<CreateCampaign>,
     name: String,
+    // TODO: if the passed no_of_recipients is smaller than the actual number of Merkle Tree leaves, a double-spend
+    // attack is possible (claiming the allocation multiple times by the same recipient with an id >
+    // no_of_recipients). How do we prevent this?
+    // + write a test confirming that this attack is not possible - and the claim Ix execution fails when trying to
+    //   update the Claim Status of the respective airdrop recipient.
     no_of_recipients: u32,
     merkle_tree_ipfs_id: String,
     merkle_root: [u8; 32],
-    expiration: i64,
+    expiration_time: i64,
 ) -> Result<()> {
     // Check: validate the campaign creation.
-    check_create_campaign(expiration)?;
+    check_create_campaign(expiration_time)?;
 
     // Effect: Initialize the campaign account.
     ctx.accounts.campaign.initialize(
@@ -72,7 +77,8 @@ pub fn handler(
         ctx.accounts.airdrop_token_mint.key(),
         merkle_tree_ipfs_id.clone(),
         merkle_root,
-        expiration,
+        expiration_time,
+        ctx.accounts.campaign_creator.key(),
     )?;
 
     // Effect: Initialize the claim status account.
@@ -84,9 +90,9 @@ pub fn handler(
         creator: ctx.accounts.campaign_creator.key(),
         campaign_name: name,
         no_of_recipients,
-        expiration,
         merkle_tree_ipfs_id,
         merkle_root,
+        expiration_time,
     });
 
     Ok(())
