@@ -16,12 +16,18 @@ pub mod sablier_merkle_instant {
         instructions::campaign_name::handler(ctx, merkle_root)
     }
 
-    // pub fn claim(ctx: Context<Claim>, leaf_id: u32, amount: u128, proof: Vec<[u8; 32]>) -> Result<()> {
-    //     instructions::claim::handler(ctx, leaf_id, amount, proof)
-    // }
+    pub fn claim(
+        ctx: Context<Claim>,
+        merkle_root: [u8; 32],
+        leaf_id: u32,
+        amount: u64,
+        proof: Vec<[u8; 32]>,
+    ) -> Result<()> {
+        instructions::claim::handler(ctx, merkle_root, leaf_id, amount, proof)
+    }
 
-    pub fn clawback(ctx: Context<Clawback>, amount: u64) -> Result<()> {
-        instructions::clawback::handler(ctx)
+    pub fn clawback(ctx: Context<Clawback>, _merkle_root: [u8; 32], amount: u64) -> Result<()> {
+        instructions::clawback::handler(ctx, _merkle_root, amount)
     }
 
     pub fn collect_fees(ctx: Context<CollectFees>) -> Result<()> {

@@ -26,6 +26,12 @@ pub struct Clawback<'info> {
     pub campaign: Account<'info, Campaign>,
 
     #[account(
+      mint::token_program = airdrop_token_program,
+      constraint = airdrop_token_mint.key() == campaign.airdrop_token_mint
+    )]
+    pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    #[account(
       mut,
       associated_token::mint = airdrop_token_mint,
       associated_token::authority = campaign,
@@ -34,10 +40,12 @@ pub struct Clawback<'info> {
     pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-      mint::token_program = airdrop_token_program,
-      constraint = airdrop_token_mint.key() == campaign.airdrop_token_mint
+      mut,
+      associated_token::mint = airdrop_token_mint,
+      associated_token::authority = campaign_creator,
+      associated_token::token_program = airdrop_token_program
     )]
-    pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
+    pub campaign_creator_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -47,10 +55,10 @@ pub fn handler(ctx: Context<Clawback>, _merkle_root: [u8; 32], amount: u64) -> R
     // Check: validate the clawback.
     check_clawback(amount, ctx.accounts.campaign_ata.amount)?;
 
-    // Interaction: transfer tokens from the sender's ATA to the Treasury ATA.
+    // Interaction: transfer tokens from the Campaign's ATA to the campaign creator's ATA.
     transfer_tokens(
         ctx.accounts.campaign_ata.to_account_info(),
-        ctx.accounts.campaign_creator.to_account_info(),
+        ctx.accounts.campaign_creator_ata.to_account_info(),
         ctx.accounts.campaign.to_account_info(),
         ctx.accounts.airdrop_token_mint.to_account_info(),
         ctx.accounts.airdrop_token_program.to_account_info(),

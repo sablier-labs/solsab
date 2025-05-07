@@ -6,6 +6,10 @@ pub enum ErrorCode {
     #[msg("Expiration time must be in the future!")]
     ExpirationTimeNotInTheFuture,
 
+    // Claim
+    #[msg("Invalid Merkle proof!")]
+    InvalidMerkleProof,
+
     // Clawback
     #[msg("Can't clawback zero amount!")]
     CantClawbackZeroAmount,

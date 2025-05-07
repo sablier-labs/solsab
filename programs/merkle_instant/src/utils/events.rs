@@ -1,6 +1,15 @@
 use anchor_lang::prelude::*;
 
 #[event]
+pub struct AirdropClaimed {
+    pub campaign: Pubkey,
+    pub claimer: Pubkey,
+    pub leaf_id: u32,
+    pub amount: u64,
+    pub proof: Vec<[u8; 32]>,
+}
+
+#[event]
 pub struct CampaignCreated {
     pub campaign: Pubkey,
     pub creator: Pubkey,

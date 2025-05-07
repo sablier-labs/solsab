@@ -6,14 +6,16 @@ use anchor_spl::{
 
 use crate::{
     state::campaign::Campaign,
-    utils::{constants::CAMPAIGN_SEED, events::CampaignFunded, transfer_helper::transfer_tokens},
+    utils::{
+        constants::CAMPAIGN_SEED, events::AirdropClaimed, transfer_helper::transfer_tokens, validations::check_claim,
+    },
 };
 
 #[derive(Accounts)]
 #[instruction(amount: u64, merkle_root: [u8; 32])]
-pub struct FundCampaign<'info> {
+pub struct Claim<'info> {
     #[account(mut)]
-    pub signer: Signer<'info>,
+    pub claimer: Signer<'info>,
 
     #[account(
       mut,
@@ -31,37 +33,52 @@ pub struct FundCampaign<'info> {
     #[account(
       mut,
       associated_token::mint = airdrop_token_mint,
-      associated_token::authority = signer,
-      associated_token::token_program = airdrop_token_program
-    )]
-    pub signer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    #[account(
-      mut,
-      associated_token::mint = airdrop_token_mint,
       associated_token::authority = campaign,
       associated_token::token_program = airdrop_token_program
     )]
     pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    #[account(
+      mut,
+      associated_token::mint = airdrop_token_mint,
+      associated_token::authority = claimer,
+      associated_token::token_program = airdrop_token_program
+    )]
+    pub claimer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-pub fn handler(ctx: Context<FundCampaign>, _merkle_root: [u8; 32], amount: u64) -> Result<()> {
-    // Interaction: transfer tokens from the signer's ATA to the Campaign's ATA.
+pub fn handler(
+    ctx: Context<Claim>,
+    merkle_root: [u8; 32],
+    leaf_id: u32,
+    amount: u64,
+    proof: Vec<[u8; 32]>,
+) -> Result<()> {
+    // Check: validate the claim.
+    check_claim(merkle_root, ctx.accounts.claimer.key(), leaf_id, amount, &proof)?;
+
+    // Interaction: transfer tokens from the Campaign's ATA to the Claimer's ATA.
     transfer_tokens(
-        ctx.accounts.signer_ata.to_account_info(),
         ctx.accounts.campaign_ata.to_account_info(),
-        ctx.accounts.signer.to_account_info(),
+        ctx.accounts.claimer_ata.to_account_info(),
+        ctx.accounts.campaign.to_account_info(),
         ctx.accounts.airdrop_token_mint.to_account_info(),
         ctx.accounts.airdrop_token_program.to_account_info(),
         amount,
         ctx.accounts.airdrop_token_mint.decimals,
-        &[],
+        &[&[CAMPAIGN_SEED, &[ctx.accounts.campaign.bump]]],
     )?;
 
-    // Log the campaign funding.
-    emit!(CampaignFunded { campaign: ctx.accounts.campaign.key(), funder: ctx.accounts.signer.key(), amount });
+    // Log the clawback.
+    emit!(AirdropClaimed {
+        campaign: ctx.accounts.campaign.key(),
+        claimer: ctx.accounts.claimer.key(),
+        leaf_id,
+        amount,
+        proof,
+    });
     Ok(())
 }
