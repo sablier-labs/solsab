@@ -218,7 +218,11 @@ pub fn handler(
     )?;
 
     // Log the newly created stream.
-    emit!(CreateLockupLinearStream { stream_id, recipient: ctx.accounts.recipient.key() });
+    emit!(CreateLockupLinearStream {
+        stream_id,
+        asset_decimals: asset_mint.decimals,
+        recipient: ctx.accounts.recipient.key()
+    });
 
     Ok(())
 }
