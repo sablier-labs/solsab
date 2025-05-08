@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-sablier_lockup = "9she3vL2CCmWjPBFVVXwu78kYg7TU8jm69siH3STngXm"
+sablier_lockup = "Eqq75u6Nth2ag2w9oMT6fLcv7PHZLRhjWZ4QihJeYCpn"
 
 [programs.localnet]
 sablier_lockup = "7KaQU8kYWDPcr9tbuMZWnWiVPUxQLjrjZ6jUU8rY1wqn"
