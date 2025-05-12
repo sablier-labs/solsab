@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 pub struct AirdropClaimed {
     pub campaign: Pubkey,
     pub claimer: Pubkey,
+    pub recipient: Pubkey,
     pub leaf_id: u32,
     pub amount: u64,
     pub proof: Vec<[u8; 32]>,
@@ -14,7 +15,7 @@ pub struct CampaignCreated {
     pub campaign: Pubkey,
     pub creator: Pubkey,
     pub campaign_name: String,
-    pub no_of_recipients: u32,
+    pub recipient_count: u32,
     pub merkle_tree_ipfs_id: String,
     pub merkle_root: [u8; 32],
     pub expiration_time: i64,
