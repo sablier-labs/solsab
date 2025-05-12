@@ -66,9 +66,11 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
       mut,
-      seeds = [METADATA_SEED,
-                token_metadata_program.key().as_ref(),
-                nft_collection_mint.key().as_ref()],
+      seeds = [
+        METADATA_SEED,
+        token_metadata_program.key().as_ref(),
+        nft_collection_mint.key().as_ref(),
+      ],
       seeds::program = token_metadata_program.key(),
       bump,
     )]
@@ -77,10 +79,12 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
       mut,
-      seeds = [METADATA_SEED,
-                token_metadata_program.key().as_ref(),
-                nft_collection_mint.key().as_ref(),
-                EDITION_SEED],
+      seeds = [
+        METADATA_SEED,
+        token_metadata_program.key().as_ref(),
+        nft_collection_mint.key().as_ref(),
+        EDITION_SEED,
+      ],
       seeds::program = token_metadata_program.key(),
       bump,
     )]
@@ -107,7 +111,10 @@ pub struct CreateWithTimestamps<'info> {
       init_if_needed,
       payer = sender,
       space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
-      seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
+      seeds = [
+        STREAM_DATA_SEED,
+        stream_nft_mint.key().as_ref()
+      ],
       bump
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
@@ -118,14 +125,16 @@ pub struct CreateWithTimestamps<'info> {
       associated_token::mint = stream_nft_mint,
       associated_token::authority = recipient,
       associated_token::token_program = nft_token_program,
-  )]
+    )]
     pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
       mut,
-      seeds = [METADATA_SEED,
-                token_metadata_program.key().as_ref(),
-                stream_nft_mint.key().as_ref()],
+      seeds = [
+        METADATA_SEED,
+        token_metadata_program.key().as_ref(),
+        stream_nft_mint.key().as_ref()
+      ],
       seeds::program = token_metadata_program.key(),
       bump,
     )]
@@ -134,10 +143,11 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
       mut,
-      seeds = [METADATA_SEED,
-                token_metadata_program.key().as_ref(),
-                stream_nft_mint.key().as_ref(),
-                EDITION_SEED],
+      seeds = [
+        METADATA_SEED,
+        token_metadata_program.key().as_ref(),
+        stream_nft_mint.key().as_ref(), EDITION_SEED
+      ],
       seeds::program = token_metadata_program.key(),
       bump,
     )]
@@ -156,7 +166,7 @@ pub struct CreateWithTimestamps<'info> {
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,
     stream_id: u64,
-    deposited_amount: u64,
+    deposit_amount: u64,
     start_time: i64,
     cliff_time: i64,
     end_time: i64,
@@ -169,7 +179,7 @@ pub fn handler(
     let sender_ata = &ctx.accounts.sender_ata;
 
     // Validate parameters
-    check_create(deposited_amount, start_time, cliff_time, end_time, start_unlock, cliff_unlock)?;
+    check_create(deposit_amount, start_time, cliff_time, end_time, start_unlock, cliff_unlock)?;
 
     // Effect: increment the total supply of the NFT collection. The increment is safe, as it would take many years to
     // overflow 2^64.
@@ -183,7 +193,7 @@ pub fn handler(
         ctx.bumps.stream_data,
         cliff_time,
         cliff_unlock,
-        deposited_amount,
+        deposit_amount,
         end_time,
         stream_id,
         nft_id,
@@ -218,7 +228,7 @@ pub fn handler(
         sender.to_account_info(),
         deposit_token_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
-        deposited_amount,
+        deposit_amount,
         deposit_token_mint.decimals,
         &[],
     )?;

@@ -20,8 +20,8 @@ pub struct Withdraw<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
-    #[account(address = stream_data.deposit_token_mint)]
-    pub deposit_token_mint: Box<InterfaceAccount<'info, Mint>>,
+    #[account(address = stream_data.deposited_token_mint)]
+    pub deposited_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account()]
     /// CHECK: This account must be the Stream's recipient (checked in recipient_stream_nft_ata's constraints)
@@ -39,8 +39,10 @@ pub struct Withdraw<'info> {
 
     #[account(
       mut,
-      seeds = [STREAM_DATA_SEED,
-                stream_nft_mint.key().as_ref()],
+      seeds = [
+        STREAM_DATA_SEED,
+        stream_nft_mint.key().as_ref()
+      ],
       bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
@@ -70,9 +72,9 @@ pub struct Withdraw<'info> {
     #[account(
       init_if_needed,
       payer = signer,
-      associated_token::mint = deposit_token_mint,
+      associated_token::mint = deposited_token_mint,
       associated_token::authority = withdrawal_recipient,
-      associated_token::token_program = deposit_token_program,
+      associated_token::token_program = deposited_token_program,
     )]
     pub withdrawal_recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -85,14 +87,14 @@ pub struct Withdraw<'info> {
 
     #[account(
       mut,
-      associated_token::mint = deposit_token_mint,
+      associated_token::mint = deposited_token_mint,
       associated_token::authority = treasury,
-      associated_token::token_program = deposit_token_program
+      associated_token::token_program = deposited_token_program
     )]
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub system_program: Program<'info, System>,
-    pub deposit_token_program: Interface<'info, TokenInterface>,
+    pub deposited_token_program: Interface<'info, TokenInterface>,
     pub nft_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
@@ -124,10 +126,10 @@ pub fn handler(ctx: Context<Withdraw>, stream_id: u64, amount: u64) -> Result<()
         ctx.accounts.treasury_ata.to_account_info(),
         ctx.accounts.withdrawal_recipient_ata.to_account_info(),
         ctx.accounts.treasury.to_account_info(),
-        ctx.accounts.deposit_token_mint.to_account_info(),
-        ctx.accounts.deposit_token_program.to_account_info(),
+        ctx.accounts.deposited_token_mint.to_account_info(),
+        ctx.accounts.deposited_token_program.to_account_info(),
         amount,
-        ctx.accounts.deposit_token_mint.decimals,
+        ctx.accounts.deposited_token_mint.decimals,
         &[&[TREASURY_SEED, &[treasury_bump]]],
     )?;
 

@@ -29,15 +29,15 @@ pub struct CampaignFunded {
 }
 
 #[event]
-pub struct FundsClawedBack {
-    pub campaign: Pubkey,
-    pub clawback_amount: u64,
-    pub tx_signer: Pubkey,
-}
-
-#[event]
 pub struct FeesCollected {
     pub fee_collector: Pubkey,
     pub fee_recipient: Pubkey,
     pub fee_amount: u64,
+}
+
+#[event]
+pub struct FundsClawedBack {
+    pub campaign: Pubkey,
+    pub clawback_amount: u64,
+    pub tx_signer: Pubkey,
 }

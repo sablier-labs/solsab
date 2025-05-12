@@ -17,7 +17,8 @@ use crate::{
 pub struct Clawback<'info> {
     #[account(
       mut,
-      address = campaign.creator)]
+      address = campaign.creator
+    )]
     pub campaign_creator: Signer<'info>,
 
     #[account(

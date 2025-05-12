@@ -23,6 +23,7 @@ pub struct Campaign {
 
 impl Campaign {
     // State update for the `create_campaign` instruction.
+    #[allow(clippy::too_many_arguments)]
     pub fn create(
         &mut self,
         bump: u8,

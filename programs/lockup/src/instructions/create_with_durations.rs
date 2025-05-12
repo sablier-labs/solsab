@@ -5,7 +5,7 @@ use crate::instructions::create_with_timestamps;
 pub fn handler(
     ctx: Context<create_with_timestamps::CreateWithTimestamps>,
     stream_id: u64,
-    deposited_amount: u64,
+    deposit_amount: u64,
     cliff_duration: i64,
     total_duration: i64,
     start_unlock: u64,
@@ -25,7 +25,7 @@ pub fn handler(
     create_with_timestamps::handler(
         ctx,
         stream_id,
-        deposited_amount,
+        deposit_amount,
         start_time,
         cliff_time,
         end_time,
