@@ -227,7 +227,7 @@ pub fn handler(
     emit!(CreateLockupLinearStream {
         stream_id,
         nft_id,
-        asset_decimals: asset_mint.decimals,
+        asset_decimals: deposit_token_mint.decimals,
         recipient: ctx.accounts.recipient.key()
     });
 

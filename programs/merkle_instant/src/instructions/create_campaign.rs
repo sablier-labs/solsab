@@ -5,9 +5,9 @@ use anchor_spl::{
 };
 
 use crate::{
-    state::{campaign::Campaign, claim_status::ClaimStatus},
+    state::campaign::Campaign,
     utils::{
-        constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED, CLAIM_STATUS_SEED},
+        constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED},
         events::CampaignCreated,
         validations::check_create_campaign,
     },
@@ -40,15 +40,6 @@ pub struct CreateCampaign<'info> {
     #[account(mint::token_program = airdrop_token_program)]
     pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    #[account(
-      init,
-      payer = campaign_creator,
-      seeds = [CLAIM_STATUS_SEED, &campaign.key().to_bytes()],
-      space = ANCHOR_DISCRIMINATOR_SIZE + ClaimStatus::INIT_SPACE,
-      bump
-    )]
-    pub claim_status: Box<Account<'info, ClaimStatus>>,
-
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
@@ -57,12 +48,12 @@ pub struct CreateCampaign<'info> {
 pub fn handler(
     ctx: Context<CreateCampaign>,
     name: String,
-    // TODO: if the passed no_of_recipients is smaller than the actual number of Merkle Tree leaves, a double-spend
-    // attack is possible (claiming the allocation multiple times by the same recipient with an id >
-    // no_of_recipients). How do we prevent this?
-    // + write a test confirming that this attack is not possible - and the claim Ix execution fails when trying to
-    //   update the Claim Status of the respective airdrop recipient.
-    no_of_recipients: u32,
+    // TODO: if the passed recipient_count is smaller than the actual number of Merkle Tree leaves, a double-spend
+    // attack is possible? (claiming the allocation multiple times by the same recipient with an id >
+    // recipient_count) How do we prevent this?
+    // Update: this attack shouldn't be possible, as the claim Ix execution should fail when trying to update the Claim
+    // Status of the respective airdrop recipient. Write a test confirming this.
+    recipient_count: u32,
     merkle_tree_ipfs_id: String,
     merkle_root: [u8; 32],
     expiration_time: i64,
@@ -71,7 +62,7 @@ pub fn handler(
     check_create_campaign(expiration_time)?;
 
     // Effect: Initialize the campaign account.
-    ctx.accounts.campaign.initialize(
+    ctx.accounts.campaign.create(
         ctx.bumps.campaign,
         name.clone(),
         ctx.accounts.airdrop_token_mint.key(),
@@ -79,17 +70,15 @@ pub fn handler(
         merkle_root,
         expiration_time,
         ctx.accounts.campaign_creator.key(),
+        recipient_count,
     )?;
-
-    // Effect: Initialize the claim status account.
-    ctx.accounts.claim_status.initialize(ctx.bumps.claim_status, no_of_recipients)?;
 
     // Log the campaign creation.
     emit!(CampaignCreated {
         campaign: ctx.accounts.campaign.key(),
         creator: ctx.accounts.campaign_creator.key(),
         campaign_name: name,
-        no_of_recipients,
+        recipient_count,
         merkle_tree_ipfs_id,
         merkle_root,
         expiration_time,

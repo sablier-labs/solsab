@@ -4,13 +4,13 @@ use crate::utils::errors::ErrorCode;
 
 pub fn check_claim(
     merkle_root: [u8; 32],
-    claimer: Pubkey,
+    recipient: Pubkey,
     leaf_id: u32,
     amount: u64,
     proof: &[[u8; 32]],
 ) -> Result<()> {
     // Form the leaf
-    let leaf = [&leaf_id.to_le_bytes(), claimer.to_bytes().as_ref(), &amount.to_le_bytes()].concat();
+    let leaf = [&leaf_id.to_le_bytes(), recipient.to_bytes().as_ref(), &amount.to_le_bytes()].concat();
 
     // Compute the hash of the leaf
     let mut leaf_hash = keccak_hashv(&[&leaf]).0;

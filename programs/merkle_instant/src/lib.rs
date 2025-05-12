@@ -37,7 +37,7 @@ pub mod sablier_merkle_instant {
     pub fn create_campaign(
         ctx: Context<CreateCampaign>,
         name: String,
-        no_of_recipients: u32,
+        recipient_count: u32,
         expiration_time: i64,
         merkle_tree_ipfs_id: String,
         merkle_root: [u8; 32],
@@ -45,15 +45,11 @@ pub mod sablier_merkle_instant {
         instructions::create_campaign::handler(
             ctx,
             name,
-            no_of_recipients,
+            recipient_count,
             merkle_tree_ipfs_id,
             merkle_root,
             expiration_time,
         )
-    }
-
-    pub fn fund_campaign(ctx: Context<FundCampaign>, merkle_root: [u8; 32], amount: u64) -> Result<()> {
-        instructions::fund_campaign::handler(ctx, merkle_root, amount)
     }
 
     pub fn has_claimed(ctx: Context<HasClaimed>, merkle_root: [u8; 32], leaf_id: u32) -> Result<bool> {
