@@ -166,6 +166,10 @@ pub fn handler(
     // Validate parameters
     check_create(deposited_amount, start_time, cliff_time, end_time, start_unlock, cliff_unlock)?;
 
+    // Effect: increment the total supply of the NFT collection. The increment is safe, as it would take many years to
+    // overflow 2^64.
+    ctx.accounts.nft_collection_data.total_supply += 1;
+
     let stream_id = ctx.accounts.nft_collection_data.total_supply;
 
     // Effect: create the stream data.
@@ -200,10 +204,6 @@ pub fn handler(
         stream_id,
         ctx.bumps.nft_collection_mint,
     )?;
-
-    // Effect: increment the total supply of the NFT collection. Safe math operation, as it would take many years to
-    // overflow 2^64.
-    ctx.accounts.nft_collection_data.total_supply += 1;
 
     // Interaction: transfer tokens from the sender's ATA to the Treasury ATA.
     transfer_tokens(
