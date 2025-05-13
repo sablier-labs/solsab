@@ -90,7 +90,7 @@ pub struct CreateWithTimestamps<'info> {
         init_if_needed,
         payer = sender,
         seeds = [STREAM_NFT_MINT_SEED,
-                 nft_collection_data.total_supply.to_le_bytes().as_ref()],
+                 (nft_collection_data.total_supply + 1).to_le_bytes().as_ref()],
         bump,
         mint::decimals = 0,
         mint::authority = nft_collection_mint, // TODO: make Treasury the authority, instead?
