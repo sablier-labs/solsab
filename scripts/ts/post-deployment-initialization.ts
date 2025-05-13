@@ -155,14 +155,14 @@ async function testStreamCreation(
   milestones: StreamMilestones,
   unlockAmounts: UnlockAmounts
 ) {
-  const { assetMint, mintedAmount: depositedAmount } =
+  const { depositTokenMint, mintedAmount: depositedAmount } =
     await createTokenAndMintToSender();
 
   await createWithTimestamps({
     expectedStreamId,
     senderKeys,
     recipient: recipientKeys.publicKey,
-    assetMint,
+    depositTokenMint,
     milestones,
     depositedAmount,
     unlockAmounts,
@@ -170,20 +170,10 @@ async function testStreamCreation(
   });
 }
 
-interface PrepareAndCreateWithTimestampsArgs {
-  senderKeys: Keypair;
-  recipient: PublicKey;
-  assetMint: PublicKey;
-  milestones: StreamMilestones;
-  depositedAmount: BN;
-  unlockAmounts: UnlockAmounts;
-  isCancelable: boolean;
-}
-
 interface CreateWithTimestampsArgs {
   senderKeys: Keypair;
   recipient: PublicKey;
-  assetMint: PublicKey;
+  depositTokenMint: PublicKey;
   expectedStreamId: BN;
   milestones: StreamMilestones;
   depositedAmount: BN;
@@ -192,14 +182,14 @@ interface CreateWithTimestampsArgs {
 }
 
 async function createTokenAndMintToSender(): Promise<{
-  assetMint: PublicKey;
+  depositTokenMint: PublicKey;
   senderATA: PublicKey;
   mintedAmount: BN;
 }> {
   const TOKEN_DECIMALS = 9;
   const freezeAuthority = null;
 
-  const assetMint = await createMint(
+  const depositTokenMint = await createMint(
     anchorProvider.connection,
     senderKeys,
     senderKeys.publicKey,
@@ -207,12 +197,12 @@ async function createTokenAndMintToSender(): Promise<{
     TOKEN_DECIMALS,
     Keypair.generate()
   );
-  console.log(`Created Token Mint: ${assetMint}`);
+  console.log(`Created Token Mint: ${depositTokenMint}`);
 
   const senderATA = await getOrCreateAssociatedTokenAccount(
     anchorProvider.connection,
     senderKeys,
-    assetMint,
+    depositTokenMint,
     senderKeys.publicKey
   );
   console.log(`Sender's ATA: ${senderATA}`);
@@ -221,14 +211,18 @@ async function createTokenAndMintToSender(): Promise<{
   await mintTo(
     anchorProvider.connection,
     senderKeys,
-    assetMint,
+    depositTokenMint,
     senderATA.address,
     senderKeys,
     Number(mintedAmount)
   );
   console.log(`Minted ${mintedAmount} tokens to the Sender ATA`);
 
-  return { assetMint, senderATA: senderATA.address, mintedAmount };
+  return {
+    depositTokenMint: depositTokenMint,
+    senderATA: senderATA.address,
+    mintedAmount,
+  };
 }
 
 async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
@@ -244,7 +238,7 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
     unlockAmounts,
     depositedAmount,
     isCancelable,
-    assetMint,
+    depositTokenMint,
     recipient,
   } = args;
 
@@ -266,7 +260,7 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
     .accountsPartial({
       sender: senderKeys.publicKey,
       streamNftMint: getStreamNftMintAddress(expectedStreamId),
-      assetMint,
+      depositTokenMint,
       recipient,
       nftTokenProgram: TOKEN_PROGRAM_ID,
       depositTokenProgram: TOKEN_PROGRAM_ID,
