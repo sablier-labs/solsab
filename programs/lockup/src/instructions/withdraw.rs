@@ -28,8 +28,11 @@ pub struct Withdraw<'info> {
     pub stream_recipient: UncheckedAccount<'info>,
 
     #[account(
-        seeds = [STREAM_NFT_MINT_SEED,
-                 stream_id.to_le_bytes().as_ref()],
+        seeds = [
+          STREAM_NFT_MINT_SEED,
+          stream_data.sender.key().as_ref(),
+          stream_id.to_le_bytes().as_ref(),
+        ],
         bump,
     )]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
@@ -93,7 +96,7 @@ pub struct Withdraw<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+pub fn handler(ctx: Context<Withdraw>, stream_id: u64, amount: u64) -> Result<()> {
     // Check: validate the withdraw.
     check_withdraw(
         ctx.accounts.stream_data.is_depleted,
@@ -128,7 +131,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     )?;
 
     // Log the withdrawal.
-    emit!(WithdrawFromLockupStream { stream_id: ctx.accounts.stream_data.id, withdrawn_amount: amount });
+    emit!(WithdrawFromLockupStream { stream_id, withdrawn_amount: amount });
 
     Ok(())
 }

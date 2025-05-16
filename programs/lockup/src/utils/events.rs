@@ -11,6 +11,7 @@ pub struct CancelLockupStream {
 #[event]
 pub struct CreateLockupLinearStream {
     pub stream_id: u64,
+    pub nft_id: u64,
     pub asset_decimals: u8,
     pub recipient: Pubkey,
 }

@@ -14,6 +14,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
+#[instruction(stream_id: u64)]
 pub struct CreateWithTimestamps<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
@@ -89,11 +90,14 @@ pub struct CreateWithTimestamps<'info> {
     #[account(
         init_if_needed,
         payer = sender,
-        seeds = [STREAM_NFT_MINT_SEED,
-                 (nft_collection_data.total_supply + 1).to_le_bytes().as_ref()],
+        seeds = [
+          STREAM_NFT_MINT_SEED,
+          sender.key().as_ref(),
+          stream_id.to_le_bytes().as_ref(),
+        ],
         bump,
         mint::decimals = 0,
-        mint::authority = nft_collection_mint, // TODO: make Treasury the authority, instead?
+        mint::authority = nft_collection_mint,
         mint::freeze_authority = nft_collection_mint,
         mint::token_program = nft_token_program,
     )]
@@ -151,6 +155,7 @@ pub struct CreateWithTimestamps<'info> {
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,
+    stream_id: u64,
     deposited_amount: u64,
     start_time: i64,
     cliff_time: i64,
@@ -170,7 +175,7 @@ pub fn handler(
     // overflow 2^64.
     ctx.accounts.nft_collection_data.total_supply += 1;
 
-    let stream_id = ctx.accounts.nft_collection_data.total_supply;
+    let nft_id = ctx.accounts.nft_collection_data.total_supply;
 
     // Effect: create the stream data.
     ctx.accounts.stream_data.create(
@@ -181,6 +186,7 @@ pub fn handler(
         deposited_amount,
         end_time,
         stream_id,
+        nft_id,
         is_cancelable,
         sender.key(),
         start_time,
@@ -220,6 +226,7 @@ pub fn handler(
     // Log the newly created stream.
     emit!(CreateLockupLinearStream {
         stream_id,
+        nft_id,
         asset_decimals: asset_mint.decimals,
         recipient: ctx.accounts.recipient.key()
     });
