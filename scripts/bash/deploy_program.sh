@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# This script deploys a new SolSab version to Devnet
+# This script deploys a new SolSab version to Devnet.
+# It must be run from the root of the SolSab repo.
 
 # Strict mode: https://gist.github.com/vncsna/64825d5609c146e80de8b1fd623011ca
 set -euo pipefail
@@ -22,6 +23,9 @@ anchor clean
 # Update the program id in Anchor.toml & lib.rs
 anchor keys sync
 
+# Start Colima (if it's already running, the command is being ignored automatically)
+colima start
+
 # Build verifiably
 anchor build -v
 
@@ -37,7 +41,9 @@ solana program close --buffers
 anchor deploy -v
 
 # Initialize SolSab on Devnet - and populate it with a bunch of Streams
-bun run ts-mocha -p ../.././tsconfig.json -t 1000000 ts/**/*.ts
+ANCHOR_PROVIDER_URL=https://api.devnet.solana.com \
+ANCHOR_WALLET=~/.config/solana/id.json \
+bun run ts-mocha -p ./tsconfig.json -t 1000000 scripts/ts/post-deployment-initialization.ts
 
 # Output summary
 echo ""
