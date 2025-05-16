@@ -16,8 +16,11 @@ pub struct Renounce<'info> {
     pub sender: Signer<'info>,
 
     #[account(
-        seeds = [STREAM_NFT_MINT_SEED,
-                 stream_id.to_le_bytes().as_ref()],
+        seeds = [
+          STREAM_NFT_MINT_SEED,
+          sender.key().as_ref(),
+          stream_id.to_le_bytes().as_ref(),
+        ],
         bump,
     )]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
@@ -30,7 +33,7 @@ pub struct Renounce<'info> {
     pub stream_data: Box<Account<'info, StreamData>>,
 }
 
-pub fn handler(ctx: Context<Renounce>) -> Result<()> {
+pub fn handler(ctx: Context<Renounce>, stream_id: u64) -> Result<()> {
     // Check: validate the renounce.
     check_renounce(ctx.accounts.stream_data.is_cancelable)?;
 
@@ -38,7 +41,7 @@ pub fn handler(ctx: Context<Renounce>) -> Result<()> {
     ctx.accounts.stream_data.renounce()?;
 
     // Log the renouncement.
-    emit!(RenounceLockupStream { stream_id: ctx.accounts.stream_data.id });
+    emit!(RenounceLockupStream { stream_id });
 
     Ok(())
 }

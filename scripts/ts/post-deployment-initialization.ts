@@ -230,6 +230,7 @@ async function createWithDurations(args: CreateWithDurationssArgs): Promise<{
   const nftTokenProgram = TOKEN_PROGRAM_ID;
   await lockupProgram.methods
     .createWithDurations(
+      expectedStreamId,
       depositedAmount,
       cliffDuration,
       totalDuration,
