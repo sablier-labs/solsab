@@ -1,4 +1,4 @@
-import { assertStreamData } from "../utils/assertions";
+import { assertEqStreamDatas, assertErrorContains } from "../utils/assertions";
 import {
   createWithDurations,
   defaultStreamData,
@@ -10,30 +10,50 @@ import {
 import * as defaults from "../utils/defaults";
 
 describe("createWithDurations", () => {
-  beforeEach(async () => {
-    await setUp();
-    await timeTravelTo(defaults.START_TIME);
-  });
+  context("when the program is not initialized", () => {
+    before(async () => {
+      await setUp(false);
+      await timeTravelTo(defaults.START_TIME);
+    });
 
-  context("when cliff duration not zero", () => {
-    it("it should create the stream", async () => {
-      const streamId = await createWithDurations();
-
-      const actualStreamData = await fetchStreamData(streamId);
-      const expectedStreamData = await defaultStreamData({ id: streamId });
-      assertStreamData(actualStreamData, expectedStreamData);
+    it("should revert", async () => {
+      try {
+        await createWithDurations();
+      } catch (error) {
+        assertErrorContains(
+          error,
+          defaults.PROGRAM_NOT_INITIALIZED_ERR.CreateWithTimestamps
+        );
+      }
     });
   });
 
-  context("when cliff duration zero", () => {
-    it("it should create the stream", async () => {
-      const streamId = await createWithDurations(defaults.ZERO_BN);
+  context("when the program is initialized", () => {
+    beforeEach(async () => {
+      await setUp();
+      await timeTravelTo(defaults.START_TIME);
+    });
 
-      const actualStreamData = await fetchStreamData(streamId);
-      const expectedStreamData = await defaultStreamData({ id: streamId });
-      expectedStreamData.amounts.cliffUnlock = defaults.ZERO_BN;
-      expectedStreamData.timestamps.cliff = defaults.ZERO_BN;
-      assertStreamData(actualStreamData, expectedStreamData);
+    context("when cliff duration not zero", () => {
+      it("it should create the stream", async () => {
+        const streamId = await createWithDurations();
+
+        const actualStreamData = await fetchStreamData(streamId);
+        const expectedStreamData = defaultStreamData({ id: streamId });
+        assertEqStreamDatas(actualStreamData, expectedStreamData);
+      });
+    });
+
+    context("when cliff duration zero", () => {
+      it("it should create the stream", async () => {
+        const streamId = await createWithDurations(defaults.ZERO_BN);
+
+        const actualStreamData = await fetchStreamData(streamId);
+        const expectedStreamData = defaultStreamData({ id: streamId });
+        expectedStreamData.amounts.cliffUnlock = defaults.ZERO_BN;
+        expectedStreamData.timestamps.cliff = defaults.ZERO_BN;
+        assertEqStreamDatas(actualStreamData, expectedStreamData);
+      });
     });
   });
 });

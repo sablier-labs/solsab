@@ -1,8 +1,14 @@
-import { Amounts, StreamData, Timestamps, UnlockAmounts } from "./types";
+import {
+  Amounts,
+  PublicKey,
+  StreamData,
+  Timestamps,
+  UnlockAmounts,
+} from "./types";
 import { assert } from "chai";
 export { assert };
 
-export function assertAmounts(a: Amounts, b: Amounts) {
+export function assertEqAmounts(a: Amounts, b: Amounts) {
   assert(
     a.cliffUnlock.eq(b.cliffUnlock),
     `Cliff unlock amounts mismatch: ${a.cliffUnlock} !== ${b.cliffUnlock}`
@@ -25,9 +31,10 @@ export function assertAmounts(a: Amounts, b: Amounts) {
   );
 }
 
-export function assertStreamData(a: StreamData, b: StreamData) {
-  assertAmounts(a.amounts, b.amounts);
-  assertTimestamps(a.timestamps, b.timestamps);
+export function assertEqStreamDatas(a: StreamData, b: StreamData) {
+  assertEqAmounts(a.amounts, b.amounts);
+  assertEqTimestamps(a.timestamps, b.timestamps);
+
   assert(
     a.assetMint.equals(b.assetMint),
     `Asset mint addresses mismatch: ${a.assetMint.toBase58()} !== ${b.assetMint.toBase58()}`
@@ -51,7 +58,7 @@ export function assertStreamData(a: StreamData, b: StreamData) {
   );
 }
 
-export function assertTimestamps(a: Timestamps, b: Timestamps) {
+export function assertEqTimestamps(a: Timestamps, b: Timestamps) {
   assert(
     a.cliff.eq(b.cliff),
     `Cliff timestamps mismatch: ${a.cliff} !== ${b.cliff}`
@@ -62,25 +69,39 @@ export function assertTimestamps(a: Timestamps, b: Timestamps) {
     `Start timestamps mismatch: ${a.start} !== ${b.start}`
   );
 }
-export function assertUnlockAmounts(a: UnlockAmounts, b: UnlockAmounts) {
+
+export function assertEqUnlockAmounts(a: UnlockAmounts, b: UnlockAmounts) {
   assert(a.cliff.eq(b.cliff), "Cliff unlock amounts mismatch");
   assert(a.start.eq(b.start), "Start unlock amounts mismatch");
 }
 
-export function assertError(
-  error: unknown,
-  hexErrorCode: string,
-  message?: string
-): void {
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  const expectedText = `custom program error: ${hexErrorCode}`;
-
-  assert(
-    errorMessage.includes(expectedText),
-    message || `Expected error code ${hexErrorCode} not found`
+export function assertErrorHexCode(error: unknown, hexErrorCode: string) {
+  assertErrorContains(
+    error,
+    `custom program error: ${hexErrorCode}`,
+    `The expected error code ${hexErrorCode} not found in "${error}"`
   );
 }
 
-export function assertFail(reason = "Expected to fail it didn't"): void {
-  assert.fail(reason);
+export function assertErrorContains(
+  error: unknown,
+  expectedText: string,
+  message?: string
+) {
+  assert(errorToMessage(error).includes(expectedText), message);
+}
+
+export function assertSigVerificationFailureFor(
+  pubkey: PublicKey,
+  error: unknown
+) {
+  assertErrorContains(
+    error,
+    `Signature verification failed.\nMissing signature for public key [\`${pubkey.toBase58()}\`].`,
+    `Signature verification for \`${pubkey.toBase58()}\` not detected in "${error}"`
+  );
+}
+
+function errorToMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

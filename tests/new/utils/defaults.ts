@@ -8,8 +8,11 @@ import { Amounts, PublicKey, Timestamps, UnlockAmounts } from "./types";
 export const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
   "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
 );
+export { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 // Amounts
+export const USDC_USER_BALANCE = 1_000_000e6; // 1M tokens
+export const DAI_USER_BALANCE = 1_000_000e9; // 1M tokens
 export const DEPOSIT_AMOUNT = new BN(10_000e6);
 export const STREAMED_AMOUNT_26_PERCENT = new BN(2600e6);
 export const WITHDRAW_AMOUNT = STREAMED_AMOUNT_26_PERCENT;
@@ -38,6 +41,10 @@ export const STREAM_NFT_MINT_SEED = "stream_nft_mint";
 export const STREAM_DATA_SEED = "LL_stream";
 export const TREASURY_SEED = "treasury";
 
+// Miscellaneous
+export const PROGRAM_NOT_INITIALIZED_ERR = {
+  CreateWithTimestamps: "NFT Collection Data account is undefined",
+};
 /*//////////////////////////////////////////////////////////////////////////
                                      PARAMETERS
 //////////////////////////////////////////////////////////////////////////*/
@@ -52,7 +59,7 @@ export function amountsAfterCreate(): Amounts {
   };
 }
 
-export function amountsAfterCreateZero(): Amounts {
+export function amountsAfterCreateWithZeroUnlocks(): Amounts {
   return {
     cliffUnlock: ZERO_BN,
     deposited: DEPOSIT_AMOUNT,

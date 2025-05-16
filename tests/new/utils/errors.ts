@@ -1,31 +1,37 @@
-export enum ErrorCode {
+const ErrorCode = {
   // Cancel Stream
-  StreamCanceled = 0x1770,
-  StreamIsNotCancelable = 0x1771,
-  StreamSettled = 0x1772,
+  StreamCanceled: 0x1770,
+  StreamIsNotCancelable: 0x1771,
+  StreamSettled: 0x1772,
 
   // Collect Fees
-  CantCollectZeroFees = 0x1773,
+  CantCollectZeroFees: 0x1773,
 
   // Create Stream
-  CliffTimeZeroUnlockAmountNotZero = 0x1774,
-  CliffTimeNotLessThanEndTime = 0x1775,
-  DepositAmountZero = 0x1776,
-  StartTimeZero = 0x1777,
-  StartTimeNotLessThanCliffTime = 0x1778,
-  StartTimeNotLessThanEndTime = 0x1779,
-  UnlockAmountsSumTooHigh = 0x177a,
+  CliffTimeZeroUnlockAmountNotZero: 0x1774,
+  CliffTimeNotLessThanEndTime: 0x1775,
+  DepositAmountZero: 0x1776,
+  StartTimeNotPositive: 0x1777,
+  StartTimeNotLessThanCliffTime: 0x1778,
+  StartTimeNotLessThanEndTime: 0x1779,
+  UnlockAmountsSumTooHigh: 0x177a,
 
   // Renounce
-  StreamAlreadyNonCancelable = 0x177b,
+  StreamAlreadyNonCancelable: 0x177b,
 
   // Withdraw
-  Overdraw = 0x177c,
-  WithdrawAmountZero = 0x177d,
+  Overdraw: 0x177c,
+  WithdrawAmountZero: 0x177d,
 
   // Common
-  StreamDepleted = 0x177e,
-}
+  StreamDepleted: 0x177e,
+
+  // Anchor Errors
+  AccountNotInitialized: 0xbc4,
+  ConstraintAddress: 0x7dc,
+  ConstraintRaw: 0x7d3,
+} as const;
+type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
 /**
  * Get the hex code for a given error name

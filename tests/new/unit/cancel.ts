@@ -1,155 +1,241 @@
-import { assertError, assertFail, assertStreamData } from "../utils/assertions";
+import { PublicKey } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
+import { assert } from "chai";
+
+import { assertErrorHexCode, assertEqStreamDatas } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";
 import {
+  banksClient,
   cancel,
   cancelToken2022,
+  createRandomSPLMint,
   createWithTimestampsToken2022,
   defaultStreamData,
   defaultStreamDataToken2022,
-  eve,
+  deriveTreasuryAtaSPL,
+  deriveTreasuryAtaToken2022,
   fetchStreamData,
+  getATABalance,
+  getTreasuryATABalanceSPL,
+  getTreasuryATABalanceToken2022,
   ids,
   recipient,
+  sender,
   setUp,
+  sleepFor,
   timeTravelTo,
   withdrawMax,
 } from "../base";
 
 describe("cancel", () => {
-  beforeEach(async () => {
-    await setUp();
-    // Set the time to 26% of the stream duration
-    await timeTravelTo(defaults.PASS_26_PERCENT);
-  });
+  context("when the program is not initialized", () => {
+    before(async () => {
+      await setUp(false);
+      // Set the time to 26% of the stream duration
+      await timeTravelTo(defaults.PASS_26_PERCENT);
+    });
 
-  context("given null", () => {
     it("should revert", async () => {
       try {
-        await cancel({ streamId: ids.nullStream });
+        await cancel({ streamId: new BN(1) });
       } catch (error) {
-        assertError(error, "0xbc4");
+        assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
       }
     });
   });
 
-  context("given not null", () => {
-    context("given cold stream", () => {
-      context("given DEPLETED status", () => {
-        it("should revert", async () => {
-          await timeTravelTo(defaults.END_TIME);
-          await withdrawMax();
-          try {
-            await cancel();
-          } catch (error) {
-            assertError(error, getErrorCode("StreamDepleted"));
-          }
-        });
-      });
+  context("when the program is initialized", () => {
+    beforeEach(async () => {
+      await setUp();
+      // Set the time to 26% of the stream duration
+      await timeTravelTo(defaults.PASS_26_PERCENT);
+    });
 
-      context("given CANCELED status", () => {
-        it("should revert", async () => {
-          await cancel();
-          try {
-            await cancel();
-          } catch (error) {
-            assertError(error, getErrorCode("StreamCanceled"));
-          }
-        });
-      });
-
-      context("given SETTLED status", () => {
-        it("should revert", async () => {
-          await timeTravelTo(defaults.END_TIME);
-          try {
-            await cancel();
-          } catch (error) {
-            assertError(error, getErrorCode("StreamSettled"));
-          }
-        });
+    context("given a null stream", () => {
+      it("should revert", async () => {
+        try {
+          await cancel({ streamId: ids.nullStream });
+        } catch (error) {
+          assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
+        }
       });
     });
 
-    context("given warm stream", () => {
-      context("when signer not sender", () => {
-        context("when signer malicious third party", () => {
-          it("should revert", async () => {
-            try {
-              await cancel({ _sender: eve.keys.publicKey });
-              assertFail();
-            } catch (error) {}
-          });
-        });
-
-        context("when signer recipient", () => {
-          it("should revert", async () => {
-            try {
-              await cancel({ _sender: recipient.keys.publicKey });
-              assertFail();
-            } catch (error) {}
-          });
+    context("given a valid stream", () => {
+      context("given an invalid asset mint", () => {
+        it("should revert", async () => {
+          const randomMint = await createRandomSPLMint();
+          try {
+            await cancel({ assetMint: randomMint });
+          } catch (error) {
+            assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
+          }
         });
       });
 
-      context("when signer sender", () => {
-        context("given non cancelable stream", () => {
-          it("should revert", async () => {
-            try {
-              await cancel({ streamId: ids.notCancelableStream });
-            } catch (error) {
-              assertError(error, getErrorCode("StreamIsNotCancelable"));
-            }
+      context("given a valid asset mint", () => {
+        context("given cold stream", () => {
+          context("given DEPLETED status", () => {
+            it("should revert", async () => {
+              await timeTravelTo(defaults.END_TIME);
+              await withdrawMax();
+              try {
+                await cancel();
+              } catch (error) {
+                assertErrorHexCode(error, getErrorCode("StreamDepleted"));
+              }
+            });
+          });
+
+          context("given CANCELED status", () => {
+            it("should revert", async () => {
+              await cancel();
+              // Sleep for 5 ms to allow the tx to be processed
+              await sleepFor(5);
+              try {
+                await cancel();
+              } catch (error) {
+                assertErrorHexCode(error, getErrorCode("StreamCanceled"));
+              }
+            });
+          });
+
+          context("given SETTLED status", () => {
+            it("should revert", async () => {
+              await timeTravelTo(defaults.END_TIME);
+              try {
+                await cancel();
+              } catch (error) {
+                assertErrorHexCode(error, getErrorCode("StreamSettled"));
+              }
+            });
           });
         });
 
-        context("given cancelable stream", () => {
-          context("given PENDING status", () => {
-            it("should cancel the stream", async () => {
-              // Go back in time so that the stream is PENDING
-              await timeTravelTo(defaults.APR_1_2025);
-
-              // Cancel the stream
-              await cancel();
-
-              const actualStreamData = await fetchStreamData();
-              const expectedStreamData = await defaultStreamData({
-                isCancelable: false,
-                isDepleted: true,
-                wasCanceled: true,
-              });
-              expectedStreamData.amounts.refunded = defaults.DEPOSIT_AMOUNT;
-              assertStreamData(actualStreamData, expectedStreamData);
+        context("given warm stream", () => {
+          context("when signer not sender", () => {
+            it("should revert", async () => {
+              try {
+                await cancel({ signer: recipient.keys });
+              } catch (error) {
+                assertErrorHexCode(error, getErrorCode("ConstraintAddress"));
+              }
             });
           });
 
-          context("given STREAMING status", () => {
-            context("given token SPL standard", () => {
-              it("should cancel the stream", async () => {
-                // Cancel the stream
-                await cancel();
-
-                const actualStreamData = await fetchStreamData();
-                const expectedStreamData = await defaultStreamData({
-                  isCancelable: false,
-                  wasCanceled: true,
-                });
-                expectedStreamData.amounts.refunded = defaults.REFUND_AMOUNT;
-                assertStreamData(actualStreamData, expectedStreamData);
+          context("when signer sender", () => {
+            context("given non cancelable stream", () => {
+              it("should revert", async () => {
+                try {
+                  await cancel({ streamId: ids.nonCancelableStream });
+                } catch (error) {
+                  assertErrorHexCode(
+                    error,
+                    getErrorCode("StreamIsNotCancelable")
+                  );
+                }
               });
             });
 
-            context("given token 2022 standard", () => {
-              it("should cancel the stream", async () => {
-                const { streamId } = await createWithTimestampsToken2022();
-                await cancelToken2022(streamId);
-                const actualStreamData = await fetchStreamData(streamId);
-                const expectedStreamData = await defaultStreamDataToken2022({
-                  id: streamId,
+            context("given cancelable stream", () => {
+              context("given PENDING status", () => {
+                it("should cancel the stream", async () => {
+                  // Go back in time so that the stream is PENDING
+                  await timeTravelTo(defaults.APR_1_2025);
+
+                  // Get the sender's ATA balance before the cancel
+                  const senderATABalanceBefore = await getATABalance(
+                    banksClient,
+                    sender.usdcATA
+                  );
+
+                  // Get the treasury's ATA balance before the cancel
+                  const treasuryATABalanceBefore =
+                    await getTreasuryATABalanceSPL();
+
+                  // Cancel the stream
+                  await cancel();
+
+                  // Assert the cancelation
+                  const expectedStreamData = defaultStreamData({
+                    isCancelable: false,
+                    isDepleted: true,
+                    wasCanceled: true,
+                  });
+                  expectedStreamData.amounts.refunded = defaults.DEPOSIT_AMOUNT;
+                  await postCancelAssertionsSPL(
+                    senderATABalanceBefore,
+                    treasuryATABalanceBefore,
+                    expectedStreamData
+                  );
                 });
-                expectedStreamData.amounts.refunded = defaults.REFUND_AMOUNT;
-                expectedStreamData.isCancelable = false;
-                expectedStreamData.wasCanceled = true;
-                assertStreamData(actualStreamData, expectedStreamData);
+              });
+
+              context("given STREAMING status", () => {
+                context("given token SPL standard", () => {
+                  it("should cancel the stream", async () => {
+                    // Get the sender's ATA balance before the cancel
+                    const senderATABalanceBefore = await getATABalance(
+                      banksClient,
+                      sender.usdcATA
+                    );
+
+                    // Get the treasury's ATA balance before the cancel
+                    const treasuryATABalanceBefore =
+                      await getTreasuryATABalanceSPL();
+
+                    // Cancel the stream
+                    await cancel();
+
+                    // Assert the cancelation
+                    const expectedStreamData = defaultStreamData({
+                      isCancelable: false,
+                      wasCanceled: true,
+                    });
+                    expectedStreamData.amounts.refunded =
+                      defaults.REFUND_AMOUNT;
+                    await postCancelAssertionsSPL(
+                      senderATABalanceBefore,
+                      treasuryATABalanceBefore,
+                      expectedStreamData
+                    );
+                  });
+                });
+
+                context("given token 2022 standard", () => {
+                  it("should cancel the stream", async () => {
+                    // Create a stream with a Token2022 mint
+                    const { streamId } = await createWithTimestampsToken2022();
+
+                    // Get the sender's ATA balance before the cancel
+                    const senderATABalanceBefore = await getATABalance(
+                      banksClient,
+                      sender.daiATA
+                    );
+
+                    // Get the treasury's ATA balance before the cancel
+                    const treasuryATABalanceBefore =
+                      await getTreasuryATABalanceToken2022();
+
+                    // Cancel the stream
+                    await cancelToken2022(streamId);
+
+                    // Assert the cancelation
+                    const expectedStreamData = defaultStreamDataToken2022({
+                      id: streamId,
+                    });
+                    expectedStreamData.amounts.refunded =
+                      defaults.REFUND_AMOUNT;
+                    expectedStreamData.isCancelable = false;
+                    expectedStreamData.wasCanceled = true;
+                    await postCancelAssertionsToken2022(
+                      senderATABalanceBefore,
+                      treasuryATABalanceBefore,
+                      expectedStreamData
+                    );
+                  });
+                });
               });
             });
           });
@@ -158,3 +244,67 @@ describe("cancel", () => {
     });
   });
 });
+
+async function postCancelAssertions(
+  senderATA: PublicKey,
+  treasuryATA: PublicKey,
+  senderATABalanceBefore: BN,
+  treasuryATABalanceBefore: BN,
+  expectedStreamData: any
+) {
+  // Get Sender's ATA balance after the cancel
+  const senderATABalanceAfter = await getATABalance(banksClient, senderATA);
+
+  // Assert that the sender's token balance has been changed correctly
+  const expectedRefundedAmount = expectedStreamData.amounts.refunded;
+  assert(
+    senderATABalanceAfter.eq(
+      senderATABalanceBefore.add(expectedRefundedAmount)
+    ),
+    "The amount refunded to the sender is incorrect"
+  );
+
+  // Assert that the Treasury ATA has been changed correctly
+  const treasuryBalance = await getATABalance(banksClient, treasuryATA);
+
+  assert(
+    treasuryBalance.eq(treasuryATABalanceBefore.sub(expectedRefundedAmount)),
+    "The Treasury's token balance is incorrect"
+  );
+
+  // Assert that the Stream state has been updated correctly
+  const actualStreamData = await fetchStreamData(expectedStreamData.id);
+  assertEqStreamDatas(actualStreamData, expectedStreamData);
+}
+
+async function postCancelAssertionsSPL(
+  senderATABalanceBefore: BN,
+  treasuryATABalanceBefore: BN,
+  expectedStreamData: any,
+  senderATA = sender.usdcATA
+) {
+  const treasuryATA = deriveTreasuryAtaSPL(expectedStreamData.assetMint);
+  await postCancelAssertions(
+    senderATA,
+    treasuryATA,
+    senderATABalanceBefore,
+    treasuryATABalanceBefore,
+    expectedStreamData
+  );
+}
+
+async function postCancelAssertionsToken2022(
+  senderATABalanceBefore: BN,
+  treasuryATABalanceBefore: BN,
+  expectedStreamData: any,
+  senderATA = sender.daiATA
+) {
+  const treasuryATA = deriveTreasuryAtaToken2022(expectedStreamData.assetMint);
+  await postCancelAssertions(
+    senderATA,
+    treasuryATA,
+    senderATABalanceBefore,
+    treasuryATABalanceBefore,
+    expectedStreamData
+  );
+}

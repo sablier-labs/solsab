@@ -42,9 +42,12 @@
     "lint:ts:fix": "eslint --ext \"migrations/**/*.ts\" \"tests/**/*.ts\" --fix",
     "prettier:check": "prettier --check \"**/*.{json,md,svg,ts,yml}\"",
     "prettier:write": "prettier --write \"**/*.{json,md,svg,ts,yml}\"",
-    "test": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 tests/new/**/*.ts",
-    "test:debug": "bun run build && RUST_LOG=debug bun run ts-mocha -t 1000000 tests/new/**/*.ts",
-    "test:match": "bun run test --grep",
+    "t": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 --parallel tests/new/**/*.ts",
+    "t:debug": "bun run build && RUST_LOG=debug bun run ts-mocha -t 1000000 --parallel tests/new/**/*.ts",
+    "t:match": "bun run t --grep",
+    "t:only": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 tests/new/**/*.ts",
+    "t:only:debug": "bun run build && RUST_LOG=debug bun run ts-mocha -t 1000000 tests/new/**/*.ts",
+    "t:only:match": "bun run t:only --grep",
     "verify": "bash ./verify.sh"
   }
 }

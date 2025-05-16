@@ -1,14 +1,20 @@
+import { BN } from "@coral-xyz/anchor";
+
 import {
   accountExists,
   deriveATAAddress,
+  getATABalance,
   getPDAAddress,
+  getMintTotalSupplyOf,
   initializeSablierLockup,
   lockupProgram,
   nftCollectionDataAddress,
   setUp,
+  sleepFor,
   treasuryAddress,
+  banksClient,
 } from "../base";
-import { assert, assertError } from "../utils/assertions";
+import { assert, assertErrorHexCode } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 
 describe("initialize", () => {
@@ -19,10 +25,11 @@ describe("initialize", () => {
   context("given initialized", () => {
     it("should revert", async () => {
       await initializeSablierLockup();
+      await sleepFor(5);
       try {
         await initializeSablierLockup();
       } catch (error) {
-        assertError(error, "0x0");
+        assertErrorHexCode(error, "0x0");
       }
     });
   });
@@ -48,15 +55,30 @@ describe("initialize", () => {
         "NFT Collection Mint not initialized"
       );
 
+      // Assert that the Total Supply of the NFT Collection Mint is 1
+      const totalSupply = await getMintTotalSupplyOf(
+        banksClient,
+        nftCollectionMint
+      );
+      assert(totalSupply.eq(new BN(1)));
+
       const nftCollectionATA = deriveATAAddress(
         nftCollectionMint,
-        treasuryAddress
+        treasuryAddress,
+        defaults.TOKEN_PROGRAM_ID
       );
 
       assert(
         await accountExists(nftCollectionATA),
         "NFT Collection ATA not initialized"
       );
+
+      // Assert that the NFT Collection ATA has a balance of 1
+      const nftCollectionATABalance = await getATABalance(
+        banksClient,
+        nftCollectionATA
+      );
+      assert(nftCollectionATABalance.eq(new BN(1)));
 
       const nftCollectionMintAsBuffer = nftCollectionMint.toBuffer();
 
