@@ -10,11 +10,7 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
-import {
-  StreamMilestones,
-  UnlockAmounts,
-  getDefaultUnlockAmounts,
-} from "../../tests/utils";
+import { UnlockAmounts, getDefaultUnlockAmounts } from "../../tests/utils";
 
 import { SablierLockup } from "../../target/types/sablier_lockup";
 
@@ -54,7 +50,8 @@ async function createAStream(expectedStreamId: BN) {
   await testStreamCreation(
     expectedStreamId,
     true,
-    await generateDefaultMilestones(),
+    new BN(0),
+    new BN(3600),
     getDefaultUnlockAmounts()
   );
 }
@@ -129,53 +126,36 @@ async function getLamportsBalanceOf(address: PublicKey): Promise<bigint> {
   return await anchorProvider.connection.getBalance(address);
 }
 
-// async function getSOLBalanceOf(address: PublicKey): Promise<bigint> {
-//   return (await getLamportsBalanceOf(address)) / BigInt(LAMPORTS_PER_SOL);
-// }
-
-async function generateDefaultMilestones(): Promise<StreamMilestones> {
-  // Get the current timestamp
-  const slot = await anchorProvider.connection.getSlot();
-  const timestamp = await anchorProvider.connection.getBlockTime(slot);
-
-  const startTime = new anchor.BN(timestamp); // Start immediately
-  const cliffTime = new anchor.BN(timestamp + 5); // Cliff in 5 seconds
-  const endTime = new anchor.BN(timestamp + 3600); // End in 1 hour
-
-  return {
-    startTime,
-    cliffTime,
-    endTime,
-  };
-}
-
 async function testStreamCreation(
   expectedStreamId: BN,
   isCancelable: boolean,
-  milestones: StreamMilestones,
+  cliffDuration: BN,
+  totalDuration: BN,
   unlockAmounts: UnlockAmounts
 ) {
   const { depositTokenMint, mintedAmount: depositedAmount } =
     await createTokenAndMintToSender();
 
-  await createWithTimestamps({
+  await createWithDurations({
     expectedStreamId,
     senderKeys,
     recipient: recipientKeys.publicKey,
     depositTokenMint,
-    milestones,
+    cliffDuration,
+    totalDuration,
     depositedAmount,
     unlockAmounts,
     isCancelable,
   });
 }
 
-interface CreateWithTimestampsArgs {
+interface CreateWithDurationssArgs {
   senderKeys: Keypair;
   recipient: PublicKey;
   depositTokenMint: PublicKey;
   expectedStreamId: BN;
-  milestones: StreamMilestones;
+  cliffDuration: BN;
+  totalDuration: BN;
   depositedAmount: BN;
   unlockAmounts: UnlockAmounts;
   isCancelable: boolean;
@@ -225,7 +205,7 @@ async function createTokenAndMintToSender(): Promise<{
   };
 }
 
-async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
+async function createWithDurations(args: CreateWithDurationssArgs): Promise<{
   streamId: BN;
   streamNftMint: PublicKey;
   recipientsStreamNftATA: PublicKey;
@@ -234,7 +214,8 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
   const {
     senderKeys,
     expectedStreamId,
-    milestones,
+    cliffDuration,
+    totalDuration,
     unlockAmounts,
     depositedAmount,
     isCancelable,
@@ -248,11 +229,10 @@ async function createWithTimestamps(args: CreateWithTimestampsArgs): Promise<{
 
   const nftTokenProgram = TOKEN_PROGRAM_ID;
   await lockupProgram.methods
-    .createWithTimestamps(
+    .createWithDurations(
       depositedAmount,
-      milestones.startTime,
-      milestones.cliffTime,
-      milestones.endTime,
+      cliffDuration,
+      totalDuration,
       unlockAmounts.startUnlock,
       unlockAmounts.cliffUnlock,
       isCancelable
