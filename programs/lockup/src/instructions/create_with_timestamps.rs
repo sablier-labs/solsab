@@ -14,6 +14,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
+#[instruction(unique_id: u64)]
 pub struct CreateWithTimestamps<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
@@ -89,8 +90,11 @@ pub struct CreateWithTimestamps<'info> {
     #[account(
         init_if_needed,
         payer = sender,
-        seeds = [STREAM_NFT_MINT_SEED,
-                 (nft_collection_data.total_supply + 1).to_le_bytes().as_ref()],
+        seeds = [
+          STREAM_NFT_MINT_SEED,
+          sender.key().as_ref(),
+          unique_id.to_le_bytes().as_ref(),
+        ],
         bump,
         mint::decimals = 0,
         mint::authority = nft_collection_mint, // TODO: make Treasury the authority, instead?
