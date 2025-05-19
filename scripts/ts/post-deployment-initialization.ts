@@ -122,10 +122,6 @@ async function initializeSablierLockup() {
     .rpc();
 }
 
-async function getLamportsBalanceOf(address: PublicKey): Promise<bigint> {
-  return await anchorProvider.connection.getBalance(address);
-}
-
 async function testStreamCreation(
   expectedStreamId: BN,
   isCancelable: boolean,
@@ -133,14 +129,14 @@ async function testStreamCreation(
   totalDuration: BN,
   unlockAmounts: UnlockAmounts
 ) {
-  const { depositTokenMint, mintedAmount: depositedAmount } =
+  const { assetMint, mintedAmount: depositedAmount } =
     await createTokenAndMintToSender();
 
   await createWithDurations({
     expectedStreamId,
     senderKeys,
     recipient: recipientKeys.publicKey,
-    depositTokenMint,
+    assetMint,
     cliffDuration,
     totalDuration,
     depositedAmount,
@@ -152,7 +148,7 @@ async function testStreamCreation(
 interface CreateWithDurationssArgs {
   senderKeys: Keypair;
   recipient: PublicKey;
-  depositTokenMint: PublicKey;
+  assetMint: PublicKey;
   expectedStreamId: BN;
   cliffDuration: BN;
   totalDuration: BN;
@@ -162,14 +158,14 @@ interface CreateWithDurationssArgs {
 }
 
 async function createTokenAndMintToSender(): Promise<{
-  depositTokenMint: PublicKey;
+  assetMint: PublicKey;
   senderATA: PublicKey;
   mintedAmount: BN;
 }> {
   const TOKEN_DECIMALS = 9;
   const freezeAuthority = null;
 
-  const depositTokenMint = await createMint(
+  const assetMint = await createMint(
     anchorProvider.connection,
     senderKeys,
     senderKeys.publicKey,
@@ -177,12 +173,12 @@ async function createTokenAndMintToSender(): Promise<{
     TOKEN_DECIMALS,
     Keypair.generate()
   );
-  console.log(`Created Token Mint: ${depositTokenMint}`);
+  console.log(`Created Token Mint: ${assetMint}`);
 
   const senderATA = await getOrCreateAssociatedTokenAccount(
     anchorProvider.connection,
     senderKeys,
-    depositTokenMint,
+    assetMint,
     senderKeys.publicKey
   );
   console.log(`Sender's ATA: ${senderATA}`);
@@ -191,7 +187,7 @@ async function createTokenAndMintToSender(): Promise<{
   await mintTo(
     anchorProvider.connection,
     senderKeys,
-    depositTokenMint,
+    assetMint,
     senderATA.address,
     senderKeys,
     Number(mintedAmount)
@@ -199,7 +195,7 @@ async function createTokenAndMintToSender(): Promise<{
   console.log(`Minted ${mintedAmount} tokens to the Sender ATA`);
 
   return {
-    depositTokenMint: depositTokenMint,
+    assetMint: assetMint,
     senderATA: senderATA.address,
     mintedAmount,
   };
@@ -219,7 +215,7 @@ async function createWithDurations(args: CreateWithDurationssArgs): Promise<{
     unlockAmounts,
     depositedAmount,
     isCancelable,
-    depositTokenMint,
+    assetMint,
     recipient,
   } = args;
 
@@ -240,8 +236,11 @@ async function createWithDurations(args: CreateWithDurationssArgs): Promise<{
     )
     .accountsPartial({
       sender: senderKeys.publicKey,
-      streamNftMint: getStreamNftMintAddress(expectedStreamId),
-      depositTokenMint,
+      streamNftMint: getStreamNftMintAddress(
+        senderKeys.publicKey,
+        expectedStreamId
+      ),
+      assetMint,
       recipient,
       nftTokenProgram: TOKEN_PROGRAM_ID,
       depositTokenProgram: TOKEN_PROGRAM_ID,
@@ -249,7 +248,10 @@ async function createWithDurations(args: CreateWithDurationssArgs): Promise<{
     .preInstructions([increaseCULimitIx])
     .rpc();
 
-  const streamNftMint = getStreamNftMintAddress(expectedStreamId);
+  const streamNftMint = getStreamNftMintAddress(
+    senderKeys.publicKey,
+    expectedStreamId
+  );
   const recipientsStreamNftATA = deriveATAAddress(
     streamNftMint,
     recipientKeys.publicKey,
@@ -271,10 +273,11 @@ function getPDAAddress(
   return anchor.web3.PublicKey.findProgramAddressSync(seeds, programId)[0];
 }
 
-function getStreamNftMintAddress(streamId: BN): PublicKey {
+function getStreamNftMintAddress(sender: PublicKey, streamId: BN): PublicKey {
   // The seeds used when creating the Stream NFT Mint
   const streamNftMintSeeds = [
     Buffer.from("stream_nft_mint"),
+    sender.toBuffer(),
     streamId.toBuffer("le", 8),
   ];
   return getPDAAddress(streamNftMintSeeds, lockupProgramId);
