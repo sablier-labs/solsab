@@ -2,6 +2,7 @@ use anchor_lang::{prelude::*, solana_program::sysvar::clock::Clock};
 
 use crate::instructions::create_with_timestamps;
 
+#[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<create_with_timestamps::CreateWithTimestamps>,
     stream_id: u64,
