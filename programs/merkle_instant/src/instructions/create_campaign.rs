@@ -54,7 +54,7 @@ pub fn handler(
     // Update: this attack shouldn't be possible, as the claim Ix execution should fail when trying to update the Claim
     // Status of the respective airdrop recipient. Write a test confirming this.
     recipient_count: u32,
-    merkle_tree_ipfs_id: String,
+    ipfs_id: String,
     merkle_root: [u8; 32],
     expiration_time: i64,
 ) -> Result<()> {
@@ -66,7 +66,7 @@ pub fn handler(
         ctx.bumps.campaign,
         name.clone(),
         ctx.accounts.airdrop_token_mint.key(),
-        merkle_tree_ipfs_id.clone(),
+        ipfs_id.clone(),
         merkle_root,
         expiration_time,
         ctx.accounts.campaign_creator.key(),
@@ -79,7 +79,7 @@ pub fn handler(
         creator: ctx.accounts.campaign_creator.key(),
         campaign_name: name,
         recipient_count,
-        merkle_tree_ipfs_id,
+        ipfs_id,
         merkle_root,
         expiration_time,
     });
