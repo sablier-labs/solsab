@@ -4,13 +4,13 @@ use crate::utils::errors::ErrorCode;
 
 pub fn check_claim(
     merkle_root: [u8; 32],
+    index: u32,
     recipient: Pubkey,
-    leaf_id: u32,
     amount: u64,
-    proof: &[[u8; 32]],
+    merkle_proof: &[[u8; 32]],
 ) -> Result<()> {
     // Form the leaf
-    let leaf = [&leaf_id.to_le_bytes(), recipient.to_bytes().as_ref(), &amount.to_le_bytes()].concat();
+    let leaf = [&index.to_le_bytes(), recipient.to_bytes().as_ref(), &amount.to_le_bytes()].concat();
 
     // Compute the hash of the leaf
     let mut leaf_hash = keccak_hashv(&[&leaf]).0;
@@ -18,17 +18,17 @@ pub fn check_claim(
     // Hash one more time to protect against the second pre-image attacks
     leaf_hash = keccak_hashv(&[&leaf_hash]).0;
 
-    // Compute the root hash from the leaf hash and the proof
+    // Compute the root hash from the leaf hash and the merkle_proof
     // Dev: the below algorithm has been inspired by
-    // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/cryptography/MerkleProof.sol
+    // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/cryptography/merkle_proof.sol
     let mut computed_root = leaf_hash;
-    for proof_element in proof.iter() {
-        if computed_root <= *proof_element {
-            // Hash(current computed hash + current element of the proof)
-            computed_root = keccak_hashv(&[&computed_root, proof_element]).0;
+    for merkle_proof_element in merkle_proof.iter() {
+        if computed_root <= *merkle_proof_element {
+            // Hash(current computed hash + current element of the merkle_proof)
+            computed_root = keccak_hashv(&[&computed_root, merkle_proof_element]).0;
         } else {
-            // Hash(current element of the proof + current computed hash)
-            computed_root = keccak_hashv(&[proof_element, &computed_root]).0;
+            // Hash(current element of the merkle_proof + current computed hash)
+            computed_root = keccak_hashv(&[merkle_proof_element, &computed_root]).0;
         }
     }
     // Check if the computed hash (root) is equal to the provided root
@@ -39,26 +39,7 @@ pub fn check_claim(
     Ok(())
 }
 
-pub fn check_create_campaign(expiration_time: i64) -> Result<()> {
-    // Check: the expiration date is strictly in the future.
-    if expiration_time <= Clock::get()?.unix_timestamp {
-        return Err(ErrorCode::ExpirationTimeNotInTheFuture.into());
-    }
-
-    Ok(())
-}
-
-pub fn check_clawback(clawback_amount: u64, campaign_ata_amount: u64, _expiration_time: i64) -> Result<()> {
-    // Check: the clawback amount is not zero.
-    if clawback_amount == 0 {
-        return Err(ErrorCode::CantClawbackZeroAmount.into());
-    }
-
-    // Check: the clawback amount is less than or equal to the campaign ATA amount.
-    if clawback_amount > campaign_ata_amount {
-        return Err(ErrorCode::CantClawbackMoreThanRemaining.into());
-    }
-
+pub fn check_clawback(_expiration_time: i64) -> Result<()> {
     // TODO: assert that the clawback is valid wrt the grace period and the expiration time
 
     Ok(())

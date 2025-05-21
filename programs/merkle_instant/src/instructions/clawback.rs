@@ -13,7 +13,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(amount: u64, merkle_root: [u8; 32])]
+#[instruction(_merkle_root: [u8; 32])]
 pub struct Clawback<'info> {
     #[account(
       mut,
@@ -23,7 +23,7 @@ pub struct Clawback<'info> {
 
     #[account(
       mut,
-      seeds = [CAMPAIGN_SEED, &merkle_root],
+      seeds = [CAMPAIGN_SEED, &_merkle_root],
       bump = campaign.bump,
     )]
     pub campaign: Box<Account<'info, Campaign>>,
@@ -54,9 +54,9 @@ pub struct Clawback<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-pub fn handler(ctx: Context<Clawback>, _merkle_root: [u8; 32], requested_amount: u64) -> Result<()> {
+pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     // Check: validate the clawback.
-    check_clawback(requested_amount, ctx.accounts.campaign_ata.amount, ctx.accounts.campaign.expiration_time)?;
+    check_clawback(ctx.accounts.campaign.expiration_time)?;
 
     // Interaction: transfer tokens from the Campaign's ATA to the campaign creator's ATA.
     transfer_tokens(
@@ -65,7 +65,7 @@ pub fn handler(ctx: Context<Clawback>, _merkle_root: [u8; 32], requested_amount:
         ctx.accounts.campaign.to_account_info(),
         ctx.accounts.airdrop_token_mint.to_account_info(),
         ctx.accounts.airdrop_token_program.to_account_info(),
-        requested_amount,
+        amount,
         ctx.accounts.airdrop_token_mint.decimals,
         &[&[CAMPAIGN_SEED, &[ctx.accounts.campaign.bump]]],
     )?;
@@ -73,7 +73,7 @@ pub fn handler(ctx: Context<Clawback>, _merkle_root: [u8; 32], requested_amount:
     // Log the clawback.
     emit!(FundsClawedBack {
         campaign: ctx.accounts.campaign.key(),
-        clawback_amount: requested_amount,
+        clawback_amount: amount,
         tx_signer: ctx.accounts.campaign_creator.key(),
     });
     Ok(())

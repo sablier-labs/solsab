@@ -1,4 +1,7 @@
-use anchor_lang::{prelude::*, solana_program::program::invoke};
+use anchor_lang::{
+    prelude::*,
+    solana_program::{program::invoke, system_instruction::transfer},
+};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
@@ -111,11 +114,7 @@ pub fn handler(ctx: Context<Withdraw>, stream_id: u64, amount: u64) -> Result<()
     ctx.accounts.stream_data.withdraw(amount)?;
 
     // Interaction: transfer the fee from the signer to the treasury.
-    let fee_collection_ix = anchor_lang::solana_program::system_instruction::transfer(
-        &ctx.accounts.signer.key(),
-        &ctx.accounts.treasury.key(),
-        WITHDRAWAL_FEE,
-    );
+    let fee_collection_ix = transfer(&ctx.accounts.signer.key(), &ctx.accounts.treasury.key(), WITHDRAWAL_FEE);
     invoke(&fee_collection_ix, &[ctx.accounts.signer.to_account_info(), ctx.accounts.treasury.to_account_info()])?;
 
     // Avoid unnecessary mutable borrow.

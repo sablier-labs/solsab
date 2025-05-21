@@ -1,18 +1,36 @@
 use anchor_lang::prelude::*;
 
-use crate::{state::campaign::*, utils::constants::*};
+use crate::{
+    state::{campaign::Campaign, claim_status::ClaimStatus},
+    utils::constants::*,
+};
 
 #[derive(Accounts)]
-#[instruction(merkle_root: [u8; 32])]
+#[instruction(_merkle_root: [u8; 32], _index: u32)]
 pub struct HasClaimed<'info> {
+    #[account(address = campaign.creator)]
+    /// CHECK: This account is validated through the constraint `address = campaign.creator`
+    pub creator: UncheckedAccount<'info>,
+
     #[account(
-      seeds = [CAMPAIGN_SEED, &merkle_root],
-      bump = campaign.bump,
+      seeds = [
+        CAMPAIGN_SEED,
+        creator.key().as_ref(),
+        _merkle_root.as_ref()
+     ],
+     bump
     )]
     pub campaign: Box<Account<'info, Campaign>>,
-}
 
-pub fn handler(ctx: Context<HasClaimed>, _merkle_root: [u8; 32], leaf_id: u32) -> Result<bool> {
-    // TODO: What if the leaf_id is out of bounds?
-    Ok(ctx.accounts.campaign.claim_status[leaf_id as usize])
+    #[account(
+        seeds = [
+            CLAIM_STATUS_SEED,
+            campaign.key().as_ref(),
+            _index.to_le_bytes().as_ref(),
+        ],
+        bump
+    )]
+    pub claim_status: Option<Account<'info, ClaimStatus>>,
+
+    pub system_program: Program<'info, System>,
 }

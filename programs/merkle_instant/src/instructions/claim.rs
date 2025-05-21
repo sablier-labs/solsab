@@ -1,28 +1,57 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{
+    prelude::*,
+    solana_program::{program::invoke, system_instruction::transfer},
+};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
 use crate::{
-    state::campaign::Campaign,
+    state::{campaign::Campaign, claim_status::ClaimStatus, treasury::Treasury},
     utils::{
-        constants::CAMPAIGN_SEED, events::AirdropClaimed, transfer_helper::transfer_tokens, validations::check_claim,
+        constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED, CLAIM_STATUS_SEED, TREASURY_SEED},
+        events::AirdropClaimed,
+        transfer_helper::transfer_tokens,
+        validations::check_claim,
     },
 };
 
+const CLAIM_FEE: u64 = 30_000_000; // The fee for claiming an airdrop, in lamports.
+
 #[derive(Accounts)]
-#[instruction(amount: u64, merkle_root: [u8; 32])]
+#[instruction(_merkle_root: [u8; 32], index: u64)]
 pub struct Claim<'info> {
     #[account(mut)]
     pub claimer: Signer<'info>,
 
+    #[account(address = campaign.creator)]
+    /// CHECK: This account is validated through the constraint `address = campaign.creator`
+    pub creator: UncheckedAccount<'info>,
+
     #[account(
       mut,
-      seeds = [CAMPAIGN_SEED, &merkle_root],
-      bump = campaign.bump,
+      seeds = [
+        CAMPAIGN_SEED,
+        creator.key().as_ref(),
+        _merkle_root.as_ref()
+      ],
+      bump
     )]
     pub campaign: Box<Account<'info, Campaign>>,
+
+    #[account(
+      init,
+      payer = claimer,
+      space = ANCHOR_DISCRIMINATOR_SIZE + ClaimStatus::INIT_SPACE,
+      seeds = [
+        CLAIM_STATUS_SEED,
+        campaign.key().as_ref(),
+        index.to_le_bytes().as_ref(),
+      ],
+      bump
+    )]
+    pub claim_status: Box<Account<'info, ClaimStatus>>,
 
     #[account(
       address = campaign.airdrop_token_mint,
@@ -39,7 +68,7 @@ pub struct Claim<'info> {
     pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account()]
-    /// CHECK: The recipient may be any Merkle Tree leaf (verified by check_claim())
+    /// CHECK: Anyone can claim in behalf of the recipient.
     pub recipient: UncheckedAccount<'info>,
 
     #[account(
@@ -51,20 +80,28 @@ pub struct Claim<'info> {
     )]
     pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    #[account(
+      mut,
+      seeds = [TREASURY_SEED],
+      bump = treasury.bump
+    )]
+    pub treasury: Box<Account<'info, Treasury>>,
+
     pub system_program: Program<'info, System>,
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-pub fn handler(
-    ctx: Context<Claim>,
-    merkle_root: [u8; 32],
-    leaf_id: u32,
-    amount: u64,
-    proof: Vec<[u8; 32]>,
-) -> Result<()> {
+pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[u8; 32]>) -> Result<()> {
     // Check: validate the claim.
-    check_claim(merkle_root, ctx.accounts.recipient.key(), leaf_id, amount, &proof)?;
+    check_claim(ctx.accounts.campaign.merkle_root, index, ctx.accounts.recipient.key(), amount, &merkle_proof)?;
+
+    ctx.accounts.campaign.claim()?;
+    ctx.accounts.claim_status.bump = ctx.bumps.claim_status;
+
+    // Interaction: transfer the fee from the claimer to the treasury.
+    let fee_collection_ix = transfer(&ctx.accounts.claimer.key(), &ctx.accounts.treasury.key(), CLAIM_FEE);
+    invoke(&fee_collection_ix, &[ctx.accounts.claimer.to_account_info(), ctx.accounts.treasury.to_account_info()])?;
 
     // Interaction: transfer tokens from the Campaign's ATA to the Recipient's ATA.
     transfer_tokens(
@@ -78,17 +115,16 @@ pub fn handler(
         &[&[CAMPAIGN_SEED, &[ctx.accounts.campaign.bump]]],
     )?;
 
-    // Effect: Update the campaign's claim status.
-    ctx.accounts.campaign.claim_status[leaf_id as usize] = true;
-
-    // Log the clawback.
+    // Log the claim.
     emit!(AirdropClaimed {
         campaign: ctx.accounts.campaign.key(),
         claimer: ctx.accounts.claimer.key(),
+        claim_status: ctx.accounts.claim_status.key(),
         recipient: ctx.accounts.recipient.key(),
-        leaf_id,
+        index,
         amount,
-        proof,
+        merkle_proof,
     });
+
     Ok(())
 }
