@@ -13,10 +13,18 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(merkle_root: [u8; 32])]
+#[instruction(
+    merkle_root: [u8; 32], 
+    expiration_time: i64, 
+    ipfs_id: String, 
+    name: String,
+)]
 pub struct CreateCampaign<'info> {
     #[account(mut)]
     pub creator: Signer<'info>,
+
+    #[account(mint::token_program = airdrop_token_program)]
+    pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
       init,
@@ -25,9 +33,13 @@ pub struct CreateCampaign<'info> {
       seeds = [
         CAMPAIGN_SEED,
         creator.key().as_ref(),
-        merkle_root.as_ref()
+        merkle_root.as_ref(),
+        expiration_time.to_le_bytes().as_ref(),
+        ipfs_id.as_ref(),
+        name.as_ref(),
+        airdrop_token_mint.key().as_ref(),
      ],
-     bump
+     bump,
     )]
     pub campaign: Box<Account<'info, Campaign>>,
 
@@ -40,9 +52,6 @@ pub struct CreateCampaign<'info> {
     )]
     pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    #[account(mint::token_program = airdrop_token_program)]
-    pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
-
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
@@ -50,11 +59,6 @@ pub struct CreateCampaign<'info> {
 
 pub fn handler(
     ctx: Context<CreateCampaign>,
-    // TODO: if the passed recipient_count is smaller than the actual number of Merkle Tree leaves, a double-spend
-    // attack is possible? (claiming the allocation multiple times by the same recipient with an id >
-    // recipient_count) How do we prevent this?
-    // Update: this attack shouldn't be possible, as the claim Ix execution should fail when trying to update the Claim
-    // Status of the respective airdrop recipient. Write a test confirming this.
     merkle_root: [u8; 32],
     expiration_time: i64,
     name: String,
@@ -75,13 +79,13 @@ pub fn handler(
 
     // Log the campaign creation.
     emit!(CampaignCreated {
-        merkle_root,
+        aggregate_amount,
         campaign: ctx.accounts.campaign.key(),
+        campaign_name: name,
         creator: ctx.accounts.creator.key(),
         expiration_time,
-        campaign_name: name,
         ipfs_id,
-        aggregate_amount,
+        merkle_root,
         recipient_count,
     });
 

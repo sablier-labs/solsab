@@ -12,14 +12,7 @@ pub struct HasClaimed<'info> {
     /// CHECK: This account is validated through the constraint `address = campaign.creator`
     pub creator: UncheckedAccount<'info>,
 
-    #[account(
-      seeds = [
-        CAMPAIGN_SEED,
-        creator.key().as_ref(),
-        _merkle_root.as_ref()
-     ],
-     bump
-    )]
+    #[account()]
     pub campaign: Box<Account<'info, Campaign>>,
 
     #[account(
@@ -31,6 +24,4 @@ pub struct HasClaimed<'info> {
         bump
     )]
     pub claim_status: Option<Account<'info, ClaimStatus>>,
-
-    pub system_program: Program<'info, System>,
 }

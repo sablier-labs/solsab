@@ -3,12 +3,17 @@ use anchor_lang::{prelude::*, solana_program::keccak::hashv as keccak_hashv};
 use crate::utils::errors::ErrorCode;
 
 pub fn check_claim(
+    expiration_time: i64,
     merkle_root: [u8; 32],
     index: u32,
     recipient: Pubkey,
     amount: u64,
     merkle_proof: &[[u8; 32]],
 ) -> Result<()> {
+    if has_expired(expiration_time)? {
+        return Err(ErrorCode::CampaignExpired.into());
+    }
+
     // Form the leaf
     let leaf = [&index.to_le_bytes(), recipient.to_bytes().as_ref(), &amount.to_le_bytes()].concat();
 
@@ -39,8 +44,10 @@ pub fn check_claim(
     Ok(())
 }
 
-pub fn check_clawback(_expiration_time: i64) -> Result<()> {
-    // TODO: assert that the clawback is valid wrt the grace period and the expiration time
+pub fn check_clawback(expiration_time: i64, first_claim_time: i64) -> Result<()> {
+    if has_grace_period_passed(first_claim_time)? && !has_expired(expiration_time)? {
+        return Err(ErrorCode::ClawbackNotAllowed.into());
+    }
 
     Ok(())
 }
@@ -52,4 +59,17 @@ pub fn check_collect_fees(collectable_amount: u64) -> Result<()> {
     }
 
     Ok(())
+}
+
+pub fn has_expired(expiration_time: i64) -> Result<bool> {
+    let current_time = Clock::get()?.unix_timestamp;
+
+    Ok(expiration_time > 0 && expiration_time <= current_time)
+}
+
+pub fn has_grace_period_passed(first_claim_time: i64) -> Result<bool> {
+    let current_time = Clock::get()?.unix_timestamp;
+    let grace_period = 7 * 24 * 60 * 60; // 7 days in seconds
+
+    Ok(first_claim_time > 0 && current_time > first_claim_time + grace_period)
 }

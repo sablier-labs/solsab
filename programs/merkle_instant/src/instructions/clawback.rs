@@ -1,37 +1,22 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{
-    associated_token::AssociatedToken,
-    token_interface::{Mint, TokenAccount, TokenInterface},
-};
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::{
     state::campaign::Campaign,
     utils::{
-        constants::CAMPAIGN_SEED, events::FundsClawedBack, transfer_helper::transfer_tokens,
-        validations::check_clawback,
+        constants::CAMPAIGN_SEED, events::Clawbacked, transfer_helper::transfer_tokens, validations::check_clawback,
     },
 };
 
 #[derive(Accounts)]
-#[instruction(_merkle_root: [u8; 32])]
 pub struct Clawback<'info> {
-    #[account(
-      mut,
-      address = campaign.creator
-    )]
+    #[account(address = campaign.creator)]
     pub campaign_creator: Signer<'info>,
 
-    #[account(
-      mut,
-      seeds = [CAMPAIGN_SEED, &_merkle_root],
-      bump = campaign.bump,
-    )]
+    #[account()]
     pub campaign: Box<Account<'info, Campaign>>,
 
-    #[account(
-      address = campaign.airdrop_token_mint,
-      mint::token_program = airdrop_token_program,
-    )]
+    #[account(address = campaign.airdrop_token_mint)]
     pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
@@ -51,12 +36,11 @@ pub struct Clawback<'info> {
     pub campaign_creator_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub airdrop_token_program: Interface<'info, TokenInterface>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     // Check: validate the clawback.
-    check_clawback(ctx.accounts.campaign.expiration_time)?;
+    check_clawback(ctx.accounts.campaign.expiration_time, ctx.accounts.campaign.first_claim_time)?;
 
     // Interaction: transfer tokens from the Campaign's ATA to the campaign creator's ATA.
     transfer_tokens(
@@ -71,10 +55,11 @@ pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     )?;
 
     // Log the clawback.
-    emit!(FundsClawedBack {
+    emit!(Clawbacked {
+        amount,
         campaign: ctx.accounts.campaign.key(),
-        clawback_amount: amount,
-        tx_signer: ctx.accounts.campaign_creator.key(),
+        campaign_creator: ctx.accounts.campaign_creator.key(),
     });
+
     Ok(())
 }

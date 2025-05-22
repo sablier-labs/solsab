@@ -11,7 +11,7 @@ use crate::{
     state::{campaign::Campaign, claim_status::ClaimStatus, treasury::Treasury},
     utils::{
         constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED, CLAIM_STATUS_SEED, TREASURY_SEED},
-        events::AirdropClaimed,
+        events::Claimed,
         transfer_helper::transfer_tokens,
         validations::check_claim,
     },
@@ -20,25 +20,20 @@ use crate::{
 const CLAIM_FEE: u64 = 30_000_000; // The fee for claiming an airdrop, in lamports.
 
 #[derive(Accounts)]
-#[instruction(_merkle_root: [u8; 32], index: u64)]
+#[instruction(index: u64)]
 pub struct Claim<'info> {
     #[account(mut)]
     pub claimer: Signer<'info>,
 
+    #[account(mut)]
+    pub campaign: Box<Account<'info, Campaign>>,
+
+    #[account(address = campaign.airdrop_token_mint)]
+    pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
+
     #[account(address = campaign.creator)]
     /// CHECK: This account is validated through the constraint `address = campaign.creator`
     pub creator: UncheckedAccount<'info>,
-
-    #[account(
-      mut,
-      seeds = [
-        CAMPAIGN_SEED,
-        creator.key().as_ref(),
-        _merkle_root.as_ref()
-      ],
-      bump
-    )]
-    pub campaign: Box<Account<'info, Campaign>>,
 
     #[account(
       init,
@@ -54,12 +49,6 @@ pub struct Claim<'info> {
     pub claim_status: Box<Account<'info, ClaimStatus>>,
 
     #[account(
-      address = campaign.airdrop_token_mint,
-      mint::token_program = airdrop_token_program,
-    )]
-    pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    #[account(
       mut,
       associated_token::mint = airdrop_token_mint,
       associated_token::authority = campaign,
@@ -68,7 +57,7 @@ pub struct Claim<'info> {
     pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account()]
-    /// CHECK: Anyone can claim in behalf of the recipient.
+    /// CHECK: Anyone can claim in behalf of the recipient. This is validated in the merkle proof verifcaition.
     pub recipient: UncheckedAccount<'info>,
 
     #[account(
@@ -83,7 +72,7 @@ pub struct Claim<'info> {
     #[account(
       mut,
       seeds = [TREASURY_SEED],
-      bump = treasury.bump
+      bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
@@ -94,7 +83,14 @@ pub struct Claim<'info> {
 
 pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[u8; 32]>) -> Result<()> {
     // Check: validate the claim.
-    check_claim(ctx.accounts.campaign.merkle_root, index, ctx.accounts.recipient.key(), amount, &merkle_proof)?;
+    check_claim(
+        ctx.accounts.campaign.expiration_time,
+        ctx.accounts.campaign.merkle_root,
+        index,
+        ctx.accounts.recipient.key(),
+        amount,
+        &merkle_proof,
+    )?;
 
     ctx.accounts.campaign.claim()?;
     ctx.accounts.claim_status.bump = ctx.bumps.claim_status;
@@ -116,14 +112,13 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
     )?;
 
     // Log the claim.
-    emit!(AirdropClaimed {
+    emit!(Claimed {
+        amount,
         campaign: ctx.accounts.campaign.key(),
         claimer: ctx.accounts.claimer.key(),
         claim_status: ctx.accounts.claim_status.key(),
-        recipient: ctx.accounts.recipient.key(),
         index,
-        amount,
-        merkle_proof,
+        recipient: ctx.accounts.recipient.key(),
     });
 
     Ok(())

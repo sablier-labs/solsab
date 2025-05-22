@@ -12,10 +12,6 @@ declare_id!("9she3vL2CCmWjPBFVVXwu78kYg7TU8jm69siH3STngXx"); // Localnet & Devne
 pub mod sablier_merkle_instant {
     use super::*;
 
-    pub fn campaign_name(ctx: Context<CampaignView>, _merkle_root: [u8; 32]) -> Result<String> {
-        instructions::campaign_name::handler(ctx)
-    }
-
     pub fn claim(
         ctx: Context<Claim>,
         _merkle_root: [u8; 32],
@@ -26,7 +22,7 @@ pub mod sablier_merkle_instant {
         instructions::claim::handler(ctx, index, amount, merkle_proof)
     }
 
-    pub fn clawback(ctx: Context<Clawback>, amount: u64, _merkle_root: [u8; 32]) -> Result<()> {
+    pub fn clawback(ctx: Context<Clawback>, amount: u64) -> Result<()> {
         instructions::clawback::handler(ctx, amount)
     }
 
@@ -58,8 +54,12 @@ pub mod sablier_merkle_instant {
         Ok(ctx.accounts.claim_status.is_some())
     }
 
-    pub fn has_expired(ctx: Context<CampaignView>, merkle_root: [u8; 32]) -> Result<bool> {
-        instructions::has_expired::handler(ctx, merkle_root)
+    pub fn has_expired(ctx: Context<CampaignView>) -> Result<bool> {
+        instructions::has_expired::handler(ctx)
+    }
+
+    pub fn has_grace_period_passed(ctx: Context<CampaignView>) -> Result<bool> {
+        instructions::has_grace_period_passed::handler(ctx)
     }
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
