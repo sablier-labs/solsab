@@ -27,18 +27,18 @@ pub fn check_claim(
     // Compute the root hash from the leaf hash and the merkle_proof
     // Dev: the below algorithm has been inspired by
     // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/cryptography/merkle_proof.sol
-    let mut computed_root = leaf_hash;
-    for merkle_proof_element in merkle_proof.iter() {
-        if computed_root <= *merkle_proof_element {
+    let mut computed_hash = leaf_hash;
+    for proof_element in merkle_proof.iter() {
+        if computed_hash <= *proof_element {
             // Hash(current computed hash + current element of the merkle_proof)
-            computed_root = keccak_hashv(&[&computed_root, merkle_proof_element]).0;
+            computed_hash = keccak_hashv(&[&computed_hash, proof_element]).0;
         } else {
             // Hash(current element of the merkle_proof + current computed hash)
-            computed_root = keccak_hashv(&[merkle_proof_element, &computed_root]).0;
+            computed_hash = keccak_hashv(&[proof_element, &computed_hash]).0;
         }
     }
     // Check if the computed hash (root) is equal to the provided root
-    if computed_root != merkle_root {
+    if computed_hash != merkle_root {
         return Err(ErrorCode::InvalidMerkleProof.into());
     }
 
