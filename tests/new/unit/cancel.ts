@@ -9,22 +9,22 @@ import {
   banksClient,
   cancel,
   cancelToken2022,
-  createRandomSPLMint,
   createWithTimestampsToken2022,
   defaultStreamData,
   defaultStreamDataToken2022,
-  deriveTreasuryAtaSPL,
-  deriveTreasuryAtaToken2022,
   fetchStreamData,
   getATABalance,
   getTreasuryATABalanceSPL,
   getTreasuryATABalanceToken2022,
   ids,
+  randomToken,
   recipient,
   sender,
   setUp,
   sleepFor,
   timeTravelTo,
+  treasuryATASpl,
+  treasuryATAToken2022,
   withdrawMax,
 } from "../base";
 
@@ -65,9 +65,8 @@ describe("cancel", () => {
     context("given a valid stream", () => {
       context("given an invalid asset mint", () => {
         it("should revert", async () => {
-          const randomMint = await createRandomSPLMint();
           try {
-            await cancel({ assetMint: randomMint });
+            await cancel({ assetMint: randomToken });
           } catch (error) {
             assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
           }
@@ -283,10 +282,9 @@ async function postCancelAssertionsSPL(
   expectedStreamData: any,
   senderATA = sender.usdcATA
 ) {
-  const treasuryATA = deriveTreasuryAtaSPL(expectedStreamData.assetMint);
   await postCancelAssertions(
     senderATA,
-    treasuryATA,
+    treasuryATASpl,
     senderATABalanceBefore,
     treasuryATABalanceBefore,
     expectedStreamData
@@ -299,10 +297,9 @@ async function postCancelAssertionsToken2022(
   expectedStreamData: any,
   senderATA = sender.daiATA
 ) {
-  const treasuryATA = deriveTreasuryAtaToken2022(expectedStreamData.assetMint);
   await postCancelAssertions(
     senderATA,
-    treasuryATA,
+    treasuryATAToken2022,
     senderATABalanceBefore,
     treasuryATABalanceBefore,
     expectedStreamData

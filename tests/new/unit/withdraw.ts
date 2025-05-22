@@ -7,23 +7,23 @@ import {
   createWithTimestampsToken2022,
   defaultStreamData,
   defaultStreamDataToken2022,
-  deriveTreasuryAtaSPL,
-  deriveTreasuryAtaToken2022,
   fetchStreamData,
   getATABalance,
   getTreasuryLamports,
   getTreasuryATABalanceSPL,
   getTreasuryATABalanceToken2022,
   ids,
+  randomToken,
+  recipient,
   sender,
   setUp,
   timeTravelTo,
+  treasuryATASpl,
+  treasuryATAToken2022,
   withdrawMax,
   withdraw,
   withdrawToken2022,
   banksClient,
-  recipient,
-  createRandomSPLMint,
 } from "../base";
 import { assertErrorHexCode, assertEqStreamDatas } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
@@ -66,9 +66,8 @@ describe("withdraw", () => {
     context("given a valid stream", () => {
       context("given an invalid asset mint", () => {
         it("should revert", async () => {
-          const randomMint = await createRandomSPLMint();
           try {
-            await withdraw({ assetMint: randomMint });
+            await withdraw({ assetMint: randomToken });
           } catch (error) {
             assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
           }
@@ -388,12 +387,11 @@ async function postWithdrawAssertionsSPL(
   treasuryATABalanceBefore: BN,
   expectedStreamData: any
 ) {
-  const treasuryATA = deriveTreasuryAtaSPL(expectedStreamData.assetMint);
   await postWithdrawAssertions(
     treasuryLamportsBefore,
     withdrawalRecipientATA,
     withdrawalRecipientATABalanceBefore,
-    treasuryATA,
+    treasuryATASpl,
     treasuryATABalanceBefore,
     expectedStreamData
   );
@@ -406,12 +404,11 @@ async function postWithdrawAssertionsToken2022(
   treasuryATABalanceBefore: BN,
   expectedStreamData: any
 ) {
-  const treasuryATA = deriveTreasuryAtaToken2022(expectedStreamData.assetMint);
   await postWithdrawAssertions(
     treasuryLamportsBefore,
     withdrawalRecipientATA,
     withdrawalRecipientATABalanceBefore,
-    treasuryATA,
+    treasuryATAToken2022,
     treasuryATABalanceBefore,
     expectedStreamData
   );

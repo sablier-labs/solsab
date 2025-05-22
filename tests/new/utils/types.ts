@@ -1,18 +1,18 @@
-import * as anchor from "@coral-xyz/anchor";
+import { BN } from "@coral-xyz/anchor";
 import { Keypair, PublicKey } from "@solana/web3.js";
 export { PublicKey } from "@solana/web3.js";
 
 export interface Amounts {
-  cliffUnlock: anchor.BN;
-  deposited: anchor.BN;
-  refunded: anchor.BN;
-  startUnlock: anchor.BN;
-  withdrawn: anchor.BN;
+  cliffUnlock: BN;
+  deposited: BN;
+  refunded: BN;
+  startUnlock: BN;
+  withdrawn: BN;
 }
 
 export interface CreateWithTimestampsParams {
   assetMint?: PublicKey;
-  depositAmount?: anchor.BN;
+  depositAmount?: BN;
   depositTokenProgram?: PublicKey;
   isCancelable?: boolean;
   recipientPubKey?: PublicKey;
@@ -22,15 +22,15 @@ export interface CreateWithTimestampsParams {
 }
 
 export interface Timestamps {
-  cliff: anchor.BN;
-  end: anchor.BN;
-  start: anchor.BN;
+  cliff: BN;
+  end: BN;
+  start: BN;
 }
 
 export interface StreamData {
   amounts: Amounts;
   assetMint: PublicKey;
-  id: anchor.BN;
+  id: BN;
   isCancelable: boolean;
   isDepleted: boolean;
   timestamps: Timestamps;
@@ -40,16 +40,16 @@ export interface StreamData {
 
 export interface StreamIds {
   // Default stream ID.
-  defaultStream: anchor.BN;
+  defaultStream: BN;
   // A non-cancelable stream ID.
-  nonCancelableStream: anchor.BN;
+  nonCancelableStream: BN;
   // A stream ID that does not exist.
-  nullStream: anchor.BN;
+  nullStream: BN;
 }
 
 export interface UnlockAmounts {
-  cliff: anchor.BN;
-  start: anchor.BN;
+  cliff: BN;
+  start: BN;
 }
 
 export interface User {

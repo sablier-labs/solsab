@@ -1,4 +1,6 @@
 import { BN } from "@coral-xyz/anchor";
+import { PublicKey } from "@solana/web3.js";
+
 import {
   assert,
   assertErrorHexCode,
@@ -10,7 +12,6 @@ import { getErrorCode } from "../utils/errors";
 import {
   accountExists,
   banksClient,
-  createRandomSPLMint,
   createWithTimestamps,
   createWithTimestampsToken2022,
   dai,
@@ -21,13 +22,13 @@ import {
   getATABalance,
   getMintTotalSupplyOf,
   getPDAAddress,
+  randomToken,
   recipient,
   sender,
   setUp,
   treasuryAddress,
   usdc,
 } from "../base";
-import { PublicKey } from "../utils/types";
 
 describe("createWithTimestamps", () => {
   context("when the program is not initialized", () => {
@@ -96,7 +97,7 @@ describe("createWithTimestamps", () => {
             it("should revert", async () => {
               try {
                 await createWithTimestamps({
-                  assetMint: await createRandomSPLMint(),
+                  assetMint: randomToken,
                 });
               } catch (error) {
                 assertErrorHexCode(

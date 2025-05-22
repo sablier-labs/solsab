@@ -31,8 +31,8 @@ import {
 } from "./utils/types";
 
 import {
+  createATA,
   createMint,
-  createAssociatedTokenAccount,
   deriveATAAddress,
   getATABalance,
   mintTo,
@@ -53,6 +53,8 @@ export let nftCollectionDataAddress: PublicKey;
 export let lockupProgram: Program<SablierLockup>;
 export let streamNftMintAddress: PublicKey;
 export let treasuryAddress: PublicKey;
+export let treasuryATASpl: PublicKey;
+export let treasuryATAToken2022: PublicKey;
 
 // Users
 export let eve: User;
@@ -63,9 +65,14 @@ export let sender: User;
 // Tokens
 export let usdc: PublicKey;
 export let dai: PublicKey;
+export let randomToken: PublicKey;
 
 // StreamIds
 export let ids: StreamIds;
+
+/*//////////////////////////////////////////////////////////////////////////
+                                       SET-UP
+//////////////////////////////////////////////////////////////////////////*/
 
 export async function setUp(initOrNot = true) {
   context = await startAnchor(
@@ -89,8 +96,8 @@ export async function setUp(initOrNot = true) {
   // Deploy the program being tested
   lockupProgram = new Program<SablierLockup>(IDL, bankrunProvider);
 
-  // Initialize the USDC and DAI token mints
-  await initializeUsdcAndDai();
+  // Initialize the tokens
+  await createTokens();
 
   // Create the users
   eve = await createUser();
@@ -105,6 +112,16 @@ export async function setUp(initOrNot = true) {
 
   // Pre-calculate the address of the Treasury
   treasuryAddress = getPDAAddress([Buffer.from(defaults.TREASURY_SEED)]);
+  treasuryATASpl = deriveATAAddress(
+    usdc,
+    treasuryAddress,
+    token.TOKEN_PROGRAM_ID
+  );
+  treasuryATAToken2022 = deriveATAAddress(
+    dai,
+    treasuryAddress,
+    token.TOKEN_2022_PROGRAM_ID
+  );
 
   // Set the block time to APR 1, 2025
   await timeTravelTo(defaults.APR_1_2025);
@@ -124,6 +141,93 @@ export async function setUp(initOrNot = true) {
       nullStream: new BN(1729),
     };
   }
+}
+
+async function createTokens(): Promise<void> {
+  const mintAndFreezeAuthority = defaultBankrunPayer.publicKey;
+
+  dai = await createMint(
+    banksClient,
+    defaultBankrunPayer,
+    mintAndFreezeAuthority,
+    mintAndFreezeAuthority,
+    9,
+    Keypair.generate(),
+    token.TOKEN_2022_PROGRAM_ID
+  );
+
+  randomToken = await createMint(
+    banksClient,
+    defaultBankrunPayer,
+    mintAndFreezeAuthority,
+    mintAndFreezeAuthority,
+    6,
+    Keypair.generate(),
+    token.TOKEN_PROGRAM_ID
+  );
+
+  usdc = await createMint(
+    banksClient,
+    defaultBankrunPayer,
+    mintAndFreezeAuthority,
+    mintAndFreezeAuthority,
+    6,
+    Keypair.generate(),
+    token.TOKEN_PROGRAM_ID
+  );
+}
+
+async function createATAsAndFund(
+  user: PublicKey
+): Promise<{ usdcATA: PublicKey; daiATA: PublicKey }> {
+  // Create ATAs for the user
+  const usdcATA = await createATA(
+    banksClient,
+    defaultBankrunPayer,
+    usdc,
+    user,
+    token.TOKEN_PROGRAM_ID
+  );
+  const daiATA = await createATA(
+    banksClient,
+    defaultBankrunPayer,
+    dai,
+    user,
+    token.TOKEN_2022_PROGRAM_ID
+  );
+
+  // Mint some tokens to the user's accounts
+  await mintTokensToUser(usdcATA, daiATA);
+
+  return { usdcATA, daiATA };
+}
+
+async function createUser(): Promise<User> {
+  // Create the keypair for the user
+  const acc = Keypair.generate();
+
+  // Set up the account info for the new keypair
+  const accInfo = {
+    lamports: 100 * LAMPORTS_PER_SOL, // Default balance (100 SOL)
+    owner: new PublicKey("11111111111111111111111111111111"), // Default owner (System Program)
+    executable: false, // Not a program account
+    rentEpoch: 0, // Default rent epoch
+    data: new Uint8Array(), // Empty data
+  };
+
+  // Add account to the BanksClient context
+  context.setAccount(acc.publicKey, accInfo);
+
+  // Create ATAs and mint tokens for the user
+  const { usdcATA, daiATA } = await createATAsAndFund(acc.publicKey);
+
+  const user: User = {
+    keys: acc,
+    usdcATA,
+    daiATA,
+  };
+
+  return user;
 }
 
 /*//////////////////////////////////////////////////////////////////////////
@@ -389,29 +493,6 @@ export async function accountExists(address: PublicKey): Promise<boolean> {
   return (await banksClient.getAccount(address)) != null;
 }
 
-export async function createRandomSPLMint(): Promise<PublicKey> {
-  const mintAndFreezeAuthority = defaultBankrunPayer.publicKey;
-  const mint = await createMint(
-    banksClient,
-    defaultBankrunPayer,
-    mintAndFreezeAuthority,
-    mintAndFreezeAuthority,
-    6,
-    Keypair.generate(),
-    token.TOKEN_PROGRAM_ID
-  );
-
-  return mint;
-}
-
-export function deriveTreasuryAtaSPL(mint = usdc): PublicKey {
-  return deriveATAAddress(mint, treasuryAddress, token.TOKEN_PROGRAM_ID);
-}
-
-export function deriveTreasuryAtaToken2022(mint = dai): PublicKey {
-  return deriveATAAddress(mint, treasuryAddress, token.TOKEN_2022_PROGRAM_ID);
-}
-
 export async function getLamportsOf(user: PublicKey): Promise<bigint> {
   return await banksClient.getBalance(user);
 }
@@ -424,90 +505,12 @@ export async function getTreasuryLamports(): Promise<bigint> {
   return await getLamportsOf(treasuryAddress);
 }
 
-export async function getTreasuryATABalanceSPL(mint = usdc): Promise<BN> {
-  const treasuryATA = deriveTreasuryAtaSPL(mint);
-  return await getATABalance(banksClient, treasuryATA);
+export async function getTreasuryATABalanceSPL(): Promise<BN> {
+  return await getATABalance(banksClient, treasuryATASpl);
 }
 
-export async function getTreasuryATABalanceToken2022(mint = dai): Promise<BN> {
-  const treasuryATA = deriveTreasuryAtaToken2022(mint);
-  return await getATABalance(banksClient, treasuryATA);
-}
-
-async function initializeUsdcAndDai(): Promise<void> {
-  const mintAndFreezeAuthority = defaultBankrunPayer.publicKey;
-  usdc = await createMint(
-    banksClient,
-    defaultBankrunPayer,
-    mintAndFreezeAuthority,
-    mintAndFreezeAuthority,
-    6,
-    Keypair.generate(),
-    token.TOKEN_PROGRAM_ID
-  );
-
-  dai = await createMint(
-    banksClient,
-    defaultBankrunPayer,
-    mintAndFreezeAuthority,
-    mintAndFreezeAuthority,
-    9,
-    Keypair.generate(),
-    token.TOKEN_2022_PROGRAM_ID
-  );
-}
-
-async function createATAsForAndMintTokensTo(
-  user: PublicKey
-): Promise<{ usdcATA: PublicKey; daiATA: PublicKey }> {
-  // Create ATAs for the user
-  const usdcATA = await createAssociatedTokenAccount(
-    banksClient,
-    defaultBankrunPayer,
-    usdc,
-    user,
-    token.TOKEN_PROGRAM_ID
-  );
-  const daiATA = await createAssociatedTokenAccount(
-    banksClient,
-    defaultBankrunPayer,
-    dai,
-    user,
-    token.TOKEN_2022_PROGRAM_ID
-  );
-
-  // Mint some tokens to the user's accounts
-  await mintTokensToUser(usdcATA, daiATA);
-
-  return { usdcATA, daiATA };
-}
-
-async function createUser(): Promise<User> {
-  // Create the keypair for the user
-  const acc = Keypair.generate();
-
-  // Set up the account info for the new keypair
-  const accInfo = {
-    lamports: 100 * LAMPORTS_PER_SOL, // Default balance (100 SOL)
-    owner: new PublicKey("11111111111111111111111111111111"), // Default owner (System Program)
-    executable: false, // Not a program account
-    rentEpoch: 0, // Default rent epoch
-    data: new Uint8Array(), // Empty data
-  };
-
-  // Add account to the BanksClient context
-  context.setAccount(acc.publicKey, accInfo);
-
-  // Create ATAs and mint tokens for the user
-  const { usdcATA, daiATA } = await createATAsForAndMintTokensTo(acc.publicKey);
-
-  const user: User = {
-    keys: acc,
-    usdcATA,
-    daiATA,
-  };
-
-  return user;
+export async function getTreasuryATABalanceToken2022(): Promise<BN> {
+  return await getATABalance(banksClient, treasuryATAToken2022);
 }
 
 export function defaultStreamData({
@@ -614,7 +617,7 @@ async function mintTokensToUser(
     defaultBankrunPayer,
     usdc,
     usdcATA,
-    defaultBankrunPayer,
+    defaultBankrunPayer.publicKey,
     defaults.USDC_USER_BALANCE
   );
 
@@ -624,7 +627,7 @@ async function mintTokensToUser(
     defaultBankrunPayer,
     dai,
     daiATA,
-    defaultBankrunPayer,
+    defaultBankrunPayer.publicKey,
     defaults.DAI_USER_BALANCE,
     [],
     token.TOKEN_2022_PROGRAM_ID
