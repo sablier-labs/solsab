@@ -31,10 +31,6 @@ pub struct Claim<'info> {
     #[account(address = campaign.airdrop_token_mint)]
     pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    #[account(address = campaign.creator)]
-    /// CHECK: This account is validated through the constraint `address = campaign.creator`
-    pub creator: UncheckedAccount<'info>,
-
     #[account(
       init,
       payer = claimer,

@@ -12,13 +12,11 @@ declare_id!("9she3vL2CCmWjPBFVVXwu78kYg7TU8jm69siH3STngXx"); // Localnet & Devne
 pub mod sablier_merkle_instant {
     use super::*;
 
-    pub fn claim(
-        ctx: Context<Claim>,
-        _merkle_root: [u8; 32],
-        index: u32,
-        amount: u64,
-        merkle_proof: Vec<[u8; 32]>,
-    ) -> Result<()> {
+    pub fn campaign_view(ctx: Context<CampaignView>) -> Result<state::campaign::Campaign> {
+        instructions::campaign_view::handler(ctx)
+    }
+
+    pub fn claim(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[u8; 32]>) -> Result<()> {
         instructions::claim::handler(ctx, index, amount, merkle_proof)
     }
 
@@ -50,7 +48,7 @@ pub mod sablier_merkle_instant {
         )
     }
 
-    pub fn has_claimed(ctx: Context<HasClaimed>, _merkle_root: [u8; 32], _index: u32) -> Result<bool> {
+    pub fn has_claimed(ctx: Context<HasClaimed>, _index: u32) -> Result<bool> {
         Ok(ctx.accounts.claim_status.is_some())
     }
 
@@ -62,7 +60,7 @@ pub mod sablier_merkle_instant {
         instructions::has_grace_period_passed::handler(ctx)
     }
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        instructions::initialize::handler(ctx)
+    pub fn initialize(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
+        instructions::initialize::handler(ctx, fee_collector)
     }
 }

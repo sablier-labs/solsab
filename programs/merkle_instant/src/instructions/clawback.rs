@@ -10,7 +10,7 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct Clawback<'info> {
-    #[account(address = campaign.creator)]
+    #[account(mut, address = campaign.creator)]
     pub campaign_creator: Signer<'info>,
 
     #[account()]

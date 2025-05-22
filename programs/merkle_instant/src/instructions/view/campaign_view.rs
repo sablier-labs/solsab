@@ -6,6 +6,9 @@ use crate::state::campaign::*;
 #[derive(Accounts)]
 pub struct CampaignView<'info> {
     #[account()]
-    /// CHECK: This is a view function
     pub campaign: Box<Account<'info, Campaign>>,
+}
+
+pub fn handler(ctx: Context<CampaignView>) -> Result<Campaign> {
+    Ok(ctx.accounts.campaign.clone().into_inner())
 }

@@ -6,12 +6,8 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(_merkle_root: [u8; 32], _index: u32)]
+#[instruction(_index: u32)]
 pub struct HasClaimed<'info> {
-    #[account(address = campaign.creator)]
-    /// CHECK: This account is validated through the constraint `address = campaign.creator`
-    pub creator: UncheckedAccount<'info>,
-
     #[account()]
     pub campaign: Box<Account<'info, Campaign>>,
 
