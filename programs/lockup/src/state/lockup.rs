@@ -6,7 +6,7 @@ pub struct StreamData {
     pub amounts: Amounts,
     pub asset_mint: Pubkey,
     pub bump: u8,
-    pub stream_id: u64,
+    pub salt: u64,
     pub nft_id: u64,
     pub is_cancelable: bool,
     pub is_depleted: bool,
@@ -54,7 +54,7 @@ impl StreamData {
         cliff_unlock: u64,
         deposited: u64,
         end_time: i64,
-        stream_id: u64,
+        salt: u64,
         nft_id: u64,
         is_cancelable: bool,
         sender: Pubkey,
@@ -68,7 +68,7 @@ impl StreamData {
         self.amounts.start_unlock = start_unlock;
         self.amounts.withdrawn = 0;
         self.asset_mint = asset_mint;
-        self.stream_id = stream_id;
+        self.salt = salt;
         self.nft_id = nft_id;
         self.is_cancelable = is_cancelable;
         self.is_depleted = false;
