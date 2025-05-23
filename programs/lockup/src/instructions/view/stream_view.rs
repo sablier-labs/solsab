@@ -5,13 +5,13 @@ use crate::{state::lockup::StreamData, utils::constants::*};
 
 // Common context that is used by multiple view instructions
 #[derive(Accounts)]
-#[instruction(_stream_id: u64)]
+#[instruction(_salt: u64)]
 pub struct StreamView<'info> {
     #[account(
         seeds = [
           STREAM_NFT_MINT_SEED,
           stream_data.sender.key().as_ref(),
-          _stream_id.to_le_bytes().as_ref(),
+          _salt.to_le_bytes().as_ref(),
         ],
         bump,
     )]

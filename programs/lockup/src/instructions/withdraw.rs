@@ -15,7 +15,7 @@ use crate::{
 const WITHDRAWAL_FEE: u64 = 10_000_000; // The fee for withdrawing from the stream, in lamports.
 
 #[derive(Accounts)]
-#[instruction(stream_id: u64)]
+#[instruction(salt: u64)]
 pub struct Withdraw<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
@@ -31,7 +31,7 @@ pub struct Withdraw<'info> {
         seeds = [
           STREAM_NFT_MINT_SEED,
           stream_data.sender.key().as_ref(),
-          stream_id.to_le_bytes().as_ref(),
+          salt.to_le_bytes().as_ref(),
         ],
         bump,
     )]
@@ -96,7 +96,7 @@ pub struct Withdraw<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-pub fn handler(ctx: Context<Withdraw>, stream_id: u64, amount: u64) -> Result<()> {
+pub fn handler(ctx: Context<Withdraw>, salt: u64, amount: u64) -> Result<()> {
     // Check: validate the withdraw.
     check_withdraw(
         ctx.accounts.stream_data.is_depleted,
@@ -131,7 +131,7 @@ pub fn handler(ctx: Context<Withdraw>, stream_id: u64, amount: u64) -> Result<()
     )?;
 
     // Log the withdrawal.
-    emit!(WithdrawFromLockupStream { stream_id, withdrawn_amount: amount });
+    emit!(WithdrawFromLockupStream { salt, withdrawn_amount: amount });
 
     Ok(())
 }

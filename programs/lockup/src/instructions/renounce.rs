@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(stream_id: u64)]
+#[instruction(salt: u64)]
 pub struct Renounce<'info> {
     #[account(
         mut,
@@ -19,7 +19,7 @@ pub struct Renounce<'info> {
         seeds = [
           STREAM_NFT_MINT_SEED,
           sender.key().as_ref(),
-          stream_id.to_le_bytes().as_ref(),
+          salt.to_le_bytes().as_ref(),
         ],
         bump,
     )]
@@ -33,7 +33,7 @@ pub struct Renounce<'info> {
     pub stream_data: Box<Account<'info, StreamData>>,
 }
 
-pub fn handler(ctx: Context<Renounce>, stream_id: u64) -> Result<()> {
+pub fn handler(ctx: Context<Renounce>, salt: u64) -> Result<()> {
     // Check: validate the renounce.
     check_renounce(ctx.accounts.stream_data.is_cancelable)?;
 
@@ -41,7 +41,7 @@ pub fn handler(ctx: Context<Renounce>, stream_id: u64) -> Result<()> {
     ctx.accounts.stream_data.renounce()?;
 
     // Log the renouncement.
-    emit!(RenounceLockupStream { stream_id });
+    emit!(RenounceLockupStream { salt });
 
     Ok(())
 }
