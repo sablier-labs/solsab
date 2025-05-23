@@ -41,15 +41,42 @@ solana program close --buffers
 # Deploy verifiably
 anchor deploy -v
 
+# Define source and destination paths
+IDL_SOURCE_PATH="target/idl/${PROGRAM_NAME}.json"
+TYPES_SOURCE_PATH="target/types/${PROGRAM_NAME}.ts"
+IDL_DEST_PATH="${PROGRAM_NAME}.json"
+TYPES_DEST_PATH="${PROGRAM_NAME}.ts"
+ZIP_FILE="IDL_types.zip"
+
+# Check if source files exist
+if [[ ! -f "$IDL_SOURCE_PATH" ]]; then
+    echo "❌ Error: IDL file not found at $IDL_SOURCE_PATH"
+    exit 1
+fi
+
+if [[ ! -f "$TYPES_SOURCE_PATH" ]]; then
+    echo "❌ Error: Types file not found at $TYPES_SOURCE_PATH"
+    exit 1
+fi
+
+# Copy files to root directory
+cp "$IDL_SOURCE_PATH" "$IDL_DEST_PATH"
+cp "$TYPES_SOURCE_PATH" "$TYPES_DEST_PATH"
+
+# Remove existing zip file if it exists
+if [[ -f "$ZIP_FILE" ]]; then
+    rm "$ZIP_FILE"
+fi
+
+# Create zip file with the IDL and types files
+zip "$ZIP_FILE" "$IDL_DEST_PATH" "$TYPES_DEST_PATH"
+
+# Clean up - remove the copied files from root directory
+rm "$IDL_DEST_PATH" "$TYPES_DEST_PATH"
+
+echo "✅ Created $ZIP_FILE with IDL and types files"
+
 # Initialize SolSab on Devnet - and populate it with a bunch of Streams
 ANCHOR_PROVIDER_URL=https://api.devnet.solana.com \
 ANCHOR_WALLET=~/.config/solana/id.json \
 bun run ts-mocha -p ./tsconfig.json -t 1000000 scripts/ts/post-deployment-initialization.ts
-
-# Output summary
-echo ""
-echo "✅ Deployment complete!"
-echo "Program ID: $(solana address -k "$PROGRAM_KEYPAIR_PATH")"
-echo "Commit: $(git rev-parse HEAD) (⚠️ Don't forget to create a PR for it! ⚠️)"
-echo "IDL Path: target/idl/${PROGRAM_NAME}.json"
-echo "Types Path: target/types/${PROGRAM_NAME}.ts"
