@@ -30,6 +30,7 @@ colima start
 anchor build -v
 
 # Commit the changes
+git checkout -b chore/deployment
 git add Anchor.toml programs/lockup/src/lib.rs
 git commit -m "chore: deployment"
 
