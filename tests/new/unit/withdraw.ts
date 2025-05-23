@@ -3,10 +3,13 @@ import { BN } from "@coral-xyz/anchor";
 import { assert } from "chai";
 
 import {
+  accountExists,
   cancel,
+  createATAAndFund,
   createWithTimestampsToken2022,
   defaultStreamData,
   defaultStreamDataToken2022,
+  deriveATAAddress,
   fetchStreamData,
   getATABalance,
   getTreasuryLamports,
@@ -24,6 +27,7 @@ import {
   withdraw,
   withdrawToken2022,
   banksClient,
+  createWithTimestamps,
 } from "../base";
 import { assertErrorHexCode, assertEqStreamDatas } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
@@ -128,34 +132,86 @@ describe("withdraw", () => {
                   });
                 });
 
-                context("when signer recipient", () => {
-                  it("should make the withdrawal", async () => {
-                    // Get the Lamports balance of the Treasury before the withdrawal
-                    const treasuryLamportsBefore = await getTreasuryLamports();
+                context(
+                  "when recipient doesn't have an ATA for the Stream's asset",
+                  () => {
+                    it("should create the ATA", async () => {
+                      // Set up the sender for the test
+                      await createATAAndFund(
+                        randomToken,
+                        defaults.DEPOSIT_AMOUNT.toNumber(),
+                        defaults.TOKEN_PROGRAM_ID,
+                        sender.keys.publicKey
+                      );
 
-                    // Get the withdrawal recipient's token balance before the withdrawal
-                    const withdrawalRecipientATABalanceBefore =
-                      await getATABalance(banksClient, sender.usdcATA);
+                      // Create a new stream with a random token
+                      const { streamId } = await createWithTimestamps({
+                        assetMint: randomToken,
+                        depositAmount: defaults.DEPOSIT_AMOUNT,
+                      });
 
-                    const treasuryATABalanceBefore =
-                      await getTreasuryATABalanceSPL();
+                      // Derive the recipient's ATA address
+                      const recipientATA = deriveATAAddress(
+                        randomToken,
+                        recipient.keys.publicKey,
+                        defaults.TOKEN_PROGRAM_ID
+                      );
 
-                    await withdraw({
-                      withdrawalRecipient: sender.keys.publicKey,
+                      // Assert that the recipient's ATA does not exist
+                      assert(
+                        !(await accountExists(recipientATA)),
+                        "Recipient's ATA shouldn't exist before the withdrawal"
+                      );
+
+                      // Perform the withdrawal
+                      await withdraw({
+                        streamId,
+                        assetMint: randomToken,
+                      });
+
+                      // Assert that the recipient's ATA was created
+                      assert(
+                        await accountExists(recipientATA),
+                        "Recipient's ATA should exist after the withdrawal"
+                      );
                     });
+                  }
+                );
 
-                    const expectedStreamData = defaultStreamData();
-                    expectedStreamData.amounts.withdrawn =
-                      defaults.WITHDRAW_AMOUNT;
-                    await postWithdrawAssertionsSPL(
-                      treasuryLamportsBefore,
-                      sender.usdcATA,
-                      withdrawalRecipientATABalanceBefore,
-                      treasuryATABalanceBefore,
-                      expectedStreamData
-                    );
-                  });
-                });
+                context(
+                  "when recipient has an ATA for the Stream's asset",
+                  () => {
+                    context("when signer recipient", () => {
+                      it("should make the withdrawal", async () => {
+                        // Get the Lamports balance of the Treasury before the withdrawal
+                        const treasuryLamportsBefore =
+                          await getTreasuryLamports();
+
+                        // Get the withdrawal recipient's token balance before the withdrawal
+                        const withdrawalRecipientATABalanceBefore =
+                          await getATABalance(banksClient, sender.usdcATA);
+
+                        const treasuryATABalanceBefore =
+                          await getTreasuryATABalanceSPL();
+
+                        await withdraw({
+                          withdrawalRecipient: sender.keys.publicKey,
+                        });
+
+                        const expectedStreamData = defaultStreamData();
+                        expectedStreamData.amounts.withdrawn =
+                          defaults.WITHDRAW_AMOUNT;
+                        await postWithdrawAssertionsSPL(
+                          treasuryLamportsBefore,
+                          sender.usdcATA,
+                          withdrawalRecipientATABalanceBefore,
+                          treasuryATABalanceBefore,
+                          expectedStreamData
+                        );
+                      });
+                    });
+                  }
+                );
               });
 
               context("when withdrawal address recipient", () => {

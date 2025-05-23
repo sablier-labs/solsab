@@ -177,27 +177,52 @@ async function createTokens(): Promise<void> {
   );
 }
 
+export async function createATAAndFund(
+  mint: PublicKey,
+  amount: number,
+  tokenProgram: PublicKey,
+  user: PublicKey
+): Promise<PublicKey> {
+  // Create ATA for the user
+  const userATA = await createATA(
+    banksClient,
+    defaultBankrunPayer,
+    mint,
+    user,
+    tokenProgram
+  );
+
+  // Mint the amount to the user's ATA
+  await mintTo(
+    banksClient,
+    defaultBankrunPayer,
+    mint,
+    userATA,
+    defaultBankrunPayer.publicKey,
+    amount,
+    [],
+    tokenProgram
+  );
+
+  return userATA;
+}
+
 async function createATAsAndFund(
   user: PublicKey
 ): Promise<{ usdcATA: PublicKey; daiATA: PublicKey }> {
   // Create ATAs for the user
-  const usdcATA = await createATA(
-    banksClient,
-    defaultBankrunPayer,
+  const usdcATA = await createATAAndFund(
     usdc,
-    user,
-    token.TOKEN_PROGRAM_ID
+    defaults.USDC_USER_BALANCE,
+    token.TOKEN_PROGRAM_ID,
+    user
   );
-  const daiATA = await createATA(
-    banksClient,
-    defaultBankrunPayer,
+  const daiATA = await createATAAndFund(
     dai,
-    user,
-    token.TOKEN_2022_PROGRAM_ID
+    defaults.DAI_USER_BALANCE,
+    token.TOKEN_2022_PROGRAM_ID,
+    user
   );
-
-  // Mint some tokens to the user's accounts
-  await mintTokensToUser(usdcATA, daiATA);
 
   return { usdcATA, daiATA };
 }
@@ -605,33 +630,6 @@ async function nextStreamId(): Promise<BN> {
 
   const totalSupply = new BN(nftCollectionData.totalSupply.toString(), 10);
   return totalSupply.add(new BN(1));
-}
-
-async function mintTokensToUser(
-  usdcATA: PublicKey,
-  daiATA: PublicKey
-): Promise<void> {
-  // Mint SPL tokens to the user
-  await mintTo(
-    banksClient,
-    defaultBankrunPayer,
-    usdc,
-    usdcATA,
-    defaultBankrunPayer.publicKey,
-    defaults.USDC_USER_BALANCE
-  );
-
-  // Mint Token-2022 tokens to the user
-  await mintTo(
-    banksClient,
-    defaultBankrunPayer,
-    dai,
-    daiATA,
-    defaultBankrunPayer.publicKey,
-    defaults.DAI_USER_BALANCE,
-    [],
-    token.TOKEN_2022_PROGRAM_ID
-  );
 }
 
 export async function sleepFor(ms: number) {
