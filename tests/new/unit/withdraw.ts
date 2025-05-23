@@ -75,7 +75,7 @@ describe("withdraw", () => {
       });
 
       context("given a valid asset mint", () => {
-        context("given DEPLETED status", () => {
+        context("when stream status is DEPLETED", () => {
           it("should revert", async () => {
             await timeTravelTo(defaults.END_TIME);
             await withdrawMax();
@@ -87,7 +87,7 @@ describe("withdraw", () => {
           });
         });
 
-        context("given not DEPLETED status", () => {
+        context("when stream status is not DEPLETED", () => {
           context("when zero withdraw amount", () => {
             it("should revert", async () => {
               try {
@@ -187,7 +187,7 @@ describe("withdraw", () => {
                 });
 
                 context("when signer not recipient", () => {
-                  context("given end time not in the future", () => {
+                  context("when stream status is SETTLED", () => {
                     it("should make the withdrawal", async () => {
                       await timeTravelTo(defaults.END_TIME);
 
@@ -222,8 +222,8 @@ describe("withdraw", () => {
                     });
                   });
 
-                  context("given end time in the future", () => {
-                    context("given canceled stream", () => {
+                  context("when stream status is not SETTLED", () => {
+                    context("when stream status is CANCELED", () => {
                       it("should make the withdrawal", async () => {
                         await cancel();
 
@@ -258,7 +258,7 @@ describe("withdraw", () => {
                       });
                     });
 
-                    context("given not canceled stream", () => {
+                    context("when stream status is STREAMING", () => {
                       context("given token SPL standard", () => {
                         it("should make the withdrawal", async () => {
                           // Get the Lamports balance of the Treasury before the withdrawal

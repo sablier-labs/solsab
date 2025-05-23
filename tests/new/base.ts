@@ -324,7 +324,7 @@ export async function createWithDurations(
         : defaults.CLIFF_AMOUNT,
       true
     )
-    .accountsPartial({
+    .accounts({
       sender: sender.keys.publicKey,
       streamNftMint: getStreamNftMintAddress(streamId),
       assetMint: usdc,
@@ -389,7 +389,7 @@ export async function getCreateWithTimestampsIx(
       unlockAmounts.cliff,
       isCancelable
     )
-    .accountsPartial({
+    .accounts({
       sender: senderPubKey,
       streamNftMint,
       assetMint,
