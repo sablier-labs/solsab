@@ -47,7 +47,6 @@
     "t:match": "bun run t --grep",
     "t:only": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 tests/new/**/*.ts",
     "t:only:debug": "bun run build && RUST_LOG=debug bun run ts-mocha -t 1000000 tests/new/**/*.ts",
-    "t:only:match": "bun run t:only --grep",
     "verify": "bash ./verify.sh"
   }
 }

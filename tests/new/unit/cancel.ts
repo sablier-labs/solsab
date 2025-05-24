@@ -164,6 +164,7 @@ describe("cancel", () => {
                   });
                   expectedStreamData.amounts.refunded = defaults.DEPOSIT_AMOUNT;
                   await postCancelAssertionsSPL(
+                    ids.defaultStream,
                     senderATABalanceBefore,
                     treasuryATABalanceBefore,
                     expectedStreamData
@@ -195,6 +196,7 @@ describe("cancel", () => {
                     expectedStreamData.amounts.refunded =
                       defaults.REFUND_AMOUNT;
                     await postCancelAssertionsSPL(
+                      ids.defaultStream,
                       senderATABalanceBefore,
                       treasuryATABalanceBefore,
                       expectedStreamData
@@ -229,6 +231,7 @@ describe("cancel", () => {
                     expectedStreamData.isCancelable = false;
                     expectedStreamData.wasCanceled = true;
                     await postCancelAssertionsToken2022(
+                      streamId,
                       senderATABalanceBefore,
                       treasuryATABalanceBefore,
                       expectedStreamData
@@ -245,6 +248,7 @@ describe("cancel", () => {
 });
 
 async function postCancelAssertions(
+  streamId: BN,
   senderATA: PublicKey,
   treasuryATA: PublicKey,
   senderATABalanceBefore: BN,
@@ -272,17 +276,19 @@ async function postCancelAssertions(
   );
 
   // Assert that the Stream state has been updated correctly
-  const actualStreamData = await fetchStreamData(expectedStreamData.id);
+  const actualStreamData = await fetchStreamData(streamId);
   assertEqStreamDatas(actualStreamData, expectedStreamData);
 }
 
 async function postCancelAssertionsSPL(
+  streamId: BN,
   senderATABalanceBefore: BN,
   treasuryATABalanceBefore: BN,
   expectedStreamData: any,
   senderATA = sender.usdcATA
 ) {
   await postCancelAssertions(
+    streamId,
     senderATA,
     treasuryATASpl,
     senderATABalanceBefore,
@@ -292,12 +298,14 @@ async function postCancelAssertionsSPL(
 }
 
 async function postCancelAssertionsToken2022(
+  streamId: BN,
   senderATABalanceBefore: BN,
   treasuryATABalanceBefore: BN,
   expectedStreamData: any,
   senderATA = sender.daiATA
 ) {
   await postCancelAssertions(
+    streamId,
     senderATA,
     treasuryATAToken2022,
     senderATABalanceBefore,

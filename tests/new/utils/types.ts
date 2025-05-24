@@ -30,7 +30,8 @@ export interface Timestamps {
 export interface StreamData {
   amounts: Amounts;
   assetMint: PublicKey;
-  id: BN;
+  salt: BN;
+  nftId: BN;
   isCancelable: boolean;
   isDepleted: boolean;
   timestamps: Timestamps;

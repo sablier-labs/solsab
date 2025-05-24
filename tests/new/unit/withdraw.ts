@@ -202,6 +202,7 @@ describe("withdraw", () => {
                         expectedStreamData.amounts.withdrawn =
                           defaults.WITHDRAW_AMOUNT;
                         await postWithdrawAssertionsSPL(
+                          ids.defaultStream,
                           treasuryLamportsBefore,
                           sender.usdcATA,
                           withdrawalRecipientATABalanceBefore,
@@ -233,6 +234,7 @@ describe("withdraw", () => {
                     expectedStreamData.amounts.withdrawn =
                       defaults.WITHDRAW_AMOUNT;
                     await postWithdrawAssertionsSPL(
+                      ids.defaultStream,
                       treasuryLamportsBefore,
                       recipient.usdcATA,
                       withdrawalRecipientATABalanceBefore,
@@ -269,6 +271,7 @@ describe("withdraw", () => {
                       expectedStreamData.isCancelable = false;
                       expectedStreamData.isDepleted = true;
                       await postWithdrawAssertionsSPL(
+                        ids.defaultStream,
                         treasuryLamportsBefore,
                         recipient.usdcATA,
                         withdrawalRecipientATABalanceBefore,
@@ -305,6 +308,7 @@ describe("withdraw", () => {
                         expectedStreamData.amounts.withdrawn =
                           defaults.WITHDRAW_AMOUNT;
                         await postWithdrawAssertionsSPL(
+                          ids.defaultStream,
                           treasuryLamportsBefore,
                           recipient.usdcATA,
                           withdrawalRecipientATABalanceBefore,
@@ -333,6 +337,7 @@ describe("withdraw", () => {
                           expectedStreamData.amounts.withdrawn =
                             defaults.WITHDRAW_AMOUNT;
                           await postWithdrawAssertionsSPL(
+                            ids.defaultStream,
                             treasuryLamportsBefore,
                             recipient.usdcATA,
                             withdrawalRecipientATABalanceBefore,
@@ -368,6 +373,7 @@ describe("withdraw", () => {
                           expectedStreamData.amounts.withdrawn =
                             defaults.WITHDRAW_AMOUNT;
                           await postWithdrawAssertionsToken2022(
+                            streamId,
                             treasuryLamportsBefore,
                             recipient.daiATA,
                             withdrawalRecipientATABalanceBefore,
@@ -389,6 +395,7 @@ describe("withdraw", () => {
 });
 
 async function postWithdrawAssertions(
+  streamId: BN,
   treasuryLamportsBefore: bigint,
   withdrawalRecipientATA: PublicKey,
   withdrawalRecipientATABalanceBefore: BN,
@@ -432,11 +439,12 @@ async function postWithdrawAssertions(
   );
 
   // Assert that the Stream state has been updated correctly
-  const actualStreamData = await fetchStreamData(expectedStreamData.id);
+  const actualStreamData = await fetchStreamData(streamId);
   assertEqStreamDatas(actualStreamData, expectedStreamData);
 }
 
 async function postWithdrawAssertionsSPL(
+  streamId: BN,
   treasuryLamportsBefore: bigint,
   withdrawalRecipientATA: PublicKey,
   withdrawalRecipientATABalanceBefore: BN,
@@ -444,6 +452,7 @@ async function postWithdrawAssertionsSPL(
   expectedStreamData: any
 ) {
   await postWithdrawAssertions(
+    streamId,
     treasuryLamportsBefore,
     withdrawalRecipientATA,
     withdrawalRecipientATABalanceBefore,
@@ -454,6 +463,7 @@ async function postWithdrawAssertionsSPL(
 }
 
 async function postWithdrawAssertionsToken2022(
+  streamId: BN,
   treasuryLamportsBefore: bigint,
   withdrawalRecipientATA: PublicKey,
   withdrawalRecipientATABalanceBefore: BN,
@@ -461,6 +471,7 @@ async function postWithdrawAssertionsToken2022(
   expectedStreamData: any
 ) {
   await postWithdrawAssertions(
+    streamId,
     treasuryLamportsBefore,
     withdrawalRecipientATA,
     withdrawalRecipientATABalanceBefore,

@@ -39,7 +39,8 @@ export function assertEqStreamDatas(a: StreamData, b: StreamData) {
     a.assetMint.equals(b.assetMint),
     `Asset mint addresses mismatch: ${a.assetMint.toBase58()} !== ${b.assetMint.toBase58()}`
   );
-  assert(a.id.eq(b.id), `Stream IDs mismatch: ${a.id} !== ${b.id}`);
+  assert(a.salt.eq(b.salt), `Salt values mismatch: ${a.salt} !== ${b.salt}`);
+  assert(a.nftId.eq(b.nftId), `NFT IDs mismatch: ${a.nftId} !== ${b.nftId}`);
   assert(
     a.isCancelable === b.isCancelable,
     `Cancelable flag mismatch: ${a.isCancelable} !== ${b.isCancelable}`

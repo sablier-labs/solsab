@@ -301,11 +301,13 @@ export async function cancel({
   assetMint = usdc,
   depositTokenProgram = token.TOKEN_PROGRAM_ID,
 } = {}): Promise<any> {
+  const streamNftMint = getStreamNftMintAddress(streamId);
   const cancelStreamIx = await lockupProgram.methods
     .cancel(streamId)
-    .accounts({
+    .accountsPartial({
       sender: signer.publicKey,
       assetMint,
+      streamNftMint,
       depositTokenProgram,
     })
     .instruction();
@@ -340,6 +342,7 @@ export async function createWithDurations(
 
   const createWithDurationsIx = await lockupProgram.methods
     .createWithDurations(
+      streamId,
       defaults.DEPOSIT_AMOUNT,
       cliffDuration,
       defaults.TOTAL_DURATION,
@@ -351,7 +354,6 @@ export async function createWithDurations(
     )
     .accounts({
       sender: sender.keys.publicKey,
-      streamNftMint: getStreamNftMintAddress(streamId),
       assetMint: usdc,
       recipient: recipient.keys.publicKey,
       depositTokenProgram: token.TOKEN_PROGRAM_ID,
@@ -406,6 +408,7 @@ export async function getCreateWithTimestampsIx(
 
   const txIx = await lockupProgram.methods
     .createWithTimestamps(
+      streamId,
       depositAmount,
       timestamps.start,
       timestamps.cliff,
@@ -416,7 +419,6 @@ export async function getCreateWithTimestampsIx(
     )
     .accounts({
       sender: senderPubKey,
-      streamNftMint,
       assetMint,
       recipient: recipientPubKey,
       depositTokenProgram,
@@ -443,10 +445,12 @@ export async function renounce({
   streamId = ids.defaultStream,
   signer = sender.keys,
 } = {}): Promise<any> {
+  const streamNftMint = getStreamNftMintAddress(streamId);
   const renounceIx = await lockupProgram.methods
     .renounce(streamId)
-    .accounts({
+    .accountsPartial({
       sender: signer.publicKey,
+      streamNftMint,
     })
     .instruction();
 
@@ -461,11 +465,22 @@ export async function withdraw({
   assetMint = usdc,
   depositTokenProgram = token.TOKEN_PROGRAM_ID,
 } = {}): Promise<any> {
+  const streamNftMint = getStreamNftMintAddress(streamId);
+  const streamData = getStreamDataAddress(streamId);
+  const recipientStreamNftAta = deriveATAAddress(
+    streamNftMint,
+    recipient.keys.publicKey,
+    token.TOKEN_PROGRAM_ID
+  );
+
   const withdrawIx = await lockupProgram.methods
     .withdraw(streamId, withdrawAmount)
-    .accounts({
+    .accountsPartial({
       signer: signer.publicKey,
       streamRecipient: recipient.keys.publicKey,
+      streamNftMint,
+      streamData,
+      recipientStreamNftAta,
       withdrawalRecipient,
       assetMint,
       depositTokenProgram,
@@ -495,11 +510,21 @@ export async function withdrawMax({
   assetMint = usdc,
   depositTokenProgram = token.TOKEN_PROGRAM_ID,
 } = {}): Promise<any> {
+  const streamNftMint = getStreamNftMintAddress(streamId);
+  const streamData = getStreamDataAddress(streamId);
+  const recipientStreamNftAta = deriveATAAddress(
+    streamNftMint,
+    recipient.keys.publicKey,
+    token.TOKEN_PROGRAM_ID
+  );
   const withdrawMaxIx = await lockupProgram.methods
     .withdrawMax(streamId)
-    .accounts({
+    .accountsPartial({
       signer,
       streamRecipient: recipient.keys.publicKey,
+      streamNftMint,
+      streamData,
+      recipientStreamNftAta,
       withdrawalRecipient,
       assetMint,
       depositTokenProgram,
@@ -547,7 +572,8 @@ export function defaultStreamData({
   return {
     amounts: defaults.amountsAfterCreate(),
     assetMint: usdc,
-    id: id,
+    salt: id,
+    nftId: id,
     isCancelable,
     isDepleted,
     timestamps: defaults.timestamps(),
@@ -602,10 +628,14 @@ function getStreamDataAddress(streamId: BN): PublicKey {
   return getPDAAddress(streamDataSeeds);
 }
 
-function getStreamNftMintAddress(streamId: BN): PublicKey {
+function getStreamNftMintAddress(
+  streamId: BN,
+  signer: PublicKey = sender.keys.publicKey
+): PublicKey {
   // The seeds used when creating the Stream NFT Mint
   const streamNftMintSeeds = [
     Buffer.from(defaults.STREAM_NFT_MINT_SEED),
+    signer.toBuffer(),
     streamId.toBuffer("le", 8),
   ];
 
