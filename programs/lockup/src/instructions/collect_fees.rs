@@ -27,7 +27,7 @@ pub struct CollectFees<'info> {
 
 pub fn handler(ctx: Context<CollectFees>) -> Result<()> {
     // Calculate the amount collectable from the treasury in lamport units.
-    let collectable_amount = collectable_amount(&ctx.accounts.treasury.to_account_info())?;
+    let collectable_amount = safe_collectable_amount(&ctx.accounts.treasury.to_account_info())?;
 
     // Check: validate the collectable amount.
     check_collect_fees(collectable_amount)?;
@@ -46,14 +46,14 @@ pub fn handler(ctx: Context<CollectFees>) -> Result<()> {
     Ok(())
 }
 
-/// Helper function to calculate the collectable amount from an account. It takes an extra-safe approach by doubling
-/// the rent exemption, ensuring that the account balance does not fall below the rent-exempt minimum, which
+/// Helper function to calculate the collectable amount from an account. It takes an extra-safe approach by adding a
+/// buffer to the rent exemption, ensuring that the account balance does not fall below the rent-exempt minimum, which
 /// could otherwise make the program unusable.
-pub fn collectable_amount(account: &AccountInfo) -> Result<u64> {
+pub fn safe_collectable_amount(account: &AccountInfo) -> Result<u64> {
     // Retrieve the current balance of the account.
     let current_balance = account.lamports();
 
-    // Determine the size of the account’s data.
+    // Determine the size of the account's data.
     let data_len = account.data_len();
 
     // Retrieve the rent sysvar.
@@ -62,9 +62,9 @@ pub fn collectable_amount(account: &AccountInfo) -> Result<u64> {
     // Calculate the minimum balance needed for rent exemption.
     let rent_exempt_minimum = rent.minimum_balance(data_len);
 
-    // Double the minimum to ensure the account stays rent-exempt.
-    let safe_rent_exempt_minimum = rent_exempt_minimum.checked_mul(2).unwrap();
+    let buffer = 1_000_000; // 0.001 SOL
+    let safe_minimum = rent_exempt_minimum.checked_add(buffer).unwrap();
 
     // Return the collectable amount
-    Ok(current_balance.saturating_sub(safe_rent_exempt_minimum))
+    Ok(current_balance.saturating_sub(safe_minimum))
 }

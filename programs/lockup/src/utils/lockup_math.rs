@@ -6,17 +6,17 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
     let now = Clock::get().unwrap().unix_timestamp;
 
     // If the start time is in the future, return zero.
-    if timestamps.start_time > now {
+    if timestamps.start > now {
         return 0;
     }
 
     // If the cliff time is in the future, return the start unlock amount.
-    if timestamps.cliff_time > now {
+    if timestamps.cliff > now {
         return amounts.start_unlock;
     }
 
     // If the end time is in the past or right now, return the deposited amount.
-    if timestamps.end_time <= now {
+    if timestamps.end <= now {
         return amounts.deposited;
     }
 
@@ -31,13 +31,13 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
     }
 
     // Determine the streaming start time.
-    let streaming_start_time = if amounts.cliff_unlock == 0 { timestamps.start_time } else { timestamps.cliff_time };
+    let streaming_start_time = if amounts.cliff_unlock == 0 { timestamps.start } else { timestamps.cliff };
 
     const SCALING_FACTOR: u128 = 1e18 as u128;
 
     // Calculate time variables. Scale to 18 decimals for increased precision and cast to u128 to prevent overflow.
     let elapsed_time = (now - streaming_start_time) as u128 * SCALING_FACTOR;
-    let streamable_time_range = (timestamps.end_time - streaming_start_time) as u128;
+    let streamable_time_range = (timestamps.end - streaming_start_time) as u128;
     let streamed_percentage = elapsed_time / streamable_time_range;
 
     // Calculate the streamable amount.

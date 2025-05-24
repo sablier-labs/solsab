@@ -22,7 +22,7 @@ pub enum ErrorCode {
     #[msg("Invalid deposit amount!")]
     DepositAmountZero, // 0x1776
     #[msg("Start time can't be zero!")]
-    StartTimeZero, // 0x1777
+    StartTimeNotPositive, // 0x1777
     #[msg("Start time must be less than cliff time!")]
     StartTimeNotLessThanCliffTime, // 0x1778
     #[msg("Start time must be less than end time!")]

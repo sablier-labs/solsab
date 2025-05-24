@@ -17,7 +17,7 @@ pub fn handler(ctx: Context<StreamView>) -> Result<StreamStatus> {
     // Get the current time
     let current_time = Clock::get()?.unix_timestamp;
 
-    if current_time < stream_data.timestamps.start_time {
+    if current_time < stream_data.timestamps.start {
         return Ok(StreamStatus::Pending);
     }
 

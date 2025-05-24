@@ -26,9 +26,9 @@ pub struct Amounts {
 
 #[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub struct Timestamps {
-    pub cliff_time: i64,
-    pub end_time: i64,
-    pub start_time: i64,
+    pub cliff: i64,
+    pub end: i64,
+    pub start: i64,
 }
 
 impl StreamData {
@@ -73,9 +73,9 @@ impl StreamData {
         self.is_cancelable = is_cancelable;
         self.is_depleted = false;
         self.sender = sender;
-        self.timestamps.cliff_time = cliff_time;
-        self.timestamps.end_time = end_time;
-        self.timestamps.start_time = start_time;
+        self.timestamps.cliff = cliff_time;
+        self.timestamps.end = end_time;
+        self.timestamps.start = start_time;
         self.was_canceled = false;
 
         Ok(())

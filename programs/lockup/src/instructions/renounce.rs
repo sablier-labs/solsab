@@ -3,7 +3,9 @@ use anchor_spl::token_interface::Mint;
 
 use crate::{
     state::lockup::StreamData,
-    utils::{constants::*, events::RenounceLockupStream, validations::check_renounce},
+    utils::{
+        constants::*, events::RenounceLockupStream, lockup_math::get_streamed_amount, validations::check_renounce,
+    },
 };
 
 #[derive(Accounts)]
@@ -35,7 +37,11 @@ pub struct Renounce<'info> {
 
 pub fn handler(ctx: Context<Renounce>, salt: u64) -> Result<()> {
     // Check: validate the renounce.
-    check_renounce(ctx.accounts.stream_data.is_cancelable)?;
+    check_renounce(
+        ctx.accounts.stream_data.is_cancelable,
+        ctx.accounts.stream_data.amounts.deposited,
+        get_streamed_amount(&ctx.accounts.stream_data.timestamps, &ctx.accounts.stream_data.amounts),
+    )?;
 
     // Effect: update the stream data state.
     ctx.accounts.stream_data.renounce()?;
