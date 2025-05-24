@@ -52,9 +52,9 @@ pub fn check_create(
         return Err(ErrorCode::DepositAmountZero.into());
     }
 
-    // Check: the start time is not zero.
-    if start_time == 0 {
-        return Err(ErrorCode::StartTimeZero.into());
+    // Check: the start time is a positive number.
+    if start_time <= 0 {
+        return Err(ErrorCode::StartTimeNotPositive.into());
     }
 
     // Check: the start time is strictly less than the end time.
@@ -88,9 +88,9 @@ pub fn check_create(
 }
 
 // Validate the renounce
-pub fn check_renounce(is_cancelable: bool) -> Result<()> {
+pub fn check_renounce(is_cancelable: bool, deposited_amount: u64, streamed_amount: u64) -> Result<()> {
     // Check: the stream is cancelable.
-    if !is_cancelable {
+    if !is_cancelable || streamed_amount >= deposited_amount {
         return Err(ErrorCode::StreamAlreadyNonCancelable.into());
     }
 

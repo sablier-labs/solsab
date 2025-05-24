@@ -1,0 +1,133 @@
+import { BN } from "@coral-xyz/anchor";
+import {
+  cancel,
+  defaultStreamData,
+  eve,
+  fetchStreamData,
+  ids,
+  renounce,
+  setUp,
+  timeTravelTo,
+  withdrawMax,
+} from "../base";
+import { assertErrorHexCode, assertEqStreamDatas } from "../utils/assertions";
+import * as defaults from "../utils/defaults";
+import { getErrorCode } from "../utils/errors";
+
+describe("renounce", () => {
+  context("when the program is not initialized", () => {
+    before(async () => {
+      await setUp(false);
+    });
+
+    it("should revert", async () => {
+      try {
+        await renounce({ streamId: new BN(1) });
+      } catch (error) {
+        assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
+      }
+    });
+  });
+
+  context("when the program is initialized", () => {
+    beforeEach(async () => {
+      await setUp();
+    });
+
+    context("given a null stream", () => {
+      it("should revert", async () => {
+        try {
+          await renounce({ streamId: ids.nullStream });
+        } catch (error) {
+          assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
+        }
+      });
+    });
+
+    context("given a valid stream", () => {
+      context("given cold stream", () => {
+        context("given DEPLETED status", () => {
+          it("should revert", async () => {
+            await timeTravelTo(defaults.END_TIME);
+            await withdrawMax();
+            try {
+              await renounce();
+            } catch (error) {
+              assertErrorHexCode(
+                error,
+                getErrorCode("StreamAlreadyNonCancelable")
+              );
+            }
+          });
+        });
+
+        context("given CANCELED status", () => {
+          it("should revert", async () => {
+            await cancel();
+            try {
+              await renounce();
+            } catch (error) {
+              assertErrorHexCode(
+                error,
+                getErrorCode("StreamAlreadyNonCancelable")
+              );
+            }
+          });
+        });
+
+        context("given SETTLED status", () => {
+          it("should revert", async () => {
+            await timeTravelTo(defaults.END_TIME);
+            try {
+              await renounce();
+            } catch (error) {
+              assertErrorHexCode(
+                error,
+                getErrorCode("StreamAlreadyNonCancelable")
+              );
+            }
+          });
+        });
+      });
+
+      context("given warm stream", () => {
+        context("when signer not sender", () => {
+          it("should revert", async () => {
+            try {
+              await renounce({ signer: eve.keys });
+            } catch (error) {
+              assertErrorHexCode(error, getErrorCode("ConstraintAddress"));
+            }
+          });
+        });
+
+        context("when signer sender", () => {
+          context("given non cancelable stream", () => {
+            it("should revert", async () => {
+              try {
+                await renounce({ streamId: ids.nonCancelableStream });
+              } catch (error) {
+                assertErrorHexCode(
+                  error,
+                  getErrorCode("StreamAlreadyNonCancelable")
+                );
+              }
+            });
+          });
+
+          context("given cancelable stream", () => {
+            it("should make stream non cancelable", async () => {
+              await renounce();
+
+              const actualStreamData = await fetchStreamData();
+              const expectedStreamData = defaultStreamData();
+              expectedStreamData.isCancelable = false;
+
+              assertEqStreamDatas(actualStreamData, expectedStreamData);
+            });
+          });
+        });
+      });
+    });
+  });
+});
