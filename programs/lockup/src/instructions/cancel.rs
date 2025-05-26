@@ -13,7 +13,6 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(salt: u64)]
 pub struct Cancel<'info> {
     #[account(
         mut,
@@ -24,14 +23,7 @@ pub struct Cancel<'info> {
     #[account(address = stream_data.asset_mint)]
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    #[account(
-        seeds = [
-          STREAM_NFT_MINT_SEED,
-          sender.key().as_ref(),
-          salt.to_le_bytes().as_ref(),
-        ],
-        bump,
-    )]
+    #[account()]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
@@ -61,7 +53,7 @@ pub struct Cancel<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-pub fn handler(ctx: Context<Cancel>, salt: u64) -> Result<()> {
+pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     // Retrieve the stream amounts from storage.
     let stream_amounts = ctx.accounts.stream_data.amounts.clone();
 
@@ -99,7 +91,7 @@ pub fn handler(ctx: Context<Cancel>, salt: u64) -> Result<()> {
     )?;
 
     // Log the cancellation.
-    emit!(CancelLockupStream { salt, asset_mint: ctx.accounts.asset_mint.key(), sender_amount, recipient_amount });
+    emit!(CancelLockupStream { asset_mint: ctx.accounts.asset_mint.key(), sender_amount, recipient_amount });
 
     Ok(())
 }
