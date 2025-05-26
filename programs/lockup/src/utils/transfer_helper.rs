@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{transfer_checked, TransferChecked};
 
-/// Helper function facilitating token transfer.
+/// Helper function to transfer tokens.
 #[allow(clippy::too_many_arguments)]
 pub fn transfer_tokens<'info>(
     from: AccountInfo<'info>,

@@ -55,7 +55,7 @@ pub struct Clawback<'info> {
 
 pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     // Check: validate the clawback.
-    check_clawback(requested_amount, ctx.accounts.campaign_ata.amount, ctx.accounts.campaign.expiration_time)?;
+    check_clawback(amount, ctx.accounts.campaign_ata.amount, ctx.accounts.campaign.expiration_time)?;
 
     // Interaction: transfer tokens from the Campaign's ATA to the campaign creator's ATA.
     transfer_tokens(
@@ -64,7 +64,7 @@ pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
         ctx.accounts.campaign.to_account_info(),
         ctx.accounts.airdrop_token_mint.to_account_info(),
         ctx.accounts.airdrop_token_program.to_account_info(),
-        requested_amount,
+        amount,
         ctx.accounts.airdrop_token_mint.decimals,
         &[&[CAMPAIGN_SEED, &[ctx.accounts.campaign.bump]]],
     )?;
@@ -72,7 +72,7 @@ pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     // Log the clawback.
     emit!(FundsClawedBack {
         campaign: ctx.accounts.campaign.key(),
-        clawback_amount: requested_amount,
+        clawback_amount: amount,
         tx_signer: ctx.accounts.campaign_creator.key(),
     });
     Ok(())
