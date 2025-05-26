@@ -5,7 +5,7 @@ use anchor_spl::{
 };
 
 use crate::{
-    state::{lockup::StreamData, treasury::Treasury},
+    state::lockup::StreamData,
     utils::{
         constants::*, events::CancelLockupStream, lockup_math::get_streamed_amount, transfer_helper::transfer_tokens,
         validations::check_cancel,
@@ -44,25 +44,18 @@ pub struct Cancel<'info> {
     #[account(
         mut,
         associated_token::mint = asset_mint,
-        associated_token::authority = sender,
+        associated_token::authority = stream_data,
         associated_token::token_program = deposit_token_program,
     )]
-    pub sender_asset_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    #[account(
-        mut,
-        seeds = [TREASURY_SEED],
-        bump = treasury.bump
-    )]
-    pub treasury: Box<Account<'info, Treasury>>,
+    pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
         associated_token::mint = asset_mint,
-        associated_token::authority = treasury,
+        associated_token::authority = sender,
         associated_token::token_program = deposit_token_program,
     )]
-    pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub sender_asset_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub deposit_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -95,14 +88,14 @@ pub fn handler(ctx: Context<Cancel>, salt: u64) -> Result<()> {
 
     // Interaction: transfer the tokens from the Treasury ATA to the sender.
     transfer_tokens(
-        ctx.accounts.treasury_ata.to_account_info(),
+        ctx.accounts.stream_data_ata.to_account_info(),
         ctx.accounts.sender_asset_ata.to_account_info(),
-        ctx.accounts.treasury.to_account_info(),
+        ctx.accounts.stream_data.to_account_info(),
         ctx.accounts.asset_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
         sender_amount,
         ctx.accounts.asset_mint.decimals,
-        &[&[TREASURY_SEED, &[ctx.accounts.treasury.bump]]],
+        &[&[STREAM_DATA_SEED, &[ctx.accounts.stream_data.bump]]],
     )?;
 
     // Log the cancellation.
