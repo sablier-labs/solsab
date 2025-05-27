@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::{
-    state::campaign::Campaign,
+    state::Campaign,
     utils::{
         constants::CAMPAIGN_SEED, events::Clawbacked, transfer_helper::transfer_tokens, validations::check_clawback,
     },

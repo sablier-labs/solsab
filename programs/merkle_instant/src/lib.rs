@@ -12,7 +12,7 @@ declare_id!("9she3vL2CCmWjPBFVVXwu78kYg7TU8jm69siH3STngXx"); // Localnet & Devne
 pub mod sablier_merkle_instant {
     use super::*;
 
-    pub fn campaign_view(ctx: Context<CampaignView>) -> Result<state::campaign::Campaign> {
+    pub fn campaign_view(ctx: Context<CampaignView>) -> Result<state::Campaign> {
         instructions::campaign_view::handler(ctx)
     }
 

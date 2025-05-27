@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    state::{campaign::Campaign, claim_status::ClaimStatus},
+    state::{ClaimStatus, Campaign},
     utils::constants::*,
 };
 

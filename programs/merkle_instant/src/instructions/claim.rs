@@ -8,7 +8,7 @@ use anchor_spl::{
 };
 
 use crate::{
-    state::{campaign::Campaign, claim_status::ClaimStatus, treasury::Treasury},
+    state::{Campaign, ClaimStatus, Treasury},
     utils::{
         constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED, CLAIM_STATUS_SEED, TREASURY_SEED},
         events::Claimed,

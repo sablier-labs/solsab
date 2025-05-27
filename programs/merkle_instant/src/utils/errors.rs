@@ -14,7 +14,7 @@ pub enum ErrorCode {
     InvalidMerkleProof,
 
     // Clawback
-    #[msg("Campaign not within grace period or campaign has not expired!")]
+    #[msg("Clawback not allowed past the grace period and before campaign expiration!")]
     ClawbackNotAllowed,
     #[msg("Can't clawback more than remaining!")]
     CantClawbackMoreThanRemaining,

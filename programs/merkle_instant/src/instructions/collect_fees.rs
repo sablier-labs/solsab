@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 
 use crate::{
-    state::treasury::Treasury,
+    state::Treasury,
     utils::{constants::*, events::*, validations::check_collect_fees},
 };
 

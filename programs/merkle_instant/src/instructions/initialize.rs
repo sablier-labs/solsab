@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{state::treasury::Treasury, utils::constants::*};
+use crate::{state::Treasury, utils::constants::*};
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {

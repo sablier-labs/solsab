@@ -5,7 +5,7 @@ use anchor_spl::{
 };
 
 use crate::{
-    state::campaign::Campaign,
+    state::Campaign,
     utils::{
         constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED},
         events::CampaignCreated,
@@ -14,9 +14,9 @@ use crate::{
 
 #[derive(Accounts)]
 #[instruction(
-    merkle_root: [u8; 32], 
-    expiration_time: i64, 
-    ipfs_id: String, 
+    merkle_root: [u8; 32],
+    expiration_time: i64,
+    ipfs_id: String,
     name: String,
 )]
 pub struct CreateCampaign<'info> {
