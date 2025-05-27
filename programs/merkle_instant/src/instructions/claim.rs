@@ -52,8 +52,7 @@ pub struct Claim<'info> {
     )]
     pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    #[account()]
-    /// CHECK: Anyone can claim in behalf of the recipient. This is validated in the merkle proof verifcaition.
+    /// CHECK: This account is validated during the Merkle proof verification.
     pub recipient: UncheckedAccount<'info>,
 
     #[account(
