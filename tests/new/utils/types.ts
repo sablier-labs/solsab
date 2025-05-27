@@ -31,7 +31,6 @@ export interface StreamData {
   amounts: Amounts;
   assetMint: PublicKey;
   salt: BN;
-  nftId: BN;
   isCancelable: boolean;
   isDepleted: boolean;
   timestamps: Timestamps;
@@ -39,13 +38,23 @@ export interface StreamData {
   wasCanceled: boolean;
 }
 
-export interface StreamIds {
-  // Default stream ID.
-  defaultStream: BN;
-  // A non-cancelable stream ID.
-  nonCancelableStream: BN;
-  // A stream ID that does not exist.
-  nullStream: BN;
+export interface Salts {
+  // Default stream salt.
+  default: BN;
+  // A non-cancelable stream salt.
+  nonCancelable: BN;
+  // A stream salt that does not exist.
+  nonExisting: BN;
+}
+
+export interface Stream {
+  data: StreamData;
+  dataAddress: PublicKey;
+  dataAta: PublicKey;
+  nftMasterEdition: PublicKey;
+  nftMetadataAddress: PublicKey;
+  nftMintAddress: PublicKey;
+  recipientStreamNftAta: PublicKey;
 }
 
 export interface UnlockAmounts {

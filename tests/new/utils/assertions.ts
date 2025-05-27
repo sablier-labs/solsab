@@ -1,3 +1,6 @@
+import { assert } from "chai";
+export { assert };
+
 import {
   Amounts,
   PublicKey,
@@ -5,8 +8,6 @@ import {
   Timestamps,
   UnlockAmounts,
 } from "./types";
-import { assert } from "chai";
-export { assert };
 
 export function assertEqAmounts(a: Amounts, b: Amounts) {
   assert(
@@ -40,7 +41,6 @@ export function assertEqStreamDatas(a: StreamData, b: StreamData) {
     `Asset mint addresses mismatch: ${a.assetMint.toBase58()} !== ${b.assetMint.toBase58()}`
   );
   assert(a.salt.eq(b.salt), `Salt values mismatch: ${a.salt} !== ${b.salt}`);
-  assert(a.nftId.eq(b.nftId), `NFT IDs mismatch: ${a.nftId} !== ${b.nftId}`);
   assert(
     a.isCancelable === b.isCancelable,
     `Cancelable flag mismatch: ${a.isCancelable} !== ${b.isCancelable}`

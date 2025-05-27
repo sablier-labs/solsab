@@ -2,11 +2,7 @@ import web3 from "@solana/web3.js";
 
 import * as token from "@solana/spl-token";
 
-import {
-  BanksClient,
-  BanksTransactionMeta,
-  ProgramTestContext,
-} from "solana-bankrun";
+import { BanksClient, BanksTransactionMeta } from "solana-bankrun";
 
 import { BN } from "@coral-xyz/anchor";
 
@@ -79,6 +75,35 @@ export function deriveATAAddress(
   programId: web3.PublicKey
 ): web3.PublicKey {
   return token.getAssociatedTokenAddressSync(mint, owner, true, programId);
+}
+
+export async function getATABalanceMint(
+  banksClient: BanksClient,
+  owner: web3.PublicKey,
+  mint: web3.PublicKey
+): Promise<BN> {
+  const mintAccount = await banksClient.getAccount(mint);
+
+  if (!mintAccount) {
+    throw new Error("Mint account does not exist!");
+  }
+
+  // Derive the ATA address from owner and mint
+  const ataAddress = await token.getAssociatedTokenAddressSync(
+    mint,
+    owner,
+    true,
+    mintAccount.owner
+  );
+
+  // Get the ATA account data
+  const ataAccount = await banksClient.getAccount(ataAddress);
+  if (!ataAccount) {
+    throw new Error("The queried ATA account does not exist!");
+  }
+
+  const accountData = token.AccountLayout.decode(ataAccount.data);
+  return new BN(accountData.amount.toString());
 }
 
 export async function getATABalance(

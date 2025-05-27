@@ -1,8 +1,8 @@
 import { BN } from "@coral-xyz/anchor";
 import {
-  defaultStreamData,
+  defaultStream,
   fetchStreamData,
-  ids,
+  salts,
   setUp,
   timeTravelTo,
   withdrawMax,
@@ -19,7 +19,7 @@ describe("withdrawMax", () => {
 
     it("should revert", async () => {
       try {
-        await withdrawMax({ streamId: new BN(1) });
+        await withdrawMax({ salt: new BN(1) });
       } catch (error) {
         assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
       }
@@ -34,7 +34,7 @@ describe("withdrawMax", () => {
     context("given a null stream", () => {
       it("should revert", async () => {
         try {
-          await withdrawMax({ streamId: ids.nullStream });
+          await withdrawMax({ salt: salts.nonExisting });
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
         }
@@ -47,10 +47,10 @@ describe("withdrawMax", () => {
           await timeTravelTo(defaults.END_TIME);
           await withdrawMax();
           const actualStreamData = await fetchStreamData();
-          const expectedStreamData = defaultStreamData({
+          const expectedStreamData = defaultStream({
             isCancelable: false,
             isDepleted: true,
-          });
+          }).data;
           expectedStreamData.amounts.withdrawn = defaults.DEPOSIT_AMOUNT;
           assertEqStreamDatas(actualStreamData, expectedStreamData);
         });
@@ -61,7 +61,7 @@ describe("withdrawMax", () => {
           await timeTravelTo(defaults.PASS_26_PERCENT);
           await withdrawMax();
           const actualStreamData = await fetchStreamData();
-          const expectedStreamData = defaultStreamData();
+          const expectedStreamData = defaultStream().data;
           expectedStreamData.amounts.withdrawn =
             defaults.STREAMED_AMOUNT_26_PERCENT;
           assertEqStreamDatas(actualStreamData, expectedStreamData);

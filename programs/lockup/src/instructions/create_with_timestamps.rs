@@ -30,7 +30,6 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    #[account()]
     /// CHECK: The recipient may be any account
     pub recipient: UncheckedAccount<'info>,
 
@@ -164,12 +163,6 @@ pub fn handler(
     // Validate parameters
     check_create(deposited_amount, start_time, cliff_time, end_time, start_unlock, cliff_unlock)?;
 
-    // Effect: increment the total supply of the NFT collection. The increment is safe, as it would take many years to
-    // overflow 2^64.
-    ctx.accounts.nft_collection_data.total_supply += 1;
-
-    let nft_id = ctx.accounts.nft_collection_data.total_supply;
-
     // Effect: create the stream data.
     ctx.accounts.stream_data.create(
         asset_mint.key(),
@@ -179,7 +172,6 @@ pub fn handler(
         deposited_amount,
         end_time,
         salt,
-        nft_id,
         is_cancelable,
         sender.key(),
         start_time,
@@ -200,11 +192,15 @@ pub fn handler(
         &ctx.accounts.nft_token_program,
         &ctx.accounts.system_program,
         &ctx.accounts.rent,
-        nft_id,
+        salt,
         ctx.bumps.nft_collection_mint,
     )?;
 
-    // Interaction: transfer tokens from the sender's ATA to the Treasury ATA.
+    // Effect: increment the total supply of the NFT collection. The increment is safe, as it would take many years to
+    // overflow 2^64.
+    ctx.accounts.nft_collection_data.total_supply += 1;
+
+    // Interaction: transfer tokens from the sender’s ATA to the StreamData ATA.
     transfer_tokens(
         sender_ata.to_account_info(),
         ctx.accounts.stream_data_ata.to_account_info(),
@@ -219,7 +215,6 @@ pub fn handler(
     // Log the newly created stream.
     emit!(CreateLockupLinearStream {
         salt,
-        nft_id,
         asset_decimals: asset_mint.decimals,
         recipient: ctx.accounts.recipient.key()
     });

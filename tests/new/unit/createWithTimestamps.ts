@@ -1,5 +1,4 @@
 import { BN } from "@coral-xyz/anchor";
-import { PublicKey } from "@solana/web3.js";
 
 import {
   assert,
@@ -15,19 +14,15 @@ import {
   createWithTimestamps,
   createWithTimestampsToken2022,
   dai,
-  defaultStreamData,
-  defaultStreamDataToken2022,
-  deriveATAAddress,
+  defaultStream,
+  defaultStreamToken2022,
   fetchStreamData,
   getATABalance,
   getMintTotalSupplyOf,
-  getPDAAddress,
+  getSenderTokenBalance,
   randomToken,
-  recipient,
   sender,
   setUp,
-  treasuryAddress,
-  usdc,
 } from "../base";
 
 describe("createWithTimestamps", () => {
@@ -171,34 +166,25 @@ describe("createWithTimestamps", () => {
                       sender.usdcATA
                     );
 
-                    const { streamId, streamNftMint } =
-                      await createWithTimestamps({
-                        timestamps: {
-                          ...defaults.timestamps(),
-                          cliff: defaults.ZERO_BN,
-                        },
-                        unlockAmounts: defaults.unlockAmountsZero(),
-                      });
-
-                    const expectedStreamData = defaultStreamData({
-                      id: streamId,
+                    const salt = await createWithTimestamps({
+                      timestamps: {
+                        ...defaults.timestamps(),
+                        cliff: defaults.ZERO_BN,
+                      },
+                      unlockAmounts: defaults.unlockAmountsZero(),
                     });
-                    expectedStreamData.timestamps.cliff = new BN(0);
-                    expectedStreamData.amounts =
+
+                    const expectedStream = defaultStream({
+                      salt: salt,
+                    });
+                    expectedStream.data.timestamps.cliff = new BN(0);
+                    expectedStream.data.amounts =
                       defaults.amountsAfterCreateWithZeroUnlocks();
 
-                    const treasuryATA = deriveATAAddress(
-                      usdc,
-                      treasuryAddress,
-                      defaults.TOKEN_PROGRAM_ID
-                    );
                     await assertStreamCreation(
-                      streamId,
-                      streamNftMint,
+                      salt,
                       beforeSenderTokenBalance,
-                      sender.usdcATA,
-                      treasuryATA,
-                      expectedStreamData
+                      expectedStream
                     );
                   });
                 });
@@ -274,17 +260,10 @@ describe("createWithTimestamps", () => {
                             const beforeSenderTokenBalance =
                               await getATABalance(banksClient, sender.usdcATA);
 
-                            // TODO: We need to decide wether we create the ATA before or in create
-                            // const beforeTreasuryTokenBalance = await getATABalance(
-                            //   sender.treasuryATA
-                            // );
+                            const salt = await createWithTimestamps();
 
-                            const { streamId, streamNftMint } =
-                              await createWithTimestamps();
-
-                            await assertStreamCreationSPL(
-                              streamId,
-                              streamNftMint,
+                            await assertStreamCreation(
+                              salt,
                               beforeSenderTokenBalance
                             );
                           });
@@ -293,15 +272,13 @@ describe("createWithTimestamps", () => {
                         context("when token 2022 standard", () => {
                           it("should create the stream", async () => {
                             const beforeSenderTokenBalance =
-                              await getATABalance(banksClient, sender.daiATA);
+                              await getSenderTokenBalance(dai);
+                            const salt = await createWithTimestampsToken2022();
 
-                            const { streamId, streamNftMint } =
-                              await createWithTimestampsToken2022();
-
-                            await assertStreamCreationToken2022(
-                              streamId,
-                              streamNftMint,
-                              beforeSenderTokenBalance
+                            await assertStreamCreation(
+                              salt,
+                              beforeSenderTokenBalance,
+                              defaultStreamToken2022({ salt: salt })
                             );
                           });
                         });
@@ -318,122 +295,60 @@ describe("createWithTimestamps", () => {
   });
 });
 
-async function assertStreamCreationSPL(
-  streamId: BN,
-  streamNftMint: PublicKey,
-  beforeSenderTokenBalance: BN
-) {
-  const treasuryATA = deriveATAAddress(
-    usdc,
-    treasuryAddress,
-    defaults.TOKEN_PROGRAM_ID
-  );
-
-  await assertStreamCreation(
-    streamId,
-    streamNftMint,
-    beforeSenderTokenBalance,
-    sender.usdcATA,
-    treasuryATA,
-    defaultStreamData({
-      id: streamId,
-    })
-  );
-}
-
-async function assertStreamCreationToken2022(
-  streamId: BN,
-  streamNftMint: PublicKey,
-  beforeSenderTokenBalance: BN
-) {
-  const treasuryATA = deriveATAAddress(
-    dai,
-    treasuryAddress,
-    defaults.TOKEN_2022_PROGRAM_ID
-  );
-
-  await assertStreamCreation(
-    streamId,
-    streamNftMint,
-    beforeSenderTokenBalance,
-    sender.daiATA,
-    treasuryATA,
-    defaultStreamDataToken2022({
-      id: streamId,
-    })
-  );
-}
-
 async function assertStreamCreation(
-  streamId: BN,
-  streamNftMint: PublicKey,
+  salt: BN,
   beforeSenderTokenBalance: BN,
-  senderATA: PublicKey,
-  treasuryATA: PublicKey,
-  expectedStreamData: any
+  expectedStream = defaultStream({ salt: salt })
 ) {
-  // Assert that the Treasury ATA has been created
-  assert(await accountExists(treasuryATA), "Treasury ATA not initialized");
-
   // Assert that the Stream NFT Mint has been created
-  assert(await accountExists(streamNftMint), "Stream NFT Mint not initialized");
+  assert(
+    await accountExists(expectedStream.nftMintAddress),
+    "Stream NFT Mint address not initialized"
+  );
+  // Assert that the Stream Data has been created
+  assert(
+    await accountExists(expectedStream.dataAddress),
+    "Stream Data address not initialized"
+  );
+  // Assert that the Stream Data ATA has been created
+  assert(
+    await accountExists(expectedStream.dataAta),
+    "Stream Data ATA address not initialized"
+  );
+  // Assert that the Stream NFT Master Edition has been created
+  assert(
+    await accountExists(expectedStream.nftMasterEdition),
+    "Stream NFT Master Edition address not initialized"
+  );
+  // Assert that the Stream NFT Metadata has been created
+  assert(
+    await accountExists(expectedStream.nftMetadataAddress),
+    "Stream NFT Metadata address not initialized"
+  );
+  // Assert that the Recipient's Stream NFT ATA has been created
+  assert(
+    await accountExists(expectedStream.recipientStreamNftAta),
+    "Recipient Stream NFT ATA address not initialized"
+  );
+
+  // Assert the contents of the Stream Data account
+  const actualStreamData = await fetchStreamData(salt);
+  assertEqStreamDatas(actualStreamData, expectedStream.data);
 
   // Assert that the Stream NFT Mint has the correct total supply
   const streamNftMintTotalSupply = await getMintTotalSupplyOf(
     banksClient,
-    streamNftMint
+    expectedStream.nftMintAddress
   );
   assert(
     streamNftMintTotalSupply.eq(new BN(1)),
     "Stream NFT Mint total supply not 1"
   );
 
-  // Assert that the Stream NFT Metadata has been created
-  const streamNftMetadata = getPDAAddress(
-    [
-      Buffer.from(defaults.METADATA_SEED),
-      defaults.TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-      streamNftMint.toBuffer(),
-    ],
-    defaults.TOKEN_METADATA_PROGRAM_ID
-  );
-  assert(
-    await accountExists(streamNftMetadata),
-    "Stream NFT Metadata not initialized"
-  );
-
-  // Assert that the Stream NFT Master Edition has been created
-  const streamNftMasterEdition = getPDAAddress(
-    [
-      Buffer.from(defaults.METADATA_SEED),
-      defaults.TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-      streamNftMint.toBuffer(),
-      Buffer.from(defaults.EDITION_SEED),
-    ],
-    defaults.TOKEN_METADATA_PROGRAM_ID
-  );
-
-  assert(
-    await accountExists(streamNftMasterEdition),
-    "Stream NFT Master Edition not initialized"
-  );
-
-  // Assert that the Recipient's Stream NFT ATA has been created
-  const recipientStreamNftATA = deriveATAAddress(
-    streamNftMint,
-    recipient.keys.publicKey,
-    defaults.TOKEN_PROGRAM_ID
-  );
-
-  assert(
-    await accountExists(recipientStreamNftATA),
-    "Recipient's Stream NFT ATA not initialized"
-  );
-
   // Assert that the Recipient's Stream NFT ATA has the correct balance
   const recipientStreamNftBalance = await getATABalance(
     banksClient,
-    recipientStreamNftATA
+    expectedStream.recipientStreamNftAta
   );
   assert(recipientStreamNftBalance.eq(new BN(1)), "Stream NFT not minted");
 
@@ -443,14 +358,11 @@ async function assertStreamCreation(
   const expectedTokenBalance = beforeSenderTokenBalance.sub(
     defaults.DEPOSIT_AMOUNT
   );
-
-  const afterSenderTokenBalance = await getATABalance(banksClient, senderATA);
+  const afterSenderTokenBalance = await getSenderTokenBalance(
+    expectedStream.data.assetMint
+  );
   assert(
-    afterSenderTokenBalance.eq(expectedTokenBalance),
+    expectedTokenBalance.eq(afterSenderTokenBalance),
     "sender balance not updated correctly"
   );
-
-  // Assert the contents of the Stream Data account
-  const actualStreamData = await fetchStreamData(streamId);
-  assertEqStreamDatas(actualStreamData, expectedStreamData);
 }

@@ -87,7 +87,7 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
         ctx.accounts.deposit_token_program.to_account_info(),
         sender_amount,
         ctx.accounts.asset_mint.decimals,
-        &[&[STREAM_DATA_SEED, &[ctx.accounts.stream_data.bump]]],
+        &[&[STREAM_DATA_SEED, ctx.accounts.stream_nft_mint.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
     )?;
 
     // Log the cancellation.

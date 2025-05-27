@@ -1,7 +1,7 @@
 import { assertEqStreamDatas, assertErrorContains } from "../utils/assertions";
 import {
   createWithDurations,
-  defaultStreamData,
+  defaultStream,
   fetchStreamData,
   setUp,
   timeTravelTo,
@@ -36,20 +36,20 @@ describe("createWithDurations", () => {
 
     context("when cliff duration not zero", () => {
       it("it should create the stream", async () => {
-        const streamId = await createWithDurations();
+        const salt = await createWithDurations();
 
-        const actualStreamData = await fetchStreamData(streamId);
-        const expectedStreamData = defaultStreamData({ id: streamId });
+        const actualStreamData = await fetchStreamData(salt);
+        const expectedStreamData = defaultStream({ salt: salt }).data;
         assertEqStreamDatas(actualStreamData, expectedStreamData);
       });
     });
 
     context("when cliff duration zero", () => {
       it("it should create the stream", async () => {
-        const streamId = await createWithDurations(defaults.ZERO_BN);
+        const salt = await createWithDurations(defaults.ZERO_BN);
 
-        const actualStreamData = await fetchStreamData(streamId);
-        const expectedStreamData = defaultStreamData({ id: streamId });
+        const actualStreamData = await fetchStreamData(salt);
+        const expectedStreamData = defaultStream({ salt: salt }).data;
         expectedStreamData.amounts.cliffUnlock = defaults.ZERO_BN;
         expectedStreamData.timestamps.cliff = defaults.ZERO_BN;
         assertEqStreamDatas(actualStreamData, expectedStreamData);

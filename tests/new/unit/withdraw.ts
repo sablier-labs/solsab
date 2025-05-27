@@ -7,22 +7,18 @@ import {
   cancel,
   createATAAndFund,
   createWithTimestampsToken2022,
-  defaultStreamData,
-  defaultStreamDataToken2022,
+  defaultStream,
+  defaultStreamToken2022,
   deriveATAAddress,
   fetchStreamData,
   getATABalance,
   getTreasuryLamports,
-  getTreasuryATABalanceSPL,
-  getTreasuryATABalanceToken2022,
-  ids,
+  salts,
   randomToken,
   recipient,
   sender,
   setUp,
   timeTravelTo,
-  treasuryATASpl,
-  treasuryATAToken2022,
   withdrawMax,
   withdraw,
   withdrawToken2022,
@@ -43,7 +39,7 @@ describe("withdraw", () => {
 
     it("should revert", async () => {
       try {
-        await withdraw({ streamId: new BN(1) });
+        await withdraw({ salt: new BN(1) });
       } catch (error) {
         assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
       }
@@ -60,7 +56,7 @@ describe("withdraw", () => {
     context("given a null stream", () => {
       it("should revert", async () => {
         try {
-          await withdraw({ streamId: ids.nullStream });
+          await withdraw({ salt: salts.nonExisting });
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
         }
@@ -145,7 +141,7 @@ describe("withdraw", () => {
                       );
 
                       // Create a new stream with a random token
-                      const { streamId } = await createWithTimestamps({
+                      const salt = await createWithTimestamps({
                         assetMint: randomToken,
                         depositAmount: defaults.DEPOSIT_AMOUNT,
                       });
@@ -165,7 +161,7 @@ describe("withdraw", () => {
 
                       // Perform the withdrawal
                       await withdraw({
-                        streamId,
+                        salt,
                         assetMint: randomToken,
                       });
 
@@ -191,22 +187,19 @@ describe("withdraw", () => {
                         const withdrawalRecipientATABalanceBefore =
                           await getATABalance(banksClient, sender.usdcATA);
 
-                        const treasuryATABalanceBefore =
-                          await getTreasuryATABalanceSPL();
-
                         await withdraw({
                           withdrawalRecipient: sender.keys.publicKey,
                         });
 
-                        const expectedStreamData = defaultStreamData();
+                        const expectedStreamData = defaultStream().data;
                         expectedStreamData.amounts.withdrawn =
                           defaults.WITHDRAW_AMOUNT;
-                        await postWithdrawAssertionsSPL(
-                          ids.defaultStream,
+
+                        await postWithdrawAssertions(
+                          salts.default,
                           treasuryLamportsBefore,
                           sender.usdcATA,
                           withdrawalRecipientATABalanceBefore,
-                          treasuryATABalanceBefore,
                           expectedStreamData
                         );
                       });
@@ -225,20 +218,17 @@ describe("withdraw", () => {
                     const withdrawalRecipientATABalanceBefore =
                       await getATABalance(banksClient, recipient.usdcATA);
 
-                    const treasuryATABalanceBefore =
-                      await getTreasuryATABalanceSPL();
-
                     await withdraw();
 
-                    const expectedStreamData = defaultStreamData();
+                    const expectedStreamData = defaultStream().data;
                     expectedStreamData.amounts.withdrawn =
                       defaults.WITHDRAW_AMOUNT;
-                    await postWithdrawAssertionsSPL(
-                      ids.defaultStream,
+
+                    await postWithdrawAssertions(
+                      salts.default,
                       treasuryLamportsBefore,
                       recipient.usdcATA,
                       withdrawalRecipientATABalanceBefore,
-                      treasuryATABalanceBefore,
                       expectedStreamData
                     );
                   });
@@ -257,25 +247,22 @@ describe("withdraw", () => {
                       const withdrawalRecipientATABalanceBefore =
                         await getATABalance(banksClient, recipient.usdcATA);
 
-                      const treasuryATABalanceBefore =
-                        await getTreasuryATABalanceSPL();
-
                       await withdraw({
                         withdrawAmount: defaults.DEPOSIT_AMOUNT,
                         signer: sender.keys,
                       });
 
-                      const expectedStreamData = defaultStreamData();
+                      const expectedStreamData = defaultStream().data;
                       expectedStreamData.amounts.withdrawn =
                         defaults.DEPOSIT_AMOUNT;
                       expectedStreamData.isCancelable = false;
                       expectedStreamData.isDepleted = true;
-                      await postWithdrawAssertionsSPL(
-                        ids.defaultStream,
+
+                      await postWithdrawAssertions(
+                        salts.default,
                         treasuryLamportsBefore,
                         recipient.usdcATA,
                         withdrawalRecipientATABalanceBefore,
-                        treasuryATABalanceBefore,
                         expectedStreamData
                       );
                     });
@@ -294,25 +281,22 @@ describe("withdraw", () => {
                         const withdrawalRecipientATABalanceBefore =
                           await getATABalance(banksClient, recipient.usdcATA);
 
-                        const treasuryATABalanceBefore =
-                          await getTreasuryATABalanceSPL();
-
                         await withdraw({ signer: sender.keys });
-                        const expectedStreamData = defaultStreamData({
+                        const expectedStreamData = defaultStream({
                           isCancelable: false,
                           isDepleted: true,
                           wasCanceled: true,
-                        });
+                        }).data;
                         expectedStreamData.amounts.refunded =
                           defaults.REFUND_AMOUNT;
                         expectedStreamData.amounts.withdrawn =
                           defaults.WITHDRAW_AMOUNT;
-                        await postWithdrawAssertionsSPL(
-                          ids.defaultStream,
+
+                        await postWithdrawAssertions(
+                          salts.default,
                           treasuryLamportsBefore,
                           recipient.usdcATA,
                           withdrawalRecipientATABalanceBefore,
-                          treasuryATABalanceBefore,
                           expectedStreamData
                         );
                       });
@@ -329,19 +313,15 @@ describe("withdraw", () => {
                           const withdrawalRecipientATABalanceBefore =
                             await getATABalance(banksClient, recipient.usdcATA);
 
-                          const treasuryATABalanceBefore =
-                            await getTreasuryATABalanceSPL();
-
                           await withdraw({ signer: sender.keys });
-                          const expectedStreamData = defaultStreamData();
+                          const expectedStreamData = defaultStream().data;
                           expectedStreamData.amounts.withdrawn =
                             defaults.WITHDRAW_AMOUNT;
-                          await postWithdrawAssertionsSPL(
-                            ids.defaultStream,
+                          await postWithdrawAssertions(
+                            salts.default,
                             treasuryLamportsBefore,
                             recipient.usdcATA,
                             withdrawalRecipientATABalanceBefore,
-                            treasuryATABalanceBefore,
                             expectedStreamData
                           );
                         });
@@ -349,8 +329,7 @@ describe("withdraw", () => {
 
                       context("given token 2022 standard", () => {
                         it("should make the withdrawal", async () => {
-                          const { streamId } =
-                            await createWithTimestampsToken2022();
+                          const salt = await createWithTimestampsToken2022();
 
                           // Get the Lamports balance of the Treasury before the withdrawal
                           const treasuryLamportsBefore =
@@ -360,24 +339,18 @@ describe("withdraw", () => {
                           const withdrawalRecipientATABalanceBefore =
                             await getATABalance(banksClient, recipient.daiATA);
 
-                          const treasuryATABalanceBefore =
-                            await getTreasuryATABalanceToken2022();
+                          await withdrawToken2022(salt, sender.keys);
 
-                          await withdrawToken2022(streamId, sender.keys);
-
-                          const expectedStreamData = defaultStreamDataToken2022(
-                            {
-                              id: streamId,
-                            }
-                          );
+                          const expectedStreamData = defaultStreamToken2022({
+                            salt: salt,
+                          }).data;
                           expectedStreamData.amounts.withdrawn =
                             defaults.WITHDRAW_AMOUNT;
-                          await postWithdrawAssertionsToken2022(
-                            streamId,
+                          await postWithdrawAssertions(
+                            salt,
                             treasuryLamportsBefore,
                             recipient.daiATA,
                             withdrawalRecipientATABalanceBefore,
-                            treasuryATABalanceBefore,
                             expectedStreamData
                           );
                         });
@@ -395,14 +368,16 @@ describe("withdraw", () => {
 });
 
 async function postWithdrawAssertions(
-  streamId: BN,
+  salt: BN,
   treasuryLamportsBefore: bigint,
   withdrawalRecipientATA: PublicKey,
   withdrawalRecipientATABalanceBefore: BN,
-  treasuryATA: PublicKey,
-  treasuryATABalanceBefore: BN,
   expectedStreamData: any
 ) {
+  // Assert that the Stream state has been updated correctly
+  const actualStreamData = await fetchStreamData(salt);
+  assertEqStreamDatas(actualStreamData, expectedStreamData);
+
   // Get the Lamports balance of the Treasury after the withdrawal
   const treasuryLamportsAfter = await getTreasuryLamports();
 
@@ -428,55 +403,5 @@ async function postWithdrawAssertions(
     "The amount withdrawn to the withdrawal recipient is incorrect"
   );
 
-  // Assert that the Treasury ATA has been changed correctly
-  const treasuryATABalance = await getATABalance(banksClient, treasuryATA);
-
-  assert(
-    treasuryATABalance.eq(
-      treasuryATABalanceBefore.sub(expectedWithdrawnAmount)
-    ),
-    "The Treasury's ATA balance is incorrect"
-  );
-
-  // Assert that the Stream state has been updated correctly
-  const actualStreamData = await fetchStreamData(streamId);
-  assertEqStreamDatas(actualStreamData, expectedStreamData);
-}
-
-async function postWithdrawAssertionsSPL(
-  streamId: BN,
-  treasuryLamportsBefore: bigint,
-  withdrawalRecipientATA: PublicKey,
-  withdrawalRecipientATABalanceBefore: BN,
-  treasuryATABalanceBefore: BN,
-  expectedStreamData: any
-) {
-  await postWithdrawAssertions(
-    streamId,
-    treasuryLamportsBefore,
-    withdrawalRecipientATA,
-    withdrawalRecipientATABalanceBefore,
-    treasuryATASpl,
-    treasuryATABalanceBefore,
-    expectedStreamData
-  );
-}
-
-async function postWithdrawAssertionsToken2022(
-  streamId: BN,
-  treasuryLamportsBefore: bigint,
-  withdrawalRecipientATA: PublicKey,
-  withdrawalRecipientATABalanceBefore: BN,
-  treasuryATABalanceBefore: BN,
-  expectedStreamData: any
-) {
-  await postWithdrawAssertions(
-    streamId,
-    treasuryLamportsBefore,
-    withdrawalRecipientATA,
-    withdrawalRecipientATABalanceBefore,
-    treasuryATAToken2022,
-    treasuryATABalanceBefore,
-    expectedStreamData
-  );
+  // TODO: Assert that the StreamData ATA has been changed correctly
 }

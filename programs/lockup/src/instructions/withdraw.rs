@@ -22,17 +22,14 @@ pub struct Withdraw<'info> {
     #[account(address = stream_data.asset_mint)]
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    #[account()]
     /// CHECK: This account must be the Stream's recipient (checked in recipient_stream_nft_ata's constraints)
     pub stream_recipient: UncheckedAccount<'info>,
 
-    #[account()]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         mut,
-        seeds = [STREAM_DATA_SEED,
-                 stream_nft_mint.key().as_ref()],
+        seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
         bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
@@ -63,7 +60,8 @@ pub struct Withdraw<'info> {
             withdrawal_recipient.key() == stream_recipient.key() ||
             (withdrawal_recipient.key() != stream_recipient.key() &&
             signer.key() == stream_recipient.key())
-        ))]
+        )
+    )]
     pub withdrawal_recipient: UncheckedAccount<'info>,
 
     #[account(
@@ -116,7 +114,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         ctx.accounts.deposit_token_program.to_account_info(),
         amount,
         ctx.accounts.asset_mint.decimals,
-        &[&[STREAM_DATA_SEED, &[ctx.accounts.stream_data.bump]]],
+        &[&[STREAM_DATA_SEED, ctx.accounts.stream_nft_mint.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
     )?;
 
     // Log the withdrawal.
