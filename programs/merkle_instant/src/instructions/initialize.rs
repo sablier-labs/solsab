@@ -20,7 +20,7 @@ pub struct Initialize<'info> {
 }
 
 pub fn handler(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
-    ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector.key())?;
+    ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector)?;
 
     Ok(())
 }

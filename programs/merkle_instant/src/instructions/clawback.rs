@@ -1,10 +1,13 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token_interface::{Mint, TokenAccount, TokenInterface},
+};
 
 use crate::{
     state::Campaign,
     utils::{
-        constants::CAMPAIGN_SEED, events::Clawbacked, transfer_helper::transfer_tokens, validations::check_clawback,
+        constants::CAMPAIGN_SEED, events::Clawedback, transfer_helper::transfer_tokens, validations::check_clawback,
     },
 };
 
@@ -36,6 +39,7 @@ pub struct Clawback<'info> {
     pub campaign_creator_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub airdrop_token_program: Interface<'info, TokenInterface>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
@@ -55,7 +59,7 @@ pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     )?;
 
     // Log the clawback.
-    emit!(Clawbacked {
+    emit!(Clawedback {
         amount,
         campaign: ctx.accounts.campaign.key(),
         campaign_creator: ctx.accounts.campaign_creator.key(),

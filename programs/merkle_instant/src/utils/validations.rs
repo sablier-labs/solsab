@@ -24,13 +24,13 @@ pub fn check_claim(
     // Hash one more time to protect against the second pre-image attacks
     leaf_hash = keccak_hashv(&[&leaf_hash]).0;
 
-    // Compute the root hash from the leaf hash and the merkle_proof
+    // Compute the root hash from the leaf hash and the merkle proof
     // Dev: the below algorithm has been inspired by
-    // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/cryptography/merkle_proof.sol
+    // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/cryptography/MerkleProof.sol
     let mut computed_hash = leaf_hash;
     for proof_element in merkle_proof.iter() {
         if computed_hash <= *proof_element {
-            // Hash(current computed hash + current element of the merkle_proof)
+            // Hash(current computed hash + current element of the merkle proof)
             computed_hash = keccak_hashv(&[&computed_hash, proof_element]).0;
         } else {
             // Hash(current element of the merkle_proof + current computed hash)
