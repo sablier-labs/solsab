@@ -1,10 +1,10 @@
 import { BN } from "@coral-xyz/anchor";
 import {
   cancel,
-  defaultStreamData,
+  defaultStream,
   eve,
   fetchStreamData,
-  ids,
+  salts,
   renounce,
   setUp,
   timeTravelTo,
@@ -22,7 +22,7 @@ describe("renounce", () => {
 
     it("should revert", async () => {
       try {
-        await renounce({ streamId: new BN(1) });
+        await renounce({ salt: new BN(1) });
       } catch (error) {
         assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
       }
@@ -37,7 +37,7 @@ describe("renounce", () => {
     context("given a null stream", () => {
       it("should revert", async () => {
         try {
-          await renounce({ streamId: ids.nullStream });
+          await renounce({ salt: salts.nonExisting });
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
         }
@@ -105,7 +105,7 @@ describe("renounce", () => {
           context("given non cancelable stream", () => {
             it("should revert", async () => {
               try {
-                await renounce({ streamId: ids.nonCancelableStream });
+                await renounce({ salt: salts.nonCancelable });
               } catch (error) {
                 assertErrorHexCode(
                   error,
@@ -120,7 +120,7 @@ describe("renounce", () => {
               await renounce();
 
               const actualStreamData = await fetchStreamData();
-              const expectedStreamData = defaultStreamData();
+              const expectedStreamData = defaultStream().data;
               expectedStreamData.isCancelable = false;
 
               assertEqStreamDatas(actualStreamData, expectedStreamData);

@@ -5,7 +5,7 @@ use crate::instructions::create_with_timestamps;
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<create_with_timestamps::CreateWithTimestamps>,
-    salt: u64,
+    salt: u128,
     deposited_amount: u64,
     cliff_duration: i64,
     total_duration: i64,

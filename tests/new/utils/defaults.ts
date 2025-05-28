@@ -45,6 +45,7 @@ export const TREASURY_SEED = "treasury";
 export const PROGRAM_NOT_INITIALIZED_ERR = {
   CreateWithTimestamps: "NFT Collection Data account is undefined",
 };
+
 /*//////////////////////////////////////////////////////////////////////////
                                      PARAMETERS
 //////////////////////////////////////////////////////////////////////////*/

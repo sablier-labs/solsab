@@ -2,7 +2,6 @@ use anchor_lang::prelude::*;
 
 #[event]
 pub struct CancelLockupStream {
-    pub salt: u64,
     pub asset_mint: Pubkey,
     pub sender_amount: u64,
     pub recipient_amount: u64,
@@ -10,8 +9,7 @@ pub struct CancelLockupStream {
 
 #[event]
 pub struct CreateLockupLinearStream {
-    pub salt: u64,
-    pub nft_id: u64,
+    pub salt: u128,
     pub asset_decimals: u8,
     pub recipient: Pubkey,
 }
@@ -23,12 +21,9 @@ pub struct FeesCollected {
 }
 
 #[event]
-pub struct RenounceLockupStream {
-    pub salt: u64,
-}
+pub struct RenounceLockupStream {}
 
 #[event]
 pub struct WithdrawFromLockupStream {
-    pub salt: u64,
     pub withdrawn_amount: u64,
 }

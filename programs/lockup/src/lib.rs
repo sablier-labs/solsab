@@ -12,8 +12,8 @@ declare_id!("Cm9PddjQKbWdtBBh9SGejbuLHqNjcYFN6BU3WHr26nMV"); // Localnet & Devne
 pub mod sablier_lockup {
     use super::*;
 
-    pub fn cancel(ctx: Context<Cancel>, salt: u64) -> Result<()> {
-        instructions::cancel::handler(ctx, salt)
+    pub fn cancel(ctx: Context<Cancel>) -> Result<()> {
+        instructions::cancel::handler(ctx)
     }
 
     pub fn collect_fees(ctx: Context<CollectFees>) -> Result<()> {
@@ -23,7 +23,7 @@ pub mod sablier_lockup {
     #[allow(clippy::too_many_arguments)]
     pub fn create_with_durations(
         ctx: Context<CreateWithTimestamps>,
-        salt: u64,
+        salt: u128,
         deposited_amount: u64,
         cliff_duration: i64,
         total_duration: i64,
@@ -46,7 +46,7 @@ pub mod sablier_lockup {
     #[allow(clippy::too_many_arguments)]
     pub fn create_with_timestamps(
         ctx: Context<CreateWithTimestamps>,
-        salt: u64,
+        salt: u128,
         deposited_amount: u64,
         start_time: i64,
         cliff_time: i64,
@@ -72,31 +72,31 @@ pub mod sablier_lockup {
         instructions::initialize::handler(ctx, fee_collector)
     }
 
-    pub fn renounce(ctx: Context<Renounce>, salt: u64) -> Result<()> {
-        instructions::renounce::handler(ctx, salt)
+    pub fn renounce(ctx: Context<Renounce>) -> Result<()> {
+        instructions::renounce::handler(ctx)
     }
 
-    pub fn refundable_amount_of(ctx: Context<StreamView>, _salt: u64) -> Result<u64> {
+    pub fn refundable_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::refundable_amount_of::handler(ctx)
     }
 
-    pub fn status_of(ctx: Context<StreamView>, _salt: u64) -> Result<StreamStatus> {
+    pub fn status_of(ctx: Context<StreamView>) -> Result<StreamStatus> {
         instructions::status_of::handler(ctx)
     }
 
-    pub fn streamed_amount_of(ctx: Context<StreamView>, _salt: u64) -> Result<u64> {
+    pub fn streamed_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::streamed_amount_of::handler(ctx)
     }
 
-    pub fn withdraw(ctx: Context<Withdraw>, salt: u64, amount: u64) -> Result<()> {
-        instructions::withdraw::handler(ctx, salt, amount)
+    pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+        instructions::withdraw::handler(ctx, amount)
     }
 
-    pub fn withdrawable_amount_of(ctx: Context<StreamView>, _salt: u64) -> Result<u64> {
+    pub fn withdrawable_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::withdrawable_amount_of::handler(ctx)
     }
 
-    pub fn withdraw_max(ctx: Context<Withdraw>, salt: u64) -> Result<()> {
-        instructions::withdraw_max::handler(ctx, salt)
+    pub fn withdraw_max(ctx: Context<Withdraw>) -> Result<()> {
+        instructions::withdraw_max::handler(ctx)
     }
 }

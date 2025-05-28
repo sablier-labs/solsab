@@ -1,6 +1,7 @@
-import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import { assert } from "chai";
+
+import { Stream } from "../utils/types";
 
 import { assertErrorHexCode, assertEqStreamDatas } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
@@ -10,21 +11,18 @@ import {
   cancel,
   cancelToken2022,
   createWithTimestampsToken2022,
-  defaultStreamData,
-  defaultStreamDataToken2022,
+  defaultStream,
+  defaultStreamToken2022,
   fetchStreamData,
+  getATABalanceMint,
   getATABalance,
-  getTreasuryATABalanceSPL,
-  getTreasuryATABalanceToken2022,
-  ids,
   randomToken,
   recipient,
+  salts,
   sender,
   setUp,
   sleepFor,
   timeTravelTo,
-  treasuryATASpl,
-  treasuryATAToken2022,
   withdrawMax,
 } from "../base";
 
@@ -38,7 +36,7 @@ describe("cancel", () => {
 
     it("should revert", async () => {
       try {
-        await cancel({ streamId: new BN(1) });
+        await cancel({ salt: new BN(1) });
       } catch (error) {
         assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
       }
@@ -55,7 +53,7 @@ describe("cancel", () => {
     context("given a null stream", () => {
       it("should revert", async () => {
         try {
-          await cancel({ streamId: ids.nullStream });
+          await cancel({ salt: salts.nonExisting });
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
         }
@@ -127,7 +125,7 @@ describe("cancel", () => {
             context("given non cancelable stream", () => {
               it("should revert", async () => {
                 try {
-                  await cancel({ streamId: ids.nonCancelableStream });
+                  await cancel({ salt: salts.nonCancelable });
                 } catch (error) {
                   assertErrorHexCode(
                     error,
@@ -143,31 +141,28 @@ describe("cancel", () => {
                   // Go back in time so that the stream is PENDING
                   await timeTravelTo(defaults.APR_1_2025);
 
-                  // Get the sender's ATA balance before the cancel
-                  const senderATABalanceBefore = await getATABalance(
+                  const beforeSenderBalance = await getATABalance(
                     banksClient,
                     sender.usdcATA
                   );
-
-                  // Get the treasury's ATA balance before the cancel
-                  const treasuryATABalanceBefore =
-                    await getTreasuryATABalanceSPL();
 
                   // Cancel the stream
                   await cancel();
 
                   // Assert the cancelation
-                  const expectedStreamData = defaultStreamData({
+                  const expectedStream = defaultStream({
                     isCancelable: false,
                     isDepleted: true,
                     wasCanceled: true,
                   });
-                  expectedStreamData.amounts.refunded = defaults.DEPOSIT_AMOUNT;
-                  await postCancelAssertionsSPL(
-                    ids.defaultStream,
-                    senderATABalanceBefore,
-                    treasuryATABalanceBefore,
-                    expectedStreamData
+                  expectedStream.data.amounts.refunded =
+                    defaults.DEPOSIT_AMOUNT;
+
+                  // Assert the cancelation
+                  await postCancelAssertions(
+                    salts.default,
+                    expectedStream,
+                    beforeSenderBalance
                   );
                 });
               });
@@ -175,31 +170,26 @@ describe("cancel", () => {
               context("given STREAMING status", () => {
                 context("given token SPL standard", () => {
                   it("should cancel the stream", async () => {
-                    // Get the sender's ATA balance before the cancel
-                    const senderATABalanceBefore = await getATABalance(
+                    const beforeSenderBalance = await getATABalance(
                       banksClient,
                       sender.usdcATA
                     );
 
-                    // Get the treasury's ATA balance before the cancel
-                    const treasuryATABalanceBefore =
-                      await getTreasuryATABalanceSPL();
-
                     // Cancel the stream
                     await cancel();
 
-                    // Assert the cancelation
-                    const expectedStreamData = defaultStreamData({
+                    const expectedStream = defaultStream({
                       isCancelable: false,
                       wasCanceled: true,
                     });
-                    expectedStreamData.amounts.refunded =
+                    expectedStream.data.amounts.refunded =
                       defaults.REFUND_AMOUNT;
-                    await postCancelAssertionsSPL(
-                      ids.defaultStream,
-                      senderATABalanceBefore,
-                      treasuryATABalanceBefore,
-                      expectedStreamData
+
+                    // Assert the cancelation
+                    await postCancelAssertions(
+                      salts.default,
+                      expectedStream,
+                      beforeSenderBalance
                     );
                   });
                 });
@@ -207,34 +197,29 @@ describe("cancel", () => {
                 context("given token 2022 standard", () => {
                   it("should cancel the stream", async () => {
                     // Create a stream with a Token2022 mint
-                    const { streamId } = await createWithTimestampsToken2022();
+                    const salt = await createWithTimestampsToken2022();
 
-                    // Get the sender's ATA balance before the cancel
-                    const senderATABalanceBefore = await getATABalance(
+                    const beforeSenderBalance = await getATABalance(
                       banksClient,
                       sender.daiATA
                     );
 
-                    // Get the treasury's ATA balance before the cancel
-                    const treasuryATABalanceBefore =
-                      await getTreasuryATABalanceToken2022();
-
                     // Cancel the stream
-                    await cancelToken2022(streamId);
+                    await cancelToken2022(salt);
+
+                    const expectedStream = defaultStreamToken2022({
+                      salt: salt,
+                      isCancelable: false,
+                      wasCanceled: true,
+                    });
+                    expectedStream.data.amounts.refunded =
+                      defaults.REFUND_AMOUNT;
 
                     // Assert the cancelation
-                    const expectedStreamData = defaultStreamDataToken2022({
-                      id: streamId,
-                    });
-                    expectedStreamData.amounts.refunded =
-                      defaults.REFUND_AMOUNT;
-                    expectedStreamData.isCancelable = false;
-                    expectedStreamData.wasCanceled = true;
-                    await postCancelAssertionsToken2022(
-                      streamId,
-                      senderATABalanceBefore,
-                      treasuryATABalanceBefore,
-                      expectedStreamData
+                    await postCancelAssertions(
+                      salt,
+                      expectedStream,
+                      beforeSenderBalance
                     );
                   });
                 });
@@ -248,68 +233,38 @@ describe("cancel", () => {
 });
 
 async function postCancelAssertions(
-  streamId: BN,
-  senderATA: PublicKey,
-  treasuryATA: PublicKey,
-  senderATABalanceBefore: BN,
-  treasuryATABalanceBefore: BN,
-  expectedStreamData: any
+  salt: BN,
+  expectedStream: Stream,
+  beforeSenderBalance: BN
 ) {
-  // Get Sender's ATA balance after the cancel
-  const senderATABalanceAfter = await getATABalance(banksClient, senderATA);
-
-  // Assert that the sender's token balance has been changed correctly
-  const expectedRefundedAmount = expectedStreamData.amounts.refunded;
-  assert(
-    senderATABalanceAfter.eq(
-      senderATABalanceBefore.add(expectedRefundedAmount)
-    ),
-    "The amount refunded to the sender is incorrect"
-  );
-
-  // Assert that the Treasury ATA has been changed correctly
-  const treasuryBalance = await getATABalance(banksClient, treasuryATA);
-
-  assert(
-    treasuryBalance.eq(treasuryATABalanceBefore.sub(expectedRefundedAmount)),
-    "The Treasury's token balance is incorrect"
-  );
-
   // Assert that the Stream state has been updated correctly
-  const actualStreamData = await fetchStreamData(streamId);
-  assertEqStreamDatas(actualStreamData, expectedStreamData);
-}
+  const actualStreamData = await fetchStreamData(salt);
+  assertEqStreamDatas(actualStreamData, expectedStream.data);
 
-async function postCancelAssertionsSPL(
-  streamId: BN,
-  senderATABalanceBefore: BN,
-  treasuryATABalanceBefore: BN,
-  expectedStreamData: any,
-  senderATA = sender.usdcATA
-) {
-  await postCancelAssertions(
-    streamId,
-    senderATA,
-    treasuryATASpl,
-    senderATABalanceBefore,
-    treasuryATABalanceBefore,
-    expectedStreamData
+  // Assert the Sender's ATA balance
+  const afterSenderBalance = await getATABalanceMint(
+    banksClient,
+    expectedStream.data.sender,
+    expectedStream.data.assetMint
   );
-}
 
-async function postCancelAssertionsToken2022(
-  streamId: BN,
-  senderATABalanceBefore: BN,
-  treasuryATABalanceBefore: BN,
-  expectedStreamData: any,
-  senderATA = sender.daiATA
-) {
-  await postCancelAssertions(
-    streamId,
-    senderATA,
-    treasuryATAToken2022,
-    senderATABalanceBefore,
-    treasuryATABalanceBefore,
-    expectedStreamData
+  const actualBalanceRefunded = afterSenderBalance.sub(beforeSenderBalance);
+  assert(
+    actualBalanceRefunded.eq(expectedStream.data.amounts.refunded),
+    "Sender's ATA balance mismatch"
+  );
+
+  // Assert the StreamData ATA balance
+  const actualStreamDataBalance = await getATABalanceMint(
+    banksClient,
+    expectedStream.dataAddress,
+    expectedStream.data.assetMint
+  );
+  const expectedStreamDataBalance = expectedStream.data.amounts.deposited.sub(
+    expectedStream.data.amounts.refunded
+  );
+  assert(
+    actualStreamDataBalance.eq(expectedStreamDataBalance),
+    "StreamData's ATA balance mismatch"
   );
 }
