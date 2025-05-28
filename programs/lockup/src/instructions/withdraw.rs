@@ -47,6 +47,14 @@ pub struct Withdraw<'info> {
 
     #[account(
         mut,
+        associated_token::mint = asset_mint,
+        associated_token::authority = stream_data,
+        associated_token::token_program = deposit_token_program,
+    )]
+    pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    #[account(
+        mut,
         associated_token::mint = stream_nft_mint,
         associated_token::authority = stream_recipient,
         associated_token::token_program = nft_token_program,
@@ -76,19 +84,11 @@ pub struct Withdraw<'info> {
     pub withdrawal_recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-        mut,
-        seeds = [TREASURY_SEED],
-        bump = treasury.bump
+      mut,
+      seeds = [TREASURY_SEED],
+      bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
-
-    #[account(
-        mut,
-        associated_token::mint = asset_mint,
-        associated_token::authority = treasury,
-        associated_token::token_program = deposit_token_program
-    )]
-    pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub system_program: Program<'info, System>,
     pub deposit_token_program: Interface<'info, TokenInterface>,
@@ -115,19 +115,16 @@ pub fn handler(ctx: Context<Withdraw>, salt: u64, amount: u64) -> Result<()> {
     );
     invoke(&fee_collection_ix, &[ctx.accounts.signer.to_account_info(), ctx.accounts.treasury.to_account_info()])?;
 
-    // Avoid unnecessary mutable borrow.
-    let treasury_bump = ctx.accounts.treasury.bump;
-
     // Interaction: transfer the tokens from the Treasury ATA to the recipient
     transfer_tokens(
-        ctx.accounts.treasury_ata.to_account_info(),
+        ctx.accounts.stream_data_ata.to_account_info(),
         ctx.accounts.withdrawal_recipient_ata.to_account_info(),
-        ctx.accounts.treasury.to_account_info(),
+        ctx.accounts.stream_data.to_account_info(),
         ctx.accounts.asset_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
         amount,
         ctx.accounts.asset_mint.decimals,
-        &[&[TREASURY_SEED, &[treasury_bump]]],
+        &[&[STREAM_DATA_SEED, &[ctx.accounts.stream_data.bump]]],
     )?;
 
     // Log the withdrawal.

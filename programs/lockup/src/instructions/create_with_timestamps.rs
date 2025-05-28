@@ -6,7 +6,7 @@ use anchor_spl::{
 };
 
 use crate::{
-    state::{lockup::*, nft_collection_data::NftCollectionData, treasury::Treasury},
+    state::{lockup::*, nft_collection_data::NftCollectionData},
     utils::{
         constants::*, events::CreateLockupLinearStream, nft, transfer_helper::transfer_tokens,
         validations::check_create,
@@ -30,25 +30,9 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    #[account()]
     /// CHECK: The recipient may be any account
     pub recipient: UncheckedAccount<'info>,
-
-    #[account(
-        seeds = [TREASURY_SEED],
-        bump = treasury.bump
-    )]
-    pub treasury: Box<Account<'info, Treasury>>,
-
-    // Dev: `init_if_needed` is used to allow for a smooth Tx sequencing in case of a concurrency
-    // (i.e. multiple streams being created at the same time)
-    #[account(
-        init_if_needed,
-        payer = sender,
-        associated_token::mint = asset_mint,
-        associated_token::authority = treasury,
-        associated_token::token_program = deposit_token_program
-    )]
-    pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
@@ -88,7 +72,7 @@ pub struct CreateWithTimestamps<'info> {
     pub nft_collection_master_edition: UncheckedAccount<'info>,
 
     #[account(
-        init_if_needed,
+        init,
         payer = sender,
         seeds = [
           STREAM_NFT_MINT_SEED,
@@ -104,13 +88,22 @@ pub struct CreateWithTimestamps<'info> {
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        init_if_needed,
+        init,
         payer = sender,
         space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
         seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
         bump
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
+
+    #[account(
+        init,
+        payer = sender,
+        associated_token::mint = asset_mint,
+        associated_token::authority = stream_data,
+        associated_token::token_program = deposit_token_program
+    )]
+    pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         init,
@@ -214,7 +207,7 @@ pub fn handler(
     // Interaction: transfer tokens from the sender's ATA to the Treasury ATA.
     transfer_tokens(
         sender_ata.to_account_info(),
-        ctx.accounts.treasury_ata.to_account_info(),
+        ctx.accounts.stream_data_ata.to_account_info(),
         sender.to_account_info(),
         asset_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
