@@ -7,7 +7,7 @@ use anchor_spl::{
 use crate::{
     state::Campaign,
     utils::{
-        constants::CAMPAIGN_SEED, events::Clawedback, transfer_helper::transfer_tokens, validations::check_clawback,
+        constants::CAMPAIGN_SEED, events::ClawedBack, transfer_helper::transfer_tokens, validations::check_clawback,
     },
 };
 
@@ -59,7 +59,7 @@ pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     )?;
 
     // Log the clawback.
-    emit!(Clawedback {
+    emit!(ClawedBack {
         amount,
         campaign: ctx.accounts.campaign.key(),
         campaign_creator: ctx.accounts.campaign_creator.key(),

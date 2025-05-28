@@ -30,7 +30,7 @@ pub struct Claimed {
 }
 
 #[event]
-pub struct Clawedback {
+pub struct ClawedBack {
     pub amount: u64,
     pub campaign: Pubkey,
     pub campaign_creator: Pubkey,
