@@ -67,7 +67,7 @@ pub struct Claim<'info> {
     #[account(
       mut,
       seeds = [TREASURY_SEED],
-      bump
+      bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
