@@ -10,7 +10,7 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
-import { UnlockAmounts, getDefaultUnlockAmounts } from "../../tests/utils";
+import { UnlockAmounts, getDefaultUnlockAmounts } from "../../tests/iaro/utils";
 
 import { SablierLockup } from "../../target/types/sablier_lockup";
 
@@ -202,7 +202,7 @@ async function createTokenAndMintToSender(): Promise<{
 }
 
 async function createWithDurations(args: CreateWithDurationssArgs): Promise<{
-  streamId: BN;
+  salt: BN;
   streamNftMint: PublicKey;
   recipientsStreamNftATA: PublicKey;
   nftTokenProgram: PublicKey;
@@ -234,12 +234,8 @@ async function createWithDurations(args: CreateWithDurationssArgs): Promise<{
       unlockAmounts.cliffUnlock,
       isCancelable
     )
-    .accountsPartial({
+    .accounts({
       sender: senderKeys.publicKey,
-      streamNftMint: getStreamNftMintAddress(
-        senderKeys.publicKey,
-        expectedStreamId
-      ),
       assetMint,
       recipient,
       nftTokenProgram: TOKEN_PROGRAM_ID,
@@ -259,7 +255,7 @@ async function createWithDurations(args: CreateWithDurationssArgs): Promise<{
   );
 
   return {
-    streamId: expectedStreamId,
+    salt: expectedStreamId,
     streamNftMint,
     recipientsStreamNftATA,
     nftTokenProgram,
@@ -273,12 +269,12 @@ function getPDAAddress(
   return anchor.web3.PublicKey.findProgramAddressSync(seeds, programId)[0];
 }
 
-function getStreamNftMintAddress(sender: PublicKey, streamId: BN): PublicKey {
+function getStreamNftMintAddress(sender: PublicKey, salt: BN): PublicKey {
   // The seeds used when creating the Stream NFT Mint
   const streamNftMintSeeds = [
     Buffer.from("stream_nft_mint"),
     sender.toBuffer(),
-    streamId.toBuffer("le", 8),
+    salt.toBuffer("le", 16),
   ];
   return getPDAAddress(streamNftMintSeeds, lockupProgramId);
 }
