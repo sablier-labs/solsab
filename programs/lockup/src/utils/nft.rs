@@ -29,7 +29,7 @@ pub fn create_stream<'info>(
     nft_token_program: &Interface<'info, TokenInterface>,
     system_program: &Program<'info, System>,
     rent: &Sysvar<'info, Rent>,
-    salt: u64,
+    salt: u128,
     nft_collection_mint_bump: u8,
 ) -> Result<()> {
     let stream_nft_name = NFT_NAME.to_owned() + salt.to_string().as_str();

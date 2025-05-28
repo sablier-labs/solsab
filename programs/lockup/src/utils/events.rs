@@ -9,7 +9,7 @@ pub struct CancelLockupStream {
 
 #[event]
 pub struct CreateLockupLinearStream {
-    pub salt: u64,
+    pub salt: u128,
     pub asset_decimals: u8,
     pub recipient: Pubkey,
 }

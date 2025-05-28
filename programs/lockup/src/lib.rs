@@ -23,7 +23,7 @@ pub mod sablier_lockup {
     #[allow(clippy::too_many_arguments)]
     pub fn create_with_durations(
         ctx: Context<CreateWithTimestamps>,
-        salt: u64,
+        salt: u128,
         deposited_amount: u64,
         cliff_duration: i64,
         total_duration: i64,
@@ -46,7 +46,7 @@ pub mod sablier_lockup {
     #[allow(clippy::too_many_arguments)]
     pub fn create_with_timestamps(
         ctx: Context<CreateWithTimestamps>,
-        salt: u64,
+        salt: u128,
         deposited_amount: u64,
         start_time: i64,
         cliff_time: i64,

@@ -652,7 +652,7 @@ function getStreamNftMintAddress(
   const streamNftMintSeeds = [
     Buffer.from(defaults.STREAM_NFT_MINT_SEED),
     signer.toBuffer(),
-    salt.toBuffer("le", 8),
+    salt.toBuffer("le", 16),
   ];
 
   return getPDAAddress(streamNftMintSeeds);

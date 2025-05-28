@@ -14,7 +14,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(salt: u64)]
+#[instruction(salt: u128)]
 pub struct CreateWithTimestamps<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
@@ -147,7 +147,7 @@ pub struct CreateWithTimestamps<'info> {
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,
-    salt: u64,
+    salt: u128,
     deposited_amount: u64,
     start_time: i64,
     cliff_time: i64,
