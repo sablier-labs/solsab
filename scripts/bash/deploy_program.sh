@@ -14,6 +14,12 @@ CLUSTER="devnet"
 PROGRAM_NAME=$(awk '/\[programs\.devnet\]/ {getline; print $1}' "./Anchor.toml") || error "Could not find program name in Anchor.toml"
 PROGRAM_KEYPAIR_PATH="target/deploy/sablier_lockup-keypair.json"
 
+# Switch to the main branch
+git switch main
+
+# Pull the latest changes from origin
+git pull
+
 # Create or replace the program keypair file
 solana-keygen new --outfile "$PROGRAM_KEYPAIR_PATH" --no-bip39-passphrase --force
 
@@ -29,8 +35,13 @@ colima start
 # Build verifiably
 anchor build -v
 
+# Delete the chore/deployment branch if it already exists, silencing the error if it doesn't
+git branch -D chore/deployment 2>/dev/null
+
+# Create the chore/deployment branch
+git switch -c chore/deployment
+
 # Commit the changes
-git checkout -b chore/deployment
 git add Anchor.toml programs/lockup/src/lib.rs
 git commit -m "chore: deployment"
 
