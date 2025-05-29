@@ -5,55 +5,108 @@ import { BN } from "@coral-xyz/anchor";
 import {
   createMint,
   getOrCreateAssociatedTokenAccount,
-  getAssociatedTokenAddressSync,
   mintTo,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-
-import { UnlockAmounts, getDefaultUnlockAmounts } from "../../tests/iaro/utils";
 
 import { SablierLockup } from "../../target/types/sablier_lockup";
 
 let anchorProvider: any;
 let senderKeys: Keypair;
-let recipientKeys: Keypair;
-let treasuryAddress: PublicKey;
-let feeCollectorDataAddress: PublicKey;
-let nftCollectionDataAddress: PublicKey;
 let lockupProgram: anchor.Program<SablierLockup>;
-let lockupProgramId: PublicKey;
-
-function configureConsoleLogs() {
-  // Suppress console logs by default
-  // Dev: comment the line below to see the logs in the console (useful when debugging)
-  // console.log = () => {};
-}
 
 describe("SablierLockup post-deployment initialization", () => {
   beforeEach(async () => {
-    configureConsoleLogs();
     await configureTestingEnvironment();
-    // await logInfoAboutImportantAccounts();
     await initializeSablierLockup();
   });
 
   it("Creates 3 cancelable SPL Token LL Streams", async () => {
-    for (let i = 0; i < 3; i++) {
-      await createAStream(new BN(i));
-    }
+    // Create a token mint and mint some tokens to the sender
+    const assetMint = await createTokenAndMintToSender();
+
+    // Create 3 unique streams
+    await createStream({
+      salt: new BN(1),
+      assetMint,
+      depositAmount: new BN(1_000e9),
+      cliffDuration: new BN(0),
+      totalDuration: new BN(3600), // 1 hour
+      unlockStartAmount: new BN(0),
+      unlockCliffAmount: new BN(0),
+      isCancelable: true,
+    });
+    await createStream({
+      salt: new BN(2),
+      assetMint,
+      depositAmount: new BN(10_000e9),
+      cliffDuration: new BN(3600), // 1 hour
+      totalDuration: new BN(3600 * 3), // 3 hours
+      unlockStartAmount: new BN(0),
+      unlockCliffAmount: new BN(2000e9),
+      isCancelable: true,
+    });
+    await createStream({
+      salt: new BN(3),
+      assetMint,
+      depositAmount: new BN(30_000e9),
+      cliffDuration: new BN(3600 * 24), // 1 day
+      totalDuration: new BN(3 * 3600 * 24), // 3 days
+      unlockStartAmount: new BN(2000e9),
+      unlockCliffAmount: new BN(10_000e9),
+      isCancelable: false,
+    });
   });
 });
 
 // HELPER FUNCTIONS AND DATA STRUCTS
 
-async function createAStream(expectedStreamId: BN) {
-  await testStreamCreation(
-    expectedStreamId,
-    true,
-    new BN(0),
-    new BN(3600),
-    getDefaultUnlockAmounts()
-  );
+interface CreateParams {
+  salt: BN;
+  assetMint: PublicKey;
+  depositAmount: BN;
+  cliffDuration: BN;
+  totalDuration: BN;
+  unlockStartAmount: BN;
+  unlockCliffAmount: BN;
+  isCancelable: boolean;
+}
+
+async function createStream(params: CreateParams) {
+  const {
+    salt,
+    assetMint,
+    depositAmount,
+    cliffDuration,
+    totalDuration,
+    unlockStartAmount,
+    unlockCliffAmount,
+    isCancelable,
+  } = params;
+
+  const increaseCULimitIx = ComputeBudgetProgram.setComputeUnitLimit({
+    units: 400000,
+  });
+
+  await lockupProgram.methods
+    .createWithDurations(
+      salt,
+      depositAmount,
+      cliffDuration,
+      totalDuration,
+      unlockStartAmount,
+      unlockCliffAmount,
+      isCancelable
+    )
+    .accounts({
+      sender: senderKeys.publicKey,
+      assetMint,
+      recipient: senderKeys.publicKey,
+      nftTokenProgram: TOKEN_PROGRAM_ID,
+      depositTokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .preInstructions([increaseCULimitIx])
+    .rpc();
 }
 
 async function configureTestingEnvironment() {
@@ -62,53 +115,8 @@ async function configureTestingEnvironment() {
   lockupProgram = anchor.workspace
     .SablierLockup as anchor.Program<SablierLockup>;
 
-  lockupProgramId = lockupProgram.programId;
-
   // Initialize the accounts involved in the tests
   senderKeys = (anchorProvider.wallet as anchor.Wallet).payer;
-  recipientKeys = anchor.web3.Keypair.generate();
-
-  // Pre-calculate the address of the Treasury
-  treasuryAddress = getPDAAddress([Buffer.from("treasury")], lockupProgramId);
-  console.log("Treasury's address: ", treasuryAddress.toBase58());
-
-  // Pre-calculate the address of the Fee Collector Data account
-  feeCollectorDataAddress = getPDAAddress(
-    [Buffer.from("fee_collector_data")],
-    lockupProgramId
-  );
-
-  // Pre-calculate the address of the NFT Collection Data
-  nftCollectionDataAddress = getPDAAddress(
-    [Buffer.from("nft_collection_data")],
-    lockupProgramId
-  );
-}
-
-async function logInfoAboutImportantAccounts() {
-  // Output the sender's public key
-  console.log(`Sender: ${senderKeys.publicKey}`);
-
-  // // Output the sender's SOL balance
-  // const sendersBalance = await getSOLBalanceOf(senderKeys.publicKey);
-  // console.log(`Sender's balance: ${sendersBalance.toString()} SOL`);
-
-  // Output the recipient's public key
-  console.log(`Recipient: ${recipientKeys.publicKey}`);
-
-  // // Output the recipient's SOL balance
-  // const recipientsBalance = await getSOLBalanceOf(recipientKeys.publicKey);
-  // console.log(`Recipient's balance: ${recipientsBalance.toString()} SOL`);
-
-  console.log(
-    "NFT Collection Data's address: ",
-    nftCollectionDataAddress.toBase58()
-  );
-
-  console.log(
-    "Fee Collector Data address: ",
-    feeCollectorDataAddress.toBase58()
-  );
 }
 
 async function initializeSablierLockup() {
@@ -122,46 +130,7 @@ async function initializeSablierLockup() {
     .rpc();
 }
 
-async function testStreamCreation(
-  expectedStreamId: BN,
-  isCancelable: boolean,
-  cliffDuration: BN,
-  totalDuration: BN,
-  unlockAmounts: UnlockAmounts
-) {
-  const { assetMint, mintedAmount: depositedAmount } =
-    await createTokenAndMintToSender();
-
-  await createWithDurations({
-    expectedStreamId,
-    senderKeys,
-    recipient: recipientKeys.publicKey,
-    assetMint,
-    cliffDuration,
-    totalDuration,
-    depositedAmount,
-    unlockAmounts,
-    isCancelable,
-  });
-}
-
-interface CreateWithDurationssArgs {
-  senderKeys: Keypair;
-  recipient: PublicKey;
-  assetMint: PublicKey;
-  expectedStreamId: BN;
-  cliffDuration: BN;
-  totalDuration: BN;
-  depositedAmount: BN;
-  unlockAmounts: UnlockAmounts;
-  isCancelable: boolean;
-}
-
-async function createTokenAndMintToSender(): Promise<{
-  assetMint: PublicKey;
-  senderATA: PublicKey;
-  mintedAmount: BN;
-}> {
+async function createTokenAndMintToSender(): Promise<PublicKey> {
   const TOKEN_DECIMALS = 9;
   const freezeAuthority = null;
 
@@ -173,7 +142,6 @@ async function createTokenAndMintToSender(): Promise<{
     TOKEN_DECIMALS,
     Keypair.generate()
   );
-  console.log(`Created Token Mint: ${assetMint}`);
 
   const senderATA = await getOrCreateAssociatedTokenAccount(
     anchorProvider.connection,
@@ -181,9 +149,8 @@ async function createTokenAndMintToSender(): Promise<{
     assetMint,
     senderKeys.publicKey
   );
-  console.log(`Sender's ATA: ${senderATA}`);
 
-  const mintedAmount = new BN(2000);
+  const mintedAmount = new BN(100_000e9); // sufficient amount
   await mintTo(
     anchorProvider.connection,
     senderKeys,
@@ -192,97 +159,6 @@ async function createTokenAndMintToSender(): Promise<{
     senderKeys,
     Number(mintedAmount)
   );
-  console.log(`Minted ${mintedAmount} tokens to the Sender ATA`);
 
-  return {
-    assetMint: assetMint,
-    senderATA: senderATA.address,
-    mintedAmount,
-  };
-}
-
-async function createWithDurations(args: CreateWithDurationssArgs): Promise<{
-  salt: BN;
-  streamNftMint: PublicKey;
-  recipientsStreamNftATA: PublicKey;
-  nftTokenProgram: PublicKey;
-}> {
-  const {
-    senderKeys,
-    expectedStreamId,
-    cliffDuration,
-    totalDuration,
-    unlockAmounts,
-    depositedAmount,
-    isCancelable,
-    assetMint,
-    recipient,
-  } = args;
-
-  const increaseCULimitIx = ComputeBudgetProgram.setComputeUnitLimit({
-    units: 400000, // specify the additional compute units you need
-  });
-
-  const nftTokenProgram = TOKEN_PROGRAM_ID;
-  await lockupProgram.methods
-    .createWithDurations(
-      expectedStreamId,
-      depositedAmount,
-      cliffDuration,
-      totalDuration,
-      unlockAmounts.startUnlock,
-      unlockAmounts.cliffUnlock,
-      isCancelable
-    )
-    .accounts({
-      sender: senderKeys.publicKey,
-      assetMint,
-      recipient,
-      nftTokenProgram: TOKEN_PROGRAM_ID,
-      depositTokenProgram: TOKEN_PROGRAM_ID,
-    })
-    .preInstructions([increaseCULimitIx])
-    .rpc();
-
-  const streamNftMint = getStreamNftMintAddress(
-    senderKeys.publicKey,
-    expectedStreamId
-  );
-  const recipientsStreamNftATA = deriveATAAddress(
-    streamNftMint,
-    recipientKeys.publicKey,
-    nftTokenProgram
-  );
-
-  return {
-    salt: expectedStreamId,
-    streamNftMint,
-    recipientsStreamNftATA,
-    nftTokenProgram,
-  };
-}
-
-function getPDAAddress(
-  seeds: Array<Buffer | Uint8Array>,
-  programId: PublicKey
-): PublicKey {
-  return anchor.web3.PublicKey.findProgramAddressSync(seeds, programId)[0];
-}
-
-function getStreamNftMintAddress(sender: PublicKey, salt: BN): PublicKey {
-  // The seeds used when creating the Stream NFT Mint
-  const streamNftMintSeeds = [
-    Buffer.from("stream_nft_mint"),
-    sender.toBuffer(),
-    salt.toBuffer("le", 16),
-  ];
-  return getPDAAddress(streamNftMintSeeds, lockupProgramId);
-}
-
-export function deriveATAAddress(
-  mint: anchor.web3.PublicKey,
-  owner: anchor.web3.PublicKey,
-  programId: anchor.web3.PublicKey
-): anchor.web3.PublicKey {
-  return getAssociatedTokenAddressSync(mint, owner, true, programId);
+  return assetMint;
 }
