@@ -21,7 +21,7 @@ describe("SablierLockup post-deployment initialization", () => {
     await initializeSablierLockup();
   });
 
-  it("Creates 3 cancelable SPL Token LL Streams", async () => {
+  it("Creates 3 different SPL Token LL Streams", async () => {
     // Create a token mint and mint some tokens to the sender
     const assetMint = await createTokenAndMintToSender();
 
