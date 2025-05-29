@@ -6,7 +6,7 @@ pub mod utils;
 
 use crate::instructions::*;
 
-declare_id!("D3r1tE8k6Ea7GpSP9gQba12VWMzq9xkyNcgfZcCh9U2z"); // Localnet & Devnet Program ID
+declare_id!("CNFdq5oX8AY3LtMnKsnE7HuBLRNUEgFyxZZKWu6ivMXX"); // Localnet & Devnet Program ID
 
 #[program]
 pub mod sablier_lockup {
