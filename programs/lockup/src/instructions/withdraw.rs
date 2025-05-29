@@ -118,7 +118,12 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     )?;
 
     // Log the withdrawal.
-    emit!(WithdrawFromLockupStream { withdrawn_amount: amount });
+    emit!(WithdrawFromLockupStream {
+        asset_mint: ctx.accounts.asset_mint.key(),
+        stream_data: ctx.accounts.stream_data.key(),
+        stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
+        withdrawn_amount: amount
+    });
 
     Ok(())
 }

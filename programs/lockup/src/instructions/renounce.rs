@@ -39,7 +39,11 @@ pub fn handler(ctx: Context<Renounce>) -> Result<()> {
     ctx.accounts.stream_data.renounce()?;
 
     // Log the renouncement.
-    emit!(RenounceLockupStream {});
+    emit!(RenounceLockupStream {
+        asset_mint: ctx.accounts.stream_data.asset_mint,
+        stream_data: ctx.accounts.stream_data.key(),
+        stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
+    });
 
     Ok(())
 }

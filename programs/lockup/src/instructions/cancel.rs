@@ -91,7 +91,13 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     )?;
 
     // Log the cancellation.
-    emit!(CancelLockupStream { asset_mint: ctx.accounts.asset_mint.key(), sender_amount, recipient_amount });
+    emit!(CancelLockupStream {
+        asset_mint: ctx.accounts.asset_mint.key(),
+        recipient_amount,
+        sender_amount,
+        stream_data: ctx.accounts.stream_data.key(),
+        stream_nft_mint: ctx.accounts.stream_nft_mint.key()
+    });
 
     Ok(())
 }

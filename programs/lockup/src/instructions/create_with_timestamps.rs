@@ -216,7 +216,10 @@ pub fn handler(
     emit!(CreateLockupLinearStream {
         salt,
         asset_decimals: asset_mint.decimals,
-        recipient: ctx.accounts.recipient.key()
+        asset_mint: ctx.accounts.asset_mint.key(),
+        recipient: ctx.accounts.recipient.key(),
+        stream_data: ctx.accounts.stream_data.key(),
+        stream_nft_mint: ctx.accounts.stream_nft_mint.key()
     });
 
     Ok(())
