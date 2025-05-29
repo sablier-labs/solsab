@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{state::treasury::Treasury, utils::constants::*};
+use crate::{state::Treasury, utils::constants::*};
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
@@ -16,15 +16,11 @@ pub struct Initialize<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
-    #[account()]
-    /// CHECK: This account is used to collect fees from the treasury. May be any account.
-    pub fee_collector: UncheckedAccount<'info>,
-
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<Initialize>) -> Result<()> {
-    ctx.accounts.treasury.initialize(ctx.bumps.treasury, ctx.accounts.fee_collector.key())?;
+pub fn handler(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
+    ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector)?;
 
     Ok(())
 }

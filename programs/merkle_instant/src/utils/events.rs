@@ -1,43 +1,44 @@
 use anchor_lang::prelude::*;
 
 #[event]
-pub struct AirdropClaimed {
-    pub campaign: Pubkey,
-    pub claimer: Pubkey,
-    pub recipient: Pubkey,
-    pub leaf_id: u32,
-    pub amount: u64,
-    pub proof: Vec<[u8; 32]>,
-}
-
-#[event]
 pub struct CampaignCreated {
+    pub aggregate_amount: u64,
     pub campaign: Pubkey,
-    pub creator: Pubkey,
     pub campaign_name: String,
-    pub recipient_count: u32,
+    pub creator: Pubkey,
+    pub expiration_time: i64,
     pub ipfs_id: String,
     pub merkle_root: [u8; 32],
-    pub expiration_time: i64,
+    pub recipient_count: u32,
 }
 
 #[event]
 pub struct CampaignFunded {
+    pub amount: u64,
     pub campaign: Pubkey,
     pub funder: Pubkey,
-    pub amount: u64,
 }
 
 #[event]
-pub struct FundsClawedBack {
+pub struct Claimed {
+    pub amount: u64,
     pub campaign: Pubkey,
-    pub clawback_amount: u64,
-    pub tx_signer: Pubkey,
+    pub claimer: Pubkey,
+    pub claim_receipt: Pubkey,
+    pub index: u32,
+    pub recipient: Pubkey,
+}
+
+#[event]
+pub struct ClawedBack {
+    pub amount: u64,
+    pub campaign: Pubkey,
+    pub campaign_creator: Pubkey,
 }
 
 #[event]
 pub struct FeesCollected {
+    pub fee_amount: u64,
     pub fee_collector: Pubkey,
     pub fee_recipient: Pubkey,
-    pub fee_amount: u64,
 }

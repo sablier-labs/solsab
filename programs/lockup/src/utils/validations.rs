@@ -40,7 +40,7 @@ pub fn check_collect_fees(collectable_amount: u64) -> Result<()> {
 
 // Validate the parameters for creating a Stream
 pub fn check_create(
-    deposited_amount: u64,
+    deposit_amount: u64,
     start_time: i64,
     cliff_time: i64,
     end_time: i64,
@@ -48,7 +48,7 @@ pub fn check_create(
     cliff_unlock: u64,
 ) -> Result<()> {
     // Check: the deposit amount is not zero.
-    if deposited_amount == 0 {
+    if deposit_amount == 0 {
         return Err(ErrorCode::DepositAmountZero.into());
     }
 
@@ -80,7 +80,7 @@ pub fn check_create(
     }
 
     // Check: the sum of the start and cliff unlock amounts is not greater than the deposit amount.
-    if start_unlock + cliff_unlock > deposited_amount {
+    if start_unlock + cliff_unlock > deposit_amount {
         return Err(ErrorCode::UnlockAmountsSumTooHigh.into());
     }
 

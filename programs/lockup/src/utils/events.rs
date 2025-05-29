@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 #[event]
 pub struct CancelLockupStream {
-    pub deposit_token_mint: Pubkey,
+    pub deposited_token_mint: Pubkey,
     pub recipient_amount: u64,
     pub sender_amount: u64,
     pub stream_data: Pubkey,

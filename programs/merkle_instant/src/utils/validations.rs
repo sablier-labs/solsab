@@ -3,14 +3,20 @@ use anchor_lang::{prelude::*, solana_program::keccak::hashv as keccak_hashv};
 use crate::utils::errors::ErrorCode;
 
 pub fn check_claim(
+    expiration_time: i64,
     merkle_root: [u8; 32],
+    index: u32,
     recipient: Pubkey,
-    leaf_id: u32,
     amount: u64,
-    proof: &[[u8; 32]],
+    merkle_proof: &[[u8; 32]],
 ) -> Result<()> {
+    // Check: the campaign has not expired.
+    if has_expired(expiration_time)? {
+        return Err(ErrorCode::CampaignExpired.into());
+    }
+
     // Form the leaf
-    let leaf = [&leaf_id.to_le_bytes(), recipient.to_bytes().as_ref(), &amount.to_le_bytes()].concat();
+    let leaf = [&index.to_le_bytes(), recipient.to_bytes().as_ref(), &amount.to_le_bytes()].concat();
 
     // Compute the hash of the leaf
     let mut leaf_hash = keccak_hashv(&[&leaf]).0;
@@ -18,48 +24,32 @@ pub fn check_claim(
     // Hash one more time to protect against the second pre-image attacks
     leaf_hash = keccak_hashv(&[&leaf_hash]).0;
 
-    // Compute the root hash from the leaf hash and the proof
+    // Compute the root hash from the leaf hash and the merkle proof
     // Dev: the below algorithm has been inspired by
     // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/cryptography/MerkleProof.sol
-    let mut computed_root = leaf_hash;
-    for proof_element in proof.iter() {
-        if computed_root <= *proof_element {
-            // Hash(current computed hash + current element of the proof)
-            computed_root = keccak_hashv(&[&computed_root, proof_element]).0;
+    let mut computed_hash = leaf_hash;
+    for proof_element in merkle_proof.iter() {
+        if computed_hash <= *proof_element {
+            // Hash(current computed hash + current element of the merkle proof)
+            computed_hash = keccak_hashv(&[&computed_hash, proof_element]).0;
         } else {
-            // Hash(current element of the proof + current computed hash)
-            computed_root = keccak_hashv(&[proof_element, &computed_root]).0;
+            // Hash(current element of the merkle_proof + current computed hash)
+            computed_hash = keccak_hashv(&[proof_element, &computed_hash]).0;
         }
     }
     // Check if the computed hash (root) is equal to the provided root
-    if computed_root != merkle_root {
+    if computed_hash != merkle_root {
         return Err(ErrorCode::InvalidMerkleProof.into());
     }
 
     Ok(())
 }
 
-pub fn check_create_campaign(expiration_time: i64) -> Result<()> {
-    // Check: the expiration date is strictly in the future.
-    if expiration_time <= Clock::get()?.unix_timestamp {
-        return Err(ErrorCode::ExpirationTimeNotInTheFuture.into());
+pub fn check_clawback(expiration_time: i64, first_claim_time: i64) -> Result<()> {
+    // Check: the grace period has passed and the campaign has not expired.
+    if has_grace_period_passed(first_claim_time)? && !has_expired(expiration_time)? {
+        return Err(ErrorCode::ClawbackNotAllowed.into());
     }
-
-    Ok(())
-}
-
-pub fn check_clawback(clawback_amount: u64, campaign_ata_amount: u64, _expiration_time: i64) -> Result<()> {
-    // Check: the clawback amount is not zero.
-    if clawback_amount == 0 {
-        return Err(ErrorCode::CantClawbackZeroAmount.into());
-    }
-
-    // Check: the clawback amount is less than or equal to the campaign ATA amount.
-    if clawback_amount > campaign_ata_amount {
-        return Err(ErrorCode::CantClawbackMoreThanRemaining.into());
-    }
-
-    // TODO: assert that the clawback is valid wrt the grace period and the expiration time
 
     Ok(())
 }
@@ -71,4 +61,17 @@ pub fn check_collect_fees(collectable_amount: u64) -> Result<()> {
     }
 
     Ok(())
+}
+
+pub fn has_expired(expiration_time: i64) -> Result<bool> {
+    let current_time = Clock::get()?.unix_timestamp;
+
+    Ok(expiration_time > 0 && expiration_time <= current_time)
+}
+
+pub fn has_grace_period_passed(first_claim_time: i64) -> Result<bool> {
+    let current_time = Clock::get()?.unix_timestamp;
+    let grace_period = 7 * 24 * 60 * 60; // 7 days in seconds
+
+    Ok(first_claim_time > 0 && current_time > first_claim_time + grace_period)
 }

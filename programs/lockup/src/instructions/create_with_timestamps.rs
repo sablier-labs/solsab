@@ -49,9 +49,11 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
       mut,
-      seeds = [METADATA_SEED,
-                token_metadata_program.key().as_ref(),
-                nft_collection_mint.key().as_ref()],
+      seeds = [
+        METADATA_SEED,
+        token_metadata_program.key().as_ref(),
+        nft_collection_mint.key().as_ref(),
+      ],
       seeds::program = token_metadata_program.key(),
       bump,
     )]
@@ -60,10 +62,12 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
       mut,
-      seeds = [METADATA_SEED,
-                token_metadata_program.key().as_ref(),
-                nft_collection_mint.key().as_ref(),
-                EDITION_SEED],
+      seeds = [
+        METADATA_SEED,
+        token_metadata_program.key().as_ref(),
+        nft_collection_mint.key().as_ref(),
+        EDITION_SEED,
+      ],
       seeds::program = token_metadata_program.key(),
       bump,
     )]
@@ -115,9 +119,11 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
       mut,
-      seeds = [METADATA_SEED,
-                token_metadata_program.key().as_ref(),
-                stream_nft_mint.key().as_ref()],
+      seeds = [
+        METADATA_SEED,
+        token_metadata_program.key().as_ref(),
+        stream_nft_mint.key().as_ref()
+      ],
       seeds::program = token_metadata_program.key(),
       bump,
     )]
@@ -126,10 +132,11 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
       mut,
-      seeds = [METADATA_SEED,
-                token_metadata_program.key().as_ref(),
-                stream_nft_mint.key().as_ref(),
-                EDITION_SEED],
+      seeds = [
+        METADATA_SEED,
+        token_metadata_program.key().as_ref(),
+        stream_nft_mint.key().as_ref(), EDITION_SEED
+      ],
       seeds::program = token_metadata_program.key(),
       bump,
     )]
@@ -148,7 +155,7 @@ pub struct CreateWithTimestamps<'info> {
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,
     salt: u128,
-    deposited_amount: u64,
+    deposit_amount: u64,
     start_time: i64,
     cliff_time: i64,
     end_time: i64,
@@ -161,7 +168,7 @@ pub fn handler(
     let sender_ata = &ctx.accounts.sender_ata;
 
     // Validate parameters
-    check_create(deposited_amount, start_time, cliff_time, end_time, start_unlock, cliff_unlock)?;
+    check_create(deposit_amount, start_time, cliff_time, end_time, start_unlock, cliff_unlock)?;
 
     // Effect: create the stream data.
     ctx.accounts.stream_data.create(
@@ -169,7 +176,7 @@ pub fn handler(
         ctx.bumps.stream_data,
         cliff_time,
         cliff_unlock,
-        deposited_amount,
+        deposit_amount,
         end_time,
         salt,
         is_cancelable,
@@ -206,7 +213,7 @@ pub fn handler(
         sender.to_account_info(),
         deposit_token_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
-        deposited_amount,
+        deposit_amount,
         deposit_token_mint.decimals,
         &[],
     )?;

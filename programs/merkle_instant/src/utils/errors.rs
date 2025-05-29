@@ -8,12 +8,14 @@ pub enum ErrorCode {
     ExpirationTimeNotInTheFuture,
 
     // Claim
+    #[msg("Campaign has expired!")]
+    CampaignExpired,
     #[msg("Invalid Merkle proof!")]
     InvalidMerkleProof,
 
     // Clawback
-    #[msg("Can't clawback zero amount!")]
-    CantClawbackZeroAmount,
+    #[msg("Clawback not allowed past the grace period and before campaign expiration!")]
+    ClawbackNotAllowed,
     #[msg("Can't clawback more than remaining!")]
     CantClawbackMoreThanRemaining,
 

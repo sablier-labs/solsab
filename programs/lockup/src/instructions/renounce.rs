@@ -21,7 +21,10 @@ pub struct Renounce<'info> {
 
     #[account(
       mut,
-      seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
+      seeds = [
+        STREAM_DATA_SEED,
+        stream_nft_mint.key().as_ref()
+      ],
       bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,

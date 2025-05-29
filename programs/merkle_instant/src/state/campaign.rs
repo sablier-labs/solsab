@@ -7,13 +7,9 @@ use crate::utils::constants::*;
 pub struct Campaign {
     pub airdrop_token_mint: Pubkey,
     pub bump: u8,
-    // TODO: what's the appropriate max length?
-    // TODO: does this negatively affect the size of the account if the actual number of recipients is low? Write a
-    // test to check this.
-    #[max_len(CLAIM_STATUS_SIZE as usize)] // u32::MAX
-    pub claim_status: Vec<bool>,
     pub creator: Pubkey,
     pub expiration_time: i64,
+    pub first_claim_time: i64,
     #[max_len(CAMPAIGN_IPFS_ID_SIZE as usize)]
     pub ipfs_id: String,
     pub merkle_root: [u8; 32],
@@ -22,26 +18,34 @@ pub struct Campaign {
 }
 
 impl Campaign {
+    pub fn claim(&mut self) -> Result<()> {
+        // Update the first claim time to the current time.
+        if self.first_claim_time == 0 {
+            self.first_claim_time = Clock::get()?.unix_timestamp;
+        }
+
+        Ok(())
+    }
+
     // State update for the `create_campaign` instruction.
+    #[allow(clippy::too_many_arguments)]
     pub fn create(
         &mut self,
-        bump: u8,
-        name: String,
         airdrop_token_mint: Pubkey,
+        bump: u8,
+        creator: Pubkey,
+        expiration_time: i64,
         ipfs_id: String,
         merkle_root: [u8; 32],
-        expiration_time: i64,
-        creator: Pubkey,
-        recipient_count: u32,
+        name: String,
     ) -> Result<()> {
-        self.bump = bump;
-        self.name = name;
         self.airdrop_token_mint = airdrop_token_mint;
+        self.bump = bump;
+        self.creator = creator;
+        self.expiration_time = expiration_time;
         self.ipfs_id = ipfs_id;
         self.merkle_root = merkle_root;
-        self.expiration_time = expiration_time;
-        self.creator = creator;
-        self.claim_status = vec![false; recipient_count as usize];
+        self.name = name;
 
         Ok(())
     }

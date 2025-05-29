@@ -62,9 +62,11 @@ pub struct Initialize<'info> {
 
     #[account(
       mut,
-      seeds = [METADATA_SEED,
-                token_metadata_program.key().as_ref(),
-                nft_collection_mint.key().as_ref()],
+      seeds = [
+        METADATA_SEED,
+        token_metadata_program.key().as_ref(),
+        nft_collection_mint.key().as_ref()
+      ],
       bump,
       seeds::program = token_metadata_program.key(), // TODO: why is this necessary if the program key is already added to the seeds?
     )]
@@ -73,10 +75,12 @@ pub struct Initialize<'info> {
 
     #[account(
       mut,
-      seeds = [METADATA_SEED,
-                token_metadata_program.key().as_ref(),
-                nft_collection_mint.key().as_ref(),
-                EDITION_SEED],
+      seeds = [
+        METADATA_SEED,
+        token_metadata_program.key().as_ref(),
+        nft_collection_mint.key().as_ref(),
+        EDITION_SEED
+      ],
       seeds::program = token_metadata_program.key(),
       bump,
     )]

@@ -1,14 +1,14 @@
 use anchor_lang::prelude::*;
 
-use crate::{state::campaign::*, utils::constants::*};
+use crate::state::Campaign;
 
 // Common context that is used by multiple view instructions
 #[derive(Accounts)]
-#[instruction(merkle_root: [u8; 32])]
 pub struct CampaignView<'info> {
-    #[account(
-      seeds = [CAMPAIGN_SEED, &merkle_root],
-      bump = campaign.bump,
-    )]
+    #[account()]
     pub campaign: Box<Account<'info, Campaign>>,
+}
+
+pub fn handler(ctx: Context<CampaignView>) -> Result<Campaign> {
+    Ok(ctx.accounts.campaign.clone().into_inner())
 }

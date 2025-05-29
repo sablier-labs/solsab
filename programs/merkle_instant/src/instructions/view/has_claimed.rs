@@ -1,18 +1,23 @@
 use anchor_lang::prelude::*;
 
-use crate::{state::campaign::*, utils::constants::*};
+use crate::{
+    state::{Campaign, ClaimReceipt},
+    utils::constants::*,
+};
 
 #[derive(Accounts)]
-#[instruction(merkle_root: [u8; 32])]
+#[instruction(_index: u32)]
 pub struct HasClaimed<'info> {
-    #[account(
-      seeds = [CAMPAIGN_SEED, &merkle_root],
-      bump = campaign.bump,
-    )]
+    #[account()]
     pub campaign: Box<Account<'info, Campaign>>,
-}
 
-pub fn handler(ctx: Context<HasClaimed>, _merkle_root: [u8; 32], leaf_id: u32) -> Result<bool> {
-    // TODO: What if the leaf_id is out of bounds?
-    Ok(ctx.accounts.campaign.claim_status[leaf_id as usize])
+    #[account(
+        seeds = [
+            CLAIM_RECEIPT_SEED,
+            campaign.key().as_ref(),
+            _index.to_le_bytes().as_ref(),
+        ],
+        bump = claim_receipt.bump
+    )]
+    pub claim_receipt: Option<Account<'info, ClaimReceipt>>,
 }
