@@ -77,43 +77,51 @@ pub struct Claim<'info> {
 }
 
 pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[u8; 32]>) -> Result<()> {
+    let campaign = ctx.accounts.campaign.clone();
+    let airdrop_token_mint = ctx.accounts.airdrop_token_mint.clone();
+    let claimer = ctx.accounts.claimer.clone();
+    let recipient = ctx.accounts.recipient.clone();
+    let treasury = ctx.accounts.treasury.clone();
+
     // Check: validate the claim.
-    check_claim(
-        ctx.accounts.campaign.expiration_time,
-        ctx.accounts.campaign.merkle_root,
-        index,
-        ctx.accounts.recipient.key(),
-        amount,
-        &merkle_proof,
-    )?;
+    check_claim(campaign.expiration_time, campaign.merkle_root, index, recipient.key(), amount, &merkle_proof)?;
 
     ctx.accounts.campaign.claim()?;
     ctx.accounts.claim_status.bump = ctx.bumps.claim_status;
 
     // Interaction: transfer the fee from the claimer to the treasury.
-    let fee_collection_ix = transfer(&ctx.accounts.claimer.key(), &ctx.accounts.treasury.key(), CLAIM_FEE);
-    invoke(&fee_collection_ix, &[ctx.accounts.claimer.to_account_info(), ctx.accounts.treasury.to_account_info()])?;
+    let fee_collection_ix = transfer(&claimer.key(), &treasury.key(), CLAIM_FEE);
+    invoke(&fee_collection_ix, &[claimer.to_account_info(), treasury.to_account_info()])?;
 
     // Interaction: transfer tokens from the Campaign's ATA to the Recipient's ATA.
     transfer_tokens(
         ctx.accounts.campaign_ata.to_account_info(),
         ctx.accounts.recipient_ata.to_account_info(),
-        ctx.accounts.campaign.to_account_info(),
-        ctx.accounts.airdrop_token_mint.to_account_info(),
+        campaign.to_account_info(),
+        airdrop_token_mint.to_account_info(),
         ctx.accounts.airdrop_token_program.to_account_info(),
         amount,
-        ctx.accounts.airdrop_token_mint.decimals,
-        &[&[CAMPAIGN_SEED, &[ctx.accounts.campaign.bump]]],
+        airdrop_token_mint.decimals,
+        &[&[
+            CAMPAIGN_SEED,
+            campaign.creator.key().as_ref(),
+            campaign.merkle_root.as_ref(),
+            campaign.expiration_time.to_le_bytes().as_ref(),
+            campaign.ipfs_id.as_ref(),
+            campaign.name.as_ref(),
+            airdrop_token_mint.key().as_ref(),
+            &[campaign.bump],
+        ]],
     )?;
 
     // Log the claim.
     emit!(Claimed {
         amount,
-        campaign: ctx.accounts.campaign.key(),
-        claimer: ctx.accounts.claimer.key(),
+        campaign: campaign.key(),
+        claimer: claimer.key(),
         claim_status: ctx.accounts.claim_status.key(),
         index,
-        recipient: ctx.accounts.recipient.key(),
+        recipient: recipient.key(),
     });
 
     Ok(())

@@ -43,27 +43,35 @@ pub struct Clawback<'info> {
 }
 
 pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
+    let campaign = ctx.accounts.campaign.clone();
+    let airdrop_token_mint = ctx.accounts.airdrop_token_mint.clone();
+
     // Check: validate the clawback.
-    check_clawback(ctx.accounts.campaign.expiration_time, ctx.accounts.campaign.first_claim_time)?;
+    check_clawback(campaign.expiration_time, campaign.first_claim_time)?;
 
     // Interaction: transfer tokens from the Campaign's ATA to the campaign creator's ATA.
     transfer_tokens(
         ctx.accounts.campaign_ata.to_account_info(),
         ctx.accounts.campaign_creator_ata.to_account_info(),
-        ctx.accounts.campaign.to_account_info(),
-        ctx.accounts.airdrop_token_mint.to_account_info(),
+        campaign.to_account_info(),
+        airdrop_token_mint.to_account_info(),
         ctx.accounts.airdrop_token_program.to_account_info(),
         amount,
-        ctx.accounts.airdrop_token_mint.decimals,
-        &[&[CAMPAIGN_SEED, &[ctx.accounts.campaign.bump]]],
+        airdrop_token_mint.decimals,
+        &[&[
+            CAMPAIGN_SEED,
+            campaign.creator.key().as_ref(),
+            campaign.merkle_root.as_ref(),
+            campaign.expiration_time.to_le_bytes().as_ref(),
+            campaign.ipfs_id.as_ref(),
+            campaign.name.as_ref(),
+            airdrop_token_mint.key().as_ref(),
+            &[campaign.bump],
+        ]],
     )?;
 
     // Log the clawback.
-    emit!(ClawedBack {
-        amount,
-        campaign: ctx.accounts.campaign.key(),
-        campaign_creator: ctx.accounts.campaign_creator.key(),
-    });
+    emit!(ClawedBack { amount, campaign: campaign.key(), campaign_creator: ctx.accounts.campaign_creator.key() });
 
     Ok(())
 }
