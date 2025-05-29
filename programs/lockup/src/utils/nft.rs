@@ -29,10 +29,9 @@ pub fn create_stream<'info>(
     nft_token_program: &Interface<'info, TokenInterface>,
     system_program: &Program<'info, System>,
     rent: &Sysvar<'info, Rent>,
-    salt: u128,
     nft_collection_mint_bump: u8,
 ) -> Result<()> {
-    let stream_nft_name = NFT_NAME.to_owned() + salt.to_string().as_str();
+    let stream_nft_name = NFT_NAME.to_owned();
     let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[NFT_COLLECTION_MINT_SEED, &[nft_collection_mint_bump]]];
 
     // Mint Stream NFT Token

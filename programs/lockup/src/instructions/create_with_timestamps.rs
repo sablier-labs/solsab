@@ -192,7 +192,6 @@ pub fn handler(
         &ctx.accounts.nft_token_program,
         &ctx.accounts.system_program,
         &ctx.accounts.rent,
-        salt,
         ctx.bumps.nft_collection_mint,
     )?;
 
