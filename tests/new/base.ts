@@ -449,7 +449,6 @@ export async function withdraw({
   depositTokenProgram = token.TOKEN_PROGRAM_ID,
 } = {}): Promise<any> {
   const streamNftMint = getStreamNftMintAddress(salt);
-  // const streamData = getStreamDataAddress(salt);
   const withdrawIx = await lockupProgram.methods
     .withdraw(withdrawAmount)
     .accounts({
@@ -487,7 +486,6 @@ export async function withdrawMax({
 } = {}): Promise<any> {
   const streamNftMint = getStreamNftMintAddress(salt);
 
-  // const streamData = getStreamDataAddress(salt);
   const withdrawMaxIx = await lockupProgram.methods
     .withdrawMax()
     .accounts({
@@ -495,7 +493,6 @@ export async function withdrawMax({
       assetMint,
       streamRecipient: recipient.keys.publicKey,
       streamNftMint,
-      /* streamData, */
       withdrawalRecipient,
       depositTokenProgram,
       nftTokenProgram: token.TOKEN_PROGRAM_ID,
