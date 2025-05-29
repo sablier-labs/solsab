@@ -4,5 +4,5 @@ pub const CAMPAIGN_IPFS_ID_SIZE: usize = 32;
 
 // Account Seeds
 pub const CAMPAIGN_SEED: &[u8] = b"campaign";
-pub const CLAIM_STATUS_SEED: &[u8] = b"claim_status";
+pub const CLAIM_RECEIPT_SEED: &[u8] = b"claim_receipt";
 pub const TREASURY_SEED: &[u8] = b"treasury";

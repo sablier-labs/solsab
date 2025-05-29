@@ -1,7 +1,7 @@
 pub mod campaign;
-pub mod claim_status;
+pub mod claim_receipt;
 pub mod treasury;
 
 pub use campaign::*;
-pub use claim_status::*;
+pub use claim_receipt::*;
 pub use treasury::*;

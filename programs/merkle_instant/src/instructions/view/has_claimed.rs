@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    state::{Campaign, ClaimStatus},
+    state::{Campaign, ClaimReceipt},
     utils::constants::*,
 };
 
@@ -13,11 +13,11 @@ pub struct HasClaimed<'info> {
 
     #[account(
         seeds = [
-            CLAIM_STATUS_SEED,
+            CLAIM_RECEIPT_SEED,
             campaign.key().as_ref(),
             _index.to_le_bytes().as_ref(),
         ],
-        bump = claim_status.bump
+        bump = claim_receipt.bump
     )]
-    pub claim_status: Option<Account<'info, ClaimStatus>>,
+    pub claim_receipt: Option<Account<'info, ClaimReceipt>>,
 }

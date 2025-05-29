@@ -8,9 +8,9 @@ use anchor_spl::{
 };
 
 use crate::{
-    state::{Campaign, ClaimStatus, Treasury},
+    state::{Campaign, ClaimReceipt, Treasury},
     utils::{
-        constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED, CLAIM_STATUS_SEED, TREASURY_SEED},
+        constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED, CLAIM_RECEIPT_SEED, TREASURY_SEED},
         events::Claimed,
         transfer_helper::transfer_tokens,
         validations::check_claim,
@@ -34,15 +34,15 @@ pub struct Claim<'info> {
     #[account(
       init,
       payer = claimer,
-      space = ANCHOR_DISCRIMINATOR_SIZE + ClaimStatus::INIT_SPACE,
+      space = ANCHOR_DISCRIMINATOR_SIZE + ClaimReceipt::INIT_SPACE,
       seeds = [
-        CLAIM_STATUS_SEED,
+        CLAIM_RECEIPT_SEED,
         campaign.key().as_ref(),
         index.to_le_bytes().as_ref(),
       ],
       bump
     )]
-    pub claim_status: Box<Account<'info, ClaimStatus>>,
+    pub claim_receipt: Box<Account<'info, ClaimReceipt>>,
 
     #[account(
       mut,
@@ -87,7 +87,7 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
     check_claim(campaign.expiration_time, campaign.merkle_root, index, recipient.key(), amount, &merkle_proof)?;
 
     ctx.accounts.campaign.claim()?;
-    ctx.accounts.claim_status.bump = ctx.bumps.claim_status;
+    ctx.accounts.claim_receipt.bump = ctx.bumps.claim_receipt;
 
     // Interaction: transfer the fee from the claimer to the treasury.
     let fee_collection_ix = transfer(&claimer.key(), &treasury.key(), CLAIM_FEE);
@@ -119,7 +119,7 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
         amount,
         campaign: campaign.key(),
         claimer: claimer.key(),
-        claim_status: ctx.accounts.claim_status.key(),
+        claim_receipt: ctx.accounts.claim_receipt.key(),
         index,
         recipient: recipient.key(),
     });

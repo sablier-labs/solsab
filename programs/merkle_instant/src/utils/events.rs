@@ -24,7 +24,7 @@ pub struct Claimed {
     pub amount: u64,
     pub campaign: Pubkey,
     pub claimer: Pubkey,
-    pub claim_status: Pubkey,
+    pub claim_receipt: Pubkey,
     pub index: u32,
     pub recipient: Pubkey,
 }

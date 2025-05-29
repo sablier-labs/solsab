@@ -49,7 +49,7 @@ pub mod sablier_merkle_instant {
     }
 
     pub fn has_claimed(ctx: Context<HasClaimed>, _index: u32) -> Result<bool> {
-        Ok(ctx.accounts.claim_status.is_some())
+        Ok(ctx.accounts.claim_receipt.is_some())
     }
 
     pub fn has_expired(ctx: Context<CampaignView>) -> Result<bool> {
