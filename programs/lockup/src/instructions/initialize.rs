@@ -26,10 +26,6 @@ pub struct Initialize<'info> {
     // TODO: merge the treasury with nft_collection_data?
     pub treasury: Box<Account<'info, Treasury>>,
 
-    #[account()]
-    /// CHECK: This account is used to collect fees from the treasury. May be any account.
-    pub fee_collector: UncheckedAccount<'info>,
-
     #[account(
       init,
       payer = initializer,
@@ -94,8 +90,8 @@ pub struct Initialize<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handler(ctx: Context<Initialize>) -> Result<()> {
-    ctx.accounts.treasury.initialize(ctx.bumps.treasury, ctx.accounts.fee_collector.key())?;
+pub fn handler(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
+    ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector)?;
     ctx.accounts.nft_collection_data.initialize(ctx.bumps.nft_collection_data)?;
 
     nft::initialize_collection(
