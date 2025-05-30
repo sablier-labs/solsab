@@ -33,7 +33,7 @@
   },
   "scripts": {
     "b": "bun run build",
-    "b:ll": "RUSTUP_TOOLCHAIN=nightly anchor build -p sablier_lockup",
+    "b:lk": "RUSTUP_TOOLCHAIN=nightly anchor build -p sablier_lockup",
     "b:mi": "RUSTUP_TOOLCHAIN=nightly anchor build -p sablier_merkle_instant",
     "build": "RUSTUP_TOOLCHAIN=nightly anchor build",
     "clean": "rm -rf .anchor target",
