@@ -285,17 +285,17 @@ async function buildSignAndProcessTx(
 export async function cancel({
   salt = salts.default,
   signer = sender.keys,
-  assetMint = usdc,
-  depositTokenProgram = token.TOKEN_PROGRAM_ID,
+  depositedTokenMint = usdc,
+  depositedTokenProgram = token.TOKEN_PROGRAM_ID,
 } = {}): Promise<any> {
   const streamNftMint = getStreamNftMintAddress(salt);
   const cancelStreamIx = await lockupProgram.methods
     .cancel()
     .accounts({
       sender: signer.publicKey,
-      assetMint,
+      depositedTokenMint,
       streamNftMint,
-      depositTokenProgram,
+      depositedTokenProgram,
     })
     .instruction();
 
@@ -305,8 +305,8 @@ export async function cancel({
 export async function cancelToken2022(salt: BN): Promise<any> {
   await cancel({
     salt,
-    assetMint: dai,
-    depositTokenProgram: token.TOKEN_2022_PROGRAM_ID,
+    depositedTokenMint: dai,
+    depositedTokenProgram: token.TOKEN_2022_PROGRAM_ID,
   });
 }
 
@@ -342,7 +342,7 @@ export async function createWithDurations(
     )
     .accounts({
       sender: sender.keys.publicKey,
-      assetMint: usdc,
+      depositTokenMint: usdc,
       recipient: recipient.keys.publicKey,
       depositTokenProgram: token.TOKEN_PROGRAM_ID,
       nftTokenProgram: token.TOKEN_PROGRAM_ID,
@@ -367,7 +367,7 @@ export async function createWithTimestamps(
 
 export async function createWithTimestampsToken2022(): Promise<BN> {
   return await createWithTimestamps({
-    assetMint: dai,
+    depositTokenMint: dai,
     depositTokenProgram: token.TOKEN_2022_PROGRAM_ID,
   });
 }
@@ -378,7 +378,7 @@ export async function getCreateWithTimestampsIx(
   const {
     senderPubKey = sender.keys.publicKey,
     recipientPubKey = recipient.keys.publicKey,
-    assetMint = usdc,
+    depositTokenMint = usdc,
     depositTokenProgram = token.TOKEN_PROGRAM_ID,
     timestamps = defaults.timestamps(),
     depositAmount = defaults.DEPOSIT_AMOUNT,
@@ -402,7 +402,7 @@ export async function getCreateWithTimestampsIx(
     )
     .accounts({
       sender: senderPubKey,
-      assetMint,
+      depositTokenMint,
       recipient: recipientPubKey,
       depositTokenProgram,
       nftTokenProgram: token.TOKEN_PROGRAM_ID,
@@ -414,9 +414,10 @@ export async function getCreateWithTimestampsIx(
 
 export async function initializeSablierLockup(): Promise<void> {
   const initializeIx = await lockupProgram.methods
-    .initialize(feeCollector.keys.publicKey)
+    .initialize()
     .accounts({
-      deployer: sender.keys.publicKey,
+      feeCollector: feeCollector.keys.publicKey,
+      initializer: sender.keys.publicKey,
       nftTokenProgram: token.TOKEN_PROGRAM_ID,
     })
     .instruction();
@@ -445,19 +446,19 @@ export async function withdraw({
   withdrawAmount = defaults.WITHDRAW_AMOUNT,
   signer = recipient.keys,
   withdrawalRecipient = recipient.keys.publicKey,
-  assetMint = usdc,
-  depositTokenProgram = token.TOKEN_PROGRAM_ID,
+  depositedTokenMint = usdc,
+  depositedTokenProgram = token.TOKEN_PROGRAM_ID,
 } = {}): Promise<any> {
   const streamNftMint = getStreamNftMintAddress(salt);
   const withdrawIx = await lockupProgram.methods
     .withdraw(withdrawAmount)
     .accounts({
       signer: signer.publicKey,
-      assetMint,
+      depositedTokenMint,
       streamNftMint,
       streamRecipient: recipient.keys.publicKey,
       withdrawalRecipient,
-      depositTokenProgram,
+      depositedTokenProgram,
       nftTokenProgram: token.TOKEN_PROGRAM_ID,
     })
     .instruction();
@@ -471,9 +472,9 @@ export async function withdrawToken2022(
 ): Promise<any> {
   await withdraw({
     salt,
-    assetMint: dai,
+    depositedTokenMint: dai,
     signer,
-    depositTokenProgram: token.TOKEN_2022_PROGRAM_ID,
+    depositedTokenProgram: token.TOKEN_2022_PROGRAM_ID,
   });
 }
 
@@ -481,8 +482,8 @@ export async function withdrawMax({
   salt = salts.default,
   signer = sender.keys.publicKey,
   withdrawalRecipient = recipient.keys.publicKey,
-  assetMint = usdc,
-  depositTokenProgram = token.TOKEN_PROGRAM_ID,
+  depositedTokenMint = usdc,
+  depositedTokenProgram = token.TOKEN_PROGRAM_ID,
 } = {}): Promise<any> {
   const streamNftMint = getStreamNftMintAddress(salt);
 
@@ -490,11 +491,11 @@ export async function withdrawMax({
     .withdrawMax()
     .accounts({
       signer,
-      assetMint,
+      depositedTokenMint,
       streamRecipient: recipient.keys.publicKey,
       streamNftMint,
       withdrawalRecipient,
-      depositTokenProgram,
+      depositedTokenProgram,
       nftTokenProgram: token.TOKEN_PROGRAM_ID,
     })
     .instruction();
@@ -530,7 +531,7 @@ export async function getTreasuryLamports(): Promise<bigint> {
 
 export function defaultStream({
   salt = salts.default,
-  assetMint = usdc,
+  depositedTokenMint = usdc,
   tokenProgram = token.TOKEN_PROGRAM_ID,
   isCancelable = true,
   isDepleted = false,
@@ -538,7 +539,7 @@ export function defaultStream({
 } = {}): Stream {
   const data: StreamData = {
     amounts: defaults.amountsAfterCreate(),
-    assetMint,
+    depositedTokenMint,
     salt,
     isCancelable,
     isDepleted,
@@ -548,7 +549,7 @@ export function defaultStream({
   };
   const streamDataAddress = getStreamDataAddress(salt);
   const streamDataAta = deriveATAAddress(
-    assetMint,
+    depositedTokenMint,
     streamDataAddress,
     tokenProgram
   );
@@ -595,7 +596,7 @@ export function defaultStreamToken2022({
   wasCanceled = false,
 } = {}): Stream {
   return defaultStream({
-    assetMint: dai,
+    depositedTokenMint: dai,
     salt,
     isCancelable,
     isDepleted,

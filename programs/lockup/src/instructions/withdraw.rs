@@ -39,9 +39,9 @@ pub struct Withdraw<'info> {
 
     #[account(
         mut,
-        associated_token::mint = deposit_token_mint,
+        associated_token::mint = deposited_token_mint,
         associated_token::authority = stream_data,
-        associated_token::token_program = deposit_token_program,
+        associated_token::token_program = deposited_token_program,
     )]
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -110,7 +110,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         ctx.accounts.withdrawal_recipient_ata.to_account_info(),
         ctx.accounts.stream_data.to_account_info(),
         ctx.accounts.deposited_token_mint.to_account_info(),
-        ctx.accounts.deposit_token_program.to_account_info(),
+        ctx.accounts.deposited_token_program.to_account_info(),
         amount,
         ctx.accounts.deposited_token_mint.decimals,
         &[&[STREAM_DATA_SEED, ctx.accounts.stream_nft_mint.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
@@ -118,7 +118,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
 
     // Log the withdrawal.
     emit!(WithdrawFromLockupStream {
-        deposited_token_mint: ctx.accounts.deposit_token_mint.key(),
+        deposited_token_mint: ctx.accounts.deposited_token_mint.key(),
         stream_data: ctx.accounts.stream_data.key(),
         stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
         withdrawn_amount: amount

@@ -92,7 +92,7 @@ describe("createWithTimestamps", () => {
             it("should revert", async () => {
               try {
                 await createWithTimestamps({
-                  assetMint: randomToken,
+                  depositTokenMint: randomToken,
                 });
               } catch (error) {
                 assertErrorHexCode(
@@ -359,7 +359,7 @@ async function assertStreamCreation(
     defaults.DEPOSIT_AMOUNT
   );
   const afterSenderTokenBalance = await getSenderTokenBalance(
-    expectedStream.data.assetMint
+    expectedStream.data.depositedTokenMint
   );
   assert(
     expectedTokenBalance.eq(afterSenderTokenBalance),

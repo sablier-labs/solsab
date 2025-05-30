@@ -37,8 +37,8 @@ export function assertEqStreamDatas(a: StreamData, b: StreamData) {
   assertEqTimestamps(a.timestamps, b.timestamps);
 
   assert(
-    a.assetMint.equals(b.assetMint),
-    `Asset mint addresses mismatch: ${a.assetMint.toBase58()} !== ${b.assetMint.toBase58()}`
+    a.depositedTokenMint.equals(b.depositedTokenMint),
+    `Asset mint addresses mismatch: ${a.depositedTokenMint.toBase58()} !== ${b.depositedTokenMint.toBase58()}`
   );
   assert(a.salt.eq(b.salt), `Salt values mismatch: ${a.salt} !== ${b.salt}`);
   assert(

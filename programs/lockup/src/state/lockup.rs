@@ -66,10 +66,9 @@ impl StreamData {
         self.amounts.start_unlock = start_unlock;
         self.amounts.withdrawn = 0;
         self.deposited_token_mint = deposited_token_mint;
-        self.stream_id = stream_id;
-        self.nft_id = nft_id;
         self.is_cancelable = is_cancelable;
         self.is_depleted = false;
+        self.salt = salt;
         self.sender = sender;
         self.timestamps.cliff = cliff_time;
         self.timestamps.end = end_time;

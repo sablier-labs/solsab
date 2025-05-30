@@ -67,7 +67,7 @@ describe("withdraw", () => {
       context("given an invalid asset mint", () => {
         it("should revert", async () => {
           try {
-            await withdraw({ assetMint: randomToken });
+            await withdraw({ depositedTokenMint: randomToken });
           } catch (error) {
             assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
           }
@@ -142,7 +142,7 @@ describe("withdraw", () => {
 
                       // Create a new stream with a random token
                       const salt = await createWithTimestamps({
-                        assetMint: randomToken,
+                        depositTokenMint: randomToken,
                         depositAmount: defaults.DEPOSIT_AMOUNT,
                       });
 
@@ -162,7 +162,7 @@ describe("withdraw", () => {
                       // Perform the withdrawal
                       await withdraw({
                         salt,
-                        assetMint: randomToken,
+                        depositedTokenMint: randomToken,
                       });
 
                       // Assert that the recipient's ATA was created
