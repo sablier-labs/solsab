@@ -16,7 +16,6 @@ pub struct Clawback<'info> {
     #[account(mut, address = campaign.creator)]
     pub campaign_creator: Signer<'info>,
 
-    #[account()]
     pub campaign: Box<Account<'info, Campaign>>,
 
     #[account(address = campaign.airdrop_token_mint)]

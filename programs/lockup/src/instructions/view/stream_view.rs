@@ -6,7 +6,6 @@ use crate::{state::lockup::StreamData, utils::constants::*};
 // Common context that is used by multiple view instructions
 #[derive(Accounts)]
 pub struct StreamView<'info> {
-    #[account()]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(

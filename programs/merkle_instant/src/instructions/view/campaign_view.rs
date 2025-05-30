@@ -5,7 +5,6 @@ use crate::state::Campaign;
 // Common context that is used by multiple view instructions
 #[derive(Accounts)]
 pub struct CampaignView<'info> {
-    #[account()]
     pub campaign: Box<Account<'info, Campaign>>,
 }
 

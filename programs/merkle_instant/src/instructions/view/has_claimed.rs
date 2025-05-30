@@ -8,7 +8,6 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(_index: u32)]
 pub struct HasClaimed<'info> {
-    #[account()]
     pub campaign: Box<Account<'info, Campaign>>,
 
     #[account(

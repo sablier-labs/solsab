@@ -23,7 +23,6 @@ pub struct Cancel<'info> {
     #[account(address = stream_data.deposited_token_mint)]
     pub deposited_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    #[account()]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(

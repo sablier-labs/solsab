@@ -16,7 +16,6 @@ pub struct Renounce<'info> {
     )]
     pub sender: Signer<'info>,
 
-    #[account()]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
