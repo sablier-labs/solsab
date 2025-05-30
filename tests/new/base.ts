@@ -414,9 +414,8 @@ export async function getCreateWithTimestampsIx(
 
 export async function initializeSablierLockup(): Promise<void> {
   const initializeIx = await lockupProgram.methods
-    .initialize()
+    .initialize(feeCollector.keys.publicKey)
     .accounts({
-      feeCollector: feeCollector.keys.publicKey,
       initializer: sender.keys.publicKey,
       nftTokenProgram: token.TOKEN_PROGRAM_ID,
     })
