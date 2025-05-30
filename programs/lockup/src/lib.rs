@@ -24,7 +24,7 @@ pub mod sablier_lockup {
     pub fn create_with_durations(
         ctx: Context<CreateWithTimestamps>,
         salt: u128,
-        deposited_amount: u64,
+        deposit_amount: u64,
         cliff_duration: i64,
         total_duration: i64,
         start_unlock: u64,
@@ -34,7 +34,7 @@ pub mod sablier_lockup {
         instructions::create_with_durations::handler(
             ctx,
             salt,
-            deposited_amount,
+            deposit_amount,
             cliff_duration,
             total_duration,
             start_unlock,
