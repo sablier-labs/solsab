@@ -1,4 +1,7 @@
-use anchor_lang::{prelude::*, solana_program::program::invoke};
+use anchor_lang::{
+    prelude::*,
+    solana_program::{program::invoke, system_instruction::transfer},
+};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
@@ -19,8 +22,8 @@ pub struct Withdraw<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
-    #[account(address = stream_data.asset_mint)]
-    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
+    #[account(address = stream_data.deposited_token_mint)]
+    pub deposited_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     /// CHECK: This account must be the Stream's recipient (checked in recipient_stream_nft_ata's constraints)
     pub stream_recipient: UncheckedAccount<'info>,
@@ -36,9 +39,9 @@ pub struct Withdraw<'info> {
 
     #[account(
         mut,
-        associated_token::mint = asset_mint,
+        associated_token::mint = deposited_token_mint,
         associated_token::authority = stream_data,
-        associated_token::token_program = deposit_token_program,
+        associated_token::token_program = deposited_token_program,
     )]
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -65,23 +68,23 @@ pub struct Withdraw<'info> {
     pub withdrawal_recipient: UncheckedAccount<'info>,
 
     #[account(
-        init_if_needed,
-        payer = signer,
-        associated_token::mint = asset_mint,
-        associated_token::authority = withdrawal_recipient,
-        associated_token::token_program = deposit_token_program,
+      init_if_needed,
+      payer = signer,
+      associated_token::mint = deposited_token_mint,
+      associated_token::authority = withdrawal_recipient,
+      associated_token::token_program = deposited_token_program,
     )]
     pub withdrawal_recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
       mut,
       seeds = [TREASURY_SEED],
-      bump
+      bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
     pub system_program: Program<'info, System>,
-    pub deposit_token_program: Interface<'info, TokenInterface>,
+    pub deposited_token_program: Interface<'info, TokenInterface>,
     pub nft_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
@@ -98,11 +101,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     ctx.accounts.stream_data.withdraw(amount)?;
 
     // Interaction: transfer the fee from the signer to the treasury.
-    let fee_collection_ix = anchor_lang::solana_program::system_instruction::transfer(
-        &ctx.accounts.signer.key(),
-        &ctx.accounts.treasury.key(),
-        WITHDRAWAL_FEE,
-    );
+    let fee_collection_ix = transfer(&ctx.accounts.signer.key(), &ctx.accounts.treasury.key(), WITHDRAWAL_FEE);
     invoke(&fee_collection_ix, &[ctx.accounts.signer.to_account_info(), ctx.accounts.treasury.to_account_info()])?;
 
     // Interaction: transfer the tokens from the Treasury ATA to the recipient
@@ -110,16 +109,16 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         ctx.accounts.stream_data_ata.to_account_info(),
         ctx.accounts.withdrawal_recipient_ata.to_account_info(),
         ctx.accounts.stream_data.to_account_info(),
-        ctx.accounts.asset_mint.to_account_info(),
-        ctx.accounts.deposit_token_program.to_account_info(),
+        ctx.accounts.deposited_token_mint.to_account_info(),
+        ctx.accounts.deposited_token_program.to_account_info(),
         amount,
-        ctx.accounts.asset_mint.decimals,
+        ctx.accounts.deposited_token_mint.decimals,
         &[&[STREAM_DATA_SEED, ctx.accounts.stream_nft_mint.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
     )?;
 
     // Log the withdrawal.
     emit!(WithdrawFromLockupStream {
-        asset_mint: ctx.accounts.asset_mint.key(),
+        deposited_token_mint: ctx.accounts.deposited_token_mint.key(),
         stream_data: ctx.accounts.stream_data.key(),
         stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
         withdrawn_amount: amount

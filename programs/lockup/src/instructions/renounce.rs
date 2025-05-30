@@ -11,18 +11,20 @@ use crate::{
 #[derive(Accounts)]
 pub struct Renounce<'info> {
     #[account(
-        mut,
-        address = stream_data.sender,
+      mut,
+      address = stream_data.sender,
     )]
     pub sender: Signer<'info>,
 
-    #[account()]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        mut,
-        seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
-        bump = stream_data.bump,
+      mut,
+      seeds = [
+        STREAM_DATA_SEED,
+        stream_nft_mint.key().as_ref()
+      ],
+      bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 }
@@ -40,7 +42,7 @@ pub fn handler(ctx: Context<Renounce>) -> Result<()> {
 
     // Log the renouncement.
     emit!(RenounceLockupStream {
-        asset_mint: ctx.accounts.stream_data.asset_mint,
+        deposited_token_mint: ctx.accounts.stream_data.deposited_token_mint,
         stream_data: ctx.accounts.stream_data.key(),
         stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
     });

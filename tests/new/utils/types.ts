@@ -11,7 +11,7 @@ export interface Amounts {
 }
 
 export interface CreateWithTimestampsParams {
-  assetMint?: PublicKey;
+  depositTokenMint?: PublicKey;
   depositAmount?: BN;
   depositTokenProgram?: PublicKey;
   isCancelable?: boolean;
@@ -29,7 +29,7 @@ export interface Timestamps {
 
 export interface StreamData {
   amounts: Amounts;
-  assetMint: PublicKey;
+  depositedTokenMint: PublicKey;
   salt: BN;
   isCancelable: boolean;
   isDepleted: boolean;

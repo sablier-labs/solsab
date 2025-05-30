@@ -245,7 +245,7 @@ async function postCancelAssertions(
   const afterSenderBalance = await getATABalanceMint(
     banksClient,
     expectedStream.data.sender,
-    expectedStream.data.assetMint
+    expectedStream.data.depositedTokenMint
   );
 
   const actualBalanceRefunded = afterSenderBalance.sub(beforeSenderBalance);
@@ -258,7 +258,7 @@ async function postCancelAssertions(
   const actualStreamDataBalance = await getATABalanceMint(
     banksClient,
     expectedStream.dataAddress,
-    expectedStream.data.assetMint
+    expectedStream.data.depositedTokenMint
   );
   const expectedStreamDataBalance = expectedStream.data.amounts.deposited.sub(
     expectedStream.data.amounts.refunded

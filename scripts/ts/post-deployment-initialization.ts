@@ -23,12 +23,12 @@ describe("SablierLockup post-deployment initialization", () => {
 
   it("Creates 3 different SPL Token LL Streams", async () => {
     // Create a token mint and mint some tokens to the sender
-    const assetMint = await createTokenAndMintToSender();
+    const depositTokenMint = await createTokenAndMintToSender();
 
     // Create 3 unique streams
     await createStream({
       salt: new BN(1),
-      assetMint,
+      depositTokenMint,
       depositAmount: new BN(1_000e9),
       cliffDuration: new BN(0),
       totalDuration: new BN(3600), // 1 hour
@@ -38,7 +38,7 @@ describe("SablierLockup post-deployment initialization", () => {
     });
     await createStream({
       salt: new BN(2),
-      assetMint,
+      depositTokenMint,
       depositAmount: new BN(10_000e9),
       cliffDuration: new BN(3600), // 1 hour
       totalDuration: new BN(3600 * 3), // 3 hours
@@ -48,7 +48,7 @@ describe("SablierLockup post-deployment initialization", () => {
     });
     await createStream({
       salt: new BN(3),
-      assetMint,
+      depositTokenMint,
       depositAmount: new BN(30_000e9),
       cliffDuration: new BN(3600 * 24), // 1 day
       totalDuration: new BN(3 * 3600 * 24), // 3 days
@@ -63,7 +63,7 @@ describe("SablierLockup post-deployment initialization", () => {
 
 interface CreateParams {
   salt: BN;
-  assetMint: PublicKey;
+  depositTokenMint: PublicKey;
   depositAmount: BN;
   cliffDuration: BN;
   totalDuration: BN;
@@ -75,7 +75,7 @@ interface CreateParams {
 async function createStream(params: CreateParams) {
   const {
     salt,
-    assetMint,
+    depositTokenMint,
     depositAmount,
     cliffDuration,
     totalDuration,
@@ -100,7 +100,7 @@ async function createStream(params: CreateParams) {
     )
     .accounts({
       sender: senderKeys.publicKey,
-      assetMint,
+      depositTokenMint,
       recipient: senderKeys.publicKey,
       nftTokenProgram: TOKEN_PROGRAM_ID,
       depositTokenProgram: TOKEN_PROGRAM_ID,
@@ -124,7 +124,7 @@ async function initializeSablierLockup() {
     .initialize(senderKeys.publicKey)
     .signers([senderKeys])
     .accounts({
-      deployer: senderKeys.publicKey,
+      initializer: senderKeys.publicKey,
       nftTokenProgram: TOKEN_PROGRAM_ID,
     })
     .rpc();
@@ -134,7 +134,7 @@ async function createTokenAndMintToSender(): Promise<PublicKey> {
   const TOKEN_DECIMALS = 9;
   const freezeAuthority = null;
 
-  const assetMint = await createMint(
+  const depositTokenMint = await createMint(
     anchorProvider.connection,
     senderKeys,
     senderKeys.publicKey,
@@ -146,7 +146,7 @@ async function createTokenAndMintToSender(): Promise<PublicKey> {
   const senderATA = await getOrCreateAssociatedTokenAccount(
     anchorProvider.connection,
     senderKeys,
-    assetMint,
+    depositTokenMint,
     senderKeys.publicKey
   );
 
@@ -154,11 +154,11 @@ async function createTokenAndMintToSender(): Promise<PublicKey> {
   await mintTo(
     anchorProvider.connection,
     senderKeys,
-    assetMint,
+    depositTokenMint,
     senderATA.address,
     senderKeys,
     Number(mintedAmount)
   );
 
-  return assetMint;
+  return depositTokenMint;
 }
