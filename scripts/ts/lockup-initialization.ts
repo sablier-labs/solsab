@@ -11,18 +11,14 @@ import {
 
 import { SablierLockup } from "../../target/types/sablier_lockup";
 
-import { SablierMerkleInstant } from "../../target/types/sablier_merkle_instant";
-
 let anchorProvider: any;
-let senderKeys: Keypair;
 let lockupProgram: anchor.Program<SablierLockup>;
-let merkleInstantProgram: anchor.Program<SablierMerkleInstant>;
+let senderKeys: Keypair;
 
 describe("SablierLockup post-deployment initialization", () => {
   beforeEach(async () => {
     await configureTestingEnvironment();
     await initializeSablierLockup();
-    await initializeSablierMerkleInstant();
   });
 
   it("Creates 3 different SPL Token LL Streams", async () => {
@@ -118,10 +114,6 @@ async function configureTestingEnvironment() {
   anchor.setProvider(anchorProvider);
   lockupProgram = anchor.workspace
     .SablierLockup as anchor.Program<SablierLockup>;
-
-  merkleInstantProgram = anchor.workspace
-    .SablierMerkleInstant as anchor.Program<SablierMerkleInstant>;
-
   // Initialize the accounts involved in the tests
   senderKeys = (anchorProvider.wallet as anchor.Wallet).payer;
 }
@@ -133,15 +125,6 @@ async function initializeSablierLockup() {
     .accounts({
       initializer: senderKeys.publicKey,
       nftTokenProgram: TOKEN_PROGRAM_ID,
-    })
-    .rpc();
-}
-async function initializeSablierMerkleInstant() {
-  await merkleInstantProgram.methods
-    .initialize(senderKeys.publicKey)
-    .signers([senderKeys])
-    .accounts({
-      initializer: senderKeys.publicKey,
     })
     .rpc();
 }
