@@ -12,8 +12,8 @@ import {
 import { SablierLockup } from "../../target/types/sablier_lockup";
 
 let anchorProvider: any;
-let senderKeys: Keypair;
 let lockupProgram: anchor.Program<SablierLockup>;
+let senderKeys: Keypair;
 
 describe("SablierLockup post-deployment initialization", () => {
   beforeEach(async () => {
@@ -114,7 +114,6 @@ async function configureTestingEnvironment() {
   anchor.setProvider(anchorProvider);
   lockupProgram = anchor.workspace
     .SablierLockup as anchor.Program<SablierLockup>;
-
   // Initialize the accounts involved in the tests
   senderKeys = (anchorProvider.wallet as anchor.Wallet).payer;
 }
