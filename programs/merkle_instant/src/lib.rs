@@ -6,7 +6,7 @@ pub mod utils;
 
 use crate::instructions::*;
 
-declare_id!("9she3vL2CCmWjPBFVVXwu78kYg7TU8jm69siH3STngXx"); // Localnet & Devnet Program ID
+declare_id!("9PgrjgDeajKz6268jbawtnXxfPrNHSoyAqtgQYW3Dp3h"); // Localnet & Devnet Program ID
 
 #[program]
 pub mod sablier_merkle_instant {
