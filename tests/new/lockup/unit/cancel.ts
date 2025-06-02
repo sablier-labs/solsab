@@ -64,7 +64,7 @@ describe("cancel", () => {
       context("given an invalid asset mint", () => {
         it("should revert", async () => {
           try {
-            await cancel({ assetMint: randomToken });
+            await cancel({ depositedTokenMint: randomToken });
           } catch (error) {
             assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
           }

@@ -19,8 +19,8 @@ import {
 } from "solana-bankrun";
 import { BankrunProvider } from "anchor-bankrun";
 
-import { SablierLockup } from "../../target/types/sablier_lockup";
-import IDL from "../../target/idl/sablier_lockup.json";
+import { SablierLockup } from "../../../target/types/sablier_lockup";
+import IDL from "../../../target/idl/sablier_lockup.json";
 
 import * as defaults from "./utils/defaults";
 import {
@@ -37,14 +37,14 @@ import {
   deriveATAAddress,
   getATABalance,
   mintTo,
-} from "./anchor-bankrun-adapter";
+} from "../anchor-bankrun-adapter";
 
 export {
   deriveATAAddress,
   getATABalance,
   getATABalanceMint,
   getMintTotalSupplyOf,
-} from "./anchor-bankrun-adapter";
+} from "../anchor-bankrun-adapter";
 
 // Programs and addresses
 export let banksClient: BanksClient;
@@ -627,8 +627,8 @@ export function getPDAAddress(
   return PublicKey.findProgramAddressSync(seeds, programId)[0];
 }
 
-export async function getSenderTokenBalance(assetMint = usdc): Promise<BN> {
-  const senderAta = assetMint === usdc ? sender.usdcATA : sender.daiATA;
+export async function getSenderTokenBalance(tokenMint = usdc): Promise<BN> {
+  const senderAta = tokenMint === usdc ? sender.usdcATA : sender.daiATA;
   return await getATABalance(banksClient, senderAta);
 }
 
