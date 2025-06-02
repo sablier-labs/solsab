@@ -22,9 +22,9 @@
 # WHAT THIS SCRIPT DOES:
 #   1. Switches to main branch and pulls latest changes
 #   2. Generates new keypairs for specified programs
-#   3. Builds programs verifiably using anchor build -p <program>
+#   3. Builds programs verifiably using anchor build -v -p <program>
 #   4. Creates deployment branch and commits changes
-#   5. Deploys programs to devnet using anchor deploy -p <program>
+#   5. Deploys programs to devnet using anchor deploy -v -p <program>
 #   6. Creates separate ZIP files with IDL and types for each program
 #   7. Optionally runs post-deployment initialization (with --init flag)
 #
@@ -82,8 +82,7 @@ done
 
 # If no programs specified, default to sablier_lockup for backward compatibility
 if [[ ${#PROGRAMS[@]} -eq 0 ]]; then
-    PROGRAMS=("sablier_lockup")
-    echo "ℹ️  No programs specified, defaulting to sablier_lockup"
+    echo "❌ Error: No programs specified"
 fi
 
 echo "🎯 Programs to deploy: ${PROGRAMS[*]}"
@@ -130,6 +129,13 @@ for program in "${PROGRAMS[@]}"; do
     anchor build -v -p "$program"
 done
 
+
+# Deploy verifiably for specified programs
+for program in "${PROGRAMS[@]}"; do
+    echo "🚀 Deploying $program..."
+    anchor deploy -v -p "$program"
+done
+
 # Delete the chore/deployment branch if it already exists, silencing the error if it doesn't
 git branch -D chore/deployment 2>/dev/null
 
@@ -144,14 +150,6 @@ for program in "${PROGRAMS[@]}"; do
         git_files_to_add+=("programs/lockup/src/lib.rs")
     elif [[ "$program" == "sablier_merkle_instant" ]]; then
         git_files_to_add+=("programs/merkle_instant/src/lib.rs")
-    else
-        # Generic approach: try to find the lib.rs file
-        lib_path=$(find programs -name "lib.rs" -path "*/${program#sablier_}/*" | head -1)
-        if [[ -n "$lib_path" ]]; then
-            git_files_to_add+=("$lib_path")
-        else
-            echo "⚠️  Warning: Could not find lib.rs for $program"
-        fi
     fi
 done
 
@@ -162,12 +160,6 @@ git commit -m "chore: deployment for ${PROGRAMS[*]}"
 # For extra safety, close any existing buffer accounts
 # Otherwise, we risk getting the "Buffer account data size is smaller than the minimum size" error
 solana program close --buffers
-
-# Deploy verifiably for specified programs
-for program in "${PROGRAMS[@]}"; do
-    echo "🚀 Deploying $program..."
-    anchor deploy -v -p "$program"
-done
 
 # Create zip files for each program
 for program in "${PROGRAMS[@]}"; do
