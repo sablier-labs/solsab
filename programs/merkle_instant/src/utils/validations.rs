@@ -71,6 +71,8 @@ pub fn has_expired(expiration_time: i64) -> Result<bool> {
     Ok(expiration_time > 0 && expiration_time <= current_time)
 }
 
+// TODO: rename this function, as the current name is wrong when
+// it's being called on a campaign with no claims yet.
 pub fn has_grace_period_passed(first_claim_time: i64) -> Result<bool> {
     let current_time = Clock::get()?.unix_timestamp;
     let grace_period = 7 * 24 * 60 * 60; // 7 days in seconds

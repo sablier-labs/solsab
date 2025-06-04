@@ -1,12 +1,11 @@
 import {
+  claim,
   collectFees,
   eve,
-  getSenderLamports,
+  getLamportsOf,
   getTreasuryLamports,
+  recipient,
   setUp,
-  sleepFor,
-  timeTravelTo,
-  withdrawMax,
 } from "../base";
 import { assert, assertErrorHexCode } from "../utils/assertions";
 import { getErrorCode } from "../utils/errors";
@@ -15,7 +14,9 @@ import * as defaults from "../utils/defaults";
 describe("collectFees", () => {
   context("when the program is not initialized", () => {
     before(async () => {
-      await setUp(false);
+      await setUp({
+        initProgram: false,
+      });
     });
 
     it("should revert", async () => {
@@ -36,10 +37,11 @@ describe("collectFees", () => {
 
     context("when signer is not the authorized fee collector", () => {
       it("should revert", async () => {
-        await withdrawMultipleTimes();
+        // Perform a claim, generating fees
+        await claim();
 
         try {
-          await collectFees(eve.keys);
+          await collectFees({ signer: eve.keys });
 
           assert.fail("Expected the tx to revert, but it succeeded.");
         } catch (error) {
@@ -63,18 +65,19 @@ describe("collectFees", () => {
 
       context("given accumulated fees", () => {
         it("should collect the fees", async () => {
-          await withdrawMultipleTimes();
+          // Perform a claim, generating fees
+          await claim({ claimerKeys: recipient.keys });
 
           const treasuryLamportsBefore = await getTreasuryLamports();
           const feeRecipientLamportsBefore = await getFeeRecipientLamports();
-          // Collect fees
+
+          // Collect the fees
           await collectFees();
 
           const treasuryLamportsAfter = await getTreasuryLamports();
           const feeRecipientLamportsAfter = await getFeeRecipientLamports();
 
-          const expectedFeesCollected =
-            2 * defaults.WITHDRAWAL_FEE_AMOUNT - 1_000_000; // 2 withdrawals worth of fees minus the safety buffer
+          const expectedFeesCollected = defaults.CLAIM_FEE_AMOUNT - 1_000_000; // 1 claim worth of fees minus the safety buffer
 
           assert(
             treasuryLamportsAfter ===
@@ -91,14 +94,5 @@ describe("collectFees", () => {
 });
 
 async function getFeeRecipientLamports() {
-  return await getSenderLamports();
-}
-
-/// Helper function to withdraw multiple times so that there are fees collected
-async function withdrawMultipleTimes() {
-  await timeTravelTo(defaults.PASS_26_PERCENT);
-  await withdrawMax();
-  await timeTravelTo(defaults.END_TIME);
-  await sleepFor(7);
-  await withdrawMax();
+  return await getLamportsOf(recipient.keys.publicKey);
 }

@@ -3249,19 +3249,13 @@ async function testForWithdrawalPostRenounceAtHalfTime(
 ) {
   const milestones = await getDefaultMilestones(banksClient);
   const unlockAmounts = getDefaultUnlockAmounts();
-  const {
-    nftTokenProgram,
-    streamData,
-    recipient,
-    senderATA,
-    assetMint,
-    depositedAmount,
-  } = await createMintATAsAndStream(
-    true,
-    milestones,
-    unlockAmounts,
-    depositTokenProgram
-  );
+  const { nftTokenProgram, streamData, recipient, assetMint, depositedAmount } =
+    await createMintATAsAndStream(
+      true,
+      milestones,
+      unlockAmounts,
+      depositTokenProgram
+    );
 
   // Time travel to half time
   await timeTravelForwardTo(
