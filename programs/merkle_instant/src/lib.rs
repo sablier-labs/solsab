@@ -41,8 +41,8 @@ pub mod sablier_merkle_instant {
             ctx,
             merkle_root,
             expiration_time,
-            name,
             ipfs_cid,
+            name,
             aggregate_amount,
             recipient_count,
         )

@@ -113,7 +113,7 @@ export async function setUp(initOrNot = true) {
 
   if (initOrNot) {
     // Initialize the SablierLockup program
-    await initializeSablierLockup();
+    await initializeLockup();
 
     // Create the default streams
     salts = {
@@ -400,7 +400,7 @@ export async function createWithTimestampsToken2022(): Promise<BN> {
   });
 }
 
-export async function initializeSablierLockup(): Promise<void> {
+export async function initializeLockup(): Promise<void> {
   const initializeIx = await lockupProgram.methods
     .initialize(feeCollector.keys.publicKey)
     .accounts({

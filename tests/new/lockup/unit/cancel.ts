@@ -42,6 +42,8 @@ describe("cancel", () => {
     it("should revert", async () => {
       try {
         await cancel({ salt: new BN(1) });
+
+        assert.fail("Expected the tx to revert, but it succeeded.");
       } catch (error) {
         assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
       }
@@ -59,6 +61,8 @@ describe("cancel", () => {
       it("should revert", async () => {
         try {
           await cancel({ salt: salts.nonExisting });
+
+          assert.fail("Expected the tx to revert, but it succeeded.");
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
         }
@@ -70,6 +74,8 @@ describe("cancel", () => {
         it("should revert", async () => {
           try {
             await cancel({ depositedTokenMint: randomToken });
+
+            assert.fail("Expected the tx to revert, but it succeeded.");
           } catch (error) {
             assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
           }
@@ -84,6 +90,8 @@ describe("cancel", () => {
               await withdrawMax();
               try {
                 await cancel();
+
+                assert.fail("Expected the tx to revert, but it succeeded.");
               } catch (error) {
                 assertErrorHexCode(error, getErrorCode("StreamDepleted"));
               }
@@ -94,9 +102,11 @@ describe("cancel", () => {
             it("should revert", async () => {
               await cancel();
               // Sleep for 5 ms to allow the tx to be processed
-              await sleepFor(5);
+              await sleepFor(7);
               try {
                 await cancel();
+
+                assert.fail("Expected the tx to revert, but it succeeded.");
               } catch (error) {
                 assertErrorHexCode(error, getErrorCode("StreamCanceled"));
               }
@@ -108,6 +118,8 @@ describe("cancel", () => {
               await timeTravelTo(defaults.END_TIME);
               try {
                 await cancel();
+
+                assert.fail("Expected the tx to revert, but it succeeded.");
               } catch (error) {
                 assertErrorHexCode(error, getErrorCode("StreamSettled"));
               }
@@ -131,6 +143,8 @@ describe("cancel", () => {
               it("should revert", async () => {
                 try {
                   await cancel({ salt: salts.nonCancelable });
+
+                  assert.fail("Expected the tx to revert, but it succeeded.");
                 } catch (error) {
                   assertErrorHexCode(
                     error,

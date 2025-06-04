@@ -42,6 +42,8 @@ describe("withdraw", () => {
     it("should revert", async () => {
       try {
         await withdraw({ salt: new BN(1) });
+
+        assert.fail("Expected the tx to revert, but it succeeded.");
       } catch (error) {
         assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
       }
@@ -59,6 +61,8 @@ describe("withdraw", () => {
       it("should revert", async () => {
         try {
           await withdraw({ salt: salts.nonExisting });
+
+          assert.fail("Expected the tx to revert, but it succeeded.");
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
         }
@@ -70,6 +74,8 @@ describe("withdraw", () => {
         it("should revert", async () => {
           try {
             await withdraw({ depositedTokenMint: randomToken });
+
+            assert.fail("Expected the tx to revert, but it succeeded.");
           } catch (error) {
             assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
           }
@@ -83,6 +89,8 @@ describe("withdraw", () => {
             await withdrawMax();
             try {
               await withdraw();
+
+              assert.fail("Expected the tx to revert, but it succeeded.");
             } catch (error) {
               assertErrorHexCode(error, getErrorCode("StreamDepleted"));
             }
@@ -96,6 +104,8 @@ describe("withdraw", () => {
                 await withdraw({
                   withdrawAmount: defaults.ZERO_BN,
                 });
+
+                assert.fail("Expected the tx to revert, but it succeeded.");
               } catch (error) {
                 assertErrorHexCode(error, getErrorCode("WithdrawAmountZero"));
               }
@@ -109,6 +119,8 @@ describe("withdraw", () => {
                   await withdraw({
                     withdrawAmount: defaults.WITHDRAW_AMOUNT.add(new BN(1)),
                   });
+
+                  assert.fail("Expected the tx to revert, but it succeeded.");
                 } catch (error) {
                   assertErrorHexCode(error, getErrorCode("Overdraw"));
                 }
@@ -124,6 +136,10 @@ describe("withdraw", () => {
                         signer: eve.keys,
                         withdrawalRecipient: eve.keys.publicKey,
                       });
+
+                      assert.fail(
+                        "Expected the tx to revert, but it succeeded."
+                      );
                     } catch (error) {
                       assertErrorHexCode(error, getErrorCode("ConstraintRaw"));
                     }

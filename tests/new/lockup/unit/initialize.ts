@@ -6,8 +6,7 @@ import {
   getATABalance,
   getPDAAddress,
   getMintTotalSupplyOf,
-  initializeSablierLockup,
-  lockupProgram,
+  initializeLockup,
   nftCollectionDataAddress,
   setUp,
   sleepFor,
@@ -24,10 +23,12 @@ describe("initialize", () => {
 
   context("given initialized", () => {
     it("should revert", async () => {
-      await initializeSablierLockup();
-      await sleepFor(5);
+      await initializeLockup();
+      await sleepFor(7);
       try {
-        await initializeSablierLockup();
+        await initializeLockup();
+
+        assert.fail("Expected the tx to revert, but it succeeded.");
       } catch (error) {
         assertErrorHexCode(error, "0x0");
       }
@@ -36,7 +37,7 @@ describe("initialize", () => {
 
   context("given not initialized", () => {
     it("should initialize the program", async () => {
-      await initializeSablierLockup();
+      await initializeLockup();
 
       assert(
         await accountExists(nftCollectionDataAddress),
@@ -45,10 +46,9 @@ describe("initialize", () => {
 
       assert(await accountExists(treasuryAddress), "Treasury not initialized");
 
-      const nftCollectionMint = getPDAAddress(
-        [Buffer.from(defaults.NFT_COLLECTION_MINT_SEED)],
-        lockupProgram.programId
-      );
+      const nftCollectionMint = getPDAAddress([
+        Buffer.from(defaults.NFT_COLLECTION_MINT_SEED),
+      ]);
 
       assert(
         await accountExists(nftCollectionMint),
