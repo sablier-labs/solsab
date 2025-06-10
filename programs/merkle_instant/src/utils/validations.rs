@@ -1,4 +1,4 @@
-use anchor_lang::{prelude::*, solana_program::keccak::hashv as keccak_hashv};
+use anchor_lang::{prelude::*, solana_program::keccak::hashv as keccak};
 
 use crate::utils::errors::ErrorCode;
 
@@ -8,21 +8,23 @@ pub fn check_claim(
     index: u32,
     recipient: Pubkey,
     amount: u64,
-    merkle_proof: &[[u8; 32]],
+    merkle_proof: Vec<[u8; 32]>,
 ) -> Result<()> {
     // Check: the campaign has not expired.
     if has_expired(expiration_time)? {
         return Err(ErrorCode::CampaignExpired.into());
     }
 
-    // Form the leaf
-    let leaf = [&index.to_le_bytes(), recipient.to_bytes().as_ref(), &amount.to_le_bytes()].concat();
+    let index_bytes = index.to_le_bytes();
+    let recipient_bytes = recipient.to_bytes();
+    let amount_bytes = amount.to_le_bytes();
+    let leaf_bytes: &[&[u8]] = &[&index_bytes, &recipient_bytes, &amount_bytes];
 
     // Compute the hash of the leaf
-    let mut leaf_hash = keccak_hashv(&[&leaf]).0;
+    let mut leaf_hash = keccak(leaf_bytes).0;
 
     // Hash one more time to protect against the second pre-image attacks
-    leaf_hash = keccak_hashv(&[&leaf_hash]).0;
+    leaf_hash = keccak(&[&leaf_hash]).0;
 
     // Compute the root hash from the leaf hash and the merkle proof
     // Dev: the below algorithm has been inspired by
@@ -31,10 +33,10 @@ pub fn check_claim(
     for proof_element in merkle_proof.iter() {
         if computed_hash <= *proof_element {
             // Hash(current computed hash + current element of the merkle proof)
-            computed_hash = keccak_hashv(&[&computed_hash, proof_element]).0;
+            computed_hash = keccak(&[&computed_hash, proof_element]).0;
         } else {
             // Hash(current element of the merkle_proof + current computed hash)
-            computed_hash = keccak_hashv(&[proof_element, &computed_hash]).0;
+            computed_hash = keccak(&[proof_element, &computed_hash]).0;
         }
     }
     // Check if the computed hash (root) is equal to the provided root
