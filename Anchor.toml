@@ -6,7 +6,7 @@ skip-lint = false
 
 [programs.devnet]
 sablier_lockup = "DczGzCFQ5kHRBGVkH22HDdtduE4qaqopdc5HGLrAzfQD"
-sablier_merkle_instant = "9PgrjgDeajKz6268jbawtnXxfPrNHSoyAqtgQYW3Dp3h"
+sablier_merkle_instant = "G3R4BBqjo2hFdPh8EZSQfpj2u8hFL57cE9KUH57NZw28"
 
 [programs.localnet]
 sablier_lockup = "DczGzCFQ5kHRBGVkH22HDdtduE4qaqopdc5HGLrAzfQD"
