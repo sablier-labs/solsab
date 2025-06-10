@@ -20,7 +20,7 @@ use crate::{
 const CLAIM_FEE: u64 = 30_000_000; // The fee for claiming an airdrop, in lamports.
 
 #[derive(Accounts)]
-#[instruction(index: u64)]
+#[instruction(index: u32)]
 pub struct Claim<'info> {
     #[account(mut)]
     pub claimer: Signer<'info>,
@@ -82,12 +82,13 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
     let claimer = ctx.accounts.claimer.clone();
     let recipient = ctx.accounts.recipient.clone();
     let treasury = ctx.accounts.treasury.clone();
+    ctx.accounts.claim_receipt.bump = ctx.bumps.claim_receipt;
 
     // Check: validate the claim.
-    check_claim(campaign.expiration_time, campaign.merkle_root, index, recipient.key(), amount, &merkle_proof)?;
+    let merkle_proof_sliced: &[[u8; 32]] = merkle_proof.as_slice();
+    check_claim(campaign.expiration_time, campaign.merkle_root, index, recipient.key(), amount, merkle_proof_sliced)?;
 
     ctx.accounts.campaign.claim()?;
-    ctx.accounts.claim_receipt.bump = ctx.bumps.claim_receipt;
 
     // Interaction: transfer the fee from the claimer to the treasury.
     let fee_collection_ix = transfer(&claimer.key(), &treasury.key(), CLAIM_FEE);
@@ -106,10 +107,12 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
             CAMPAIGN_SEED,
             campaign.creator.key().as_ref(),
             campaign.merkle_root.as_ref(),
+            campaign.aggregate_amount.to_le_bytes().as_ref(),
             campaign.expiration_time.to_le_bytes().as_ref(),
             campaign.ipfs_id.as_ref(),
             campaign.name.as_ref(),
             airdrop_token_mint.key().as_ref(),
+            campaign.recipient_count.to_le_bytes().as_ref(),
             &[campaign.bump],
         ]],
     )?;

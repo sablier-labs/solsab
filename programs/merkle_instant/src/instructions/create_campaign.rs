@@ -18,6 +18,8 @@ use crate::{
     expiration_time: i64,
     ipfs_id: String,
     name: String,
+    aggregate_amount: u64,
+    recipient_count: u32,
 )]
 pub struct CreateCampaign<'info> {
     #[account(mut)]
@@ -34,10 +36,12 @@ pub struct CreateCampaign<'info> {
         CAMPAIGN_SEED,
         creator.key().as_ref(),
         merkle_root.as_ref(),
+        aggregate_amount.to_le_bytes().as_ref(),
         expiration_time.to_le_bytes().as_ref(),
         ipfs_id.as_ref(),
         name.as_ref(),
         airdrop_token_mint.key().as_ref(),
+        recipient_count.to_le_bytes().as_ref(),
      ],
      bump,
     )]
@@ -68,6 +72,7 @@ pub fn handler(
 ) -> Result<()> {
     // Effect: Initialize the campaign account.
     ctx.accounts.campaign.create(
+        aggregate_amount,
         ctx.accounts.airdrop_token_mint.key(),
         ctx.bumps.campaign,
         ctx.accounts.creator.key(),
@@ -75,6 +80,7 @@ pub fn handler(
         ipfs_id.clone(),
         merkle_root,
         name.clone(),
+        recipient_count,
     )?;
 
     // Log the campaign creation.
