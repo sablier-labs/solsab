@@ -8,7 +8,7 @@ pub fn check_claim(
     index: u32,
     recipient: Pubkey,
     amount: u64,
-    merkle_proof: &[[u8; 32]],
+    merkle_proof: Vec<[u8; 32]>,
 ) -> Result<()> {
     // Check: the campaign has not expired.
     if has_expired(expiration_time)? {

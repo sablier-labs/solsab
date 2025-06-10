@@ -85,8 +85,7 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
     ctx.accounts.claim_receipt.bump = ctx.bumps.claim_receipt;
 
     // Check: validate the claim.
-    let merkle_proof_sliced: &[[u8; 32]] = merkle_proof.as_slice();
-    check_claim(campaign.expiration_time, campaign.merkle_root, index, recipient.key(), amount, merkle_proof_sliced)?;
+    check_claim(campaign.expiration_time, campaign.merkle_root, index, recipient.key(), amount, merkle_proof)?;
 
     ctx.accounts.campaign.claim()?;
 
