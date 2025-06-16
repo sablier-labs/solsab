@@ -11,7 +11,7 @@ use crate::{
     state::{Campaign, ClaimReceipt, Treasury},
     utils::{
         constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED, CLAIM_RECEIPT_SEED, TREASURY_SEED},
-        events::Claimed,
+        events,
         transfer_helper::transfer_tokens,
         validations::check_claim,
     },
@@ -115,7 +115,7 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
     )?;
 
     // Log the claim.
-    emit!(Claimed {
+    emit!(events::Claim {
         amount,
         campaign: campaign.key(),
         claimer: claimer.key(),

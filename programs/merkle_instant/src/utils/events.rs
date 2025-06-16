@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 #[event]
-pub struct CampaignCreated {
+pub struct CreateCampaign {
     pub aggregate_amount: u64,
     pub campaign: Pubkey,
     pub campaign_name: String,
@@ -13,14 +13,7 @@ pub struct CampaignCreated {
 }
 
 #[event]
-pub struct CampaignFunded {
-    pub amount: u64,
-    pub campaign: Pubkey,
-    pub funder: Pubkey,
-}
-
-#[event]
-pub struct Claimed {
+pub struct Claim {
     pub amount: u64,
     pub campaign: Pubkey,
     pub claimer: Pubkey,
@@ -30,7 +23,7 @@ pub struct Claimed {
 }
 
 #[event]
-pub struct ClawedBack {
+pub struct Clawback {
     pub amount: u64,
     pub campaign: Pubkey,
     pub campaign_creator: Pubkey,
