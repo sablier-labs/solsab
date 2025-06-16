@@ -16,7 +16,7 @@ use crate::{
 #[instruction(
     merkle_root: [u8; 32],
     expiration_time: i64,
-    ipfs_id: String,
+    ipfs_cid: String,
     name: String,
 )]
 pub struct CreateCampaign<'info> {
@@ -35,7 +35,7 @@ pub struct CreateCampaign<'info> {
         creator.key().as_ref(),
         merkle_root.as_ref(),
         expiration_time.to_le_bytes().as_ref(),
-        ipfs_id.as_ref(),
+        ipfs_cid.as_ref(),
         name.as_ref(),
         airdrop_token_mint.key().as_ref(),
      ],
@@ -62,7 +62,7 @@ pub fn handler(
     merkle_root: [u8; 32],
     expiration_time: i64,
     name: String,
-    ipfs_id: String,
+    ipfs_cid: String,
     aggregate_amount: u64,
     recipient_count: u32,
 ) -> Result<()> {
@@ -72,7 +72,7 @@ pub fn handler(
         ctx.bumps.campaign,
         ctx.accounts.creator.key(),
         expiration_time,
-        ipfs_id.clone(),
+        ipfs_cid.clone(),
         merkle_root,
         name.clone(),
     )?;
@@ -84,7 +84,7 @@ pub fn handler(
         campaign_name: name,
         creator: ctx.accounts.creator.key(),
         expiration_time,
-        ipfs_id,
+        ipfs_cid,
         merkle_root,
         recipient_count,
         token_decimals: ctx.accounts.airdrop_token_mint.decimals,

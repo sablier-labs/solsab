@@ -32,7 +32,7 @@ pub mod sablier_merkle_instant {
         ctx: Context<CreateCampaign>,
         merkle_root: [u8; 32],
         expiration_time: i64,
-        ipfs_id: String,
+        ipfs_cid: String,
         name: String,
         aggregate_amount: u64,
         recipient_count: u32,
@@ -42,7 +42,7 @@ pub mod sablier_merkle_instant {
             merkle_root,
             expiration_time,
             name,
-            ipfs_id,
+            ipfs_cid,
             aggregate_amount,
             recipient_count,
         )

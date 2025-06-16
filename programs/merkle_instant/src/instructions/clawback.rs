@@ -60,7 +60,7 @@ pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
             campaign.creator.key().as_ref(),
             campaign.merkle_root.as_ref(),
             campaign.expiration_time.to_le_bytes().as_ref(),
-            campaign.ipfs_id.as_ref(),
+            campaign.ipfs_cid.as_ref(),
             campaign.name.as_ref(),
             airdrop_token_mint.key().as_ref(),
             &[campaign.bump],
