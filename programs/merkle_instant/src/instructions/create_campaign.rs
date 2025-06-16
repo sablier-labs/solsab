@@ -87,6 +87,8 @@ pub fn handler(
         ipfs_id,
         merkle_root,
         recipient_count,
+        token_decimals: ctx.accounts.airdrop_token_mint.decimals,
+        token_mint: ctx.accounts.airdrop_token_mint.key(),
     });
 
     Ok(())
