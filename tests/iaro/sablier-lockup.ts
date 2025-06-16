@@ -3620,7 +3620,10 @@ function getStreamDataAddress(streamId: BN): PublicKey {
   const streamNftMint = getStreamNftMintAddress(streamId);
 
   // The seeds used when creating the Stream Data
-  const streamDataSeeds = [Buffer.from("LL_stream"), streamNftMint.toBuffer()];
+  const streamDataSeeds = [
+    Buffer.from("stream_data"),
+    streamNftMint.toBuffer(),
+  ];
 
   return getPDAAddress(streamDataSeeds, lockupProgramId);
 }

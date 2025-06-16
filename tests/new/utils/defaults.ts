@@ -38,7 +38,7 @@ export const METADATA_SEED = "metadata";
 export const NFT_COLLECTION_DATA_SEED = "nft_collection_data";
 export const NFT_COLLECTION_MINT_SEED = "nft_collection_mint";
 export const STREAM_NFT_MINT_SEED = "stream_nft_mint";
-export const STREAM_DATA_SEED = "LL_stream";
+export const STREAM_DATA_SEED = "stream_data";
 export const TREASURY_SEED = "treasury";
 
 // Miscellaneous

@@ -10,8 +10,8 @@ use anchor_spl::{
 };
 
 use crate::utils::constants::{
-    COLLECTION_METADATA_URI, COLLECTION_NAME, COLLECTION_SYMBOL, NFT_COLLECTION_MINT_SEED, NFT_METADATA_URI, NFT_NAME,
-    NFT_SYMBOL,
+    COLLECTION_METADATA_URI, COLLECTION_NAME, COLLECTION_SYMBOL, NFT_COLLECTION_MINT_SEED, NFT_METADATA_URI,
+    NFT_NAME_PREFIX, NFT_SYMBOL,
 };
 
 /// Creates and mints a stream NFT with collection verification
@@ -31,7 +31,12 @@ pub fn create_stream<'info>(
     rent: &Sysvar<'info, Rent>,
     nft_collection_mint_bump: u8,
 ) -> Result<()> {
-    let stream_nft_name = NFT_NAME.to_owned();
+    // Form the Stream NFT name
+    let mint_key: String = stream_nft_mint.key().to_string();
+    let stream_id = format!("{}..{}", &mint_key[..4], &mint_key[mint_key.len() - 4..]);
+    let nft_name = format!("{NFT_NAME_PREFIX}{stream_id}");
+
+    // Prepare the seeds for NFT Collection Mint
     let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[NFT_COLLECTION_MINT_SEED, &[nft_collection_mint_bump]]];
 
     // Mint Stream NFT Token
@@ -64,7 +69,7 @@ pub fn create_stream<'info>(
             nft_collection_mint_signer_seeds,
         ),
         DataV2 {
-            name: stream_nft_name,
+            name: nft_name,
             symbol: NFT_SYMBOL.to_string(),
             uri: NFT_METADATA_URI.to_string(),
             seller_fee_basis_points: 0,
