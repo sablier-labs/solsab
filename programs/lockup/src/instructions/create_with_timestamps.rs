@@ -28,7 +28,7 @@ pub struct CreateWithTimestamps<'info> {
       associated_token::authority = creator,
       associated_token::token_program = deposit_token_program
     )]
-    pub funding_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub creator_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// CHECK: The sender may be any account
     pub sender: UncheckedAccount<'info>,
@@ -168,8 +168,7 @@ pub fn handler(
 ) -> Result<()> {
     let deposit_token_mint = &ctx.accounts.deposit_token_mint;
     let creator = &ctx.accounts.creator;
-    let sender = &ctx.accounts.sender;
-    let funding_ata = &ctx.accounts.funding_ata;
+    let creator_ata = &ctx.accounts.creator_ata;
 
     // Validate parameters
     check_create(deposit_amount, start_time, cliff_time, end_time, start_unlock, cliff_unlock)?;
@@ -184,7 +183,7 @@ pub fn handler(
         end_time,
         salt,
         is_cancelable,
-        sender.key(),
+        ctx.accounts.sender.key(),
         start_time,
         start_unlock,
     )?;
@@ -212,7 +211,7 @@ pub fn handler(
 
     // Interaction: transfer tokens from the sender’s ATA to the StreamData ATA.
     transfer_tokens(
-        funding_ata.to_account_info(),
+        creator_ata.to_account_info(),
         ctx.accounts.stream_data_ata.to_account_info(),
         creator.to_account_info(),
         deposit_token_mint.to_account_info(),
