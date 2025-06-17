@@ -50,6 +50,10 @@ export function assertEqCampaignDatas(a: CampaignData, b: CampaignData) {
   assert(a.name === b.name, `Campaign names mismatch: ${a.name} !== ${b.name}`);
 }
 
+export function assertFail() {
+  assert.fail("Expected the tx to revert, but it succeeded.");
+}
+
 export function assertSigVerificationFailureFor(
   pubkey: PublicKey,
   error: unknown

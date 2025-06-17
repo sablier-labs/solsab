@@ -1,7 +1,7 @@
 import {
-  assert,
   assertEqStreamDatas,
   assertErrorContains,
+  assertFail,
 } from "../utils/assertions";
 import {
   createWithDurations,
@@ -23,8 +23,7 @@ describe("createWithDurations", () => {
     it("should revert", async () => {
       try {
         await createWithDurations();
-
-        assert.fail("Expected the tx to revert, but it succeeded.");
+        assertFail();
       } catch (error) {
         assertErrorContains(
           error,

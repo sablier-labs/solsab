@@ -28,7 +28,7 @@ describe("initialize", () => {
       try {
         await initializeLockup();
 
-        assert.fail("Expected the tx to revert, but it succeeded.");
+        assertFail();
       } catch (error) {
         assertErrorHexCode(error, "0x0");
       }

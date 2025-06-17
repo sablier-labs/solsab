@@ -19,7 +19,7 @@ import {
   eve,
 } from "../base";
 import * as defaults from "../utils/defaults";
-import { assert, assertErrorHexCode } from "../utils/assertions";
+import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import { getErrorCode } from "../utils/errors";
 
 describe("createCampaign", () => {
@@ -33,8 +33,7 @@ describe("createCampaign", () => {
     it("should revert", async () => {
       try {
         await clawback({ campaign: recipient.keys.publicKey }); // Passing a non-Campaign account since no Campaigns exist yet
-
-        assert.fail("Expected the tx to revert, but it succeeded.");
+        assertFail();
       } catch (error) {
         assertErrorHexCode(error, getErrorCode("AccountOwnedByWrongProgram"));
       }
@@ -49,8 +48,7 @@ describe("createCampaign", () => {
         it("should revert", async () => {
           try {
             await clawback({ campaign: treasuryAddress });
-
-            assert.fail("Expected the tx to revert, but it succeeded.");
+            assertFail();
           } catch (error) {
             assertErrorHexCode(
               error,
@@ -66,8 +64,7 @@ describe("createCampaign", () => {
                 await clawback({
                   airdropTokenMint: dai,
                 });
-
-                assert.fail("Expected the tx to revert, but it succeeded.");
+                assertFail();
               } catch (error) {
                 assertErrorHexCode(
                   error,
@@ -85,7 +82,7 @@ describe("createCampaign", () => {
                     signer: eve.keys,
                   });
 
-                  assert.fail("Expected the tx to revert, but it succeeded.");
+                  assertFail();
                 } catch (error) {
                   assertErrorHexCode(error, getErrorCode("ConstraintAddress"));
                 }

@@ -1,6 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import { assert, assertErrorHexCode } from "../utils/assertions";
+import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import {
   campaignCreator,
   claim,
@@ -40,8 +40,7 @@ describe("claim", () => {
     it("should revert", async () => {
       try {
         await claim({ campaignId: recipient.keys.publicKey }); // Passing a non-Campaign account since no Campaigns exist yet
-
-        assert.fail("Expected the tx to revert, but it succeeded.");
+        assertFail();
       } catch (error) {
         assertErrorHexCode(error, getErrorCode("AccountOwnedByWrongProgram"));
       }
@@ -61,8 +60,7 @@ describe("claim", () => {
         try {
           // Claim from a non-existent Campaign
           await claim({ campaignId: new PublicKey(12345) });
-
-          assert.fail("Expected the tx to revert, but it succeeded.");
+          assertFail();
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
         }
@@ -81,8 +79,7 @@ describe("claim", () => {
           try {
             // Claim from the Campaign again
             await claim();
-
-            assert.fail("Expected the tx to revert, but it succeeded.");
+            assertFail();
           } catch (error) {
             assertErrorHexCode(error, "0x0");
           }
@@ -95,8 +92,7 @@ describe("claim", () => {
             try {
               // Claim from the Campaign with an invalid token mint
               await claim({ airdropTokenMint: dai });
-
-              assert.fail("Expected the tx to revert, but it succeeded.");
+              assertFail();
             } catch (error) {
               assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
             }
@@ -110,8 +106,7 @@ describe("claim", () => {
                 await claim({
                   amount: defaults.CLAIM_AMOUNT.sub(new BN(1)), // Invalid amount
                 });
-
-                assert.fail("Expected the tx to revert, but it succeeded.");
+                assertFail();
               } catch (error) {
                 assertErrorHexCode(error, getErrorCode("InvalidMerkleProof"));
               }
@@ -131,8 +126,7 @@ describe("claim", () => {
               it("should revert", async () => {
                 try {
                   await claim();
-
-                  assert.fail("Expected the tx to revert, but it succeeded.");
+                  assertFail();
                 } catch (error) {
                   assertErrorHexCode(error, "0x1");
                 }
@@ -146,8 +140,7 @@ describe("claim", () => {
                   await timeTravelTo(defaults.EXPIRATION_TIME);
                   try {
                     await claim();
-
-                    assert.fail("Expected the tx to revert, but it succeeded.");
+                    assertFail();
                   } catch (error) {
                     assertErrorHexCode(error, getErrorCode("CampaignExpired"));
                   }

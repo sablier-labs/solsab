@@ -13,10 +13,10 @@ import {
 } from "../base";
 import * as defaults from "../utils/defaults";
 import {
-  assert,
   assertEqCampaignDatas,
   assertErrorHexCode,
   assertErrorContains,
+  assertFail,
 } from "../utils/assertions";
 
 describe("createCampaign", () => {
@@ -30,8 +30,7 @@ describe("createCampaign", () => {
     it.skip("should revert", async () => {
       try {
         await createCampaign();
-
-        assert.fail("Expected the tx to revert, but it succeeded.");
+        assertFail();
       } catch (error) {
         assertErrorContains(error, "");
       }
@@ -69,19 +68,15 @@ describe("createCampaign", () => {
         });
       });
 
-      context("given a Token2022 token", () => {
-        it("should create the campaign", async () => {
-          // Mint the random Token2022 token to the campaign creator
-          await createATAAndMintTo(
-            campaignCreator.keys.publicKey,
-            randomTokenToken2022,
-            defaults.AGGREGATE_AMOUNT.toNumber(),
-            TOKEN_2022_PROGRAM_ID
-          );
-
-          const campaignId = await createCampaignToken2022(
-            randomTokenToken2022
-          );
+      context("when the campaign already exists", () => {
+        it("should revert", async () => {
+          try {
+            await createCampaign();
+            assertFail();
+          } catch (error) {
+            assertErrorHexCode(error, "0x0");
+          }
+        });
 
           // Assert that the campaign was created successfully
           const expectedCampaignData = {

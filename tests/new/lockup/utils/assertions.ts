@@ -92,6 +92,10 @@ export function assertErrorContains(
   assert(errorToMessage(error).includes(expectedText), message);
 }
 
+export function assertFail() {
+  assert.fail("Expected the tx to revert, but it succeeded.");
+}
+
 export function assertSigVerificationFailureFor(
   pubkey: PublicKey,
   error: unknown

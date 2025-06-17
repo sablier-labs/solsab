@@ -1,6 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import { assert } from "chai";
 
 import {
   accountExists,
@@ -25,7 +24,12 @@ import {
   banksClient,
   createWithTimestamps,
 } from "../base";
-import { assertErrorHexCode, assertEqStreamDatas } from "../utils/assertions";
+import {
+  assert,
+  assertErrorHexCode,
+  assertEqStreamDatas,
+  assertFail,
+} from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";
 
@@ -40,8 +44,7 @@ describe("withdraw", () => {
     it("should revert", async () => {
       try {
         await withdraw({ salt: new BN(1) });
-
-        assert.fail("Expected the tx to revert, but it succeeded.");
+        assertFail();
       } catch (error) {
         assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
       }
@@ -59,8 +62,7 @@ describe("withdraw", () => {
       it("should revert", async () => {
         try {
           await withdraw({ salt: salts.nonExisting });
-
-          assert.fail("Expected the tx to revert, but it succeeded.");
+          assertFail();
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
         }
@@ -73,7 +75,7 @@ describe("withdraw", () => {
           try {
             await withdraw({ depositedTokenMint: randomToken });
 
-            assert.fail("Expected the tx to revert, but it succeeded.");
+            assertFail();
           } catch (error) {
             assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
           }
@@ -87,8 +89,7 @@ describe("withdraw", () => {
             await withdrawMax();
             try {
               await withdraw();
-
-              assert.fail("Expected the tx to revert, but it succeeded.");
+              assertFail();
             } catch (error) {
               assertErrorHexCode(error, getErrorCode("StreamDepleted"));
             }
@@ -102,8 +103,7 @@ describe("withdraw", () => {
                 await withdraw({
                   withdrawAmount: defaults.ZERO_BN,
                 });
-
-                assert.fail("Expected the tx to revert, but it succeeded.");
+                assertFail();
               } catch (error) {
                 assertErrorHexCode(error, getErrorCode("WithdrawAmountZero"));
               }
@@ -117,8 +117,7 @@ describe("withdraw", () => {
                   await withdraw({
                     withdrawAmount: defaults.WITHDRAW_AMOUNT.add(new BN(1)),
                   });
-
-                  assert.fail("Expected the tx to revert, but it succeeded.");
+                  assertFail();
                 } catch (error) {
                   assertErrorHexCode(error, getErrorCode("Overdraw"));
                 }

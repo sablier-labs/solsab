@@ -5,7 +5,7 @@ import {
   sleepFor,
   treasuryAddress,
 } from "../base";
-import { assert, assertErrorHexCode } from "../utils/assertions";
+import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 
 describe("initialize", () => {
   beforeEach(async () => {
@@ -20,8 +20,7 @@ describe("initialize", () => {
       await sleepFor(7);
       try {
         await initializeMerkleInstant();
-
-        assert.fail("Expected the tx to revert, but it succeeded.");
+        assertFail();
       } catch (error) {
         assertErrorHexCode(error, "0x0");
       }
