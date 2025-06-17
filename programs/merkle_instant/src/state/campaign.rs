@@ -11,7 +11,7 @@ pub struct Campaign {
     pub expiration_time: i64,
     pub first_claim_time: i64,
     #[max_len(CAMPAIGN_IPFS_ID_SIZE as usize)]
-    pub ipfs_id: String,
+    pub ipfs_cid: String,
     pub merkle_root: [u8; 32],
     #[max_len(CAMPAIGN_NAME_SIZE as usize)]
     pub name: String,
@@ -35,7 +35,7 @@ impl Campaign {
         bump: u8,
         creator: Pubkey,
         expiration_time: i64,
-        ipfs_id: String,
+        ipfs_cid: String,
         merkle_root: [u8; 32],
         name: String,
     ) -> Result<()> {
@@ -43,7 +43,7 @@ impl Campaign {
         self.bump = bump;
         self.creator = creator;
         self.expiration_time = expiration_time;
-        self.ipfs_id = ipfs_id;
+        self.ipfs_cid = ipfs_cid;
         self.merkle_root = merkle_root;
         self.name = name;
 
