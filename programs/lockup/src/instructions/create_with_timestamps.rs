@@ -17,7 +17,7 @@ use crate::{
 #[instruction(salt: u128)]
 pub struct CreateWithTimestamps<'info> {
     #[account(mut)]
-    pub sender: Signer<'info>,
+    pub creator: Signer<'info>,
 
     #[account(mint::token_program = deposit_token_program)]
     pub deposit_token_mint: Box<InterfaceAccount<'info, Mint>>,
@@ -25,10 +25,13 @@ pub struct CreateWithTimestamps<'info> {
     #[account(
       mut,
       associated_token::mint = deposit_token_mint,
-      associated_token::authority = sender,
+      associated_token::authority = creator,
       associated_token::token_program = deposit_token_program
     )]
-    pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub funding_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    /// CHECK: The sender may be any account
+    pub sender: UncheckedAccount<'info>,
 
     /// CHECK: The recipient may be any account
     pub recipient: UncheckedAccount<'info>,
@@ -76,7 +79,7 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
         init,
-        payer = sender,
+        payer = creator,
         seeds = [
           STREAM_NFT_MINT_SEED,
           sender.key().as_ref(),
@@ -92,7 +95,7 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
         init,
-        payer = sender,
+        payer = creator,
         space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
         seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
         bump
@@ -101,7 +104,7 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
         init,
-        payer = sender,
+        payer = creator,
         associated_token::mint = deposit_token_mint,
         associated_token::authority = stream_data,
         associated_token::token_program = deposit_token_program
@@ -110,7 +113,7 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
         init,
-        payer = sender,
+        payer = creator,
         associated_token::mint = stream_nft_mint,
         associated_token::authority = recipient,
         associated_token::token_program = nft_token_program,
@@ -164,8 +167,9 @@ pub fn handler(
     is_cancelable: bool,
 ) -> Result<()> {
     let deposit_token_mint = &ctx.accounts.deposit_token_mint;
+    let creator = &ctx.accounts.creator;
     let sender = &ctx.accounts.sender;
-    let sender_ata = &ctx.accounts.sender_ata;
+    let funding_ata = &ctx.accounts.funding_ata;
 
     // Validate parameters
     check_create(deposit_amount, start_time, cliff_time, end_time, start_unlock, cliff_unlock)?;
@@ -194,7 +198,7 @@ pub fn handler(
         &ctx.accounts.nft_collection_metadata,
         &ctx.accounts.nft_collection_master_edition,
         &ctx.accounts.recipient_stream_nft_ata,
-        &ctx.accounts.sender,
+        creator,
         &ctx.accounts.token_metadata_program,
         &ctx.accounts.nft_token_program,
         &ctx.accounts.system_program,
@@ -208,9 +212,9 @@ pub fn handler(
 
     // Interaction: transfer tokens from the sender’s ATA to the StreamData ATA.
     transfer_tokens(
-        sender_ata.to_account_info(),
+        funding_ata.to_account_info(),
         ctx.accounts.stream_data_ata.to_account_info(),
-        sender.to_account_info(),
+        creator.to_account_info(),
         deposit_token_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
         deposit_amount,

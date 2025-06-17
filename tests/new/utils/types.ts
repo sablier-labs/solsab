@@ -10,17 +10,6 @@ export interface Amounts {
   withdrawn: BN;
 }
 
-export interface CreateWithTimestampsParams {
-  depositTokenMint?: PublicKey;
-  depositAmount?: BN;
-  depositTokenProgram?: PublicKey;
-  isCancelable?: boolean;
-  recipientPubKey?: PublicKey;
-  senderPubKey?: PublicKey;
-  timestamps?: Timestamps;
-  unlockAmounts?: UnlockAmounts;
-}
-
 export interface Timestamps {
   cliff: BN;
   end: BN;

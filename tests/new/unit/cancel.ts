@@ -17,13 +17,13 @@ import {
   getATABalanceMint,
   getATABalance,
   randomToken,
-  recipient,
   salts,
   sender,
   setUp,
   sleepFor,
   timeTravelTo,
   withdrawMax,
+  eve,
 } from "../base";
 
 describe("cancel", () => {
@@ -64,7 +64,7 @@ describe("cancel", () => {
       context("given an invalid asset mint", () => {
         it("should revert", async () => {
           try {
-            await cancel({ assetMint: randomToken });
+            await cancel({ depositedTokenMint: randomToken });
           } catch (error) {
             assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
           }
@@ -114,7 +114,7 @@ describe("cancel", () => {
           context("when signer not sender", () => {
             it("should revert", async () => {
               try {
-                await cancel({ signer: recipient.keys });
+                await cancel({ signer: eve.keys });
               } catch (error) {
                 assertErrorHexCode(error, getErrorCode("ConstraintAddress"));
               }
