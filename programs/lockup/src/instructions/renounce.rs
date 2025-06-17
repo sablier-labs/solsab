@@ -4,7 +4,8 @@ use anchor_spl::token_interface::Mint;
 use crate::{
     state::lockup::StreamData,
     utils::{
-        constants::*, events::RenounceLockupStream, lockup_math::get_streamed_amount, validations::check_renounce,
+        constants::seeds::STREAM_DATA_SEED, events::RenounceLockupStream, lockup_math::get_streamed_amount,
+        validations::check_renounce,
     },
 };
 

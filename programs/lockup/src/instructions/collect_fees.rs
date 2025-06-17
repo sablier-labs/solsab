@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     state::treasury::Treasury,
-    utils::{constants::*, events::FeesCollected, validations::check_collect_fees},
+    utils::{constants::seeds::TREASURY_SEED, events::FeesCollected, validations::check_collect_fees},
 };
 
 #[derive(Accounts)]

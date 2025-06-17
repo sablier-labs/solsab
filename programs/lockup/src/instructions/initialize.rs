@@ -8,7 +8,10 @@ use anchor_spl::{
 
 use crate::{
     state::{nft_collection_data::NftCollectionData, treasury::Treasury},
-    utils::{constants::*, nft},
+    utils::{
+        constants::{seeds::*, ANCHOR_DISCRIMINATOR_SIZE},
+        nft,
+    },
 };
 
 #[derive(Accounts)]

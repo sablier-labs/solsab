@@ -9,10 +9,7 @@ use anchor_spl::{
     token_interface::{mint_to, Mint, MintTo, TokenAccount, TokenInterface},
 };
 
-use crate::utils::constants::{
-    COLLECTION_METADATA_URI, COLLECTION_NAME, COLLECTION_SYMBOL, NFT_COLLECTION_MINT_SEED, NFT_METADATA_URI,
-    NFT_NAME_PREFIX, NFT_SYMBOL,
-};
+use crate::utils::constants::{nft_constants::*, seeds::NFT_COLLECTION_MINT_SEED};
 
 /// Creates and mints a stream NFT with collection verification
 #[allow(clippy::too_many_arguments)]
@@ -31,10 +28,11 @@ pub fn create_stream<'info>(
     rent: &Sysvar<'info, Rent>,
     nft_collection_mint_bump: u8,
 ) -> Result<()> {
-    // Form the Stream NFT name
+    // Form the Stream NFT name, which has the following format:
+    // "Sablier LL Stream #[first 4 chars of mint key]..[last 4 chars of mint key]"
+    // e.g., "Sablier LL Stream #2qid..m8jF"
     let mint_key: String = stream_nft_mint.key().to_string();
-    let stream_id = format!("{}..{}", &mint_key[..4], &mint_key[mint_key.len() - 4..]);
-    let nft_name = format!("{NFT_NAME_PREFIX}{stream_id}");
+    let nft_name = format!("{NFT_NAME_PREFIX}{}..{}", &mint_key[..4], &mint_key[mint_key.len() - 4..]);
 
     // Prepare the seeds for NFT Collection Mint
     let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[NFT_COLLECTION_MINT_SEED, &[nft_collection_mint_bump]]];
