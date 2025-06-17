@@ -8,7 +8,7 @@ use crate::{
     state::Campaign,
     utils::{
         constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED},
-        events::CampaignCreated,
+        events,
     },
 };
 
@@ -78,7 +78,7 @@ pub fn handler(
     )?;
 
     // Log the campaign creation.
-    emit!(CampaignCreated {
+    emit!(events::CreateCampaign {
         aggregate_amount,
         campaign: ctx.accounts.campaign.key(),
         campaign_name: name,
@@ -87,6 +87,8 @@ pub fn handler(
         ipfs_id,
         merkle_root,
         recipient_count,
+        token_decimals: ctx.accounts.airdrop_token_mint.decimals,
+        token_mint: ctx.accounts.airdrop_token_mint.key(),
     });
 
     Ok(())

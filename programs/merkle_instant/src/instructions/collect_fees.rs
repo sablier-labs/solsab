@@ -3,7 +3,7 @@ use anchor_spl::associated_token::AssociatedToken;
 
 use crate::{
     state::Treasury,
-    utils::{constants::*, events::*, validations::check_collect_fees},
+    utils::{constants::*, events, validations::check_collect_fees},
 };
 
 #[derive(Accounts)]
@@ -41,7 +41,7 @@ pub fn handler(ctx: Context<CollectFees>) -> Result<()> {
     ctx.accounts.fee_recipient.add_lamports(collectable_amount)?;
 
     // Log the fee collection.
-    emit!(FeesCollected {
+    emit!(events::FeesCollected {
         fee_collector: ctx.accounts.fee_collector.key(),
         fee_recipient: ctx.accounts.fee_recipient.key(),
         fee_amount: collectable_amount
