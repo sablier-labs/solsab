@@ -7,7 +7,7 @@ use anchor_spl::{
 use crate::{
     state::lockup::StreamData,
     utils::{
-        constants::seeds::STREAM_DATA_SEED, events::CancelLockupStream, lockup_math::get_streamed_amount,
+        constants::seeds::STREAM_DATA, events::CancelLockupStream, lockup_math::get_streamed_amount,
         transfer_helper::transfer_tokens, validations::check_cancel,
     },
 };
@@ -28,7 +28,7 @@ pub struct Cancel<'info> {
     #[account(
       mut,
       seeds = [
-        STREAM_DATA_SEED,
+        STREAM_DATA,
         stream_nft_mint.key().as_ref()
       ],
       bump = stream_data.bump,
@@ -89,7 +89,7 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
         ctx.accounts.deposited_token_program.to_account_info(),
         sender_amount,
         ctx.accounts.deposited_token_mint.decimals,
-        &[&[STREAM_DATA_SEED, ctx.accounts.stream_nft_mint.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
+        &[&[STREAM_DATA, ctx.accounts.stream_nft_mint.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
     )?;
 
     // Log the cancellation.

@@ -4,7 +4,7 @@ use anchor_spl::token_interface::Mint;
 use crate::{
     state::lockup::StreamData,
     utils::{
-        constants::seeds::STREAM_DATA_SEED, events::RenounceLockupStream, lockup_math::get_streamed_amount,
+        constants::seeds::STREAM_DATA, events::RenounceLockupStream, lockup_math::get_streamed_amount,
         validations::check_renounce,
     },
 };
@@ -22,7 +22,7 @@ pub struct Renounce<'info> {
     #[account(
       mut,
       seeds = [
-        STREAM_DATA_SEED,
+        STREAM_DATA,
         stream_nft_mint.key().as_ref()
       ],
       bump = stream_data.bump,

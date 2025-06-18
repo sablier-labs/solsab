@@ -38,14 +38,14 @@ pub struct CreateWithTimestamps<'info> {
 
     #[account(
         mut,
-        seeds = [NFT_COLLECTION_DATA_SEED],
+        seeds = [NFT_COLLECTION_DATA],
         bump = nft_collection_data.bump
     )]
     pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
 
     #[account(
       mut,
-      seeds = [NFT_COLLECTION_MINT_SEED],
+      seeds = [NFT_COLLECTION_MINT],
       bump,
     )]
     pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
@@ -53,7 +53,7 @@ pub struct CreateWithTimestamps<'info> {
     #[account(
       mut,
       seeds = [
-        METADATA_SEED,
+        METADATA,
         token_metadata_program.key().as_ref(),
         nft_collection_mint.key().as_ref(),
       ],
@@ -66,10 +66,10 @@ pub struct CreateWithTimestamps<'info> {
     #[account(
       mut,
       seeds = [
-        METADATA_SEED,
+        METADATA,
         token_metadata_program.key().as_ref(),
         nft_collection_mint.key().as_ref(),
-        EDITION_SEED,
+        EDITION,
       ],
       seeds::program = token_metadata_program.key(),
       bump,
@@ -81,7 +81,7 @@ pub struct CreateWithTimestamps<'info> {
         init,
         payer = sender,
         seeds = [
-          STREAM_NFT_MINT_SEED,
+          STREAM_NFT_MINT,
           sender.key().as_ref(),
           salt.to_le_bytes().as_ref(),
         ],
@@ -97,7 +97,7 @@ pub struct CreateWithTimestamps<'info> {
         init,
         payer = sender,
         space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
-        seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
+        seeds = [STREAM_DATA, stream_nft_mint.key().as_ref()],
         bump
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
@@ -123,7 +123,7 @@ pub struct CreateWithTimestamps<'info> {
     #[account(
       mut,
       seeds = [
-        METADATA_SEED,
+        METADATA,
         token_metadata_program.key().as_ref(),
         stream_nft_mint.key().as_ref()
       ],
@@ -136,9 +136,9 @@ pub struct CreateWithTimestamps<'info> {
     #[account(
       mut,
       seeds = [
-        METADATA_SEED,
+        METADATA,
         token_metadata_program.key().as_ref(),
-        stream_nft_mint.key().as_ref(), EDITION_SEED
+        stream_nft_mint.key().as_ref(), EDITION
       ],
       seeds::program = token_metadata_program.key(),
       bump,

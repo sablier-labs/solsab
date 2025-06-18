@@ -2,17 +2,17 @@ pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
 
 // Account Seeds
 pub mod seeds {
-    pub const EDITION_SEED: &[u8] = b"edition";
-    pub const METADATA_SEED: &[u8] = b"metadata";
-    pub const NFT_COLLECTION_DATA_SEED: &[u8] = b"nft_collection_data";
-    pub const NFT_COLLECTION_MINT_SEED: &[u8] = b"nft_collection_mint";
-    pub const STREAM_NFT_MINT_SEED: &[u8] = b"stream_nft_mint";
-    pub const STREAM_DATA_SEED: &[u8] = b"stream_data";
-    pub const TREASURY_SEED: &[u8] = b"treasury";
+    pub const EDITION: &[u8] = b"edition";
+    pub const METADATA: &[u8] = b"metadata";
+    pub const NFT_COLLECTION_DATA: &[u8] = b"nft_collection_data";
+    pub const NFT_COLLECTION_MINT: &[u8] = b"nft_collection_mint";
+    pub const STREAM_NFT_MINT: &[u8] = b"stream_nft_mint";
+    pub const STREAM_DATA: &[u8] = b"stream_data";
+    pub const TREASURY: &[u8] = b"treasury";
 }
 
 // NFT
-pub mod nft_constants {
+pub mod nft {
     pub const COLLECTION_METADATA_URI: &str =
         "https://ipfs.io/ipfs/bafkreiak467qbqncgpkmgqmu7hynjnqb5j33jjnkk6bcdda63m3lf7czca";
     pub const COLLECTION_NAME: &str = "Sablier LockupLinear Streams";

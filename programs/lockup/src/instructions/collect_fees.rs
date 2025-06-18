@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     state::treasury::Treasury,
-    utils::{constants::seeds::TREASURY_SEED, events::FeesCollected, validations::check_collect_fees},
+    utils::{constants::seeds::TREASURY, events::FeesCollected, validations::check_collect_fees},
 };
 
 #[derive(Accounts)]
@@ -19,7 +19,7 @@ pub struct CollectFees<'info> {
 
     #[account(
       mut,
-      seeds = [TREASURY_SEED],
+      seeds = [TREASURY],
       bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
