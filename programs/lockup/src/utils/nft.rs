@@ -29,10 +29,10 @@ pub fn create_stream<'info>(
     nft_collection_mint_bump: u8,
 ) -> Result<()> {
     // Construct the Stream NFT name using the following format:
-    // "Sablier LL Stream #[first 4 chars of mint key]...[last 4 chars of mint key]"
-    // Example: "Sablier LL Stream #2qid...m8jF"
+    // "Sablier LL Stream #[first 5 chars of mint key]...[last 5 chars of mint key]"
+    // Example: "Sablier LL Stream #2qidf...dm8jF"
     let mint_key: String = stream_nft_mint.key().to_string();
-    let nft_name = format!("{NFT_NAME_PREFIX}{}...{}", &mint_key[..4], &mint_key[mint_key.len() - 4..]);
+    let nft_name = format!("{NFT_NAME_PREFIX}{}...{}", &mint_key[..5], &mint_key[mint_key.len() - 5..]);
 
     // Prepare the seeds for NFT Collection Mint
     let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[NFT_COLLECTION_MINT, &[nft_collection_mint_bump]]];
