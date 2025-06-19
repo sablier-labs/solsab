@@ -1,23 +1,6 @@
-import {
-  PublicKey,
-  Keypair,
-  LAMPORTS_PER_SOL,
-  Transaction,
-  TransactionInstruction as TxIx,
-  ComputeBudgetProgram,
-} from "@solana/web3.js";
-
 import { BN, Program } from "@coral-xyz/anchor";
-
 import * as token from "@solana/spl-token";
-
-import {
-  BanksClient,
-  Clock,
-  ProgramTestContext,
-  startAnchor,
-} from "solana-bankrun";
-import { BankrunProvider } from "anchor-bankrun";
+import { PublicKey, Keypair } from "@solana/web3.js";
 
 import { SablierLockup } from "../../../target/types/sablier_lockup";
 import IDL from "../../../target/idl/sablier_lockup.json";
@@ -32,12 +15,23 @@ import {
 } from "./utils/types";
 
 import {
-  createATA,
-  createMint,
+  buildSignAndProcessTx,
   deriveATAAddress,
   getATABalance,
-  mintTo,
 } from "../anchor-bankrun-adapter";
+
+import {
+  banksClient,
+  bankrunProvider,
+  commonSetUp,
+  createUser,
+  dai,
+  feeCollector,
+  getLamportsOf,
+  getPDAAddress,
+  recipient,
+  usdc,
+} from "../common-base";
 
 export {
   deriveATAAddress,
@@ -47,24 +41,12 @@ export {
 } from "../anchor-bankrun-adapter";
 
 // Programs and addresses
-export let banksClient: BanksClient;
-let bankrunProvider: BankrunProvider;
-let context: ProgramTestContext;
-export let defaultBankrunPayer: Keypair;
 export let nftCollectionDataAddress: PublicKey;
 export let lockupProgram: Program<SablierLockup>;
 export let treasuryAddress: PublicKey;
 
 // Users
-export let eve: User;
-export let feeCollector: User;
-export let recipient: User;
 export let sender: User;
-
-// Tokens
-export let usdc: PublicKey;
-export let dai: PublicKey;
-export let randomToken: PublicKey;
 
 // Streams
 export let salts: Salts;
@@ -74,46 +56,31 @@ export let salts: Salts;
 //////////////////////////////////////////////////////////////////////////*/
 
 export async function setUp(initOrNot = true) {
-  context = await startAnchor(
-    "",
-    [
-      {
-        name: "sablier_lockup",
-        programId: new PublicKey(IDL.address),
-      },
-      {
-        name: "token_metadata_program",
-        programId: defaults.TOKEN_METADATA_PROGRAM_ID,
-      },
-    ],
-    []
-  );
-  banksClient = context.banksClient;
-  bankrunProvider = new BankrunProvider(context);
-  defaultBankrunPayer = bankrunProvider.wallet.payer;
+  // Call common setup with lockup specific programs
+  await commonSetUp("sablier_lockup", new PublicKey(IDL.address), [
+    {
+      name: "token_metadata_program",
+      programId: defaults.TOKEN_METADATA_PROGRAM_ID,
+    },
+  ]);
 
   // Deploy the program being tested
   lockupProgram = new Program<SablierLockup>(IDL, bankrunProvider);
 
-  // Initialize the tokens
-  await createTokens();
-
-  // Create the users
-  eve = await createUser();
-  feeCollector = await createUser();
-  recipient = await createUser();
+  // Create the stream users.
   sender = await createUser();
 
   // Pre-calculate the address of the NFT Collection Data
-  nftCollectionDataAddress = getPDAAddress([
-    Buffer.from(defaults.NFT_COLLECTION_DATA_SEED),
-  ]);
+  nftCollectionDataAddress = getPDAAddress(
+    [Buffer.from(defaults.NFT_COLLECTION_DATA_SEED)],
+    lockupProgram.programId
+  );
 
   // Pre-calculate the address of the Treasury
-  treasuryAddress = getPDAAddress([Buffer.from(defaults.TREASURY_SEED)]);
-
-  // Set the block time to APR 1, 2025
-  await timeTravelTo(defaults.APR_1_2025);
+  treasuryAddress = getPDAAddress(
+    [Buffer.from(defaults.TREASURY_SEED)],
+    lockupProgram.programId
+  );
 
   if (initOrNot) {
     // Initialize the SablierLockup program
@@ -130,157 +97,9 @@ export async function setUp(initOrNot = true) {
   }
 }
 
-async function createTokens(): Promise<void> {
-  const mintAndFreezeAuthority = defaultBankrunPayer.publicKey;
-
-  dai = await createMint(
-    banksClient,
-    defaultBankrunPayer,
-    mintAndFreezeAuthority,
-    mintAndFreezeAuthority,
-    9,
-    Keypair.generate(),
-    token.TOKEN_2022_PROGRAM_ID
-  );
-
-  randomToken = await createMint(
-    banksClient,
-    defaultBankrunPayer,
-    mintAndFreezeAuthority,
-    mintAndFreezeAuthority,
-    6,
-    Keypair.generate(),
-    token.TOKEN_PROGRAM_ID
-  );
-
-  usdc = await createMint(
-    banksClient,
-    defaultBankrunPayer,
-    mintAndFreezeAuthority,
-    mintAndFreezeAuthority,
-    6,
-    Keypair.generate(),
-    token.TOKEN_PROGRAM_ID
-  );
-}
-
-export async function createATAAndFund(
-  mint: PublicKey,
-  amount: number,
-  tokenProgram: PublicKey,
-  user: PublicKey
-): Promise<PublicKey> {
-  // Create ATA for the user
-  const userATA = await createATA(
-    banksClient,
-    defaultBankrunPayer,
-    mint,
-    user,
-    tokenProgram
-  );
-
-  // Mint the amount to the user's ATA
-  await mintTo(
-    banksClient,
-    defaultBankrunPayer,
-    mint,
-    userATA,
-    defaultBankrunPayer.publicKey,
-    amount,
-    [],
-    tokenProgram
-  );
-
-  return userATA;
-}
-
-async function createATAsAndFund(
-  user: PublicKey
-): Promise<{ usdcATA: PublicKey; daiATA: PublicKey }> {
-  // Create ATAs for the user
-  const usdcATA = await createATAAndFund(
-    usdc,
-    defaults.USDC_USER_BALANCE,
-    token.TOKEN_PROGRAM_ID,
-    user
-  );
-  const daiATA = await createATAAndFund(
-    dai,
-    defaults.DAI_USER_BALANCE,
-    token.TOKEN_2022_PROGRAM_ID,
-    user
-  );
-
-  return { usdcATA, daiATA };
-}
-
-async function createUser(): Promise<User> {
-  // Create the keypair for the user
-  const acc = Keypair.generate();
-
-  // Set up the account info for the new keypair
-  const accInfo = {
-    lamports: 100 * LAMPORTS_PER_SOL, // Default balance (100 SOL)
-    owner: new PublicKey("11111111111111111111111111111111"), // Default owner (System Program)
-    executable: false, // Not a program account
-    rentEpoch: 0, // Default rent epoch
-    data: new Uint8Array(), // Empty data
-  };
-
-  // Add account to the BanksClient context
-  context.setAccount(acc.publicKey, accInfo);
-
-  // Create ATAs and mint tokens for the user
-  const { usdcATA, daiATA } = await createATAsAndFund(acc.publicKey);
-
-  const user: User = {
-    keys: acc,
-    usdcATA,
-    daiATA,
-  };
-
-  return user;
-}
-
 /*//////////////////////////////////////////////////////////////////////////
                                     TX-IX
 //////////////////////////////////////////////////////////////////////////*/
-
-async function buildSignAndProcessTx(
-  ixs: TxIx | TxIx[],
-  signerKeys: Keypair | Keypair[] = sender.keys,
-  cuLimit: number = 1_400_000
-) {
-  // Get the latest blockhash
-  const res = await banksClient.getLatestBlockhash();
-  if (!res) throw new Error("Couldn't get the latest blockhash");
-
-  // Initialize the transaction
-  const tx = new Transaction();
-  tx.recentBlockhash = res[0];
-
-  // Add compute unit limit instruction if specified
-  if (cuLimit !== undefined) {
-    const cuLimitIx = ComputeBudgetProgram.setComputeUnitLimit({
-      units: cuLimit,
-    });
-    tx.add(cuLimitIx);
-  }
-
-  // Add instructions to the transaction
-  const internal_ixs: TxIx[] = Array.isArray(ixs) ? ixs : [ixs];
-  internal_ixs.forEach((ix) => tx.add(ix));
-
-  // Ensure `signerKeys` is always an array
-  const signers = Array.isArray(signerKeys) ? signerKeys : [signerKeys];
-
-  // Sign the transaction with all provided signers
-  tx.sign(...signers);
-
-  // Process the transaction
-  const txMeta = await banksClient.processTransaction(tx);
-  return txMeta;
-}
 
 export async function cancel({
   salt = salts.default,
@@ -299,7 +118,7 @@ export async function cancel({
     })
     .instruction();
 
-  await buildSignAndProcessTx(cancelStreamIx, signer);
+  await buildSignAndProcessTx(banksClient, cancelStreamIx, signer);
 }
 
 export async function cancelToken2022(salt: BN): Promise<any> {
@@ -319,7 +138,7 @@ export async function collectFees(signer: Keypair = feeCollector.keys) {
     })
     .instruction();
 
-  await buildSignAndProcessTx(collectFeesIx, signer);
+  await buildSignAndProcessTx(banksClient, collectFeesIx, signer);
 }
 
 export async function createWithDurations(
@@ -349,7 +168,7 @@ export async function createWithDurations(
     })
     .instruction();
 
-  await buildSignAndProcessTx(createWithDurationsIx);
+  await buildSignAndProcessTx(banksClient, createWithDurationsIx, sender.keys);
 
   return salt;
 }
@@ -357,24 +176,6 @@ export async function createWithDurations(
 export async function createWithTimestamps(
   params: CreateWithTimestampsParams = {}
 ): Promise<BN> {
-  // Create the transaction instruction
-  const { txIx, salt } = await getCreateWithTimestampsIx(params);
-
-  await buildSignAndProcessTx(txIx, sender.keys);
-
-  return salt;
-}
-
-export async function createWithTimestampsToken2022(): Promise<BN> {
-  return await createWithTimestamps({
-    depositTokenMint: dai,
-    depositTokenProgram: token.TOKEN_2022_PROGRAM_ID,
-  });
-}
-
-export async function getCreateWithTimestampsIx(
-  params: CreateWithTimestampsParams = {}
-): Promise<{ txIx: TxIx; salt: BN }> {
   const {
     senderPubKey = sender.keys.publicKey,
     recipientPubKey = recipient.keys.publicKey,
@@ -409,7 +210,16 @@ export async function getCreateWithTimestampsIx(
     })
     .instruction();
 
-  return { txIx, salt };
+  await buildSignAndProcessTx(banksClient, txIx, sender.keys);
+
+  return salt;
+}
+
+export async function createWithTimestampsToken2022(): Promise<BN> {
+  return await createWithTimestamps({
+    depositTokenMint: dai,
+    depositTokenProgram: token.TOKEN_2022_PROGRAM_ID,
+  });
 }
 
 export async function initializeLockup(): Promise<void> {
@@ -421,7 +231,7 @@ export async function initializeLockup(): Promise<void> {
     })
     .instruction();
 
-  await buildSignAndProcessTx(initializeIx);
+  await buildSignAndProcessTx(banksClient, initializeIx, sender.keys);
 }
 
 export async function renounce({
@@ -437,7 +247,7 @@ export async function renounce({
     })
     .instruction();
 
-  await buildSignAndProcessTx(renounceIx, signer);
+  await buildSignAndProcessTx(banksClient, renounceIx, signer);
 }
 
 export async function withdraw({
@@ -462,7 +272,7 @@ export async function withdraw({
     })
     .instruction();
 
-  await buildSignAndProcessTx(withdrawIx, signer);
+  await buildSignAndProcessTx(banksClient, withdrawIx, signer);
 }
 
 export async function withdrawToken2022(
@@ -499,20 +309,12 @@ export async function withdrawMax({
     })
     .instruction();
 
-  await buildSignAndProcessTx(withdrawMaxIx);
+  await buildSignAndProcessTx(banksClient, withdrawMaxIx, sender.keys);
 }
 
 /*//////////////////////////////////////////////////////////////////////////
                                   HELPERS
 //////////////////////////////////////////////////////////////////////////*/
-
-export async function accountExists(address: PublicKey): Promise<boolean> {
-  return (await banksClient.getAccount(address)) != null;
-}
-
-export async function getLamportsOf(user: PublicKey): Promise<bigint> {
-  return await banksClient.getBalance(user);
-}
 
 export async function getSenderLamports(): Promise<bigint> {
   return await getLamportsOf(sender.keys.publicKey);
@@ -620,13 +422,6 @@ export async function fetchStreamData(salt = salts.default): Promise<any> {
   );
 }
 
-export function getPDAAddress(
-  seeds: Array<Buffer | Uint8Array>,
-  programId: PublicKey = lockupProgram.programId
-): PublicKey {
-  return PublicKey.findProgramAddressSync(seeds, programId)[0];
-}
-
 export async function getSenderTokenBalance(tokenMint = usdc): Promise<BN> {
   const senderAta = tokenMint === usdc ? sender.usdcATA : sender.daiATA;
   return await getATABalance(banksClient, senderAta);
@@ -638,7 +433,7 @@ function getStreamDataAddress(salt: BN): PublicKey {
     Buffer.from(defaults.STREAM_DATA_SEED),
     streamNftMint.toBuffer(),
   ];
-  return getPDAAddress(streamDataSeeds);
+  return getPDAAddress(streamDataSeeds, lockupProgram.programId);
 }
 
 function getStreamNftMintAddress(
@@ -652,7 +447,7 @@ function getStreamNftMintAddress(
     salt.toBuffer("le", 16),
   ];
 
-  return getPDAAddress(streamNftMintSeeds);
+  return getPDAAddress(streamNftMintSeeds, lockupProgram.programId);
 }
 
 async function getTotalSupply(): Promise<BN> {
@@ -673,24 +468,4 @@ async function getTotalSupply(): Promise<BN> {
 
   const totalSupply = new BN(nftCollectionData.totalSupply.toString(), 10);
   return totalSupply;
-}
-
-export async function sleepFor(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export async function timeTravelTo(timestamp: bigint | BN) {
-  const currentClock = await banksClient.getClock();
-  const timestampAsBigInt =
-    timestamp instanceof BN ? BigInt(timestamp.toString()) : timestamp;
-
-  context.setClock(
-    new Clock(
-      currentClock.slot,
-      currentClock.epochStartTimestamp,
-      currentClock.epoch,
-      currentClock.leaderScheduleEpoch,
-      timestampAsBigInt
-    )
-  );
 }

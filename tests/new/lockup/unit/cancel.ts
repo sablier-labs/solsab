@@ -1,17 +1,7 @@
 import { BN } from "@coral-xyz/anchor";
 import { assert } from "chai";
 
-import { Stream } from "../utils/types";
-
 import {
-  assertErrorHexCode,
-  assertEqStreamDatas,
-  assertFail,
-} from "../utils/assertions";
-import * as defaults from "../utils/defaults";
-import { getErrorCode } from "../utils/errors";
-import {
-  banksClient,
   cancel,
   cancelToken2022,
   createWithTimestampsToken2022,
@@ -20,15 +10,26 @@ import {
   fetchStreamData,
   getATABalanceMint,
   getATABalance,
-  randomToken,
-  recipient,
   salts,
   sender,
   setUp,
-  sleepFor,
-  timeTravelTo,
   withdrawMax,
 } from "../base";
+import {
+  banksClient,
+  randomToken,
+  recipient,
+  sleepFor,
+  timeTravelTo,
+} from "../../common-base";
+import {
+  assertErrorHexCode,
+  assertEqStreamDatas,
+  assertFail,
+} from "../utils/assertions";
+import * as defaults from "../utils/defaults";
+import { getErrorCode } from "../utils/errors";
+import { Stream } from "../utils/types";
 
 describe("cancel", () => {
   context("when the program is not initialized", () => {

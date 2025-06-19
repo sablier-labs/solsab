@@ -1,33 +1,37 @@
 import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
+
+import { createATAAndFund } from "../../anchor-bankrun-adapter";
 import {
   campaignCreator,
   claim,
-  createATAAndMintTo,
   createCampaign,
   deriveATAAddress,
-  randomTokenSPL,
   claimToken2022,
   setUp,
-  sleepFor,
-  timeTravelTo,
   TOKEN_PROGRAM_ID,
-  banksClient,
-  getPDAAddress,
   campaignIds,
-  accountExists,
   fetchCampaignData,
-  recipient,
+  merkleInstantProgram,
   getATABalance,
-  usdc,
   treasuryAddress,
-  getLamportsOf,
-  dai,
   fundCampaign,
 } from "../base";
-import { getErrorCode } from "../utils/errors";
+import {
+  accountExists,
+  banksClient,
+  randomToken,
+  getLamportsOf,
+  dai,
+  getPDAAddress,
+  recipient,
+  sleepFor,
+  timeTravelTo,
+  usdc,
+} from "../../common-base";
+import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
+import { getErrorCode } from "../utils/errors";
 
 describe("claim", () => {
   context("when the program is not initialized", () => {
@@ -153,22 +157,24 @@ describe("claim", () => {
                   () => {
                     it("should claim the airdrop", async () => {
                       // Mint the random token to the campaign creator
-                      const campaignCreatorAta = await createATAAndMintTo(
-                        campaignCreator.keys.publicKey,
-                        randomTokenSPL,
+                      const campaignCreatorAta = await createATAAndFund(
+                        banksClient,
+                        campaignCreator.keys,
+                        randomToken,
                         defaults.AGGREGATE_AMOUNT.toNumber(),
-                        TOKEN_PROGRAM_ID
+                        TOKEN_PROGRAM_ID,
+                        campaignCreator.keys.publicKey
                       );
 
                       // Create a Campaign with the random token
                       const campaignId = await createCampaign({
-                        airdropTokenMint: randomTokenSPL,
+                        airdropTokenMint: randomToken,
                       });
 
                       await fundCampaign(
                         campaignCreator.keys,
                         campaignId,
-                        randomTokenSPL,
+                        randomToken,
                         campaignCreatorAta,
                         TOKEN_PROGRAM_ID,
                         defaults.AGGREGATE_AMOUNT.toNumber()
@@ -331,9 +337,12 @@ function deriveClaimReceiptAddress(
   const indexBuffer = Buffer.alloc(4);
   indexBuffer.writeUInt32LE(recipientIndex); // use LE to match the Rust program
 
-  return getPDAAddress([
-    Buffer.from(defaults.CLAIM_RECEIPT_SEED),
-    campaignId.toBuffer(),
-    indexBuffer,
-  ]);
+  return getPDAAddress(
+    [
+      Buffer.from(defaults.CLAIM_RECEIPT_SEED),
+      campaignId.toBuffer(),
+      indexBuffer,
+    ],
+    merkleInstantProgram.programId
+  );
 }

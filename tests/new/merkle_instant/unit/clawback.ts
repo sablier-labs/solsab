@@ -3,26 +3,28 @@ import { BN } from "@coral-xyz/anchor";
 import {
   setUp,
   clawback,
-  recipient,
-  treasuryAddress,
-  dai,
+  deriveATAAddress,
   claim,
-  timeTravelTo,
   TOKEN_2022_PROGRAM_ID,
   campaignIds,
-  usdc,
   campaignCreator,
   getATABalance,
-  banksClient,
-  deriveATAAddress,
   TOKEN_PROGRAM_ID,
-  eve,
+  treasuryAddress,
 } from "../base";
+import {
+  banksClient,
+  dai,
+  eve,
+  recipient,
+  timeTravelTo,
+  usdc,
+} from "../../common-base";
 import * as defaults from "../utils/defaults";
 import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import { getErrorCode } from "../utils/errors";
 
-describe("createCampaign", () => {
+describe("clawback", () => {
   context("when the program is not initialized", () => {
     before(async () => {
       await setUp({
@@ -81,7 +83,6 @@ describe("createCampaign", () => {
                   await clawback({
                     signer: eve.keys,
                   });
-
                   assertFail();
                 } catch (error) {
                   assertErrorHexCode(error, getErrorCode("ConstraintAddress"));

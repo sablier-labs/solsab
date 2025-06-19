@@ -1,12 +1,5 @@
-import {
-  claim,
-  collectFees,
-  eve,
-  getLamportsOf,
-  getTreasuryLamports,
-  recipient,
-  setUp,
-} from "../base";
+import { claim, collectFees, getTreasuryLamports, setUp } from "../base";
+import { eve, getLamportsOf, recipient } from "../../common-base";
 import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import { getErrorCode } from "../utils/errors";
 import * as defaults from "../utils/defaults";

@@ -1,14 +1,7 @@
 import { keccak_256 } from "@noble/hashes/sha3";
 import bs58 from "bs58";
 
-import {
-  PublicKey,
-  Keypair,
-  LAMPORTS_PER_SOL,
-  Transaction,
-  TransactionInstruction as TxIx,
-  ComputeBudgetProgram,
-} from "@solana/web3.js";
+import { PublicKey, Keypair } from "@solana/web3.js";
 
 import * as token from "@solana/spl-token";
 export { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
@@ -16,21 +9,23 @@ export { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { BN, Program } from "@coral-xyz/anchor";
 
 import {
-  BanksClient,
-  Clock,
-  ProgramTestContext,
-  startAnchor,
-} from "solana-bankrun";
-
-import { BankrunProvider } from "anchor-bankrun";
-
-import {
-  createATA,
-  createMint,
+  buildSignAndProcessTx,
   deriveATAAddress,
-  mintTo,
   transfer,
 } from "../anchor-bankrun-adapter";
+
+import {
+  banksClient,
+  bankrunProvider,
+  commonSetUp,
+  createUser,
+  dai,
+  feeCollector,
+  getLamportsOf,
+  getPDAAddress,
+  recipient,
+  usdc,
+} from "../common-base";
 
 export {
   deriveATAAddress,
@@ -47,32 +42,20 @@ import * as defaults from "./utils/defaults";
 import { CampaignData, CampaignIds, User } from "./utils/types";
 
 // Programs and addresses
-export let banksClient: BanksClient;
-let bankrunProvider: BankrunProvider;
-let context: ProgramTestContext;
-let defaultBankrunPayer: Keypair;
-let merkleInstantProgram: Program<SablierMerkleInstant>;
+export let merkleInstantProgram: Program<SablierMerkleInstant>;
 export let treasuryAddress: PublicKey;
 
 // Users
-export let eve: User;
-let feeCollector: User;
-export let recipient: User;
 export let campaignCreator: User;
 
 // Campaigns
 export let campaignIds: CampaignIds;
 
+// Merkle Tree
 let merkleLeaves: (string | number)[][];
 let merkleLeavesHashes: Buffer[];
 let merkleRoot: number[];
 let merkleProof: number[][];
-
-// Tokens
-export let usdc: PublicKey;
-export let dai: PublicKey;
-export let randomTokenSPL: PublicKey;
-export let randomTokenToken2022: PublicKey;
 
 /*//////////////////////////////////////////////////////////////////////////
                                        SET-UP
@@ -82,20 +65,9 @@ export async function setUp({
   initProgram = true,
   createCampaigns = true,
   fundCampaigns = true,
-} = {}): Promise<void> {
-  context = await startAnchor(
-    "",
-    [
-      {
-        name: "sablier_merkle_instant",
-        programId: new PublicKey(IDL.address),
-      },
-    ],
-    []
-  );
-  banksClient = context.banksClient;
-  bankrunProvider = new BankrunProvider(context);
-  defaultBankrunPayer = bankrunProvider.wallet.payer;
+} = {}) {
+  // Call common setup with merkle-instant specific programs
+  await commonSetUp("sablier_merkle_instant", new PublicKey(IDL.address));
 
   // Deploy the program being tested
   merkleInstantProgram = new Program<SablierMerkleInstant>(
@@ -103,20 +75,14 @@ export async function setUp({
     bankrunProvider
   );
 
-  // Initialize the tokens
-  await createTokenMints();
-
   // Create the users
-  eve = await createUser();
-  feeCollector = await createUser();
-  recipient = await createUser();
   campaignCreator = await createUser();
 
   // Pre-calculate the address of the Treasury
-  treasuryAddress = getPDAAddress([Buffer.from(defaults.TREASURY_SEED)]);
-
-  // Set the block time to APR 1, 2025
-  await timeTravelTo(defaults.APR_1_2025);
+  treasuryAddress = getPDAAddress(
+    [Buffer.from(defaults.TREASURY_SEED)],
+    merkleInstantProgram.programId
+  );
 
   // Initialize the Merkle Tree leaves
   merkleLeaves = [
@@ -179,131 +145,6 @@ export async function setUp({
   }
 }
 
-async function createTokenMints(): Promise<void> {
-  const mintAndFreezeAuthority = defaultBankrunPayer.publicKey;
-
-  usdc = await createMint(
-    banksClient,
-    defaultBankrunPayer,
-    mintAndFreezeAuthority,
-    mintAndFreezeAuthority,
-    6,
-    Keypair.generate(),
-    token.TOKEN_PROGRAM_ID
-  );
-
-  randomTokenSPL = await createMint(
-    banksClient,
-    defaultBankrunPayer,
-    mintAndFreezeAuthority,
-    mintAndFreezeAuthority,
-    6,
-    Keypair.generate(),
-    token.TOKEN_PROGRAM_ID
-  );
-
-  dai = await createMint(
-    banksClient,
-    defaultBankrunPayer,
-    mintAndFreezeAuthority,
-    mintAndFreezeAuthority,
-    9,
-    Keypair.generate(),
-    token.TOKEN_2022_PROGRAM_ID
-  );
-
-  randomTokenToken2022 = await createMint(
-    banksClient,
-    defaultBankrunPayer,
-    mintAndFreezeAuthority,
-    mintAndFreezeAuthority,
-    9,
-    Keypair.generate(),
-    token.TOKEN_2022_PROGRAM_ID
-  );
-}
-
-async function createCommonATAsAndMintTo(
-  user: PublicKey
-): Promise<{ usdcATA: PublicKey; daiATA: PublicKey }> {
-  // Create the USDC and DAI ATAs for the user
-  const usdcATA = await createATAAndMintTo(
-    user,
-    usdc,
-    defaults.USDC_USER_BALANCE,
-    token.TOKEN_PROGRAM_ID
-  );
-
-  const daiATA = await createATAAndMintTo(
-    user,
-    dai,
-    defaults.DAI_USER_BALANCE,
-    token.TOKEN_2022_PROGRAM_ID
-  );
-
-  return { usdcATA, daiATA };
-}
-
-export async function createATAAndMintTo(
-  user: PublicKey,
-  tokenMint: PublicKey,
-  amount: number,
-  tokenProgram: PublicKey
-): Promise<PublicKey> {
-  // Create ATA for the user
-  const userATA = await createATA(
-    banksClient,
-    defaultBankrunPayer,
-    tokenMint,
-    user,
-    tokenProgram
-  );
-
-  // Mint the requested amount to the user's ATA
-  await mintTo(
-    banksClient,
-    defaultBankrunPayer,
-    tokenMint,
-    userATA,
-    defaultBankrunPayer.publicKey,
-    amount,
-    [],
-    tokenProgram
-  );
-
-  return userATA;
-}
-
-async function createUser(): Promise<User> {
-  // Create the keypair for the user
-  const userKeypair = Keypair.generate();
-
-  // Set up the account info for the new keypair
-  const accInfo = {
-    lamports: 100 * LAMPORTS_PER_SOL, // Default balance (100 SOL)
-    owner: new PublicKey("11111111111111111111111111111111"), // Default owner (System Program)
-    executable: false, // Not a program account
-    rentEpoch: 0, // Default rent epoch
-    data: new Uint8Array(), // Empty data
-  };
-
-  // Add account to the BanksClient context
-  context.setAccount(userKeypair.publicKey, accInfo);
-
-  // Create ATAs and mint tokens for the user
-  const { usdcATA, daiATA } = await createCommonATAsAndMintTo(
-    userKeypair.publicKey
-  );
-
-  const user: User = {
-    keys: userKeypair,
-    usdcATA,
-    daiATA,
-  };
-
-  return user;
-}
-
 export async function fundCampaign(
   funderKeys: Keypair,
   campaignId: PublicKey,
@@ -336,42 +177,6 @@ export async function fundCampaign(
                                     TX-IX
 //////////////////////////////////////////////////////////////////////////*/
 
-async function buildSignAndProcessTx(
-  ixs: TxIx | TxIx[],
-  signerKeys: Keypair | Keypair[] = campaignCreator.keys,
-  cuLimit: number = 1_400_000 // The maximum Compute Unit limit for a tx
-) {
-  // Get the latest blockhash
-  const res = await banksClient.getLatestBlockhash();
-  if (!res) throw new Error("Couldn't get the latest blockhash");
-
-  // Initialize the transaction
-  const tx = new Transaction();
-  tx.recentBlockhash = res[0];
-
-  // Add compute unit limit instruction if specified
-  if (cuLimit !== undefined) {
-    const cuLimitIx = ComputeBudgetProgram.setComputeUnitLimit({
-      units: cuLimit,
-    });
-    tx.add(cuLimitIx);
-  }
-
-  // Add instructions to the transaction
-  const internal_ixs: TxIx[] = Array.isArray(ixs) ? ixs : [ixs];
-  internal_ixs.forEach((ix) => tx.add(ix));
-
-  // Ensure `signerKeys` is always an array
-  const signers = Array.isArray(signerKeys) ? signerKeys : [signerKeys];
-
-  // Sign the transaction with all provided signers
-  tx.sign(...signers);
-
-  // Process the transaction
-  const txMeta = await banksClient.processTransaction(tx);
-  return txMeta;
-}
-
 export async function claim({
   claimerKeys = recipient.keys,
   campaignId = campaignIds.default,
@@ -394,7 +199,7 @@ export async function claim({
     .instruction();
 
   // Build and sign the transaction
-  await buildSignAndProcessTx(claimIx, claimerKeys);
+  await buildSignAndProcessTx(banksClient, claimIx, claimerKeys);
 }
 
 export async function claimToken2022(): Promise<void> {
@@ -422,7 +227,7 @@ export async function clawback({
     })
     .instruction();
 
-  await buildSignAndProcessTx(clawbackIx, signer);
+  await buildSignAndProcessTx(banksClient, clawbackIx, signer);
 }
 
 export async function collectFees({
@@ -437,7 +242,7 @@ export async function collectFees({
     })
     .instruction();
 
-  await buildSignAndProcessTx(collectFeesIx, signer);
+  await buildSignAndProcessTx(banksClient, collectFeesIx, signer);
 }
 
 export async function createCampaign({
@@ -445,7 +250,7 @@ export async function createCampaign({
   merkleRoot: paramMerkleRoot = Array.from(merkleRoot),
   expirationTime = defaults.EXPIRATION_TIME,
   name = defaults.CAMPAIGN_NAME,
-  ipfsId = defaults.IPFS_ID,
+  ipfsCid = defaults.IPFS_CID,
   aggregateAmount = defaults.AGGREGATE_AMOUNT,
   recipientCount = merkleLeaves.length,
   airdropTokenMint = usdc,
@@ -457,7 +262,6 @@ export async function createCampaign({
       paramMerkleRoot,
       expirationTime,
       name,
-      ipfsId,
       aggregateAmount,
       recipientCount
     )
@@ -468,17 +272,21 @@ export async function createCampaign({
     })
     .instruction();
 
-  await buildSignAndProcessTx(txIx, creatorKeys);
+  await buildSignAndProcessTx(banksClient, txIx, creatorKeys);
 
   // Derive the address of the campaign
-  const campaignAddress = getPDAAddress([
-    Buffer.from(defaults.CAMPAIGN_SEED),
-    creatorKeys.publicKey.toBuffer(),
-    Buffer.from(merkleRoot),
-    expirationTime.toArrayLike(Buffer, "le", 8),
-    Buffer.from(name),
-    airdropTokenMint.toBuffer(),
-  ]);
+  const campaignAddress = getPDAAddress(
+    [
+      Buffer.from(defaults.CAMPAIGN_SEED),
+      creatorKeys.publicKey.toBuffer(),
+      Buffer.from(merkleRoot),
+      expirationTime.toArrayLike(Buffer, "le", 8),
+      Buffer.from(ipfsCid),
+      Buffer.from(name),
+      airdropTokenMint.toBuffer(),
+    ],
+    merkleInstantProgram.programId
+  );
 
   return campaignAddress;
 }
@@ -498,7 +306,7 @@ export function defaultCampaignData(): CampaignData {
     creator: campaignCreator.keys.publicKey,
     expirationTime: defaults.EXPIRATION_TIME,
     firstClaimTime: new BN(0),
-    ipfsId: defaults.IPFS_ID,
+    ipfsCid: defaults.IPFS_CID,
     merkleRoot: Array.from(merkleRoot),
     name: defaults.CAMPAIGN_NAME,
   };
@@ -512,16 +320,12 @@ export async function initializeMerkleInstant(): Promise<void> {
     })
     .instruction();
 
-  await buildSignAndProcessTx(initializeIx);
+  await buildSignAndProcessTx(banksClient, initializeIx, campaignCreator.keys);
 }
 
 /*//////////////////////////////////////////////////////////////////////////
                                   HELPERS
 //////////////////////////////////////////////////////////////////////////*/
-
-export async function accountExists(address: PublicKey): Promise<boolean> {
-  return (await banksClient.getAccount(address)) != null;
-}
 
 export async function fetchCampaignData(
   campaignId: PublicKey
@@ -538,17 +342,6 @@ export async function fetchCampaignData(
     "campaign",
     Buffer.from(campaignAcc.data)
   );
-}
-
-export async function getLamportsOf(user: PublicKey): Promise<bigint> {
-  return await banksClient.getBalance(user);
-}
-
-export function getPDAAddress(seeds: Array<Buffer | Uint8Array>): PublicKey {
-  return PublicKey.findProgramAddressSync(
-    seeds,
-    merkleInstantProgram.programId
-  )[0];
 }
 
 export async function getTreasuryLamports(): Promise<bigint> {
@@ -571,24 +364,4 @@ export function hashLeaf(
   const packed = Buffer.concat([indexBuf, pubkeyBuf, amountBuf]);
   const firstHash = Buffer.from(keccak_256(packed));
   return Buffer.from(keccak_256(firstHash)); // double-hash
-}
-
-export async function sleepFor(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export async function timeTravelTo(timestamp: bigint | BN) {
-  const currentClock = await banksClient.getClock();
-  const timestampAsBigInt =
-    timestamp instanceof BN ? BigInt(timestamp.toString()) : timestamp;
-
-  context.setClock(
-    new Clock(
-      currentClock.slot,
-      currentClock.epochStartTimestamp,
-      currentClock.epoch,
-      currentClock.leaderScheduleEpoch,
-      timestampAsBigInt
-    )
-  );
 }

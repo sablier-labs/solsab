@@ -39,8 +39,8 @@ export function assertEqCampaignDatas(a: CampaignData, b: CampaignData) {
     `First claim times mismatch: ${a.firstClaimTime.toString()} !== ${b.firstClaimTime.toString()}`
   );
   assert(
-    a.ipfsId === b.ipfsId,
-    `IPFS IDs mismatch: ${a.ipfsId} !== ${b.ipfsId}`
+    a.ipfsCid === b.ipfsCid,
+    `IPFS IDs mismatch: ${a.ipfsCid} !== ${b.ipfsCid}`
   );
   assert(
     a.merkleRoot.length === b.merkleRoot.length &&

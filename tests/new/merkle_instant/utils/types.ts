@@ -6,7 +6,7 @@ export interface CampaignData {
   creator: PublicKey;
   expirationTime: BN;
   firstClaimTime: BN;
-  ipfsId: string;
+  ipfsCid: string;
   merkleRoot: number[];
   name: string;
 }

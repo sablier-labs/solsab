@@ -2,14 +2,13 @@ import { BN } from "@coral-xyz/anchor";
 import {
   cancel,
   defaultStream,
-  eve,
   fetchStreamData,
   salts,
   renounce,
   setUp,
-  timeTravelTo,
   withdrawMax,
 } from "../base";
+import { eve, timeTravelTo } from "../../common-base";
 import {
   assertErrorHexCode,
   assertEqStreamDatas,

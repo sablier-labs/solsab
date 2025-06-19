@@ -4,9 +4,9 @@ import {
   fetchStreamData,
   salts,
   setUp,
-  timeTravelTo,
   withdrawMax,
 } from "../base";
+import { timeTravelTo } from "../../common-base";
 import {
   assertEqStreamDatas,
   assertErrorHexCode,

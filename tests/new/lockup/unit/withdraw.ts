@@ -1,10 +1,9 @@
 import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 
+import { createATAAndFund } from "../../anchor-bankrun-adapter";
 import {
-  accountExists,
   cancel,
-  createATAAndFund,
   createWithTimestampsToken2022,
   defaultStream,
   defaultStreamToken2022,
@@ -13,17 +12,20 @@ import {
   getATABalance,
   getTreasuryLamports,
   salts,
-  randomToken,
-  recipient,
   sender,
   setUp,
-  timeTravelTo,
   withdrawMax,
   withdraw,
   withdrawToken2022,
-  banksClient,
   createWithTimestamps,
 } from "../base";
+import {
+  accountExists,
+  banksClient,
+  randomToken,
+  recipient,
+  timeTravelTo,
+} from "../../common-base";
 import {
   assert,
   assertErrorHexCode,
@@ -149,6 +151,8 @@ describe("withdraw", () => {
                     it("should create the ATA", async () => {
                       // Set up the sender for the test
                       await createATAAndFund(
+                        banksClient,
+                        sender.keys,
                         randomToken,
                         defaults.DEPOSIT_AMOUNT.toNumber(),
                         defaults.TOKEN_PROGRAM_ID,

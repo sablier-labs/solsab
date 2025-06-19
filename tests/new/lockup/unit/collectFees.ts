@@ -1,13 +1,11 @@
 import {
   collectFees,
-  eve,
   getSenderLamports,
   getTreasuryLamports,
   setUp,
-  sleepFor,
-  timeTravelTo,
   withdrawMax,
 } from "../base";
+import { eve, sleepFor, timeTravelTo } from "../../common-base";
 import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import { getErrorCode } from "../utils/errors";
 import * as defaults from "../utils/defaults";

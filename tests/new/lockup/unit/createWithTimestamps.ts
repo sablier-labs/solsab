@@ -10,21 +10,24 @@ import {
 import * as defaults from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";
 import {
-  accountExists,
-  banksClient,
   createWithTimestamps,
   createWithTimestampsToken2022,
-  dai,
   defaultStream,
   defaultStreamToken2022,
   fetchStreamData,
   getATABalance,
   getMintTotalSupplyOf,
   getSenderTokenBalance,
-  randomToken,
   sender,
   setUp,
 } from "../base";
+
+import {
+  accountExists,
+  banksClient,
+  dai,
+  randomToken,
+} from "../../common-base";
 
 describe("createWithTimestamps", () => {
   context("when the program is not initialized", () => {

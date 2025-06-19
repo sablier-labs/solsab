@@ -1,16 +1,15 @@
 import {
-  assertEqStreamDatas,
-  assertErrorContains,
-  assertFail,
-} from "../utils/assertions";
-import {
   createWithDurations,
   defaultStream,
   fetchStreamData,
   setUp,
-  timeTravelTo,
 } from "../base";
-
+import { timeTravelTo } from "../../common-base";
+import {
+  assertEqStreamDatas,
+  assertErrorContains,
+  assertFail,
+} from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 
 describe("createWithDurations", () => {
