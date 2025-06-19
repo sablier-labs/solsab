@@ -44,13 +44,15 @@ pub struct Cancel<'info> {
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-        mut,
+        init_if_needed,
+        payer = sender,
         associated_token::mint = deposited_token_mint,
         associated_token::authority = sender,
         associated_token::token_program = deposited_token_program,
     )]
     pub sender_asset_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    pub system_program: Program<'info, System>,
     pub deposited_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
