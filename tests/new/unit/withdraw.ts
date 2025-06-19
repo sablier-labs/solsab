@@ -24,6 +24,8 @@ import {
   withdrawToken2022,
   banksClient,
   createWithTimestamps,
+  defaultTxSigner,
+  eve,
 } from "../base";
 import { assertErrorHexCode, assertEqStreamDatas } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
@@ -119,8 +121,8 @@ describe("withdraw", () => {
                   it("should revert", async () => {
                     try {
                       await withdraw({
-                        signer: sender.keys,
-                        withdrawalRecipient: sender.keys.publicKey,
+                        signer: eve.keys,
+                        withdrawalRecipient: eve.keys.publicKey,
                       });
                     } catch (error) {
                       assertErrorHexCode(error, getErrorCode("ConstraintRaw"));
@@ -132,12 +134,12 @@ describe("withdraw", () => {
                   "when recipient doesn't have an ATA for the Stream's asset",
                   () => {
                     it("should create the ATA", async () => {
-                      // Set up the sender for the test
+                      // Set up the tx signer for the test
                       await createATAAndFund(
                         randomToken,
                         defaults.DEPOSIT_AMOUNT.toNumber(),
                         defaults.TOKEN_PROGRAM_ID,
-                        sender.keys.publicKey
+                        defaultTxSigner.keys.publicKey
                       );
 
                       // Create a new stream with a random token
@@ -249,7 +251,7 @@ describe("withdraw", () => {
 
                       await withdraw({
                         withdrawAmount: defaults.DEPOSIT_AMOUNT,
-                        signer: sender.keys,
+                        signer: defaultTxSigner.keys,
                       });
 
                       const expectedStreamData = defaultStream().data;
@@ -281,7 +283,7 @@ describe("withdraw", () => {
                         const withdrawalRecipientATABalanceBefore =
                           await getATABalance(banksClient, recipient.usdcATA);
 
-                        await withdraw({ signer: sender.keys });
+                        await withdraw({ signer: defaultTxSigner.keys });
                         const expectedStreamData = defaultStream({
                           isCancelable: false,
                           isDepleted: true,
@@ -313,7 +315,7 @@ describe("withdraw", () => {
                           const withdrawalRecipientATABalanceBefore =
                             await getATABalance(banksClient, recipient.usdcATA);
 
-                          await withdraw({ signer: sender.keys });
+                          await withdraw({ signer: defaultTxSigner.keys });
                           const expectedStreamData = defaultStream().data;
                           expectedStreamData.amounts.withdrawn =
                             defaults.WITHDRAW_AMOUNT;
@@ -339,7 +341,7 @@ describe("withdraw", () => {
                           const withdrawalRecipientATABalanceBefore =
                             await getATABalance(banksClient, recipient.daiATA);
 
-                          await withdrawToken2022(salt, sender.keys);
+                          await withdrawToken2022(salt, defaultTxSigner.keys);
 
                           const expectedStreamData = defaultStreamToken2022({
                             salt: salt,

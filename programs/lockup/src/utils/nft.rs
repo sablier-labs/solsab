@@ -21,7 +21,7 @@ pub fn create_stream<'info>(
     nft_collection_metadata: &UncheckedAccount<'info>,
     nft_collection_master_edition: &UncheckedAccount<'info>,
     recipient_stream_nft_ata: &InterfaceAccount<'info, TokenAccount>,
-    sender: &Signer<'info>,
+    creator: &Signer<'info>,
     token_metadata_program: &Program<'info, Metadata>,
     nft_token_program: &Interface<'info, TokenInterface>,
     system_program: &Program<'info, System>,
@@ -60,7 +60,7 @@ pub fn create_stream<'info>(
                 mint: stream_nft_mint.to_account_info(),
                 mint_authority: nft_collection_mint.to_account_info(),
                 update_authority: nft_collection_mint.to_account_info(),
-                payer: sender.to_account_info(),
+                payer: creator.to_account_info(),
                 system_program: system_program.to_account_info(),
                 rent: rent.to_account_info(),
             },
@@ -85,7 +85,7 @@ pub fn create_stream<'info>(
         CpiContext::new_with_signer(
             token_metadata_program.to_account_info(),
             CreateMasterEditionV3 {
-                payer: sender.to_account_info(),
+                payer: creator.to_account_info(),
                 mint: stream_nft_mint.to_account_info(),
                 edition: stream_nft_master_edition.to_account_info(),
                 mint_authority: nft_collection_mint.to_account_info(),
@@ -107,7 +107,7 @@ pub fn create_stream<'info>(
             SetAndVerifySizedCollectionItem {
                 metadata: stream_nft_metadata.to_account_info(),
                 collection_authority: nft_collection_mint.to_account_info(),
-                payer: sender.to_account_info(),
+                payer: creator.to_account_info(),
                 update_authority: nft_collection_mint.to_account_info(),
                 collection_mint: nft_collection_mint.to_account_info(),
                 collection_metadata: nft_collection_metadata.to_account_info(),

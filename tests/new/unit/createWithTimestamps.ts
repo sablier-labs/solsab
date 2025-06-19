@@ -18,10 +18,9 @@ import {
   defaultStreamToken2022,
   fetchStreamData,
   getATABalance,
+  getCreatorTokenBalance,
   getMintTotalSupplyOf,
-  getSenderTokenBalance,
   randomToken,
-  sender,
   setUp,
 } from "../base";
 
@@ -48,7 +47,7 @@ describe("createWithTimestamps", () => {
       await setUp();
     });
 
-    context("when deposit amount zero", () => {
+    context("when deposit amount is zero", () => {
       it("should revert", async () => {
         try {
           await createWithTimestamps({ depositAmount: defaults.ZERO_BN });
@@ -58,7 +57,7 @@ describe("createWithTimestamps", () => {
       });
     });
 
-    context("when deposit amount not zero", () => {
+    context("when deposit amount is not zero", () => {
       context("when start time is zero", () => {
         it("should revert", async () => {
           try {
@@ -161,10 +160,8 @@ describe("createWithTimestamps", () => {
 
                 context("when start time less than end time", () => {
                   it("should create the stream", async () => {
-                    const beforeSenderTokenBalance = await getATABalance(
-                      banksClient,
-                      sender.usdcATA
-                    );
+                    const beforeCreatorTokenBalance =
+                      await getCreatorTokenBalance();
 
                     const salt = await createWithTimestamps({
                       timestamps: {
@@ -183,7 +180,7 @@ describe("createWithTimestamps", () => {
 
                     await assertStreamCreation(
                       salt,
-                      beforeSenderTokenBalance,
+                      beforeCreatorTokenBalance,
                       expectedStream
                     );
                   });
@@ -257,27 +254,27 @@ describe("createWithTimestamps", () => {
                       () => {
                         context("when token SPL standard", () => {
                           it("should create the stream", async () => {
-                            const beforeSenderTokenBalance =
-                              await getATABalance(banksClient, sender.usdcATA);
+                            const beforeCreatorTokenBalance =
+                              await getCreatorTokenBalance();
 
                             const salt = await createWithTimestamps();
 
                             await assertStreamCreation(
                               salt,
-                              beforeSenderTokenBalance
+                              beforeCreatorTokenBalance
                             );
                           });
                         });
 
                         context("when token 2022 standard", () => {
                           it("should create the stream", async () => {
-                            const beforeSenderTokenBalance =
-                              await getSenderTokenBalance(dai);
+                            const beforeCreatorTokenBalance =
+                              await getCreatorTokenBalance(dai);
                             const salt = await createWithTimestampsToken2022();
 
                             await assertStreamCreation(
                               salt,
-                              beforeSenderTokenBalance,
+                              beforeCreatorTokenBalance,
                               defaultStreamToken2022({ salt: salt })
                             );
                           });
@@ -297,7 +294,7 @@ describe("createWithTimestamps", () => {
 
 async function assertStreamCreation(
   salt: BN,
-  beforeSenderTokenBalance: BN,
+  beforeCreatorTokenBalance: BN,
   expectedStream = defaultStream({ salt: salt })
 ) {
   // Assert that the Stream NFT Mint has been created
@@ -354,15 +351,15 @@ async function assertStreamCreation(
 
   // TODO: assert that the Stream NFT has been properly added to the LL NFT collection
 
-  // Assert that the Sender's balance has changed correctly
-  const expectedTokenBalance = beforeSenderTokenBalance.sub(
+  // Assert that the Creator's balance has changed correctly
+  const expectedTokenBalance = beforeCreatorTokenBalance.sub(
     defaults.DEPOSIT_AMOUNT
   );
-  const afterSenderTokenBalance = await getSenderTokenBalance(
+  const afterCreatorTokenBalance = await getCreatorTokenBalance(
     expectedStream.data.depositedTokenMint
   );
   assert(
-    expectedTokenBalance.eq(afterSenderTokenBalance),
-    "sender balance not updated correctly"
+    expectedTokenBalance.eq(afterCreatorTokenBalance),
+    "Creator's balance not updated correctly"
   );
 }
