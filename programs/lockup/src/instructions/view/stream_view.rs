@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::Mint;
 
-use crate::{state::lockup::StreamData, utils::constants::*};
+use crate::{state::lockup::StreamData, utils::constants::seeds::STREAM_DATA};
 
 // Common context that is used by multiple view instructions
 #[derive(Accounts)]
@@ -10,7 +10,7 @@ pub struct StreamView<'info> {
 
     #[account(
       seeds = [
-        STREAM_DATA_SEED,
+        STREAM_DATA,
         stream_nft_mint.key().as_ref()
       ],
       bump = stream_data.bump,

@@ -9,10 +9,7 @@ use anchor_spl::{
     token_interface::{mint_to, Mint, MintTo, TokenAccount, TokenInterface},
 };
 
-use crate::utils::constants::{
-    COLLECTION_METADATA_URI, COLLECTION_NAME, COLLECTION_SYMBOL, NFT_COLLECTION_MINT_SEED, NFT_METADATA_URI, NFT_NAME,
-    NFT_SYMBOL,
-};
+use crate::utils::constants::{nft::*, seeds::NFT_COLLECTION_MINT};
 
 /// Creates and mints a stream NFT with collection verification
 #[allow(clippy::too_many_arguments)]
@@ -31,8 +28,14 @@ pub fn create_stream<'info>(
     rent: &Sysvar<'info, Rent>,
     nft_collection_mint_bump: u8,
 ) -> Result<()> {
-    let stream_nft_name = NFT_NAME.to_owned();
-    let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[NFT_COLLECTION_MINT_SEED, &[nft_collection_mint_bump]]];
+    // Construct the Stream NFT name using the following format:
+    // "Sablier LL Stream #[first 5 chars of mint key]...[last 5 chars of mint key]"
+    // Example: "Sablier LL Stream #2qidf...dm8jF"
+    let mint_key: String = stream_nft_mint.key().to_string();
+    let nft_name = format!("{NFT_NAME_PREFIX}{}...{}", &mint_key[..5], &mint_key[mint_key.len() - 5..]);
+
+    // Prepare the seeds for NFT Collection Mint
+    let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[NFT_COLLECTION_MINT, &[nft_collection_mint_bump]]];
 
     // Mint Stream NFT Token
     mint_to(
@@ -64,7 +67,7 @@ pub fn create_stream<'info>(
             nft_collection_mint_signer_seeds,
         ),
         DataV2 {
-            name: stream_nft_name,
+            name: nft_name,
             symbol: NFT_SYMBOL.to_string(),
             uri: NFT_METADATA_URI.to_string(),
             seller_fee_basis_points: 0,
@@ -132,7 +135,7 @@ pub fn initialize_collection<'info>(
     rent: &Sysvar<'info, Rent>,
     nft_collection_mint_bump: u8,
 ) -> Result<()> {
-    let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[NFT_COLLECTION_MINT_SEED, &[nft_collection_mint_bump]]];
+    let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[NFT_COLLECTION_MINT, &[nft_collection_mint_bump]]];
 
     // Mint the Collection NFT
     mint_to(

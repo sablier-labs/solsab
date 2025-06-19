@@ -10,7 +10,7 @@ use anchor_spl::{
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
     utils::{
-        constants::*, events::WithdrawFromLockupStream, lockup_math::get_withdrawable_amount,
+        constants::seeds::*, events::WithdrawFromLockupStream, lockup_math::get_withdrawable_amount,
         transfer_helper::transfer_tokens, validations::check_withdraw,
     },
 };
@@ -32,7 +32,7 @@ pub struct Withdraw<'info> {
 
     #[account(
         mut,
-        seeds = [STREAM_DATA_SEED, stream_nft_mint.key().as_ref()],
+        seeds = [STREAM_DATA, stream_nft_mint.key().as_ref()],
         bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
@@ -78,7 +78,7 @@ pub struct Withdraw<'info> {
 
     #[account(
       mut,
-      seeds = [TREASURY_SEED],
+      seeds = [TREASURY],
       bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
@@ -113,7 +113,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         ctx.accounts.deposited_token_program.to_account_info(),
         amount,
         ctx.accounts.deposited_token_mint.decimals,
-        &[&[STREAM_DATA_SEED, ctx.accounts.stream_nft_mint.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
+        &[&[STREAM_DATA, ctx.accounts.stream_nft_mint.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
     )?;
 
     // Log the withdrawal.

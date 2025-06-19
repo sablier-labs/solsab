@@ -8,7 +8,10 @@ use anchor_spl::{
 
 use crate::{
     state::{nft_collection_data::NftCollectionData, treasury::Treasury},
-    utils::{constants::*, nft},
+    utils::{
+        constants::{seeds::*, ANCHOR_DISCRIMINATOR_SIZE},
+        nft,
+    },
 };
 
 #[derive(Accounts)]
@@ -19,7 +22,7 @@ pub struct Initialize<'info> {
     #[account(
       init,
       payer = initializer,
-      seeds = [TREASURY_SEED],
+      seeds = [TREASURY],
       space = ANCHOR_DISCRIMINATOR_SIZE + Treasury::INIT_SPACE,
       bump
     )]
@@ -29,7 +32,7 @@ pub struct Initialize<'info> {
     #[account(
       init,
       payer = initializer,
-      seeds = [NFT_COLLECTION_DATA_SEED],
+      seeds = [NFT_COLLECTION_DATA],
       space = ANCHOR_DISCRIMINATOR_SIZE + NftCollectionData::INIT_SPACE,
       bump
     )]
@@ -38,7 +41,7 @@ pub struct Initialize<'info> {
     #[account(
       init,
       payer = initializer,
-      seeds = [NFT_COLLECTION_MINT_SEED],
+      seeds = [NFT_COLLECTION_MINT],
       bump,
       mint::decimals = 0,
       mint::authority = nft_collection_mint, // TODO: make Treasury the authority, instead?
@@ -59,7 +62,7 @@ pub struct Initialize<'info> {
     #[account(
       mut,
       seeds = [
-        METADATA_SEED,
+        METADATA,
         token_metadata_program.key().as_ref(),
         nft_collection_mint.key().as_ref()
       ],
@@ -72,10 +75,10 @@ pub struct Initialize<'info> {
     #[account(
       mut,
       seeds = [
-        METADATA_SEED,
+        METADATA,
         token_metadata_program.key().as_ref(),
         nft_collection_mint.key().as_ref(),
-        EDITION_SEED
+        EDITION
       ],
       seeds::program = token_metadata_program.key(),
       bump,
