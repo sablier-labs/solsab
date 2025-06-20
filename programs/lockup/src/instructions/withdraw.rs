@@ -50,7 +50,7 @@ pub struct Withdraw<'info> {
         associated_token::mint = stream_nft_mint,
         associated_token::authority = stream_recipient,
         associated_token::token_program = nft_token_program,
-        // Dev: the below constraint is vital for making sure that the assets are only withdrawn to the legit recipient
+        // Dev: the below constraint is vital for making sure that the tokens are only withdrawn to the legit recipient
         constraint = recipient_stream_nft_ata.amount == 1,
         // TODO: are there any other ways in which one could "fake" the recipient's authority (and that need to be checked in this Ix)?
     )]

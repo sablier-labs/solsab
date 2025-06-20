@@ -74,7 +74,7 @@ describe("cancel", () => {
     });
 
     context("given a valid stream", () => {
-      context("given an invalid asset mint", () => {
+      context("given an invalid deposit mint", () => {
         it("should revert", async () => {
           try {
             await cancel({ depositedTokenMint: randomToken });
@@ -84,7 +84,7 @@ describe("cancel", () => {
         });
       });
 
-      context("given a valid asset mint", () => {
+      context("given a valid deposit mint", () => {
         context("given cold stream", () => {
           context("given DEPLETED status", () => {
             it("should revert", async () => {
@@ -149,7 +149,7 @@ describe("cancel", () => {
             });
 
             context("given cancelable stream", () => {
-              context("when the sender does not have ATA for the token", () => {
+              context("when the sender does not have ATA", () => {
                 it("should cancel the stream", async () => {
                   // Create ATA for & mint random token to the stream creator
                   await createATAAndFund(
@@ -197,7 +197,7 @@ describe("cancel", () => {
                 });
               });
 
-              context("when the sender has ATA for the token", () => {
+              context("when the sender has ATA", () => {
                 context("given PENDING status", () => {
                   it("should cancel the stream", async () => {
                     // Go back in time so that the stream is PENDING

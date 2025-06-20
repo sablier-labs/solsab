@@ -615,9 +615,13 @@ export function getPDAAddress(
   return PublicKey.findProgramAddressSync(seeds, programId)[0];
 }
 
-export async function getCreatorTokenBalance(assetMint = usdc): Promise<BN> {
+export async function getCreatorTokenBalance(
+  depositTokenMint = usdc
+): Promise<BN> {
   const creatorAta =
-    assetMint === usdc ? defaultTxSigner.usdcATA : defaultTxSigner.daiATA;
+    depositTokenMint === usdc
+      ? defaultTxSigner.usdcATA
+      : defaultTxSigner.daiATA;
   return await getATABalance(banksClient, creatorAta);
 }
 

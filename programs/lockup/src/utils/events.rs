@@ -11,7 +11,7 @@ pub struct CancelLockupStream {
 
 #[event]
 pub struct CreateLockupLinearStream {
-    pub asset_decimals: u8,
+    pub deposit_token_decimals: u8,
     pub deposit_token_mint: Pubkey,
     pub recipient: Pubkey,
     pub salt: u128,
