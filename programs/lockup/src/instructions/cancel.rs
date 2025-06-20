@@ -50,7 +50,7 @@ pub struct Cancel<'info> {
         associated_token::authority = sender,
         associated_token::token_program = deposited_token_program,
     )]
-    pub sender_deposited_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub system_program: Program<'info, System>,
     pub deposited_token_program: Interface<'info, TokenInterface>,
@@ -85,7 +85,7 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     // Interaction: transfer the tokens from the Treasury ATA to the sender.
     transfer_tokens(
         ctx.accounts.stream_data_ata.to_account_info(),
-        ctx.accounts.sender_deposited_ata.to_account_info(),
+        ctx.accounts.sender_ata.to_account_info(),
         ctx.accounts.stream_data.to_account_info(),
         ctx.accounts.deposited_token_mint.to_account_info(),
         ctx.accounts.deposited_token_program.to_account_info(),
