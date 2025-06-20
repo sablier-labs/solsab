@@ -3,27 +3,33 @@ import { assert } from "chai";
 
 import { Stream } from "../utils/types";
 
-import { assertErrorHexCode, assertEqStreamDatas } from "../utils/assertions";
+import { assertEqStreamDatas, assertErrorHexCode } from "../utils/assertions";
 import {
   APR_1_2025,
-  TOKEN_PROGRAM_ID,
+  DEPOSIT_AMOUNT,
   END_TIME,
   PASS_26_PERCENT,
-  USDC_USER_BALANCE,
   REFUND_AMOUNT,
-  DEPOSIT_AMOUNT,
+  TOKEN_PROGRAM_ID,
+  USDC_USER_BALANCE,
 } from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";
 import {
+  accountExists,
   banksClient,
   cancel,
   cancelToken2022,
+  createATAAndFund,
+  createWithTimestamps,
   createWithTimestampsToken2022,
   defaultStream,
   defaultStreamToken2022,
+  defaultTxSigner,
+  deriveATAAddress,
+  eve,
   fetchStreamData,
-  getATABalanceMint,
   getATABalance,
+  getATABalanceMint,
   randomToken,
   salts,
   sender,
@@ -31,12 +37,6 @@ import {
   sleepFor,
   timeTravelTo,
   withdrawMax,
-  eve,
-  createWithTimestamps,
-  deriveATAAddress,
-  accountExists,
-  createATAAndFund,
-  defaultTxSigner,
 } from "../base";
 
 describe("cancel", () => {
