@@ -1,6 +1,6 @@
 pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
 pub const CAMPAIGN_NAME_SIZE: usize = 32;
-pub const CAMPAIGN_IPFS_ID_SIZE: usize = 32;
+pub const CAMPAIGN_IPFS_CID_SIZE: usize = 32;
 
 // Account Seeds
 pub const CAMPAIGN_SEED: &[u8] = b"campaign";

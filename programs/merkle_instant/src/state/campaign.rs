@@ -10,7 +10,7 @@ pub struct Campaign {
     pub creator: Pubkey,
     pub expiration_time: i64,
     pub first_claim_time: i64,
-    #[max_len(CAMPAIGN_IPFS_ID_SIZE as usize)]
+    #[max_len(CAMPAIGN_IPFS_CID_SIZE as usize)]
     pub ipfs_cid: String,
     pub merkle_root: [u8; 32],
     #[max_len(CAMPAIGN_NAME_SIZE as usize)]
