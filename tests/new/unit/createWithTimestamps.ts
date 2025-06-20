@@ -71,7 +71,7 @@ describe("createWithTimestamps", () => {
       });
 
       context("when start time is not zero", () => {
-        context("when start time is not negative", () => {
+        context("when start time is negative", () => {
           it("should revert", async () => {
             try {
               await createWithTimestamps({
