@@ -1,8 +1,9 @@
 import { claim, collectFees, getTreasuryLamports, setUp } from "../base";
 import { eve, getLamportsOf, recipient } from "../../common-base";
+
 import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
-import { getErrorCode } from "../utils/errors";
 import * as defaults from "../utils/defaults";
+import { getErrorCode } from "../utils/errors";
 
 describe("collectFees", () => {
   context("when the program is not initialized", () => {

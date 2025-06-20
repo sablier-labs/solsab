@@ -31,10 +31,8 @@ export class MerkleTree {
     // Concatenate: index (4) + recipient (32) + amount (8) = 44 bytes total
     const leafBytes = Buffer.concat([indexBytes, recipientBytes, amountBytes]);
 
-    // First hash
+    // hash the leaf data
     const firstHash = Buffer.from(keccak_256(leafBytes));
-
-    // Second hash (double hashing for second pre-image attack protection)
     const leaf = Buffer.from(keccak_256(firstHash));
 
     return leaf;
@@ -43,10 +41,8 @@ export class MerkleTree {
   /**
    * Sort leaf data and compute sorted leaves
    */
-  private static computeSortedLeaves(leafData: LeafData[]): Buffer[] {
+  private static sortLeaves(leafData: LeafData[]): Buffer[] {
     const leaves = leafData.map((data) => this.computeLeaf(data));
-
-    // Sort leaves in ascending order
     return leaves.sort((a, b) => Buffer.compare(a, b));
   }
 
@@ -68,7 +64,7 @@ export class MerkleTree {
 
       for (let i = 0; i < currentLevel.length; i += 2) {
         const left = currentLevel[i];
-        const right = i + 1 < currentLevel.length ? currentLevel[i + 1] : left; // Duplicate last node if odd number
+        const right = i + 1 < currentLevel.length ? currentLevel[i + 1] : left;
 
         // Hash pair in sorted order
         const combinedHash =
@@ -90,7 +86,7 @@ export class MerkleTree {
    * Get merkle root from array of LeafData
    */
   static getRoot(leafData: LeafData[]): number[] {
-    const sortedLeaves = this.computeSortedLeaves(leafData);
+    const sortedLeaves = this.sortLeaves(leafData);
     const tree = this.buildTree(sortedLeaves);
     const root = tree[tree.length - 1][0];
 
@@ -98,24 +94,27 @@ export class MerkleTree {
   }
 
   /**
-   * Get merkle proof for a specific LeafData at given position
+   * Get merkle proof for a specific LeafData by index
    */
-  static getProof(
-    leafData: LeafData[],
-    targetLeaf: LeafData,
-    position: number
-  ): number[][] {
-    const sortedLeaves = this.computeSortedLeaves(leafData);
-    const tree = this.buildTree(sortedLeaves);
-
-    if (position >= sortedLeaves.length) {
-      throw new Error(
-        `Position ${position} out of bounds. Tree has ${sortedLeaves.length} leaves.`
-      );
+  static getProof(leafData: LeafData[], index: number): number[][] {
+    // Find the leaf data with the specified index
+    const targetLeafData = leafData.find((data) => data.index === index);
+    if (!targetLeafData) {
+      throw new Error(`No leaf found with index ${index}`);
     }
 
+    // Sort leaves and find position of target leaf
+    const sortedLeaves = this.sortLeaves(leafData);
+    const targetLeaf = this.computeLeaf(targetLeafData);
+    const pos = sortedLeaves.findIndex((leaf) => leaf.equals(targetLeaf));
+
+    if (pos === -1) {
+      throw new Error(`Could not find leaf in sorted array for index ${index}`);
+    }
+
+    const tree = this.buildTree(sortedLeaves);
     const proof: Buffer[] = [];
-    let currentIndex = position;
+    let currentIndex = pos;
 
     // Traverse up the tree
     for (let level = 0; level < tree.length - 1; level++) {

@@ -22,6 +22,7 @@ import {
 import {
   accountExists,
   banksClient,
+  defaultBankrunPayer,
   randomToken,
   recipient,
   timeTravelTo,
@@ -135,10 +136,7 @@ describe("withdraw", () => {
                         signer: sender.keys,
                         withdrawalRecipient: sender.keys.publicKey,
                       });
-
-                      assert.fail(
-                        "Expected the tx to revert, but it succeeded."
-                      );
+                      assertFail();
                     } catch (error) {
                       assertErrorHexCode(error, getErrorCode("ConstraintRaw"));
                     }
@@ -152,7 +150,7 @@ describe("withdraw", () => {
                       // Set up the sender for the test
                       await createATAAndFund(
                         banksClient,
-                        sender.keys,
+                        defaultBankrunPayer,
                         randomToken,
                         defaults.DEPOSIT_AMOUNT.toNumber(),
                         defaults.TOKEN_PROGRAM_ID,

@@ -19,7 +19,7 @@ export const TIME_AFTER_GRACE_PERIOD = APR_1_2025.add(
   GRACE_PERIOD_DURATION.add(new BN(1))
 ); // 7 days + 1 sec past APR_1_2025
 const TEN_DAYS_IN_SECONDS = 60 * 60 * 24 * 10;
-export const EXPIRATION_TIME = APR_1_2025.add(new BN(TEN_DAYS_IN_SECONDS)); // 10 days past APR_1_2025
+export const EXPIRATION_TIME = APR_1_2025.add(new BN(TEN_DAYS_IN_SECONDS));
 
 // Seeds
 export const TREASURY_SEED = "treasury";

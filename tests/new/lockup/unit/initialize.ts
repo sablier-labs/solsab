@@ -5,7 +5,7 @@ import {
   getATABalance,
   getMintTotalSupplyOf,
   initializeLockup,
-  lockupProgram,
+  lockup,
   nftCollectionDataAddress,
   setUp,
   treasuryAddress,
@@ -52,7 +52,7 @@ describe("initialize", () => {
 
       const nftCollectionMint = getPDAAddress(
         [Buffer.from(defaults.NFT_COLLECTION_MINT_SEED)],
-        lockupProgram.programId
+        lockup.programId
       );
 
       assert(

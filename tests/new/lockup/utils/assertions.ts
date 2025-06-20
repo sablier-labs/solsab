@@ -1,13 +1,7 @@
 import { assert } from "chai";
 export { assert };
 
-import {
-  Amounts,
-  PublicKey,
-  StreamData,
-  Timestamps,
-  UnlockAmounts,
-} from "./types";
+import { Amounts, StreamData, Timestamps, UnlockAmounts } from "./types";
 
 export function assertEqAmounts(a: Amounts, b: Amounts) {
   assert(
@@ -94,17 +88,6 @@ export function assertErrorContains(
 
 export function assertFail() {
   assert.fail("Expected the tx to revert, but it succeeded.");
-}
-
-export function assertSigVerificationFailureFor(
-  pubkey: PublicKey,
-  error: unknown
-) {
-  assertErrorContains(
-    error,
-    `Signature verification failed.\nMissing signature for public key [\`${pubkey.toBase58()}\`].`,
-    `Signature verification for \`${pubkey.toBase58()}\` not detected in "${error}"`
-  );
 }
 
 function errorToMessage(error: unknown): string {

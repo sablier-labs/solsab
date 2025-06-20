@@ -1,8 +1,6 @@
 import { assert } from "chai";
 export { assert };
 
-import { PublicKey } from "@solana/web3.js";
-
 import { CampaignData } from "./types";
 
 export function assertErrorHexCode(error: unknown, hexErrorCode: string) {
@@ -39,8 +37,8 @@ export function assertEqCampaignDatas(a: CampaignData, b: CampaignData) {
     `First claim times mismatch: ${a.firstClaimTime.toString()} !== ${b.firstClaimTime.toString()}`
   );
   assert(
-    a.ipfsCid === b.ipfsCid,
-    `IPFS IDs mismatch: ${a.ipfsCid} !== ${b.ipfsCid}`
+    a.ipfsId === b.ipfsId,
+    `IPFS CIDs mismatch: ${a.ipfsId} !== ${b.ipfsId}`
   );
   assert(
     a.merkleRoot.length === b.merkleRoot.length &&
@@ -52,17 +50,6 @@ export function assertEqCampaignDatas(a: CampaignData, b: CampaignData) {
 
 export function assertFail() {
   assert.fail("Expected the tx to revert, but it succeeded.");
-}
-
-export function assertSigVerificationFailureFor(
-  pubkey: PublicKey,
-  error: unknown
-) {
-  assertErrorContains(
-    error,
-    `Signature verification failed.\nMissing signature for public key [\`${pubkey.toBase58()}\`].`,
-    `Signature verification for \`${pubkey.toBase58()}\` not detected in "${error}"`
-  );
 }
 
 function errorToMessage(error: unknown): string {
