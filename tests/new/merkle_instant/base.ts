@@ -456,8 +456,8 @@ export async function createCampaign({
     .createCampaign(
       paramMerkleRoot,
       expirationTime,
-      ipfsId,
       name,
+      ipfsId,
       aggregateAmount,
       recipientCount
     )
@@ -476,7 +476,6 @@ export async function createCampaign({
     creatorKeys.publicKey.toBuffer(),
     Buffer.from(merkleRoot),
     expirationTime.toArrayLike(Buffer, "le", 8),
-    Buffer.from(ipfsId),
     Buffer.from(name),
     airdropTokenMint.toBuffer(),
   ]);

@@ -27,5 +27,5 @@ export const CAMPAIGN_SEED = "campaign";
 export const CLAIM_RECEIPT_SEED = "claim_receipt";
 
 // Miscellaneous
-export const CAMPAIGN_NAME = "Default Campaign";
-export const IPFS_ID = "DefaultIpfsId";
+export const CAMPAIGN_NAME = "Default Campaign Name";
+export const IPFS_ID = "QmbWqxBEKC3P8gqxKc68xmWNzrzDtRLMiMPL8wBuTGsMnR";
