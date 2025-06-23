@@ -16,7 +16,6 @@ use crate::{
 #[instruction(
     merkle_root: [u8; 32],
     expiration_time: i64,
-    ipfs_id: String,
     name: String,
 )]
 pub struct CreateCampaign<'info> {
@@ -35,7 +34,6 @@ pub struct CreateCampaign<'info> {
         creator.key().as_ref(),
         merkle_root.as_ref(),
         expiration_time.to_le_bytes().as_ref(),
-        ipfs_id.as_ref(),
         name.as_ref(),
         airdrop_token_mint.key().as_ref(),
      ],
