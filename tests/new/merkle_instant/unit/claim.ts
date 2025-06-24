@@ -31,7 +31,6 @@ import {
   timeTravelTo,
   usdc,
 } from "../../common-base";
-
 import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";
@@ -212,14 +211,12 @@ describe("claim", () => {
 /// Common test function to test the claim functionality
 async function testClaim(
   campaign = defaultCampaign,
-  recipientKeys = recipient.keys,
+  claimer = recipient.keys,
   tokenMint = usdc,
   tokenProgram = TOKEN_PROGRAM_ID
 ) {
-  const claimReceiptAddress = deriveClaimReceiptAddress(campaign);
-
-  // Assert that the Claim Receipt account doesn't exist before claiming
-  assert.isFalse(await accountExists(claimReceiptAddress));
+  // Assert that the claim has not been made
+  assert.isFalse(await hasClaimed());
 
   // Get the Campaign's data before claiming
   const campaignDataBefore = await fetchCampaignData(campaign);
@@ -244,7 +241,7 @@ async function testClaim(
   // Claim from the Campaign
   await claim({
     campaign: campaign,
-    claimerKeys: recipientKeys,
+    claimerKeys: claimer,
     airdropTokenMint: tokenMint,
     airdropTokenProgram: tokenProgram,
   });
@@ -252,8 +249,8 @@ async function testClaim(
   const campaignDataAfter = await fetchCampaignData(campaign);
   assert(campaignDataAfter.firstClaimTime.eq(defaults.APR_1_2025));
 
-  // Assert that the Claim Receipt account exists
-  assert(await accountExists(claimReceiptAddress), "Claim Receipt");
+  // Assert that the claim has been made
+  assert(await hasClaimed(campaign));
 
   const campaignAtaBalanceAfter = await getATABalanceMint(
     banksClient,
@@ -293,16 +290,13 @@ async function testClaim(
   );
 }
 
-function deriveClaimReceiptAddress(campaign: PublicKey): PublicKey {
-  const indexBuffer = Buffer.alloc(4);
-  indexBuffer.writeUInt32LE(defaultIndex); // use LE to match the Rust program
-
-  return getPDAAddress(
-    [
-      Buffer.from(defaults.CLAIM_RECEIPT_SEED),
-      campaign.toBuffer(),
-      indexBuffer,
-    ],
-    merkleInstant.programId
-  );
+// Implicitly tests the `has_claimed` Ix works.
+async function hasClaimed(campaign = defaultCampaign): Promise<boolean> {
+  return await merkleInstant.methods
+    .hasClaimed(defaultIndex)
+    .accounts({
+      campaign: campaign,
+    })
+    .signers([defaultBankrunPayer])
+    .view();
 }

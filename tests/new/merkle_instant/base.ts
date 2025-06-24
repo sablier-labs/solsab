@@ -257,21 +257,11 @@ export function defaultCampaignData(): CampaignData {
   };
 }
 
+// Implicitly tests the `campaign_view` Ix works.
 export async function fetchCampaignData(
   campaign = defaultCampaign
 ): Promise<CampaignData> {
-  const campaignAcc = await banksClient.getAccount(campaign);
-  if (!campaignAcc) {
-    throw new Error("Campaign account is undefined");
-  }
-
-  // Return the Campaign data decoded via the Anchor account layout
-  const campaignLayout = merkleInstant.account.campaign;
-
-  return campaignLayout.coder.accounts.decode(
-    "campaign",
-    Buffer.from(campaignAcc.data)
-  );
+  return await merkleInstant.account.campaign.fetch(campaign);
 }
 
 export async function getTreasuryLamports(): Promise<bigint> {

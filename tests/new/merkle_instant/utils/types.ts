@@ -1,5 +1,5 @@
 import { BN } from "@coral-xyz/anchor";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 
 export interface CampaignData {
   airdropTokenMint: PublicKey;
@@ -9,10 +9,4 @@ export interface CampaignData {
   ipfsId: string;
   merkleRoot: number[];
   name: string;
-}
-
-export interface User {
-  keys: Keypair;
-  daiATA: PublicKey;
-  usdcATA: PublicKey;
 }

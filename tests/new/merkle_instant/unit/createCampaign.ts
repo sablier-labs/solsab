@@ -40,7 +40,7 @@ describe("createCampaign", () => {
       });
     });
 
-    context("when the campaign does exist", () => {
+    context("when the campaign does not exist", () => {
       it("should create the campaign", async () => {
         await testCreateCampaign();
       });
