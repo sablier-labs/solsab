@@ -519,7 +519,7 @@ export async function getTreasuryLamports(): Promise<bigint> {
 export function defaultStream({
   salt = salts.default,
   depositedTokenMint = usdc,
-  tokenProgram = token.TOKEN_PROGRAM_ID,
+  depositedTokenProgram = token.TOKEN_PROGRAM_ID,
   isCancelable = true,
   isDepleted = false,
   wasCanceled = false,
@@ -538,7 +538,7 @@ export function defaultStream({
   const streamDataAta = deriveATAAddress(
     depositedTokenMint,
     streamDataAddress,
-    tokenProgram
+    depositedTokenProgram
   );
   const streamNftMint = getStreamNftMintAddress(salt);
   const recipientStreamNftAta = deriveATAAddress(
@@ -588,7 +588,7 @@ export function defaultStreamToken2022({
     isCancelable,
     isDepleted,
     wasCanceled,
-    tokenProgram: token.TOKEN_2022_PROGRAM_ID,
+    depositedTokenProgram: token.TOKEN_2022_PROGRAM_ID,
   });
 }
 
@@ -615,9 +615,13 @@ export function getPDAAddress(
   return PublicKey.findProgramAddressSync(seeds, programId)[0];
 }
 
-export async function getCreatorTokenBalance(assetMint = usdc): Promise<BN> {
+export async function getCreatorTokenBalance(
+  depositTokenMint = usdc
+): Promise<BN> {
   const creatorAta =
-    assetMint === usdc ? defaultTxSigner.usdcATA : defaultTxSigner.daiATA;
+    depositTokenMint === usdc
+      ? defaultTxSigner.usdcATA
+      : defaultTxSigner.daiATA;
   return await getATABalance(banksClient, creatorAta);
 }
 

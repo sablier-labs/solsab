@@ -3,19 +3,25 @@ import { assert } from "chai";
 
 import { Stream } from "../utils/types";
 
-import { assertErrorHexCode, assertEqStreamDatas } from "../utils/assertions";
+import { assertEqStreamDatas, assertErrorHexCode } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";
 import {
+  accountExists,
   banksClient,
   cancel,
   cancelToken2022,
+  createATAAndFund,
+  createWithTimestamps,
   createWithTimestampsToken2022,
   defaultStream,
   defaultStreamToken2022,
+  defaultTxSigner,
+  deriveATAAddress,
+  eve,
   fetchStreamData,
-  getATABalanceMint,
   getATABalance,
+  getATABalanceMint,
   randomToken,
   salts,
   sender,
@@ -23,7 +29,6 @@ import {
   sleepFor,
   timeTravelTo,
   withdrawMax,
-  eve,
 } from "../base";
 
 describe("cancel", () => {
@@ -61,7 +66,7 @@ describe("cancel", () => {
     });
 
     context("given a valid stream", () => {
-      context("given an invalid asset mint", () => {
+      context("given an invalid deposit mint", () => {
         it("should revert", async () => {
           try {
             await cancel({ depositedTokenMint: randomToken });
@@ -71,7 +76,7 @@ describe("cancel", () => {
         });
       });
 
-      context("given a valid asset mint", () => {
+      context("given a valid deposit mint", () => {
         context("given cold stream", () => {
           context("given DEPLETED status", () => {
             it("should revert", async () => {
@@ -136,40 +141,60 @@ describe("cancel", () => {
             });
 
             context("given cancelable stream", () => {
-              context("given PENDING status", () => {
+              context("when the sender does not have ATA", () => {
                 it("should cancel the stream", async () => {
-                  // Go back in time so that the stream is PENDING
-                  await timeTravelTo(defaults.APR_1_2025);
-
-                  const beforeSenderBalance = await getATABalance(
-                    banksClient,
-                    sender.usdcATA
+                  // Create ATA for & mint random token to the stream creator
+                  await createATAAndFund(
+                    randomToken,
+                    defaults.USDC_USER_BALANCE,
+                    defaults.TOKEN_PROGRAM_ID,
+                    defaultTxSigner.keys.publicKey
                   );
 
+                  // Create a stream with a random token
+                  const salt = await createWithTimestamps({
+                    depositTokenMint: randomToken,
+                    depositTokenProgram: defaults.TOKEN_PROGRAM_ID,
+                  });
+
+                  // Derive the sender's ATA for the random token
+                  const senderATA = deriveATAAddress(
+                    randomToken,
+                    sender.keys.publicKey,
+                    defaults.TOKEN_PROGRAM_ID
+                  );
+
+                  // Assert the sender's ATA doesn't exist
+                  assert.isFalse(await accountExists(senderATA));
+
                   // Cancel the stream
-                  await cancel();
+                  await cancel({
+                    salt,
+                    depositedTokenMint: randomToken,
+                    depositedTokenProgram: defaults.TOKEN_PROGRAM_ID,
+                  });
 
                   // Assert the cancelation
                   const expectedStream = defaultStream({
+                    salt: salt,
                     isCancelable: false,
-                    isDepleted: true,
                     wasCanceled: true,
+                    depositedTokenMint: randomToken,
+                    depositedTokenProgram: defaults.TOKEN_PROGRAM_ID,
                   });
-                  expectedStream.data.amounts.refunded =
-                    defaults.DEPOSIT_AMOUNT;
+                  expectedStream.data.amounts.refunded = defaults.REFUND_AMOUNT;
 
                   // Assert the cancelation
-                  await postCancelAssertions(
-                    salts.default,
-                    expectedStream,
-                    beforeSenderBalance
-                  );
+                  await postCancelAssertions(salt, expectedStream, new BN(0));
                 });
               });
 
-              context("given STREAMING status", () => {
-                context("given token SPL standard", () => {
+              context("when the sender has ATA", () => {
+                context("given PENDING status", () => {
                   it("should cancel the stream", async () => {
+                    // Go back in time so that the stream is PENDING
+                    await timeTravelTo(defaults.APR_1_2025);
+
                     const beforeSenderBalance = await getATABalance(
                       banksClient,
                       sender.usdcATA
@@ -178,12 +203,14 @@ describe("cancel", () => {
                     // Cancel the stream
                     await cancel();
 
+                    // Assert the cancelation
                     const expectedStream = defaultStream({
                       isCancelable: false,
+                      isDepleted: true,
                       wasCanceled: true,
                     });
                     expectedStream.data.amounts.refunded =
-                      defaults.REFUND_AMOUNT;
+                      defaults.DEPOSIT_AMOUNT;
 
                     // Assert the cancelation
                     await postCancelAssertions(
@@ -194,33 +221,61 @@ describe("cancel", () => {
                   });
                 });
 
-                context("given token 2022 standard", () => {
-                  it("should cancel the stream", async () => {
-                    // Create a stream with a Token2022 mint
-                    const salt = await createWithTimestampsToken2022();
+                context("given STREAMING status", () => {
+                  context("given token SPL standard", () => {
+                    it("should cancel the stream", async () => {
+                      const beforeSenderBalance = await getATABalance(
+                        banksClient,
+                        sender.usdcATA
+                      );
 
-                    const beforeSenderBalance = await getATABalance(
-                      banksClient,
-                      sender.daiATA
-                    );
+                      // Cancel the stream
+                      await cancel();
 
-                    // Cancel the stream
-                    await cancelToken2022(salt);
+                      const expectedStream = defaultStream({
+                        isCancelable: false,
+                        wasCanceled: true,
+                      });
+                      expectedStream.data.amounts.refunded =
+                        defaults.REFUND_AMOUNT;
 
-                    const expectedStream = defaultStreamToken2022({
-                      salt: salt,
-                      isCancelable: false,
-                      wasCanceled: true,
+                      // Assert the cancelation
+                      await postCancelAssertions(
+                        salts.default,
+                        expectedStream,
+                        beforeSenderBalance
+                      );
                     });
-                    expectedStream.data.amounts.refunded =
-                      defaults.REFUND_AMOUNT;
+                  });
 
-                    // Assert the cancelation
-                    await postCancelAssertions(
-                      salt,
-                      expectedStream,
-                      beforeSenderBalance
-                    );
+                  context("given token 2022 standard", () => {
+                    it("should cancel the stream", async () => {
+                      // Create a stream with a Token2022 mint
+                      const salt = await createWithTimestampsToken2022();
+
+                      const beforeSenderBalance = await getATABalance(
+                        banksClient,
+                        sender.daiATA
+                      );
+
+                      // Cancel the stream
+                      await cancelToken2022(salt);
+
+                      const expectedStream = defaultStreamToken2022({
+                        salt: salt,
+                        isCancelable: false,
+                        wasCanceled: true,
+                      });
+                      expectedStream.data.amounts.refunded =
+                        defaults.REFUND_AMOUNT;
+
+                      // Assert the cancelation
+                      await postCancelAssertions(
+                        salt,
+                        expectedStream,
+                        beforeSenderBalance
+                      );
+                    });
                   });
                 });
               });

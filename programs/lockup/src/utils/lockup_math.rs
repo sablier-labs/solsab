@@ -47,7 +47,7 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
     let streamed_amount = unlock_amounts_sum + ((streamed_percentage * streamable_amount) / SCALING_FACTOR) as u64;
 
     // Although the streamed amount should never exceed the deposited amount, this condition is checked
-    // without asserting to avoid locking assets in case of a bug. If this situation occurs, the withdrawn
+    // without asserting to avoid locking tokens in case of a bug. If this situation occurs, the withdrawn
     // amount is considered to be the streamed amount, and the stream is effectively frozen.
     if streamed_amount > amounts.deposited {
         return amounts.deposited;

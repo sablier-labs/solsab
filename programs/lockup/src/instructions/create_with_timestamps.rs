@@ -227,7 +227,7 @@ pub fn handler(
     // Log the newly created stream.
     emit!(CreateLockupLinearStream {
         salt,
-        asset_decimals: deposit_token_mint.decimals,
+        deposit_token_decimals: deposit_token_mint.decimals,
         deposit_token_mint: ctx.accounts.deposit_token_mint.key(),
         recipient: ctx.accounts.recipient.key(),
         stream_data: ctx.accounts.stream_data.key(),

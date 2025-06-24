@@ -66,7 +66,7 @@ describe("withdraw", () => {
     });
 
     context("given a valid stream", () => {
-      context("given an invalid asset mint", () => {
+      context("given an invalid deposited token mint", () => {
         it("should revert", async () => {
           try {
             await withdraw({ depositedTokenMint: randomToken });
@@ -76,7 +76,7 @@ describe("withdraw", () => {
         });
       });
 
-      context("given a valid asset mint", () => {
+      context("given a valid deposited token mint", () => {
         context("when stream status is DEPLETED", () => {
           it("should revert", async () => {
             await timeTravelTo(defaults.END_TIME);
@@ -130,84 +130,78 @@ describe("withdraw", () => {
                   });
                 });
 
-                context(
-                  "when recipient doesn't have an ATA for the Stream's asset",
-                  () => {
-                    it("should create the ATA", async () => {
-                      // Set up the tx signer for the test
-                      await createATAAndFund(
-                        randomToken,
-                        defaults.DEPOSIT_AMOUNT.toNumber(),
-                        defaults.TOKEN_PROGRAM_ID,
-                        defaultTxSigner.keys.publicKey
-                      );
+                context("when recipient does not have an ATA", () => {
+                  it("should create the ATA", async () => {
+                    // Set up the tx signer for the test
+                    await createATAAndFund(
+                      randomToken,
+                      defaults.DEPOSIT_AMOUNT.toNumber(),
+                      defaults.TOKEN_PROGRAM_ID,
+                      defaultTxSigner.keys.publicKey
+                    );
 
-                      // Create a new stream with a random token
-                      const salt = await createWithTimestamps({
-                        depositTokenMint: randomToken,
-                        depositAmount: defaults.DEPOSIT_AMOUNT,
-                      });
+                    // Create a new stream with a random token
+                    const salt = await createWithTimestamps({
+                      depositTokenMint: randomToken,
+                      depositAmount: defaults.DEPOSIT_AMOUNT,
+                    });
 
-                      // Derive the recipient's ATA address
-                      const recipientATA = deriveATAAddress(
-                        randomToken,
-                        recipient.keys.publicKey,
-                        defaults.TOKEN_PROGRAM_ID
-                      );
+                    // Derive the recipient's ATA address
+                    const recipientATA = deriveATAAddress(
+                      randomToken,
+                      recipient.keys.publicKey,
+                      defaults.TOKEN_PROGRAM_ID
+                    );
 
-                      // Assert that the recipient's ATA does not exist
-                      assert(
-                        !(await accountExists(recipientATA)),
-                        "Recipient's ATA shouldn't exist before the withdrawal"
-                      );
+                    // Assert that the recipient's ATA does not exist
+                    assert(
+                      !(await accountExists(recipientATA)),
+                      "Recipient's ATA shouldn't exist before the withdrawal"
+                    );
 
-                      // Perform the withdrawal
+                    // Perform the withdrawal
+                    await withdraw({
+                      salt,
+                      depositedTokenMint: randomToken,
+                    });
+
+                    // Assert that the recipient's ATA was created
+                    assert(
+                      await accountExists(recipientATA),
+                      "Recipient's ATA should exist after the withdrawal"
+                    );
+                  });
+                });
+
+                context("when recipient has an ATA", () => {
+                  context("when signer recipient", () => {
+                    it("should make the withdrawal", async () => {
+                      // Get the Lamports balance of the Treasury before the withdrawal
+                      const treasuryLamportsBefore =
+                        await getTreasuryLamports();
+
+                      // Get the withdrawal recipient's token balance before the withdrawal
+                      const withdrawalRecipientATABalanceBefore =
+                        await getATABalance(banksClient, sender.usdcATA);
+
                       await withdraw({
-                        salt,
-                        depositedTokenMint: randomToken,
+                        withdrawalRecipient: sender.keys.publicKey,
                       });
 
-                      // Assert that the recipient's ATA was created
-                      assert(
-                        await accountExists(recipientATA),
-                        "Recipient's ATA should exist after the withdrawal"
+                      const expectedStreamData = defaultStream().data;
+                      expectedStreamData.amounts.withdrawn =
+                        defaults.WITHDRAW_AMOUNT;
+
+                      await postWithdrawAssertions(
+                        salts.default,
+                        treasuryLamportsBefore,
+                        sender.usdcATA,
+                        withdrawalRecipientATABalanceBefore,
+                        expectedStreamData
                       );
                     });
-                  }
-                );
-
-                context(
-                  "when recipient has an ATA for the Stream's asset",
-                  () => {
-                    context("when signer recipient", () => {
-                      it("should make the withdrawal", async () => {
-                        // Get the Lamports balance of the Treasury before the withdrawal
-                        const treasuryLamportsBefore =
-                          await getTreasuryLamports();
-
-                        // Get the withdrawal recipient's token balance before the withdrawal
-                        const withdrawalRecipientATABalanceBefore =
-                          await getATABalance(banksClient, sender.usdcATA);
-
-                        await withdraw({
-                          withdrawalRecipient: sender.keys.publicKey,
-                        });
-
-                        const expectedStreamData = defaultStream().data;
-                        expectedStreamData.amounts.withdrawn =
-                          defaults.WITHDRAW_AMOUNT;
-
-                        await postWithdrawAssertions(
-                          salts.default,
-                          treasuryLamportsBefore,
-                          sender.usdcATA,
-                          withdrawalRecipientATABalanceBefore,
-                          expectedStreamData
-                        );
-                      });
-                    });
-                  }
-                );
+                  });
+                });
               });
 
               context("when withdrawal address recipient", () => {
