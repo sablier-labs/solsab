@@ -113,7 +113,7 @@ export async function claim({
   airdropTokenMint = usdc,
   airdropTokenProgram = TOKEN_PROGRAM_ID,
 } = {}): Promise<void> {
-  const claimIx = await merkleInstant.methods
+  const txIx = await merkleInstant.methods
     .claim(
       index,
       defaults.CLAIM_AMOUNT,
@@ -129,7 +129,7 @@ export async function claim({
     .instruction();
 
   // Build and sign the transaction
-  await buildSignAndProcessTx(banksClient, claimIx, claimerKeys);
+  await buildSignAndProcessTx(banksClient, txIx, claimerKeys);
 }
 
 export async function clawback({
@@ -139,7 +139,7 @@ export async function clawback({
   airdropTokenMint = usdc,
   airdropTokenProgram = TOKEN_PROGRAM_ID,
 } = {}): Promise<void> {
-  const clawbackIx = await merkleInstant.methods
+  const txIx = await merkleInstant.methods
     .clawback(amount)
     .accountsPartial({
       campaign,
@@ -149,14 +149,14 @@ export async function clawback({
     })
     .instruction();
 
-  await buildSignAndProcessTx(banksClient, clawbackIx, signer);
+  await buildSignAndProcessTx(banksClient, txIx, signer);
 }
 
 export async function collectFees({
   signer = feeCollector.keys,
   feeRecipient = recipient.keys.publicKey,
 } = {}): Promise<void> {
-  const collectFeesIx = await merkleInstant.methods
+  const txIx = await merkleInstant.methods
     .collectFees()
     .accounts({
       feeCollector: signer.publicKey,
@@ -164,7 +164,7 @@ export async function collectFees({
     })
     .instruction();
 
-  await buildSignAndProcessTx(banksClient, collectFeesIx, signer);
+  await buildSignAndProcessTx(banksClient, txIx, signer);
 }
 
 export async function createCampaign({

@@ -149,6 +149,46 @@ export async function accountExists(address: PublicKey): Promise<boolean> {
   return (await banksClient.getAccount(address)) != null;
 }
 
+/**
+ * Get the hex code for a given error name from an error code object
+ * @param errorCodeObj The error code object/enum
+ * @param errorName The name of the error
+ * @returns The hex code for the error
+ */
+export function getErrorCode<T extends Record<string, number>>(
+  errorCodeObj: T,
+  errorName: string
+): string {
+  const errorCode = errorCodeObj[errorName as keyof T];
+  return `0x${errorCode.toString(16)}`;
+}
+
+/**
+ * Get the error name for a given hex code from an error code object
+ * @param errorCodeObj The error code object/enum
+ * @param hexCode The hex code of the error (e.g., "0x177e")
+ * @returns The error name
+ */
+export function getErrorName<T extends Record<string, number>>(
+  errorCodeObj: T,
+  hexCode: string
+): string {
+  // Convert the hex string to a number
+  const numericCode = parseInt(hexCode, 16);
+
+  // Find the error name by value
+  for (const [key, value] of Object.entries(errorCodeObj)) {
+    // Skip numeric keys (TypeScript enums have reverse mappings)
+    if (!isNaN(Number(key))) continue;
+
+    if (value === numericCode) {
+      return key;
+    }
+  }
+
+  return "not found";
+}
+
 export async function getLamportsOf(user: PublicKey): Promise<bigint> {
   return await banksClient.getBalance(user);
 }
