@@ -1,6 +1,6 @@
-import { initializeMerkleInstant, setUp, treasuryAddress } from "../base";
 import { accountExists, sleepFor } from "../../common-base";
 
+import { initializeMerkleInstant, setUp, treasuryAddress } from "../base";
 import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 
 describe("initialize", () => {

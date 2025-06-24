@@ -2,6 +2,8 @@ import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 
 import { getATABalanceMint } from "../../anchor-bankrun-adapter";
+import { banksClient, dai, eve, timeTravelTo, usdc } from "../../common-base";
+
 import {
   campaignCreator,
   claim,
@@ -10,7 +12,6 @@ import {
   defaultCampaignToken2022,
   setUp,
 } from "../base";
-import { banksClient, dai, eve, timeTravelTo, usdc } from "../../common-base";
 
 import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import * as defaults from "../utils/defaults";

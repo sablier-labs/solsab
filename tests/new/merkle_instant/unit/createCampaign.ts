@@ -4,7 +4,6 @@ import {
   fetchCampaignData,
   setUp,
 } from "../base";
-
 import {
   assertEqCampaignDatas,
   assertErrorHexCode,

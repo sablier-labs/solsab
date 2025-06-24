@@ -141,10 +141,7 @@ describe("createWithTimestamps", () => {
                           cliff: new BN(1000),
                         },
                       });
-
-                      assert.fail(
-                        "Expected the tx to revert, but it succeeded."
-                      );
+                      assertFail();
                     } catch (error) {
                       assertErrorHexCode(
                         error,
@@ -164,10 +161,7 @@ describe("createWithTimestamps", () => {
                           cliff: defaults.ZERO_BN,
                         },
                       });
-
-                      assert.fail(
-                        "Expected the tx to revert, but it succeeded."
-                      );
+                      assertFail();
                     } catch (error) {
                       assertErrorHexCode(
                         error,
@@ -218,10 +212,7 @@ describe("createWithTimestamps", () => {
                           start: defaults.timestamps().cliff,
                         },
                       });
-
-                      assert.fail(
-                        "Expected the tx to revert, but it succeeded."
-                      );
+                      assertFail();
                     } catch (error) {
                       assertErrorHexCode(
                         error,
@@ -241,10 +232,7 @@ describe("createWithTimestamps", () => {
                             cliff: defaults.timestamps().end,
                           },
                         });
-
-                        assert.fail(
-                          "Expected the tx to revert, but it succeeded."
-                        );
+                        assertFail();
                       } catch (error) {
                         assertErrorHexCode(
                           error,
@@ -268,10 +256,7 @@ describe("createWithTimestamps", () => {
                               },
                               depositAmount,
                             });
-
-                            assert.fail(
-                              "Expected the tx to revert, but it succeeded."
-                            );
+                            assertFail();
                           } catch (error) {
                             assertErrorHexCode(
                               error,

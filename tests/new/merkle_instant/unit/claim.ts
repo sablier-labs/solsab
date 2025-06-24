@@ -7,30 +7,29 @@ import {
   getATABalanceMint,
 } from "../../anchor-bankrun-adapter";
 import {
-  campaignCreator,
-  claim,
-  createCampaign,
-  defaultCampaign,
-  defaultCampaignToken2022,
-  setUp,
-  defaultIndex,
-  fetchCampaignData,
-  merkleInstant,
-  treasuryAddress,
-} from "../base";
-import {
-  accountExists,
   banksClient,
-  defaultBankrunPayer,
-  randomToken,
-  getLamportsOf,
   dai,
-  getPDAAddress,
+  defaultBankrunPayer,
+  getLamportsOf,
+  randomToken,
   recipient,
   sleepFor,
   timeTravelTo,
   usdc,
 } from "../../common-base";
+
+import {
+  campaignCreator,
+  claim,
+  createCampaign,
+  defaultCampaign,
+  defaultCampaignToken2022,
+  defaultIndex,
+  fetchCampaignData,
+  merkleInstant,
+  setUp,
+  treasuryAddress,
+} from "../base";
 import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";

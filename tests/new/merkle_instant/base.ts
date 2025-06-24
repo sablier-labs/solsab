@@ -18,11 +18,12 @@ import {
   getPDAAddress,
   recipient,
   usdc,
+  User,
 } from "../common-base";
 
 import * as defaults from "./utils/defaults";
 import { LeafData, MerkleTree } from "./utils/merkle";
-import { CampaignData, User } from "./utils/types";
+import { CampaignData } from "./utils/types";
 
 import { SablierMerkleInstant } from "../../../target/types/sablier_merkle_instant";
 import IDL from "../../../target/idl/sablier_merkle_instant.json";
@@ -104,8 +105,8 @@ export async function setUp({ initProgram = true } = {}) {
 //////////////////////////////////////////////////////////////////////////*/
 
 export async function claim({
-  claimerKeys = recipient.keys,
   campaign = defaultCampaign,
+  claimerKeys = recipient.keys,
   recipientAddress = recipient.keys.publicKey,
   index = defaultIndex,
 

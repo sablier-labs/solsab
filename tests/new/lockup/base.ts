@@ -11,7 +11,6 @@ import {
   Stream,
   StreamData,
   Salts,
-  User,
 } from "./utils/types";
 
 import {
@@ -31,6 +30,7 @@ import {
   getPDAAddress,
   recipient,
   usdc,
+  User,
 } from "../common-base";
 
 export {

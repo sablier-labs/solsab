@@ -147,7 +147,6 @@ export function getTokenBalanceByATAAccountData(ataData: Uint8Array): string {
 
   return balance.toString();
 }
-
 export function getTotalSupplyByAccountData(mintData: Uint8Array): string {
   // The supply is an 8-byte little-endian unsigned integer located at offset 36.
   const supplyOffset = 36;
