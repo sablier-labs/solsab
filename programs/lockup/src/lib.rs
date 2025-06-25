@@ -72,12 +72,12 @@ pub mod sablier_lockup {
         instructions::initialize::handler(ctx, fee_collector)
     }
 
-    pub fn renounce(ctx: Context<Renounce>) -> Result<()> {
-        instructions::renounce::handler(ctx)
-    }
-
     pub fn refundable_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::refundable_amount_of::handler(ctx)
+    }
+
+    pub fn renounce(ctx: Context<Renounce>) -> Result<()> {
+        instructions::renounce::handler(ctx)
     }
 
     pub fn status_of(ctx: Context<StreamView>) -> Result<StreamStatus> {
@@ -92,11 +92,11 @@ pub mod sablier_lockup {
         instructions::withdraw::handler(ctx, amount)
     }
 
-    pub fn withdrawable_amount_of(ctx: Context<StreamView>) -> Result<u64> {
-        instructions::withdrawable_amount_of::handler(ctx)
-    }
-
     pub fn withdraw_max(ctx: Context<Withdraw>) -> Result<()> {
         instructions::withdraw_max::handler(ctx)
+    }
+
+    pub fn withdrawable_amount_of(ctx: Context<StreamView>) -> Result<u64> {
+        instructions::withdrawable_amount_of::handler(ctx)
     }
 }
