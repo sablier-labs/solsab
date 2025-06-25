@@ -155,6 +155,7 @@ pub struct CreateWithTimestamps<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
+/// Refer to the {lib.rs#create_with_timestamps} function explanatory comments.
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,

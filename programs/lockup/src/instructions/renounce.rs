@@ -30,6 +30,7 @@ pub struct Renounce<'info> {
     pub stream_data: Box<Account<'info, StreamData>>,
 }
 
+/// Refer to the {lib.rs#renounce} function explanatory comments.
 pub fn handler(ctx: Context<Renounce>) -> Result<()> {
     // Check: validate the renounce.
     check_renounce(
