@@ -82,7 +82,6 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
     let claimer = ctx.accounts.claimer.clone();
     let recipient = ctx.accounts.recipient.clone();
     let treasury = ctx.accounts.treasury.clone();
-    ctx.accounts.claim_receipt.bump = ctx.bumps.claim_receipt;
 
     // Check: validate the claim.
     check_claim(campaign.expiration_time, campaign.merkle_root, index, recipient.key(), amount, merkle_proof)?;
