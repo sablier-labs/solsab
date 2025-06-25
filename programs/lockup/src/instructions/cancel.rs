@@ -82,7 +82,7 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     // Effect: update the stream data state.
     ctx.accounts.stream_data.cancel(sender_amount, recipient_amount)?;
 
-    // Interaction: transfer the tokens from the Treasury ATA to the sender.
+    // Interaction: transfer the tokens from the stream ATA to the sender.
     transfer_tokens(
         ctx.accounts.stream_data_ata.to_account_info(),
         ctx.accounts.sender_ata.to_account_info(),

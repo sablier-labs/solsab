@@ -104,7 +104,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     let fee_collection_ix = transfer(&ctx.accounts.signer.key(), &ctx.accounts.treasury.key(), WITHDRAWAL_FEE);
     invoke(&fee_collection_ix, &[ctx.accounts.signer.to_account_info(), ctx.accounts.treasury.to_account_info()])?;
 
-    // Interaction: transfer the tokens from the Treasury ATA to the recipient
+    // Interaction: transfer the tokens from the stream ATA to the recipient.
     transfer_tokens(
         ctx.accounts.stream_data_ata.to_account_info(),
         ctx.accounts.withdrawal_recipient_ata.to_account_info(),
