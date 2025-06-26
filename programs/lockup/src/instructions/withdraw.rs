@@ -46,7 +46,6 @@ pub struct Withdraw<'info> {
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-        mut,
         associated_token::mint = stream_nft_mint,
         associated_token::authority = stream_recipient,
         associated_token::token_program = nft_token_program,
