@@ -19,12 +19,15 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(salt: u128)]
 pub struct CreateWithTimestamps<'info> {
+    /// Write account: the creator and funder of the stream.
     #[account(mut)]
     pub creator: Signer<'info>,
 
+    /// Read account: the mint account for the deposit token.
     #[account(mint::token_program = deposit_token_program)]
     pub deposit_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Write account: the creator's ATA for the deposit token.
     #[account(
       mut,
       associated_token::mint = deposit_token_mint,
@@ -33,12 +36,15 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub creator_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Read account: the sender of the stream.
     /// CHECK: The sender may be any account
     pub sender: UncheckedAccount<'info>,
 
+    /// Read account: the recipient of the stream.
     /// CHECK: The recipient may be any account
     pub recipient: UncheckedAccount<'info>,
 
+    /// Write account: the NFT collection data storing the total supply.
     #[account(
         mut,
         seeds = [NFT_COLLECTION_DATA],
@@ -46,12 +52,14 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
 
+    /// Write account: the mint account for the NFT collection.
     #[account(
       seeds = [NFT_COLLECTION_MINT],
       bump,
     )]
     pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Write account: the metadata account for the NFT collection.
     #[account(
       mut,
       seeds = [
@@ -65,6 +73,7 @@ pub struct CreateWithTimestamps<'info> {
     /// CHECK: This account will only be touched by the Metaplex program
     pub nft_collection_metadata: UncheckedAccount<'info>,
 
+    /// Write account: the master edition account for the NFT collection.
     #[account(
       seeds = [
         METADATA,
@@ -78,6 +87,7 @@ pub struct CreateWithTimestamps<'info> {
     /// CHECK: This account will only be touched by the Metaplex program
     pub nft_collection_master_edition: UncheckedAccount<'info>,
 
+    /// Create account: the mint account for the stream NFT.
     #[account(
         init,
         payer = creator,
@@ -89,11 +99,12 @@ pub struct CreateWithTimestamps<'info> {
         bump,
         mint::decimals = 0,
         mint::authority = nft_collection_mint,
-        mint::freeze_authority = nft_collection_mint,  // TODO: make Treasury the authority, instead?
+        mint::freeze_authority = nft_collection_mint,
         mint::token_program = nft_token_program,
     )]
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Create account: the account that will store the stream data.
     #[account(
         init,
         payer = creator,
@@ -103,6 +114,7 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 
+    /// Create account: the ATA for deposit tokens owned by stream data account.
     #[account(
         init,
         payer = creator,
@@ -112,6 +124,7 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Create account: the ATA for the stream NFT owned by the recipient.
     #[account(
         init,
         payer = creator,
@@ -121,6 +134,7 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Create if needed account: the metadata account for the stream NFT.
     #[account(
       mut,
       seeds = [
@@ -134,6 +148,7 @@ pub struct CreateWithTimestamps<'info> {
     /// CHECK: This account will be initialized by the Metaplex program
     pub stream_nft_metadata: UncheckedAccount<'info>,
 
+    /// Create if needed account: the master edition account for the stream NFT.
     #[account(
       mut,
       seeds = [
@@ -147,11 +162,22 @@ pub struct CreateWithTimestamps<'info> {
     /// CHECK: This account will be initialized by the Metaplex program
     pub stream_nft_master_edition: UncheckedAccount<'info>,
 
+    /// Program account: the System program.
     pub system_program: Program<'info, System>,
+
+    /// Program account: the Token program of the deposit token.
     pub deposit_token_program: Interface<'info, TokenInterface>,
+
+    /// Program account: the Token program of the stream NFT.
     pub nft_token_program: Interface<'info, TokenInterface>,
+
+    /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,
+
+    /// Program account: the Token Metadata program.
     pub token_metadata_program: Program<'info, Metadata>,
+
+    /// Sysvar account: Rent.
     pub rent: Sysvar<'info, Rent>,
 }
 

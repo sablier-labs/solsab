@@ -14,17 +14,21 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct Cancel<'info> {
+    /// Write account: the sender of the stream who can cancel it.
     #[account(
       mut,
       address = stream_data.sender,
     )]
     pub sender: Signer<'info>,
 
+    /// Read account: the mint account of the deposited token.
     #[account(address = stream_data.deposited_token_mint)]
     pub deposited_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Read account: the mint account for the stream NFT.
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Write account: the stream data account storing stream details.
     #[account(
       mut,
       seeds = [
@@ -35,6 +39,7 @@ pub struct Cancel<'info> {
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 
+    /// Write account: the deposited token ATA owned by the stream data account.
     #[account(
         mut,
         associated_token::mint = deposited_token_mint,
@@ -43,6 +48,7 @@ pub struct Cancel<'info> {
     )]
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Create if needed account: the deposited token ATA owned by the sender.
     #[account(
         init_if_needed,
         payer = sender,
@@ -52,8 +58,13 @@ pub struct Cancel<'info> {
     )]
     pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Program account: the System program.
     pub system_program: Program<'info, System>,
+
+    /// Program account: the Token program of the deposited token.
     pub deposited_token_program: Interface<'info, TokenInterface>,
+
+    /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 

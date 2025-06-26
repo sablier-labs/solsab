@@ -6,8 +6,10 @@ use crate::{state::lockup::StreamData, utils::constants::seeds::STREAM_DATA};
 // Common context that is used by multiple view instructions
 #[derive(Accounts)]
 pub struct StreamView<'info> {
+    /// Read account: the mint account for the stream NFT.
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Read account: the stream data account storing stream details.
     #[account(
       seeds = [
         STREAM_DATA,
