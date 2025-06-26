@@ -11,8 +11,6 @@ export const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
 export { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 // Amounts
-export const USDC_USER_BALANCE = 1_000_000e6; // 1M tokens
-export const DAI_USER_BALANCE = 1_000_000e9; // 1M tokens
 export const DEPOSIT_AMOUNT = new BN(10_000e6);
 export const STREAMED_AMOUNT_26_PERCENT = new BN(2600e6);
 export const WITHDRAW_AMOUNT = STREAMED_AMOUNT_26_PERCENT;

@@ -58,7 +58,7 @@ export async function setUp({ initProgram = true } = {}) {
   // Deploy the program being tested
   merkleInstant = new Program<SablierMerkleInstant>(IDL, bankrunProvider);
 
-  // Create the users
+  // Create the Campaign Creator user
   campaignCreator = await createUser();
 
   // Pre-calculate the address of the Treasury
@@ -141,7 +141,7 @@ export async function clawback({
 } = {}): Promise<void> {
   const txIx = await merkleInstant.methods
     .clawback(amount)
-    .accountsPartial({
+    .accounts({
       campaign,
       campaignCreator: signer.publicKey,
       airdropTokenMint,
@@ -201,7 +201,7 @@ export async function createCampaign({
       defaults.AGGREGATE_AMOUNT,
       leaves.length
     )
-    .accountsPartial({
+    .accounts({
       creator: creator.keys.publicKey,
       airdropTokenMint,
       airdropTokenProgram,
@@ -258,7 +258,7 @@ export function defaultCampaignData(): CampaignData {
   };
 }
 
-// Implicitly tests the `campaign_view` Ix works.
+// Implicitly tests the `campaign_view` Ix.
 export async function fetchCampaignData(
   campaign = defaultCampaign
 ): Promise<CampaignData> {

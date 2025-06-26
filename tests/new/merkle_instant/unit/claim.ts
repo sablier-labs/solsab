@@ -164,7 +164,8 @@ describe("claim", () => {
                       campaign,
                       recipient.keys,
                       randomToken,
-                      TOKEN_PROGRAM_ID
+                      TOKEN_PROGRAM_ID,
+                      false
                     );
                   });
                 }
@@ -212,7 +213,8 @@ async function testClaim(
   campaign = defaultCampaign,
   claimer = recipient.keys,
   tokenMint = usdc,
-  tokenProgram = TOKEN_PROGRAM_ID
+  tokenProgram = TOKEN_PROGRAM_ID,
+  recipientAtaExists = true
 ) {
   // Assert that the claim has not been made
   assert.isFalse(await hasClaimed());
@@ -230,9 +232,9 @@ async function testClaim(
   );
 
   // Get the recipient's balance before claiming
-  const recipientAtaBalanceBefore = tokenMint.equals(randomToken)
-    ? new BN(0)
-    : await getATABalanceMint(banksClient, recipient.keys.publicKey, tokenMint);
+  const recipientAtaBalanceBefore = recipientAtaExists
+    ? await getATABalanceMint(banksClient, recipient.keys.publicKey, tokenMint)
+    : new BN(0);
 
   // Get the treasury's Lamports balance before claiming
   const treasuryLamportsBefore = await getLamportsOf(treasuryAddress);

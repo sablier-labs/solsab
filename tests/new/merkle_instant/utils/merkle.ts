@@ -15,7 +15,7 @@ export class MerkleTree {
   private static computeLeaf(leafData: LeafData): Buffer {
     // Convert index to little-endian bytes (u32 = 4 bytes)
     const indexBytes = Buffer.alloc(4);
-    indexBytes.writeUInt32LE(leafData.index, 0);
+    indexBytes.writeUInt32LE(leafData.index);
 
     // Solana PublicKey is 32 bytes
     const recipientBytes = leafData.recipient.toBuffer();
@@ -26,7 +26,7 @@ export class MerkleTree {
       typeof leafData.amount === "bigint"
         ? leafData.amount
         : BigInt(leafData.amount.toString());
-    amountBytes.writeBigUInt64LE(amount, 0);
+    amountBytes.writeBigUInt64LE(amount);
 
     // Concatenate: index (4) + recipient (32) + amount (8) = 44 bytes total
     const leafBytes = Buffer.concat([indexBytes, recipientBytes, amountBytes]);
@@ -39,20 +39,27 @@ export class MerkleTree {
   }
 
   /**
-   * Sort leaf data and compute sorted leaves
+   * Build complete merkle tree from leaf data
    */
-  private static sortLeaves(leafData: LeafData[]): Buffer[] {
-    const leaves = leafData.map((data) => this.computeLeaf(data));
-    return leaves.sort((a, b) => Buffer.compare(a, b));
-  }
-
-  /**
-   * Build tree from sorted leaves
-   */
-  private static buildTree(sortedLeaves: Buffer[]): Buffer[][] {
-    if (sortedLeaves.length === 0) {
+  private static buildTree(leafData: LeafData[]): {
+    tree: Buffer[][];
+    sortedLeaves: Buffer[];
+    leafToIndex: Map<string, number>;
+  } {
+    if (leafData.length === 0) {
       throw new Error("Cannot build tree with empty leaves");
     }
+
+    // Compute and sort leaves
+    const sortedLeaves = leafData
+      .map((data) => this.computeLeaf(data))
+      .sort((a, b) => Buffer.compare(a, b));
+
+    // Create mapping from leaf hash to position for efficient proof generation
+    const leafToIndex = new Map<string, number>();
+    sortedLeaves.forEach((leaf, index) => {
+      leafToIndex.set(leaf.toString("hex"), index);
+    });
 
     const tree: Buffer[][] = [];
     tree.push([...sortedLeaves]);
@@ -79,17 +86,15 @@ export class MerkleTree {
       currentLevel = nextLevel;
     }
 
-    return tree;
+    return { tree, sortedLeaves, leafToIndex };
   }
 
   /**
    * Get merkle root from array of LeafData
    */
   static getRoot(leafData: LeafData[]): number[] {
-    const sortedLeaves = this.sortLeaves(leafData);
-    const tree = this.buildTree(sortedLeaves);
+    const { tree } = this.buildTree(leafData);
     const root = tree[tree.length - 1][0];
-
     return Array.from(root);
   }
 
@@ -103,16 +108,16 @@ export class MerkleTree {
       throw new Error(`No leaf found with index ${index}`);
     }
 
-    // Sort leaves and find position of target leaf
-    const sortedLeaves = this.sortLeaves(leafData);
+    // Build tree once and get all necessary data
+    const { tree, leafToIndex } = this.buildTree(leafData);
     const targetLeaf = this.computeLeaf(targetLeafData);
-    const pos = sortedLeaves.findIndex((leaf) => leaf.equals(targetLeaf));
 
-    if (pos === -1) {
+    // Find position using the pre-computed mapping
+    const pos = leafToIndex.get(targetLeaf.toString("hex"));
+    if (pos === undefined) {
       throw new Error(`Could not find leaf in sorted array for index ${index}`);
     }
 
-    const tree = this.buildTree(sortedLeaves);
     const proof: Buffer[] = [];
     let currentIndex = pos;
 

@@ -67,7 +67,7 @@ export async function setUp(initOrNot = true) {
   // Deploy the program being tested
   lockup = new Program<SablierLockup>(IDL, bankrunProvider);
 
-  // Create the stream users.
+  // Create the sender user.
   sender = await createUser();
 
   // Pre-calculate the address of the NFT Collection Data

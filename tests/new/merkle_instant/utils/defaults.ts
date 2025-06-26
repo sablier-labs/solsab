@@ -5,8 +5,6 @@ import { BN } from "@coral-xyz/anchor";
 //////////////////////////////////////////////////////////////////////////*/
 
 // Amounts
-export const USDC_USER_BALANCE = 1_000_000e6; // 1M tokens
-export const DAI_USER_BALANCE = 1_000_000e9; // 1M tokens
 export const AGGREGATE_AMOUNT = new BN(10_000e6);
 export const CLAIM_AMOUNT = new BN(100e6);
 export const CLAWBACK_AMOUNT = new BN(1_000e6);

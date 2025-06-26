@@ -11,13 +11,13 @@ import {
 
 import { createATAAndFund, createMint } from "./anchor-bankrun-adapter";
 
-// Programs and addresses
+// Config variables
 export let banksClient: BanksClient;
 export let bankrunProvider: BankrunProvider;
 export let context: ProgramTestContext;
 export let defaultBankrunPayer: Keypair;
 
-// Common users
+// Users
 export let eve: User;
 export let feeCollector: User;
 export let recipient: User;
@@ -43,7 +43,7 @@ export async function commonSetUp(
   // Initialize the tokens
   await createTokens();
 
-  // Create the common users
+  // Create the users
   eve = await createUser();
   feeCollector = await createUser();
   recipient = await createUser();
