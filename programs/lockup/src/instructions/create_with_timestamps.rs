@@ -47,7 +47,6 @@ pub struct CreateWithTimestamps<'info> {
     pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
 
     #[account(
-      mut,
       seeds = [NFT_COLLECTION_MINT],
       bump,
     )]
@@ -67,7 +66,6 @@ pub struct CreateWithTimestamps<'info> {
     pub nft_collection_metadata: UncheckedAccount<'info>,
 
     #[account(
-      mut,
       seeds = [
         METADATA,
         token_metadata_program.key().as_ref(),
