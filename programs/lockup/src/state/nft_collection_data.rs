@@ -8,6 +8,14 @@ pub struct NftCollectionData {
 }
 
 impl NftCollectionData {
+    // State update for the `create` instructions.
+    pub fn create(&mut self) -> Result<()> {
+        // The increment is safe, as it would take many years to overflow 2^64.
+        self.total_supply += 1;
+
+        Ok(())
+    }
+
     // State update for the `initialize` instruction.
     pub fn initialize(&mut self, bump: u8) -> Result<()> {
         self.bump = bump;
