@@ -27,7 +27,7 @@ export let usdc: PublicKey;
 export let dai: PublicKey;
 export let randomToken: PublicKey;
 
-export async function commonSetUp(
+export async function setUp(
   programName: string,
   programId: PublicKey,
   additionalPrograms: { name: string; programId: PublicKey }[] = []

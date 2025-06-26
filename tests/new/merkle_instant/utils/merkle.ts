@@ -5,7 +5,7 @@ import { keccak_256 } from "@noble/hashes/sha3";
 export interface LeafData {
   index: number;
   recipient: PublicKey;
-  amount: bigint | BN;
+  amount: BN;
 }
 
 export class MerkleTree {

@@ -10,13 +10,13 @@ import {
 import {
   banksClient,
   bankrunProvider,
-  commonSetUp,
   createUser,
   dai,
   feeCollector,
   getLamportsOf,
   getPDAAddress,
   recipient,
+  setUp as commonSetUp,
   usdc,
   User,
 } from "../common-base";
@@ -258,7 +258,6 @@ export function defaultCampaignData(): CampaignData {
   };
 }
 
-// Implicitly tests the `campaign_view` Ix.
 export async function fetchCampaignData(
   campaign = defaultCampaign
 ): Promise<CampaignData> {

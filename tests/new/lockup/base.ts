@@ -22,13 +22,13 @@ import {
 import {
   banksClient,
   bankrunProvider,
-  commonSetUp,
   createUser,
   dai,
   feeCollector,
   getLamportsOf,
   getPDAAddress,
   recipient,
+  setUp as commonSetUp,
   usdc,
   User,
 } from "../common-base";
