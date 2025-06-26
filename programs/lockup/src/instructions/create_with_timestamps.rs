@@ -206,9 +206,8 @@ pub fn handler(
         ctx.bumps.nft_collection_mint,
     )?;
 
-    // Effect: increment the total supply of the NFT collection. The increment is safe, as it would take many years to
-    // overflow 2^64.
-    ctx.accounts.nft_collection_data.total_supply += 1;
+    // Effect: increment the total supply of the NFT collection.
+    ctx.accounts.nft_collection_data.create()?;
 
     // Interaction: transfer tokens from the sender’s ATA to the StreamData ATA.
     transfer_tokens(
