@@ -1,16 +1,15 @@
 import {
-  assert,
-  assertEqStreamDatas,
-  assertErrorContains,
-} from "../utils/assertions";
-import {
   createWithDurations,
   defaultStream,
   fetchStreamData,
   setUp,
-  timeTravelTo,
 } from "../base";
-
+import { timeTravelTo } from "../../common-base";
+import {
+  assertEqStreamDatas,
+  assertErrorContains,
+  assertFail,
+} from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 
 describe("createWithDurations", () => {
@@ -23,8 +22,7 @@ describe("createWithDurations", () => {
     it("should revert", async () => {
       try {
         await createWithDurations();
-
-        assert.fail("Expected the tx to revert, but it succeeded.");
+        assertFail();
       } catch (error) {
         assertErrorContains(
           error,

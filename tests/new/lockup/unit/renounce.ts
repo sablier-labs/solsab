@@ -2,18 +2,17 @@ import { BN } from "@coral-xyz/anchor";
 import {
   cancel,
   defaultStream,
-  eve,
   fetchStreamData,
   salts,
   renounce,
   setUp,
-  timeTravelTo,
   withdrawMax,
 } from "../base";
+import { eve, timeTravelTo } from "../../common-base";
 import {
-  assert,
   assertErrorHexCode,
   assertEqStreamDatas,
+  assertFail,
 } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";
@@ -27,8 +26,7 @@ describe("renounce", () => {
     it("should revert", async () => {
       try {
         await renounce({ salt: new BN(1) });
-
-        assert.fail("Expected the tx to revert, but it succeeded.");
+        assertFail();
       } catch (error) {
         assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
       }
@@ -44,8 +42,7 @@ describe("renounce", () => {
       it("should revert", async () => {
         try {
           await renounce({ salt: salts.nonExisting });
-
-          assert.fail("Expected the tx to revert, but it succeeded.");
+          assertFail();
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
         }
@@ -60,8 +57,7 @@ describe("renounce", () => {
             await withdrawMax();
             try {
               await renounce();
-
-              assert.fail("Expected the tx to revert, but it succeeded.");
+              assertFail();
             } catch (error) {
               assertErrorHexCode(
                 error,
@@ -76,8 +72,7 @@ describe("renounce", () => {
             await cancel();
             try {
               await renounce();
-
-              assert.fail("Expected the tx to revert, but it succeeded.");
+              assertFail();
             } catch (error) {
               assertErrorHexCode(
                 error,
@@ -92,8 +87,7 @@ describe("renounce", () => {
             await timeTravelTo(defaults.END_TIME);
             try {
               await renounce();
-
-              assert.fail("Expected the tx to revert, but it succeeded.");
+              assertFail();
             } catch (error) {
               assertErrorHexCode(
                 error,
@@ -109,8 +103,7 @@ describe("renounce", () => {
           it("should revert", async () => {
             try {
               await renounce({ signer: eve.keys });
-
-              assert.fail("Expected the tx to revert, but it succeeded.");
+              assertFail();
             } catch (error) {
               assertErrorHexCode(error, getErrorCode("ConstraintAddress"));
             }
@@ -122,8 +115,7 @@ describe("renounce", () => {
             it("should revert", async () => {
               try {
                 await renounce({ salt: salts.nonCancelable });
-
-                assert.fail("Expected the tx to revert, but it succeeded.");
+                assertFail();
               } catch (error) {
                 assertErrorHexCode(
                   error,

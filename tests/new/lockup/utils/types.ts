@@ -1,5 +1,5 @@
 import { BN } from "@coral-xyz/anchor";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 export { PublicKey } from "@solana/web3.js";
 
 export interface Amounts {
@@ -49,10 +49,4 @@ export interface Stream {
 export interface UnlockAmounts {
   cliff: BN;
   start: BN;
-}
-
-export interface User {
-  keys: Keypair;
-  daiATA: PublicKey;
-  usdcATA: PublicKey;
 }

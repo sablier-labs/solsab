@@ -5,8 +5,6 @@ import { BN } from "@coral-xyz/anchor";
 //////////////////////////////////////////////////////////////////////////*/
 
 // Amounts
-export const USDC_USER_BALANCE = 1_000_000e6; // 1M tokens
-export const DAI_USER_BALANCE = 1_000_000e9; // 1M tokens
 export const AGGREGATE_AMOUNT = new BN(10_000e6);
 export const CLAIM_AMOUNT = new BN(100e6);
 export const CLAWBACK_AMOUNT = new BN(1_000e6);
@@ -19,7 +17,7 @@ export const TIME_AFTER_GRACE_PERIOD = APR_1_2025.add(
   GRACE_PERIOD_DURATION.add(new BN(1))
 ); // 7 days + 1 sec past APR_1_2025
 const TEN_DAYS_IN_SECONDS = 60 * 60 * 24 * 10;
-export const EXPIRATION_TIME = APR_1_2025.add(new BN(TEN_DAYS_IN_SECONDS)); // 10 days past APR_1_2025
+export const EXPIRATION_TIME = APR_1_2025.add(new BN(TEN_DAYS_IN_SECONDS));
 
 // Seeds
 export const TREASURY_SEED = "treasury";
@@ -28,4 +26,4 @@ export const CLAIM_RECEIPT_SEED = "claim_receipt";
 
 // Miscellaneous
 export const CAMPAIGN_NAME = "Default Campaign Name";
-export const IPFS_ID = "QmbWqxBEKC3P8gqxKc68xmWNzrzDtRLMiMPL8wBuTGsMnR";
+export const IPFS_CID = "QmbWqxBEKC3P8tqsKc98xmWNzrzDtRLMiMPL8wBuTGsMnR";

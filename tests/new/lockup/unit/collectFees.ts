@@ -1,14 +1,12 @@
 import {
   collectFees,
-  eve,
   getSenderLamports,
   getTreasuryLamports,
   setUp,
-  sleepFor,
-  timeTravelTo,
   withdrawMax,
 } from "../base";
-import { assert, assertErrorHexCode } from "../utils/assertions";
+import { eve, sleepFor, timeTravelTo } from "../../common-base";
+import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import { getErrorCode } from "../utils/errors";
 import * as defaults from "../utils/defaults";
 
@@ -21,8 +19,7 @@ describe("collectFees", () => {
     it("should revert", async () => {
       try {
         await collectFees();
-
-        assert.fail("Expected the tx to revert, but it succeeded.");
+        assertFail();
       } catch (error) {
         assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
       }
@@ -40,8 +37,7 @@ describe("collectFees", () => {
 
         try {
           await collectFees(eve.keys);
-
-          assert.fail("Expected the tx to revert, but it succeeded.");
+          assertFail();
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("ConstraintAddress"));
         }
@@ -53,8 +49,7 @@ describe("collectFees", () => {
         it("should revert", async () => {
           try {
             await collectFees();
-
-            assert.fail("Expected the tx to revert, but it succeeded.");
+            assertFail();
           } catch (error) {
             assertErrorHexCode(error, getErrorCode("CantCollectZeroFees"));
           }

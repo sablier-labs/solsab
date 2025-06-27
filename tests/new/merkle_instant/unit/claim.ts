@@ -1,33 +1,38 @@
-import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import { assert, assertErrorHexCode } from "../utils/assertions";
+import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import { PublicKey } from "@solana/web3.js";
+
+import {
+  createATAAndFund,
+  getATABalanceMint,
+} from "../../anchor-bankrun-adapter";
+import {
+  banksClient,
+  dai,
+  defaultBankrunPayer,
+  getLamportsOf,
+  randomToken,
+  recipient,
+  sleepFor,
+  timeTravelTo,
+  usdc,
+} from "../../common-base";
+
 import {
   campaignCreator,
   claim,
-  createATAAndMintTo,
   createCampaign,
-  deriveATAAddress,
-  randomTokenSPL,
-  claimToken2022,
-  setUp,
-  sleepFor,
-  timeTravelTo,
-  TOKEN_PROGRAM_ID,
-  banksClient,
-  getPDAAddress,
-  campaignIds,
-  accountExists,
+  defaultCampaign,
+  defaultCampaignToken2022,
+  defaultIndex,
   fetchCampaignData,
-  recipient,
-  getATABalance,
-  usdc,
+  merkleInstant,
+  setUp,
   treasuryAddress,
-  getLamportsOf,
-  dai,
-  fundCampaign,
 } from "../base";
-import { getErrorCode } from "../utils/errors";
+import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
+import { getErrorCode } from "../utils/errors";
 
 describe("claim", () => {
   context("when the program is not initialized", () => {
@@ -36,33 +41,38 @@ describe("claim", () => {
         initProgram: false,
       });
     });
+    context("when the campaign doesn't exist", () => {
+      it("should revert", async () => {
+        try {
+          // Passing a non-Campaign account since no Campaigns exist yet
+          await claim({ campaign: new PublicKey(12345) });
+          assertFail();
+        } catch (error) {
+          assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
+        }
+      });
+    });
 
-    it("should revert", async () => {
-      try {
-        await claim({ campaignId: recipient.keys.publicKey }); // Passing a non-Campaign account since no Campaigns exist yet
-
-        assert.fail("Expected the tx to revert, but it succeeded.");
-      } catch (error) {
-        assertErrorHexCode(error, getErrorCode("AccountOwnedByWrongProgram"));
-      }
+    context("when the campaign exists", () => {
+      it("should revert", async () => {
+        const campaign = await createCampaign({ name: "Test Campaign" });
+        try {
+          await claim({ campaign: campaign });
+          assertFail();
+        } catch (error) {
+          assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
+        }
+      });
     });
   });
 
   context("when the program is initialized", () => {
     context("when the campaign doesn't exist", () => {
-      beforeEach(async () => {
-        await setUp({
-          initProgram: true,
-          createCampaigns: false,
-        });
-      });
-
       it("should revert", async () => {
         try {
           // Claim from a non-existent Campaign
-          await claim({ campaignId: new PublicKey(12345) });
-
-          assert.fail("Expected the tx to revert, but it succeeded.");
+          await claim({ campaign: new PublicKey(12345) });
+          assertFail();
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
         }
@@ -74,44 +84,41 @@ describe("claim", () => {
         await setUp();
       });
 
-      context("when the airdrop has already been claimed", () => {
+      context("when the token mint is invalid", () => {
         it("should revert", async () => {
-          await claim();
-          await sleepFor(7);
           try {
-            // Claim from the Campaign again
-            await claim();
-
-            assert.fail("Expected the tx to revert, but it succeeded.");
+            // Claim from the Campaign with an invalid token mint
+            await claim({ airdropTokenMint: dai });
+            assertFail();
           } catch (error) {
-            assertErrorHexCode(error, "0x0");
+            assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
           }
         });
       });
 
-      context("when the airdrop has not been claimed", () => {
-        context("when the token mint is invalid", () => {
+      context("when the token mint is valid", () => {
+        context("when the airdrop has already been claimed", () => {
           it("should revert", async () => {
+            await claim();
+            await sleepFor(7);
             try {
-              // Claim from the Campaign with an invalid token mint
-              await claim({ airdropTokenMint: dai });
-
-              assert.fail("Expected the tx to revert, but it succeeded.");
+              // Claim from the Campaign again
+              await claim();
+              assertFail();
             } catch (error) {
-              assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
+              assertErrorHexCode(error, "0x0");
             }
           });
         });
 
-        context("when the token mint is valid", () => {
+        context("when the airdrop has not been claimed", () => {
           context("when the merkle proof is invalid", () => {
             it("should revert", async () => {
               try {
                 await claim({
-                  amount: defaults.CLAIM_AMOUNT.sub(new BN(1)), // Invalid amount
+                  amount: defaults.CLAIM_AMOUNT.sub(new BN(1)),
                 });
-
-                assert.fail("Expected the tx to revert, but it succeeded.");
+                assertFail();
               } catch (error) {
                 assertErrorHexCode(error, getErrorCode("InvalidMerkleProof"));
               }
@@ -119,206 +126,76 @@ describe("claim", () => {
           });
 
           context("when the merkle proof is valid", () => {
-            context("when the campaign doesn't have enough tokens", () => {
-              beforeEach(async () => {
-                await setUp({
-                  initProgram: true,
-                  createCampaigns: true,
-                  fundCampaigns: false,
-                });
-              });
-
+            context("when the campaign expired", () => {
               it("should revert", async () => {
+                // Time travel to when the campaign has expired
+                await timeTravelTo(defaults.EXPIRATION_TIME);
                 try {
                   await claim();
-
-                  assert.fail("Expected the tx to revert, but it succeeded.");
+                  assertFail();
                 } catch (error) {
-                  assertErrorHexCode(error, "0x1");
+                  assertErrorHexCode(error, getErrorCode("CampaignExpired"));
                 }
               });
             });
 
-            context("when the campaign has enough tokens", () => {
-              context("when the campaign expired", () => {
-                it("should revert", async () => {
-                  // Time travel to when the campaign has expired
-                  await timeTravelTo(defaults.EXPIRATION_TIME);
-                  try {
-                    await claim();
+            context("when the campaign has not expired", () => {
+              context(
+                "when the recipient doesn't have an ATA for the token",
+                () => {
+                  it("should claim the airdrop", async () => {
+                    // Mint the random token to the campaign creator
+                    await createATAAndFund(
+                      banksClient,
+                      defaultBankrunPayer,
+                      randomToken,
+                      defaults.AGGREGATE_AMOUNT.toNumber(),
+                      TOKEN_PROGRAM_ID,
+                      campaignCreator.keys.publicKey
+                    );
 
-                    assert.fail("Expected the tx to revert, but it succeeded.");
-                  } catch (error) {
-                    assertErrorHexCode(error, getErrorCode("CampaignExpired"));
-                  }
-                });
-              });
-
-              context("when the campaign has not expired", () => {
-                context(
-                  "when the recipient doesn't have an ATA for the token",
-                  () => {
-                    it("should claim the airdrop", async () => {
-                      // Mint the random token to the campaign creator
-                      const campaignCreatorAta = await createATAAndMintTo(
-                        campaignCreator.keys.publicKey,
-                        randomTokenSPL,
-                        defaults.AGGREGATE_AMOUNT.toNumber(),
-                        TOKEN_PROGRAM_ID
-                      );
-
-                      // Create a Campaign with the random token
-                      const campaignId = await createCampaign({
-                        airdropTokenMint: randomTokenSPL,
-                      });
-
-                      await fundCampaign(
-                        campaignCreator.keys,
-                        campaignId,
-                        randomTokenSPL,
-                        campaignCreatorAta,
-                        TOKEN_PROGRAM_ID,
-                        defaults.AGGREGATE_AMOUNT.toNumber()
-                      );
-
-                      // Claim from the Campaign
-                      await claim();
+                    // Create a Campaign with the random token
+                    const campaign = await createCampaign({
+                      airdropTokenMint: randomToken,
                     });
-                  }
-                );
 
-                context("when the recipient has an ATA for the token", () => {
-                  context("when the claimer is not the recipient", () => {
+                    // Test the campaign
+                    await testClaim(
+                      campaign,
+                      recipient.keys,
+                      randomToken,
+                      TOKEN_PROGRAM_ID,
+                      false
+                    );
+                  });
+                }
+              );
+
+              context("when the recipient has an ATA for the token", () => {
+                context("when the claimer is not the recipient", () => {
+                  it("should claim the airdrop", async () => {
+                    // Test the claim.
+                    await testClaim(defaultCampaign, campaignCreator.keys);
+                  });
+                });
+
+                context("when the claimer is the recipient", () => {
+                  context("given token SPL standard", () => {
                     it("should claim the airdrop", async () => {
                       // Claim from the Campaign
-                      await claim({
-                        claimerKeys: campaignCreator.keys,
-                      });
+                      await testClaim();
                     });
                   });
 
-                  context("when the claimer is the recipient", () => {
-                    context("given a Token2022 token", () => {
-                      it("should claim the airdrop", async () => {
-                        // Claim from the Campaign
-                        await claimToken2022();
-                      });
-                    });
-
-                    context("given an SPL token", () => {
-                      it("should create the Claim Receipt account", async () => {
-                        const claimReceiptAddress = deriveClaimReceiptAddress();
-
-                        // Assert that the Claim Receipt account doesn't exist before claiming
-                        assert.isFalse(
-                          await accountExists(claimReceiptAddress)
-                        );
-
-                        // Claim from the Campaign
-                        await claim();
-
-                        // Assert that the Claim Receipt account exists
-                        assert(await accountExists(claimReceiptAddress));
-                      });
-
-                      it("should set the Campaign's firstClaimTime", async () => {
-                        // Get the Campaign's data before claiming
-                        const campaignDataBefore = await fetchCampaignData(
-                          campaignIds.default
-                        );
-                        // Assert that the firstClaimTime is not set
-                        assert(campaignDataBefore.firstClaimTime.isZero());
-
-                        // Claim from the Campaign
-                        await claim();
-
-                        // Get the Campaign's data after claiming
-                        const campaignDataAfter = await fetchCampaignData(
-                          campaignIds.default
-                        );
-                        // Assert that the firstClaimTime field is set to the current time
-                        const now = new BN(
-                          (
-                            await banksClient.getClock()
-                          ).unixTimestamp.toString()
-                        );
-                        assert(campaignDataAfter.firstClaimTime.eq(now));
-                      });
-
-                      it("should transfer the airdrop from the Campaign to the recipient", async () => {
-                        // Get the recipient's balance before claiming
-                        const recipientBalanceBefore = await getATABalance(
-                          banksClient,
-                          recipient.usdcATA
-                        );
-
-                        // Derive the ATA of the Campaign
-                        const campaignAta = deriveATAAddress(
-                          usdc,
-                          campaignIds.default,
-                          TOKEN_PROGRAM_ID
-                        );
-
-                        // Get the balance of the Campaign before claiming
-                        const campaignAtaBalanceBefore = await getATABalance(
-                          banksClient,
-                          campaignAta
-                        );
-
-                        // Claim from the Campaign
-                        const amountToClaim = defaults.CLAIM_AMOUNT;
-                        await claim({ amount: amountToClaim });
-
-                        // Get the recipient's balance after claiming
-                        const recipientBalanceAfter = await getATABalance(
-                          banksClient,
-                          recipient.usdcATA
-                        );
-
-                        // Assert that the recipient's balance increased by the claim amount
-                        assert(
-                          recipientBalanceAfter.eq(
-                            recipientBalanceBefore.add(amountToClaim)
-                          )
-                        );
-
-                        // Get the balance of the Campaign after claiming
-                        const campaignAtaBalanceAfter = await getATABalance(
-                          banksClient,
-                          campaignAta
-                        );
-
-                        // Assert that the Campaign's ATA balance decreased by the claim amount
-                        assert(
-                          campaignAtaBalanceAfter.eq(
-                            campaignAtaBalanceBefore.sub(amountToClaim)
-                          )
-                        );
-                      });
-
-                      it("should transfer the claim fee to the treasury", async () => {
-                        // Get the treasury's Lamports balance before claiming
-                        const treasuryLamportsBefore = await getLamportsOf(
-                          treasuryAddress
-                        );
-
-                        // Claim from the Campaign
-                        await claim();
-
-                        // Get the treasury's Lamports balance after claiming
-                        const treasuryLamportsAfter = await getLamportsOf(
-                          treasuryAddress
-                        );
-
-                        // Assert that the treasury's balance has increased by the claim fee amount
-                        assert(
-                          treasuryLamportsAfter ==
-                            treasuryLamportsBefore +
-                              BigInt(defaults.CLAIM_FEE_AMOUNT)
-                        );
-
-                        // Dev: we're not asserting the claimer paying the claim fee, because we don't know how big of a tx fee the claimer had to pay
-                      });
+                  context("given token 2022 standard", () => {
+                    it("should claim the airdrop", async () => {
+                      // Test the claim.
+                      await testClaim(
+                        defaultCampaignToken2022,
+                        recipient.keys,
+                        dai,
+                        TOKEN_2022_PROGRAM_ID
+                      );
                     });
                   });
                 });
@@ -331,16 +208,106 @@ describe("claim", () => {
   });
 });
 
-function deriveClaimReceiptAddress(
-  campaignId: PublicKey = campaignIds.default,
-  recipientIndex: number = 0
-): PublicKey {
-  const indexBuffer = Buffer.alloc(4);
-  indexBuffer.writeUInt32LE(recipientIndex); // use LE to match the Rust program
+/// Common test function to test the claim functionality
+async function testClaim(
+  campaign = defaultCampaign,
+  claimer = recipient.keys,
+  tokenMint = usdc,
+  tokenProgram = TOKEN_PROGRAM_ID,
+  recipientAtaExists = true
+) {
+  // Assert that the claim has not been made
+  assert.isFalse(await hasClaimed());
 
-  return getPDAAddress([
-    Buffer.from(defaults.CLAIM_RECEIPT_SEED),
-    campaignId.toBuffer(),
-    indexBuffer,
-  ]);
+  // Get the Campaign's data before claiming
+  const campaignDataBefore = await fetchCampaignData(campaign);
+
+  // Assert that the Campaign's firstClaimTime is zero before claiming
+  assert(campaignDataBefore.firstClaimTime.isZero());
+
+  // Get the campaign and recipient ATA balances before claiming.
+  const campaignAtaBalanceBefore = await getATABalanceMint(
+    banksClient,
+    campaign,
+    tokenMint
+  );
+  const recipientAtaBalanceBefore = recipientAtaExists
+    ? await getATABalanceMint(banksClient, recipient.keys.publicKey, tokenMint)
+    : new BN(0);
+
+  // Get the claimer and treasury lamports balance before claiming
+  const claimerLamportsBefore = await getLamportsOf(claimer.publicKey);
+  const treasuryLamportsBefore = await getLamportsOf(treasuryAddress);
+
+  // Claim from the Campaign
+  await claim({
+    campaign: campaign,
+    claimerKeys: claimer,
+    airdropTokenMint: tokenMint,
+    airdropTokenProgram: tokenProgram,
+  });
+
+  const campaignDataAfter = await fetchCampaignData(campaign);
+  assert(campaignDataAfter.firstClaimTime.eq(defaults.APR_1_2025));
+
+  // Assert that the claim has been made
+  assert(await hasClaimed(campaign));
+
+  const campaignAtaBalanceAfter = await getATABalanceMint(
+    banksClient,
+    campaign,
+    tokenMint
+  );
+
+  // Assert that the Campaign's ATA balance decreased by the claim amount
+  assert(
+    campaignAtaBalanceAfter.eq(
+      campaignAtaBalanceBefore.sub(defaults.CLAIM_AMOUNT)
+    ),
+    "campaign ATA balance"
+  );
+
+  const recipientAtaBalanceAfter = await getATABalanceMint(
+    banksClient,
+    recipient.keys.publicKey,
+    tokenMint
+  );
+
+  // Assert that the recipient's ATA balance increased by the claim amount
+  assert(
+    recipientAtaBalanceAfter.eq(
+      recipientAtaBalanceBefore.add(defaults.CLAIM_AMOUNT)
+    ),
+    "recipient ATA balance"
+  );
+
+  const claimerLamportsAfter = await getLamportsOf(claimer.publicKey);
+
+  // Assert that the claimer's lamports balance has changed atleast by the claim fee amount.
+  // We use `<=` because we don't know in advance the gas cost.
+  assert(
+    claimerLamportsAfter <=
+      claimerLamportsBefore - BigInt(defaults.CLAIM_FEE_AMOUNT),
+    "claimer lamports balance"
+  );
+
+  const treasuryLamportsAfter = await getLamportsOf(treasuryAddress);
+
+  // Assert that the treasury's balance has increased by the claim fee amount
+  assert(
+    treasuryLamportsAfter ==
+      treasuryLamportsBefore + BigInt(defaults.CLAIM_FEE_AMOUNT),
+    "treasury balance"
+  );
+}
+
+// Implicitly tests the `has_claimed` Ix works.
+async function hasClaimed(campaign = defaultCampaign): Promise<boolean> {
+  return await merkleInstant.methods
+    .hasClaimed(defaultIndex)
+    .accounts({
+      campaign: campaign,
+    })
+    .signers([defaultBankrunPayer])
+    .view();
 }

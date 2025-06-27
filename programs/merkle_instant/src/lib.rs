@@ -32,8 +32,8 @@ pub mod sablier_merkle_instant {
         ctx: Context<CreateCampaign>,
         merkle_root: [u8; 32],
         expiration_time: i64,
-        ipfs_cid: String,
         name: String,
+        ipfs_cid: String,
         aggregate_amount: u64,
         recipient_count: u32,
     ) -> Result<()> {
@@ -49,7 +49,7 @@ pub mod sablier_merkle_instant {
     }
 
     pub fn has_claimed(ctx: Context<HasClaimed>, _index: u32) -> Result<bool> {
-        Ok(ctx.accounts.claim_receipt.is_some())
+        Ok(!ctx.accounts.claim_receipt.data_is_empty())
     }
 
     pub fn has_expired(ctx: Context<CampaignView>) -> Result<bool> {

@@ -1,3 +1,8 @@
+import {
+  getErrorCode as getErrorCodeBase,
+  getErrorName as getErrorNameBase,
+} from "../../common-base";
+
 const ErrorCode = {
   // Cancel Stream
   StreamCanceled: 0x1770,
@@ -39,8 +44,7 @@ type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
  * @returns The hex code for the error
  */
 export function getErrorCode(errorName: string): string {
-  const errorCode = ErrorCode[errorName as keyof typeof ErrorCode];
-  return `0x${errorCode.toString(16)}`;
+  return getErrorCodeBase(ErrorCode, errorName);
 }
 
 /**
@@ -49,18 +53,5 @@ export function getErrorCode(errorName: string): string {
  * @returns The error name
  */
 export function getErrorName(hexCode: string): string {
-  // Convert the hex string to a number
-  const numericCode = parseInt(hexCode, 16);
-
-  // Find the error name by value
-  for (const [key, value] of Object.entries(ErrorCode)) {
-    // Skip numeric keys (TypeScript enums have reverse mappings)
-    if (!isNaN(Number(key))) continue;
-
-    if (value === numericCode) {
-      return key;
-    }
-  }
-
-  return "not found";
+  return getErrorNameBase(ErrorCode, hexCode);
 }

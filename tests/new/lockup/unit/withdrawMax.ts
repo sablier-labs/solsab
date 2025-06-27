@@ -4,13 +4,13 @@ import {
   fetchStreamData,
   salts,
   setUp,
-  timeTravelTo,
   withdrawMax,
 } from "../base";
+import { timeTravelTo } from "../../common-base";
 import {
-  assert,
   assertEqStreamDatas,
   assertErrorHexCode,
+  assertFail,
 } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";
@@ -24,8 +24,7 @@ describe("withdrawMax", () => {
     it("should revert", async () => {
       try {
         await withdrawMax({ salt: new BN(1) });
-
-        assert.fail("Expected the tx to revert, but it succeeded.");
+        assertFail();
       } catch (error) {
         assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
       }
@@ -41,8 +40,7 @@ describe("withdrawMax", () => {
       it("should revert", async () => {
         try {
           await withdrawMax({ salt: salts.nonExisting });
-
-          assert.fail("Expected the tx to revert, but it succeeded.");
+          assertFail();
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("AccountNotInitialized"));
         }

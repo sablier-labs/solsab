@@ -1,19 +1,24 @@
 import { BN } from "@coral-xyz/anchor";
 
 import {
-  accountExists,
   deriveATAAddress,
   getATABalance,
-  getPDAAddress,
   getMintTotalSupplyOf,
   initializeLockup,
+  lockup,
   nftCollectionDataAddress,
   setUp,
-  sleepFor,
   treasuryAddress,
-  banksClient,
 } from "../base";
-import { assert, assertErrorHexCode } from "../utils/assertions";
+
+import {
+  accountExists,
+  banksClient,
+  getPDAAddress,
+  sleepFor,
+} from "../../common-base";
+
+import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 
 describe("initialize", () => {
@@ -27,8 +32,7 @@ describe("initialize", () => {
       await sleepFor(7);
       try {
         await initializeLockup();
-
-        assert.fail("Expected the tx to revert, but it succeeded.");
+        assertFail();
       } catch (error) {
         assertErrorHexCode(error, "0x0");
       }
@@ -46,9 +50,10 @@ describe("initialize", () => {
 
       assert(await accountExists(treasuryAddress), "Treasury not initialized");
 
-      const nftCollectionMint = getPDAAddress([
-        Buffer.from(defaults.NFT_COLLECTION_MINT_SEED),
-      ]);
+      const nftCollectionMint = getPDAAddress(
+        [Buffer.from(defaults.NFT_COLLECTION_MINT_SEED)],
+        lockup.programId
+      );
 
       assert(
         await accountExists(nftCollectionMint),
