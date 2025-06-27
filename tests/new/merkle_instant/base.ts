@@ -22,7 +22,7 @@ import {
 } from "../common-base";
 
 import * as defaults from "./utils/defaults";
-import { LeafData, MerkleTree } from "./utils/merkle";
+import { LeafData, getRoot, getProof } from "./utils/merkle";
 import { CampaignData } from "./utils/types";
 
 import { SablierMerkleInstant } from "../../../target/types/sablier_merkle_instant";
@@ -39,8 +39,11 @@ export let campaignCreator: User;
 export let defaultCampaign: PublicKey;
 export let defaultCampaignToken2022: PublicKey;
 
+// For the recipient declared in `common-base.ts`
+export const defaultIndex = 0;
+let defaultMerkleProof: number[][];
+
 // Merkle Tree
-export const defaultIndex = 0; // For the recipient declared in common-base.ts
 let leaves: LeafData[];
 let merkleRoot: number[];
 let recipient1: PublicKey;
@@ -85,7 +88,8 @@ export async function setUp({ initProgram = true } = {}) {
     { index: 3, recipient: recipient3, amount: defaults.CLAIM_AMOUNT },
   ];
 
-  merkleRoot = MerkleTree.getRoot(leaves);
+  merkleRoot = getRoot(leaves);
+  defaultMerkleProof = getProof(leaves, leaves[0]);
 
   if (initProgram) {
     // Initialize the Merkle Instant program
@@ -114,11 +118,7 @@ export async function claim({
   airdropTokenProgram = TOKEN_PROGRAM_ID,
 } = {}): Promise<void> {
   const txIx = await merkleInstant.methods
-    .claim(
-      index,
-      defaults.CLAIM_AMOUNT,
-      MerkleTree.getProof(leaves, defaultIndex)
-    )
+    .claim(index, defaults.CLAIM_AMOUNT, defaultMerkleProof)
     .accounts({
       claimer: claimerKeys.publicKey,
       campaign: campaign,
