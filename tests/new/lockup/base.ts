@@ -19,8 +19,8 @@ import {
 } from "solana-bankrun";
 import { BankrunProvider } from "anchor-bankrun";
 
-import { SablierLockup } from "../../target/types/sablier_lockup";
-import IDL from "../../target/idl/sablier_lockup.json";
+import { SablierLockup } from "../../../target/types/sablier_lockup";
+import IDL from "../../../target/idl/sablier_lockup.json";
 
 import * as defaults from "./utils/defaults";
 import { Stream, StreamData, Salts, User } from "./utils/types";
@@ -31,14 +31,14 @@ import {
   deriveATAAddress,
   getATABalance,
   mintTo,
-} from "./anchor-bankrun-adapter";
+} from "../anchor-bankrun-adapter";
 
 export {
   deriveATAAddress,
   getATABalance,
   getATABalanceMint,
   getMintTotalSupplyOf,
-} from "./anchor-bankrun-adapter";
+} from "../anchor-bankrun-adapter";
 
 // Programs and addresses
 export let banksClient: BanksClient;
