@@ -115,14 +115,13 @@ export async function setUp({ initProgram = true } = {}) {
 export async function claim({
   campaign = defaultCampaign,
   claimerKeys = recipient.keys,
+  amount = defaults.CLAIM_AMOUNT,
   recipientAddress = recipient.keys.publicKey,
-  index = defaultIndex,
-
   airdropTokenMint = usdc,
   airdropTokenProgram = TOKEN_PROGRAM_ID,
 } = {}): Promise<void> {
   const txIx = await merkleInstant.methods
-    .claim(index, defaults.CLAIM_AMOUNT, defaultMerkleProof)
+    .claim(defaultIndex, amount, defaultMerkleProof)
     .accounts({
       claimer: claimerKeys.publicKey,
       campaign: campaign,

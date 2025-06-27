@@ -116,7 +116,7 @@ describe("claim", () => {
             it("should revert", async () => {
               try {
                 await claim({
-                  index: 100, // Invalid index
+                  amount: defaults.CLAIM_AMOUNT.sub(new BN(1)),
                 });
                 assertFail();
               } catch (error) {
