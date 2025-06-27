@@ -29,6 +29,7 @@ import {
   getPDAAddress,
   recipient,
   setUp as commonSetUp,
+  timeTravelTo,
   usdc,
   User,
 } from "../common-base";
@@ -81,6 +82,9 @@ export async function setUp(initOrNot = true) {
     [Buffer.from(defaults.TREASURY_SEED)],
     lockup.programId
   );
+
+  // Set the block time to APR 1, 2025
+  await timeTravelTo(defaults.APR_1_2025);
 
   if (initOrNot) {
     // Initialize the SablierLockup program

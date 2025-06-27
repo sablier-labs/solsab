@@ -47,10 +47,6 @@ export async function setUp(
   eve = await createUser();
   feeCollector = await createUser();
   recipient = await createUser();
-
-  // Set the block time to APR 1, 2025
-  const APR_1_2025 = new BN(1_743_454_800);
-  await timeTravelTo(APR_1_2025);
 }
 
 async function createATAsAndFund(

@@ -17,6 +17,7 @@ import {
   getPDAAddress,
   recipient,
   setUp as commonSetUp,
+  timeTravelTo,
   usdc,
   User,
 } from "../common-base";
@@ -90,6 +91,9 @@ export async function setUp({ initProgram = true } = {}) {
 
   merkleRoot = getRoot(leaves);
   defaultMerkleProof = getProof(leaves, leaves[0]);
+
+  // Set the block time to APR 1, 2025
+  await timeTravelTo(defaults.APR_1_2025);
 
   if (initProgram) {
     // Initialize the Merkle Instant program
