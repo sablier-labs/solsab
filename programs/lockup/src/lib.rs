@@ -21,13 +21,13 @@ pub mod sablier_lockup {
     /// Notes:
     /// - If there any tokens left for the recipient to withdraw, the stream is marked as canceled. Otherwise, the
     /// stream is marked as depleted.
-    /// - If the sender does not have an ATA for the deposited token, one is created.
+    /// - If the sender does not have an ATA for the deposited token, it is created.
     /// - Emits a {CancelLockupStream} event.
     ///
     /// Accounts expected:
     /// - `sender` The transaction signer and the stream's sender.
     /// - `deposited_token_mint` The mint of the deposited token.
-    /// - `stream_nft_mint` The stream NFT mint PDA identifying the unique stream.
+    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
     /// - `deposited_token_program` The Token Program of the deposited token.
     ///
     /// Requirements:
@@ -42,7 +42,7 @@ pub mod sablier_lockup {
     /// Collects the fees accumulated in the treasury by transferring them to the fee recipient.
     ///
     /// Notes:
-    /// - Leaves a buffer of 0.001 SOL to ensure the account remains rent-exempt after the transfer.
+    /// - Leaves a buffer of 0.001 SOL to ensure the account remains rent-exempt after the fee collection.
     /// - Emits a {FeesCollected} event.
     ///
     /// Accounts expected:
@@ -50,7 +50,7 @@ pub mod sablier_lockup {
     /// - `fee_recipient` The address receiving the collected fees.
     ///
     /// Requirements:
-    /// - `fee_collector` must be the treasury’s fee collector.
+    /// - `fee_collector` must be authorized for fee collection.
     pub fn collect_fees(ctx: Context<CollectFees>) -> Result<()> {
         instructions::collect_fees::handler(ctx)
     }
@@ -58,14 +58,8 @@ pub mod sablier_lockup {
     /// Creates a stream by setting the start time to the current timestamp, and the end time to the sum of
     /// current timestamp and `total_duration`. The stream is funded by the signer and wrapped in a Metaplex NFT.
     ///
-    /// Notes:
+    /// Notes / Accounts expected / Requirements:
     /// - Refer to the notes in {create_with_timestamps}.
-    ///
-    /// Accounts expected:
-    /// - Refer to the accounts in {create_with_timestamps}.
-    ///
-    /// Requirements:
-    /// - Refer to the requirements in {create_with_timestamps}.
     #[allow(clippy::too_many_arguments)]
     pub fn create_with_durations(
         ctx: Context<CreateWithTimestamps>,
@@ -93,10 +87,11 @@ pub mod sablier_lockup {
     /// a Metaplex NFT.
     ///
     /// Notes:
-    /// - The creator of the stream does not need to be the sender.
+    /// - The passed sender of the stream doesn't have to be the same as its creator.
     /// - A cliff time of zero means there is no cliff.
     /// - As long as the times are ordered, it is not an error for the start or the cliff time to be in the past.
-    /// - The recipient is saved as the owner of the stream NFT, which is minted to their ATA.
+    /// - The stream recipient is given solely by the ownership of the stream NFT, which is minted to the passed
+    /// `recipient`.
     /// - Emits a {CreateLockupLinearStream} event.
     ///
     /// Accounts expected:
@@ -108,7 +103,7 @@ pub mod sablier_lockup {
     /// - `nft_token_program` The Token Program of the NFT.
     ///
     /// Parameters:
-    /// - `salt` A unique salt used to derive the stream NFT mint PDA.
+    /// - `salt` A unique salt used to derive the address of the stream NFT mint.
     /// - `deposit_amount` The deposit amount, denoted in units of the token's decimals.
     /// - `start_time` The Unix timestamp indicating the stream's start.
     /// - `cliff_time` The Unix timestamp indicating the stream's cliff.
@@ -167,12 +162,12 @@ pub mod sablier_lockup {
     ///
     /// Accounts expected:
     /// - `sender` The transaction signer and the stream's sender.
-    /// - `stream_nft_mint` The stream NFT mint PDA identifying the unique stream.
+    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
     pub fn renounce(ctx: Context<Renounce>) -> Result<()> {
         instructions::renounce::handler(ctx)
     }
 
-    /// Withdraws the provided amount of tokens from the stream ATA to the provided account.
+    /// Withdraws the provided amount of tokens from the stream data ATA to the provided account.
     ///
     /// Notes:
     /// - If the withdrawal recipient does not have an ATA for the deposited token, one is created.
@@ -182,7 +177,7 @@ pub mod sablier_lockup {
     /// Accounts expected:
     /// - `signer` The transaction signer.
     /// - `deposited_token_mint` The mint of the deposited token.
-    /// - `stream_nft_mint` The stream NFT mint PDA identifying the unique stream.
+    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
     /// - `withdrawal_recipient` The address of the recipient receiving the withdrawn tokens.
     /// - `deposited_token_program` The Token Program of the deposited token.
     /// - `nft_token_program` The Token Program of the NFT.
@@ -199,15 +194,9 @@ pub mod sablier_lockup {
         instructions::withdraw::handler(ctx, amount)
     }
 
-    /// Withdraws the maximum withdrawable amount from the stream ATA to the provided account.
+    /// Withdraws the maximum withdrawable amount from the stream data ATA to the provided account.
     ///
-    /// Notes:
-    /// - Refer to the notes in {withdraw}.
-    ///
-    /// Accounts expected:
-    /// - Refer to the accounts in {withdraw}.
-    ///
-    /// Requirements:
+    /// Notes / Accounts expected / Requirements:
     /// - Refer to the requirements in {withdraw}.
     pub fn withdraw_max(ctx: Context<Withdraw>) -> Result<()> {
         instructions::withdraw_max::handler(ctx)
@@ -224,7 +213,7 @@ pub mod sablier_lockup {
     /// - Reverts if the stream does not exist.
     ///
     /// Accounts expected:
-    /// - `stream_nft_mint` The stream NFT mint PDA identifying the unique stream.
+    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
     pub fn refundable_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::refundable_amount_of::handler(ctx)
     }
@@ -235,7 +224,7 @@ pub mod sablier_lockup {
     /// - Reverts if the stream does not exist.
     ///
     /// Accounts expected:
-    /// - `stream_nft_mint` The stream NFT mint PDA identifying the unique stream.
+    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
     pub fn status_of(ctx: Context<StreamView>) -> Result<StreamStatus> {
         instructions::status_of::handler(ctx)
     }
@@ -249,7 +238,7 @@ pub mod sablier_lockup {
     /// to the total amount withdrawn.
     ///
     /// Accounts expected:
-    /// - `stream_nft_mint` The stream NFT mint PDA identifying the unique stream.
+    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
     pub fn streamed_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::streamed_amount_of::handler(ctx)
     }
@@ -261,7 +250,7 @@ pub mod sablier_lockup {
     /// - Reverts if the stream does not exist.
     ///
     /// Accounts expected:
-    /// - `stream_nft_mint` The stream NFT mint PDA identifying the unique stream.
+    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
     pub fn withdrawable_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::withdrawable_amount_of::handler(ctx)
     }

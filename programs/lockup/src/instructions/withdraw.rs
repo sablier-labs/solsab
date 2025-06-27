@@ -88,7 +88,7 @@ pub struct Withdraw<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-/// Refer to the {lib.rs#withdraw} function explanatory comments.
+/// See the documentation of the {lib.rs#withdraw} function.
 pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Check: validate the withdraw.
     check_withdraw(

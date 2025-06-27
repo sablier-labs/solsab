@@ -57,7 +57,7 @@ pub struct Cancel<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-/// Refer to the {lib.rs#cancel} function explanatory comments.
+/// See the documentation of the {lib.rs#cancel} function.
 pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     // Retrieve the stream amounts from storage.
     let stream_amounts = ctx.accounts.stream_data.amounts.clone();

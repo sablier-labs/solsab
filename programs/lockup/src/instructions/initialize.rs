@@ -92,7 +92,7 @@ pub struct Initialize<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-/// Refer to the {lib.rs#initialize} function explanatory comments.
+/// See the documentation of the {lib.rs#initialize} function.
 pub fn handler(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
     ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector)?;
     ctx.accounts.nft_collection_data.initialize(ctx.bumps.nft_collection_data)?;
