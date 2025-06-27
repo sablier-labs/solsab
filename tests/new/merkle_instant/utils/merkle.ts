@@ -1,8 +1,7 @@
 import { BN } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
-import { MerkleTree } from "merkletreejs";
 import keccak256 from "keccak256";
-// import { Buffer } from "buffer";
+import { MerkleTree } from "merkletreejs";
 
 // ---- LeafData interface ----
 export interface LeafData {

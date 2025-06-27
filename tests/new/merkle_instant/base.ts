@@ -22,7 +22,7 @@ import {
 } from "../common-base";
 
 import * as defaults from "./utils/defaults";
-import { LeafData, getRoot, getProof } from "./utils/merkle";
+import { getProof, getRoot, LeafData } from "./utils/merkle";
 import { CampaignData } from "./utils/types";
 
 import { SablierMerkleInstant } from "../../../target/types/sablier_merkle_instant";
