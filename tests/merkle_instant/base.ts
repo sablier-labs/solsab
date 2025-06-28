@@ -76,7 +76,7 @@ export async function setUp({ initProgram = true } = {}) {
   recipient2 = (await createUser()).keys.publicKey;
   recipient3 = (await createUser()).keys.publicKey;
 
-  // Declare the leaves of the Merkle Tree before hashing and sorting
+  // Define the leaves of the Merkle Tree
   leaves = [
     {
       index: defaultIndex,

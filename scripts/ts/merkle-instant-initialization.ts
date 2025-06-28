@@ -1,6 +1,6 @@
 import { Keypair, PublicKey } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
-import { BN } from "@coral-xyz/anchor";
+import { AnchorProvider, Wallet, BN, Program } from "@coral-xyz/anchor";
 
 import {
   createMint,
@@ -10,25 +10,32 @@ import {
   transfer,
 } from "@solana/spl-token";
 
-import { keccak_256 } from "@noble/hashes/sha3";
-
 import { SablierMerkleInstant } from "../../target/types/sablier_merkle_instant";
-import { hashLeaf } from "../../tests/new/merkle_instant/base";
+import {
+  getProof,
+  getRoot,
+  LeafData,
+} from "../../tests/new/merkle_instant/utils/merkle";
 
-const CAMPAIGN_SEED = "campaign";
-const CLAIM_AMOUNT = new BN(100e6);
-const AGGREGATE_AMOUNT = CLAIM_AMOUNT.add(new BN(1000000));
-const IPFS_ID = "DefaultIpfsId";
-const CAMPAIGN_NAME = "Default campaign name";
+import {
+  CAMPAIGN_SEED,
+  CAMPAIGN_NAME,
+  IPFS_CID,
+  AGGREGATE_AMOUNT,
+  CLAIM_AMOUNT,
+} from "../../tests/new/merkle_instant/utils/defaults";
 
 let anchorProvider: any;
-let merkleInstantProgram: anchor.Program<SablierMerkleInstant>;
+let merkleInstant: anchor.Program<SablierMerkleInstant>;
 let campaignCreatorKeys: Keypair;
 
-let recipients: (string | number)[][];
-let leaves: Buffer[];
+let leaves: LeafData[];
 let merkleRoot: number[];
 let merkleProof: number[][];
+
+let recipient1: Keypair;
+let recipient2: Keypair;
+let recipient3: Keypair;
 
 describe("SablierLockup post-deployment initialization", () => {
   beforeEach(async () => {
@@ -45,13 +52,13 @@ describe("SablierLockup post-deployment initialization", () => {
     const expirationTime = new BN(
       Math.floor(Date.now() / 1000) + 10 * 24 * 60 * 60
     ); // 10 days into the future
-    const recipientCount = recipients.length;
-    await merkleInstantProgram.methods
+    const recipientCount = leaves.length;
+    await merkleInstant.methods
       .createCampaign(
         merkleRoot,
         expirationTime,
-        IPFS_ID,
         CAMPAIGN_NAME,
+        IPFS_CID,
         AGGREGATE_AMOUNT,
         recipientCount
       )
@@ -69,7 +76,6 @@ describe("SablierLockup post-deployment initialization", () => {
       campaignCreatorKeys.publicKey.toBuffer(),
       Buffer.from(merkleRoot),
       expirationTime.toArrayLike(Buffer, "le", 8),
-      Buffer.from(IPFS_ID),
       Buffer.from(CAMPAIGN_NAME),
       airdropTokenMint.toBuffer(),
     ]);
@@ -97,13 +103,13 @@ describe("SablierLockup post-deployment initialization", () => {
 
     // Claim from the campaign
     const recipientIndex = 0;
-    await merkleInstantProgram.methods
+    await merkleInstant.methods
       .claim(recipientIndex, CLAIM_AMOUNT, merkleProof)
       .signers([campaignCreatorKeys])
       .accountsPartial({
         claimer: campaignCreatorKeys.publicKey,
-        recipient: campaignCreatorKeys.publicKey,
         campaign,
+        recipient: campaignCreatorKeys.publicKey,
         airdropTokenMint,
         airdropTokenProgram: TOKEN_PROGRAM_ID,
       })
@@ -112,36 +118,38 @@ describe("SablierLockup post-deployment initialization", () => {
 });
 
 async function configureTestingEnvironment() {
-  anchorProvider = anchor.AnchorProvider.env();
+  anchorProvider = AnchorProvider.env();
   anchor.setProvider(anchorProvider);
 
-  merkleInstantProgram = anchor.workspace
-    .SablierMerkleInstant as anchor.Program<SablierMerkleInstant>;
+  merkleInstant = anchor.workspace
+    .SablierMerkleInstant as Program<SablierMerkleInstant>;
 
   // Initialize the accounts involved in the tests
-  campaignCreatorKeys = (anchorProvider.wallet as anchor.Wallet).payer;
+  campaignCreatorKeys = (anchorProvider.wallet as Wallet).payer;
 
-  // Create the Merkle Tree to use during initialization
-  recipients = [
-    [0, campaignCreatorKeys.publicKey.toString(), CLAIM_AMOUNT.toNumber()],
-    [1, Keypair.generate().publicKey.toString(), 1000000],
+  recipient1 = Keypair.generate();
+  recipient2 = Keypair.generate();
+  recipient3 = Keypair.generate();
+
+  // Declare the leaves of the Merkle Tree before hashing and sorting
+  leaves = [
+    {
+      index: 0,
+      // Use the default recipient's public key for the first leaf
+      recipient: campaignCreatorKeys.publicKey,
+      amount: CLAIM_AMOUNT,
+    },
+    { index: 1, recipient: recipient1.publicKey, amount: CLAIM_AMOUNT },
+    { index: 2, recipient: recipient2.publicKey, amount: CLAIM_AMOUNT },
+    { index: 3, recipient: recipient3.publicKey, amount: CLAIM_AMOUNT },
   ];
-  leaves = recipients.map((r) =>
-    hashLeaf(r[0] as number, r[1] as string, r[2] as number)
-  );
-  // Sort leaves before concatenation to match Merkle tree convention
-  const [left, right] =
-    Buffer.compare(leaves[0], leaves[1]) <= 0
-      ? [leaves[0], leaves[1]]
-      : [leaves[1], leaves[0]];
-  merkleRoot = Array.from(
-    Buffer.from(keccak_256(Buffer.concat([left, right])))
-  );
-  merkleProof = [Array.from(leaves[1])];
+
+  merkleRoot = getRoot(leaves);
+  merkleProof = getProof(leaves, leaves[0]);
 }
 
 async function initializeSablierMerkleInstant() {
-  await merkleInstantProgram.methods
+  await merkleInstant.methods
     .initialize(campaignCreatorKeys.publicKey)
     .signers([campaignCreatorKeys])
     .accounts({
@@ -194,7 +202,7 @@ async function createTokenAndMintToCampaignCreator(): Promise<{
 
 export function getPDAAddress(
   seeds: Array<Buffer | Uint8Array>,
-  programId: PublicKey = merkleInstantProgram.programId
+  programId: PublicKey = merkleInstant.programId
 ): PublicKey {
   return PublicKey.findProgramAddressSync(seeds, programId)[0];
 }
