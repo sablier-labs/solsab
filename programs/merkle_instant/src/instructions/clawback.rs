@@ -28,13 +28,15 @@ pub struct Clawback<'info> {
     pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-      mut,
+      init_if_needed,
+      payer = campaign_creator,
       associated_token::mint = airdrop_token_mint,
       associated_token::authority = campaign_creator,
       associated_token::token_program = airdrop_token_program
     )]
     pub campaign_creator_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    pub system_program: Program<'info, System>,
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
