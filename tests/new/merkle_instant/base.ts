@@ -173,6 +173,7 @@ export async function collectFees({
 export async function createCampaign({
   creator = campaignCreator,
   name = defaults.CAMPAIGN_NAME,
+  campaignFunder = campaignCreator.keys,
   airdropTokenMint = usdc,
   airdropTokenProgram = TOKEN_PROGRAM_ID,
 } = {}): Promise<PublicKey> {
@@ -187,12 +188,6 @@ export async function createCampaign({
       airdropTokenMint.toBuffer(),
     ],
     merkleInstant.programId
-  );
-
-  const campaignAta = deriveATAAddress(
-    airdropTokenMint,
-    campaign,
-    airdropTokenProgram
   );
 
   const txIx = await merkleInstant.methods
@@ -213,20 +208,26 @@ export async function createCampaign({
 
   await buildSignAndProcessTx(banksClient, txIx, creator.keys);
 
-  const creatorAta = deriveATAAddress(
+  const campaignAta = deriveATAAddress(
     airdropTokenMint,
-    creator.keys.publicKey,
+    campaign,
     airdropTokenProgram
   );
 
-  // Transfer the aggregate amount from the creator to the campaign
+  const campaignFunderAta = deriveATAAddress(
+    airdropTokenMint,
+    campaignFunder.publicKey,
+    airdropTokenProgram
+  );
+
+  // Transfer the aggregate amount from the campaign funder to the campaign
   await transfer(
     banksClient,
-    creator.keys,
-    creatorAta,
+    campaignFunder,
+    campaignFunderAta,
     campaignAta,
-    creator.keys.publicKey,
-    defaults.AGGREGATE_AMOUNT.toNumber(),
+    campaignFunder.publicKey,
+    defaults.AGGREGATE_AMOUNT,
     [],
     airdropTokenProgram
   );

@@ -1,13 +1,29 @@
+import { BN } from "@coral-xyz/anchor";
 import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 
-import { getATABalanceMint } from "../../anchor-bankrun-adapter";
-import { banksClient, dai, eve, timeTravelTo, usdc } from "../../common-base";
+import {
+  createATAAndFund,
+  deriveATAAddress,
+  getATABalanceMint,
+} from "../../anchor-bankrun-adapter";
+import {
+  accountExists,
+  banksClient,
+  dai,
+  defaultBankrunPayer,
+  eve,
+  randomToken,
+  recipient,
+  timeTravelTo,
+  usdc,
+} from "../../common-base";
 
 import {
   campaignCreator,
   claim,
   clawback,
+  createCampaign,
   defaultCampaign,
   defaultCampaignToken2022,
   setUp,
@@ -124,6 +140,40 @@ describe("clawback", () => {
                   await timeTravelTo(defaults.EXPIRATION_TIME);
                 });
 
+                context("when campaign creator does not have ATA", () => {
+                  it("should clawback", async () => {
+                    await createATAAndFund(
+                      banksClient,
+                      defaultBankrunPayer,
+                      randomToken,
+                      defaults.AGGREGATE_AMOUNT,
+                      TOKEN_PROGRAM_ID,
+                      recipient.keys.publicKey
+                    );
+
+                    const campaign = await createCampaign({
+                      campaignFunder: recipient.keys,
+                      airdropTokenMint: randomToken,
+                    });
+
+                    const campaignCreatorAta = deriveATAAddress(
+                      randomToken,
+                      campaignCreator.keys.publicKey,
+                      TOKEN_PROGRAM_ID
+                    );
+                    assert.isFalse(await accountExists(campaignCreatorAta));
+
+                    // Claim from the Campaign
+                    await testClawback({
+                      campaign: campaign,
+                      airdropTokenMint: randomToken,
+                      campaignCreatorAtaExists: false,
+                    });
+
+                    assert(await accountExists(campaignCreatorAta));
+                  });
+                });
+
                 context("given token SPL standard", () => {
                   it("should clawback", async () => {
                     // Claim from the Campaign
@@ -134,11 +184,11 @@ describe("clawback", () => {
                 context("given token 2022 standard", () => {
                   it("should clawback", async () => {
                     // Test the claim.
-                    await testClawback(
-                      defaultCampaignToken2022,
-                      dai,
-                      TOKEN_2022_PROGRAM_ID
-                    );
+                    await testClawback({
+                      campaign: defaultCampaignToken2022,
+                      airdropTokenMint: dai,
+                      airdropTokenProgram: TOKEN_2022_PROGRAM_ID,
+                    });
                   });
                 });
               });
@@ -150,21 +200,24 @@ describe("clawback", () => {
   });
 });
 
-async function testClawback(
+async function testClawback({
   campaign = defaultCampaign,
   airdropTokenMint = usdc,
-  airdropTokenProgram = TOKEN_PROGRAM_ID
-) {
+  airdropTokenProgram = TOKEN_PROGRAM_ID,
+  campaignCreatorAtaExists = true,
+} = {}) {
   const campaignAtaBalanceBefore = await getATABalanceMint(
     banksClient,
     campaign,
     airdropTokenMint
   );
-  const creatorAtaBalanceBefore = await getATABalanceMint(
-    banksClient,
-    campaignCreator.keys.publicKey,
-    airdropTokenMint
-  );
+  const creatorAtaBalanceBefore = campaignCreatorAtaExists
+    ? await getATABalanceMint(
+        banksClient,
+        campaignCreator.keys.publicKey,
+        airdropTokenMint
+      )
+    : new BN(0);
 
   await clawback({
     campaign,
