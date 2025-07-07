@@ -1,4 +1,12 @@
-import web3 from "@solana/web3.js";
+import {
+  ComputeBudgetProgram,
+  Keypair,
+  PublicKey,
+  Signer,
+  SystemProgram,
+  Transaction,
+  TransactionInstruction as TxIx,
+} from "@solana/web3.js";
 
 import * as token from "@solana/spl-token";
 
@@ -6,20 +14,57 @@ import { BanksClient, BanksTransactionMeta } from "solana-bankrun";
 
 import { BN } from "@coral-xyz/anchor";
 
+export async function buildSignAndProcessTx(
+  banksClient: BanksClient,
+  ixs: TxIx | TxIx[],
+  signerKeys: Keypair | Keypair[],
+  cuLimit: number = 1_400_000 // The maximum Compute Unit limit for a tx
+) {
+  // Get the latest blockhash
+  const res = await banksClient.getLatestBlockhash();
+  if (!res) throw new Error("Couldn't get the latest blockhash");
+
+  // Initialize the transaction
+  const tx = new Transaction();
+  tx.recentBlockhash = res[0];
+
+  // Add compute unit limit instruction if specified
+  if (cuLimit !== undefined) {
+    const cuLimitIx = ComputeBudgetProgram.setComputeUnitLimit({
+      units: cuLimit,
+    });
+    tx.add(cuLimitIx);
+  }
+
+  // Add instructions to the transaction
+  const internal_ixs: TxIx[] = Array.isArray(ixs) ? ixs : [ixs];
+  internal_ixs.forEach((ix) => tx.add(ix));
+
+  // Ensure `signerKeys` is always an array
+  const signers = Array.isArray(signerKeys) ? signerKeys : [signerKeys];
+
+  // Sign the transaction with all provided signers
+  tx.sign(...signers);
+
+  // Process the transaction
+  const txMeta = await banksClient.processTransaction(tx);
+  return txMeta;
+}
+
 export async function createMint(
   banksClient: BanksClient,
-  payer: web3.Keypair,
-  mintAuthority: web3.PublicKey,
-  freezeAuthority: web3.PublicKey | null,
+  payer: Keypair,
+  mintAuthority: PublicKey,
+  freezeAuthority: PublicKey | null,
   decimals: number,
-  mintKeypair = web3.Keypair.generate(),
+  mintKeypair = Keypair.generate(),
   programId = token.TOKEN_PROGRAM_ID
-): Promise<web3.PublicKey> {
+): Promise<PublicKey> {
   const rent = await banksClient.getRent();
 
   const mint = mintKeypair.publicKey;
-  const tx = new web3.Transaction().add(
-    web3.SystemProgram.createAccount({
+  const tx = new Transaction().add(
+    SystemProgram.createAccount({
       fromPubkey: payer.publicKey,
       newAccountPubkey: mint,
       space: token.MINT_SIZE,
@@ -44,14 +89,14 @@ export async function createMint(
 
 export async function createATA(
   banksClient: BanksClient,
-  payer: web3.Signer,
-  mint: web3.PublicKey,
-  owner: web3.PublicKey,
-  programId: web3.PublicKey
-): Promise<web3.PublicKey> {
+  payer: Signer,
+  mint: PublicKey,
+  owner: PublicKey,
+  programId: PublicKey
+): Promise<PublicKey> {
   const ata = deriveATAAddress(mint, owner, programId);
 
-  const tx = new web3.Transaction().add(
+  const tx = new Transaction().add(
     token.createAssociatedTokenAccountInstruction(
       payer.publicKey,
       ata,
@@ -69,18 +114,44 @@ export async function createATA(
   return ata;
 }
 
+export async function createATAAndFund(
+  banksClient: BanksClient,
+  payer: Signer,
+  mint: PublicKey,
+  amount: number,
+  tokenProgram: PublicKey,
+  user: PublicKey
+): Promise<PublicKey> {
+  // Create ATA for the user
+  const userATA = await createATA(banksClient, payer, mint, user, tokenProgram);
+
+  // Mint the amount to the user's ATA
+  await mintTo(
+    banksClient,
+    payer,
+    mint,
+    userATA,
+    payer.publicKey,
+    amount,
+    [],
+    tokenProgram
+  );
+
+  return userATA;
+}
+
 export function deriveATAAddress(
-  mint: web3.PublicKey,
-  owner: web3.PublicKey,
-  programId: web3.PublicKey
-): web3.PublicKey {
+  mint: PublicKey,
+  owner: PublicKey,
+  programId: PublicKey
+): PublicKey {
   return token.getAssociatedTokenAddressSync(mint, owner, true, programId);
 }
 
 export async function getATABalanceMint(
   banksClient: BanksClient,
-  owner: web3.PublicKey,
-  mint: web3.PublicKey
+  owner: PublicKey,
+  mint: PublicKey
 ): Promise<BN> {
   const mintAccount = await banksClient.getAccount(mint);
 
@@ -108,7 +179,7 @@ export async function getATABalanceMint(
 
 export async function getATABalance(
   banksClient: BanksClient,
-  ataAddress: web3.PublicKey
+  ataAddress: PublicKey
 ): Promise<BN> {
   const ataAccount = await banksClient.getAccount(ataAddress);
   if (!ataAccount) {
@@ -121,7 +192,7 @@ export async function getATABalance(
 
 export async function getMintTotalSupplyOf(
   banksClient: BanksClient,
-  mintAddress: web3.PublicKey
+  mintAddress: PublicKey
 ): Promise<BN> {
   const mintAccount = await banksClient.getAccount(mintAddress);
   if (!mintAccount) {
@@ -134,15 +205,15 @@ export async function getMintTotalSupplyOf(
 
 export async function mintTo(
   banksClient: BanksClient,
-  payer: web3.Signer,
-  mint: web3.PublicKey,
-  destination: web3.PublicKey,
-  authority: web3.PublicKey,
+  payer: Signer,
+  mint: PublicKey,
+  destination: PublicKey,
+  authority: PublicKey,
   amount: number | bigint,
-  multiSigners: web3.Signer[] = [],
+  multiSigners: Signer[] = [],
   programId = token.TOKEN_PROGRAM_ID
 ): Promise<BanksTransactionMeta> {
-  const tx = new web3.Transaction().add(
+  const tx = new Transaction().add(
     token.createMintToInstruction(
       mint,
       destination,
@@ -153,6 +224,32 @@ export async function mintTo(
     )
   );
 
+  [tx.recentBlockhash] = (await banksClient.getLatestBlockhash())!;
+  tx.sign(payer, ...multiSigners);
+
+  return await banksClient.processTransaction(tx);
+}
+
+export async function transfer(
+  banksClient: BanksClient,
+  payer: Signer,
+  source: PublicKey,
+  destination: PublicKey,
+  owner: PublicKey,
+  amount: number | bigint,
+  multiSigners: Signer[] = [],
+  programId = token.TOKEN_PROGRAM_ID
+): Promise<BanksTransactionMeta> {
+  const tx = new Transaction().add(
+    token.createTransferInstruction(
+      source,
+      destination,
+      owner,
+      amount,
+      multiSigners,
+      programId
+    )
+  );
   [tx.recentBlockhash] = (await banksClient.getLatestBlockhash())!;
   tx.sign(payer, ...multiSigners);
 

@@ -1,20 +1,24 @@
 import { BN } from "@coral-xyz/anchor";
 
 import {
-  accountExists,
   deriveATAAddress,
   getATABalance,
-  getPDAAddress,
   getMintTotalSupplyOf,
-  initializeSablierLockup,
-  lockupProgram,
+  initializeLockup,
+  lockup,
   nftCollectionDataAddress,
   setUp,
-  sleepFor,
   treasuryAddress,
-  banksClient,
 } from "../base";
-import { assert, assertErrorHexCode } from "../utils/assertions";
+
+import {
+  accountExists,
+  banksClient,
+  getPDAAddress,
+  sleepFor,
+} from "../../common-base";
+
+import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 
 describe("initialize", () => {
@@ -24,10 +28,11 @@ describe("initialize", () => {
 
   context("given initialized", () => {
     it("should revert", async () => {
-      await initializeSablierLockup();
-      await sleepFor(5);
+      await initializeLockup();
+      await sleepFor(7);
       try {
-        await initializeSablierLockup();
+        await initializeLockup();
+        assertFail();
       } catch (error) {
         assertErrorHexCode(error, "0x0");
       }
@@ -36,7 +41,7 @@ describe("initialize", () => {
 
   context("given not initialized", () => {
     it("should initialize the program", async () => {
-      await initializeSablierLockup();
+      await initializeLockup();
 
       assert(
         await accountExists(nftCollectionDataAddress),
@@ -47,7 +52,7 @@ describe("initialize", () => {
 
       const nftCollectionMint = getPDAAddress(
         [Buffer.from(defaults.NFT_COLLECTION_MINT_SEED)],
-        lockupProgram.programId
+        lockup.programId
       );
 
       assert(

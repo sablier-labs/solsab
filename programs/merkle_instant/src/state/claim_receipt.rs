@@ -2,6 +2,5 @@ use anchor_lang::prelude::*;
 
 #[account]
 #[derive(InitSpace)]
-pub struct ClaimReceipt {
-    pub bump: u8,
-}
+// This struct is declared as empty to avoid manually allocating space.
+pub struct ClaimReceipt {}

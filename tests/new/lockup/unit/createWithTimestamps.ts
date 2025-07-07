@@ -5,24 +5,29 @@ import {
   assertErrorHexCode,
   assertErrorContains,
   assertEqStreamDatas,
+  assertFail,
 } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";
 import {
-  accountExists,
-  banksClient,
   createWithTimestamps,
   createWithTimestampsToken2022,
-  dai,
   defaultStream,
   defaultStreamToken2022,
   fetchStreamData,
   getATABalance,
-  getCreatorTokenBalance,
   getMintTotalSupplyOf,
-  randomToken,
+  getSenderTokenBalance,
+  sender,
   setUp,
 } from "../base";
+
+import {
+  accountExists,
+  banksClient,
+  dai,
+  randomToken,
+} from "../../common-base";
 
 describe("createWithTimestamps", () => {
   context("when the program is not initialized", () => {
@@ -33,6 +38,7 @@ describe("createWithTimestamps", () => {
     it("should revert", async () => {
       try {
         await createWithTimestamps();
+        assertFail();
       } catch (error) {
         assertErrorContains(
           error,
@@ -47,23 +53,25 @@ describe("createWithTimestamps", () => {
       await setUp();
     });
 
-    context("when deposit amount is zero", () => {
+    context("when deposit amount zero", () => {
       it("should revert", async () => {
         try {
           await createWithTimestamps({ depositAmount: defaults.ZERO_BN });
+          assertFail();
         } catch (error) {
           assertErrorHexCode(error, getErrorCode("DepositAmountZero"));
         }
       });
     });
 
-    context("when deposit amount is not zero", () => {
+    context("when deposit amount not zero", () => {
       context("when start time is zero", () => {
         it("should revert", async () => {
           try {
             await createWithTimestamps({
               timestamps: { ...defaults.timestamps(), start: defaults.ZERO_BN },
             });
+            assertFail();
           } catch (error) {
             assertErrorHexCode(error, getErrorCode("StartTimeNotPositive"));
           }
@@ -71,7 +79,7 @@ describe("createWithTimestamps", () => {
       });
 
       context("when start time is not zero", () => {
-        context("when start time is negative", () => {
+        context("when start time is not negative", () => {
           it("should revert", async () => {
             try {
               await createWithTimestamps({
@@ -80,6 +88,7 @@ describe("createWithTimestamps", () => {
                   start: defaults.ZERO_BN.sub(new BN(1)),
                 },
               });
+              assertFail();
             } catch (error) {
               assertErrorHexCode(error, getErrorCode("StartTimeNotPositive"));
             }
@@ -93,6 +102,7 @@ describe("createWithTimestamps", () => {
                 await createWithTimestamps({
                   depositTokenMint: randomToken,
                 });
+                assertFail();
               } catch (error) {
                 assertErrorHexCode(
                   error,
@@ -107,8 +117,9 @@ describe("createWithTimestamps", () => {
               it("should revert", async () => {
                 try {
                   await createWithTimestamps({
-                    depositAmount: new BN(defaults.USDC_USER_BALANCE + 1),
+                    depositAmount: new BN(1_000_000e6 + 1),
                   });
+                  assertFail();
                 } catch (error) {
                   assertErrorHexCode(error, "0x1");
                 }
@@ -130,6 +141,7 @@ describe("createWithTimestamps", () => {
                           cliff: new BN(1000),
                         },
                       });
+                      assertFail();
                     } catch (error) {
                       assertErrorHexCode(
                         error,
@@ -149,6 +161,7 @@ describe("createWithTimestamps", () => {
                           cliff: defaults.ZERO_BN,
                         },
                       });
+                      assertFail();
                     } catch (error) {
                       assertErrorHexCode(
                         error,
@@ -160,8 +173,10 @@ describe("createWithTimestamps", () => {
 
                 context("when start time less than end time", () => {
                   it("should create the stream", async () => {
-                    const beforeCreatorTokenBalance =
-                      await getCreatorTokenBalance();
+                    const beforeSenderTokenBalance = await getATABalance(
+                      banksClient,
+                      sender.usdcATA
+                    );
 
                     const salt = await createWithTimestamps({
                       timestamps: {
@@ -180,7 +195,7 @@ describe("createWithTimestamps", () => {
 
                     await assertStreamCreation(
                       salt,
-                      beforeCreatorTokenBalance,
+                      beforeSenderTokenBalance,
                       expectedStream
                     );
                   });
@@ -197,6 +212,7 @@ describe("createWithTimestamps", () => {
                           start: defaults.timestamps().cliff,
                         },
                       });
+                      assertFail();
                     } catch (error) {
                       assertErrorHexCode(
                         error,
@@ -216,6 +232,7 @@ describe("createWithTimestamps", () => {
                             cliff: defaults.timestamps().end,
                           },
                         });
+                        assertFail();
                       } catch (error) {
                         assertErrorHexCode(
                           error,
@@ -239,6 +256,7 @@ describe("createWithTimestamps", () => {
                               },
                               depositAmount,
                             });
+                            assertFail();
                           } catch (error) {
                             assertErrorHexCode(
                               error,
@@ -254,27 +272,27 @@ describe("createWithTimestamps", () => {
                       () => {
                         context("when token SPL standard", () => {
                           it("should create the stream", async () => {
-                            const beforeCreatorTokenBalance =
-                              await getCreatorTokenBalance();
+                            const beforeSenderTokenBalance =
+                              await getATABalance(banksClient, sender.usdcATA);
 
                             const salt = await createWithTimestamps();
 
                             await assertStreamCreation(
                               salt,
-                              beforeCreatorTokenBalance
+                              beforeSenderTokenBalance
                             );
                           });
                         });
 
                         context("when token 2022 standard", () => {
                           it("should create the stream", async () => {
-                            const beforeCreatorTokenBalance =
-                              await getCreatorTokenBalance(dai);
+                            const beforeSenderTokenBalance =
+                              await getSenderTokenBalance(dai);
                             const salt = await createWithTimestampsToken2022();
 
                             await assertStreamCreation(
                               salt,
-                              beforeCreatorTokenBalance,
+                              beforeSenderTokenBalance,
                               defaultStreamToken2022({ salt: salt })
                             );
                           });
@@ -294,7 +312,7 @@ describe("createWithTimestamps", () => {
 
 async function assertStreamCreation(
   salt: BN,
-  beforeCreatorTokenBalance: BN,
+  beforeSenderTokenBalance: BN,
   expectedStream = defaultStream({ salt: salt })
 ) {
   // Assert that the Stream NFT Mint has been created
@@ -351,15 +369,15 @@ async function assertStreamCreation(
 
   // TODO: assert that the Stream NFT has been properly added to the LL NFT collection
 
-  // Assert that the Creator's balance has changed correctly
-  const expectedTokenBalance = beforeCreatorTokenBalance.sub(
+  // Assert that the Sender's balance has changed correctly
+  const expectedTokenBalance = beforeSenderTokenBalance.sub(
     defaults.DEPOSIT_AMOUNT
   );
-  const afterCreatorTokenBalance = await getCreatorTokenBalance(
+  const afterSenderTokenBalance = await getSenderTokenBalance(
     expectedStream.data.depositedTokenMint
   );
   assert(
-    expectedTokenBalance.eq(afterCreatorTokenBalance),
-    "Creator's balance not updated correctly"
+    expectedTokenBalance.eq(afterSenderTokenBalance),
+    "sender balance not updated correctly"
   );
 }
