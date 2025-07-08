@@ -19,17 +19,22 @@ const WITHDRAWAL_FEE: u64 = 10_000_000; // The fee for withdrawing from the stre
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
+    /// Write account: the signer of the withdrawal who pays the withdrawal fee.
     #[account(mut)]
     pub signer: Signer<'info>,
 
+    /// Read account: the mint account for the deposited token.
     #[account(address = stream_data.deposited_token_mint)]
     pub deposited_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Read account: the recipient of the stream who owns the stream NFT.
     /// CHECK: This account must be the Stream's recipient (checked in recipient_stream_nft_ata's constraints)
     pub stream_recipient: UncheckedAccount<'info>,
 
+    /// Read account: the mint account for the stream NFT.
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Write account: the account storing the stream data.
     #[account(
         mut,
         seeds = [STREAM_DATA, stream_nft_mint.key().as_ref()],
@@ -37,6 +42,7 @@ pub struct Withdraw<'info> {
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 
+    /// Write account: the ATA for deposited tokens owned by stream data.
     #[account(
         mut,
         associated_token::mint = deposited_token_mint,
@@ -45,6 +51,7 @@ pub struct Withdraw<'info> {
     )]
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Read account: the ATA for the stream NFT owned by recipient.
     #[account(
         associated_token::mint = stream_nft_mint,
         associated_token::authority = stream_recipient,
@@ -55,8 +62,7 @@ pub struct Withdraw<'info> {
     )]
     pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    /// CHECK: This can be any address if the tx signer is the Stream's Recipient -
-    /// and must be the Stream's Recipient if it's not
+    /// Read account: the account that will receive the withdrawn tokens.
     #[account(
         constraint = (
             withdrawal_recipient.key() == stream_recipient.key() ||
@@ -64,8 +70,11 @@ pub struct Withdraw<'info> {
             signer.key() == stream_recipient.key())
         )
     )]
+    /// CHECK: This can be any address if the signer is the stream's recipient, otherwise it must be the stream's
+    /// recipient.
     pub withdrawal_recipient: UncheckedAccount<'info>,
 
+    /// Create if needed account: the ATA for deposited tokens owned by withdrawal recipient.
     #[account(
       init_if_needed,
       payer = signer,
@@ -75,6 +84,7 @@ pub struct Withdraw<'info> {
     )]
     pub withdrawal_recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Write account: the treasury account that receives the withdrawal fee
     #[account(
       mut,
       seeds = [TREASURY],
@@ -82,9 +92,16 @@ pub struct Withdraw<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
+    /// Program account: the System program.
     pub system_program: Program<'info, System>,
+
+    /// Program account: the Token program of the deposited token.
     pub deposited_token_program: Interface<'info, TokenInterface>,
+
+    /// Program account: the Token program of the stream NFT.
     pub nft_token_program: Interface<'info, TokenInterface>,
+
+    /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 

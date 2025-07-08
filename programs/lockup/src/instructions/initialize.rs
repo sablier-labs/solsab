@@ -16,9 +16,11 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
+    /// Write account: the initializer of the program.
     #[account(mut)]
     pub initializer: Signer<'info>,
 
+    /// Create account: the treasury account that will hold the fees.
     #[account(
       init,
       payer = initializer,
@@ -28,6 +30,7 @@ pub struct Initialize<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
+    /// Create account: the NFT collection data account storing collection metadata.
     #[account(
       init,
       payer = initializer,
@@ -37,6 +40,7 @@ pub struct Initialize<'info> {
     )]
     pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
 
+    /// Create account: the mint account for the NFT collection.
     #[account(
       init,
       payer = initializer,
@@ -49,6 +53,7 @@ pub struct Initialize<'info> {
     )]
     pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Create account: the ATA for the NFT collection owned by treasury.
     #[account(
       init,
       payer = initializer,
@@ -58,6 +63,7 @@ pub struct Initialize<'info> {
     )]
     pub nft_collection_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Create account: the metadata account for the NFT collection.
     #[account(
       mut,
       seeds = [
@@ -71,6 +77,7 @@ pub struct Initialize<'info> {
     /// CHECK: This account will be initialized by the Metaplex program
     pub nft_collection_metadata: UncheckedAccount<'info>,
 
+    /// Create account: the master edition account for the NFT collection.
     #[account(
       mut,
       seeds = [
@@ -85,10 +92,19 @@ pub struct Initialize<'info> {
     /// CHECK: This account will be initialized by the Metaplex program
     pub nft_collection_master_edition: UncheckedAccount<'info>,
 
+    /// Program account: the Token program of the collection NFT.
     pub nft_token_program: Interface<'info, TokenInterface>,
+
+    /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,
+
+    /// Program account: the System program.
     pub system_program: Program<'info, System>,
+
+    /// Program account: the Token Metadata program.
     pub token_metadata_program: Program<'info, Metadata>,
+
+    /// Sysvar account: Rent.
     pub rent: Sysvar<'info, Rent>,
 }
 

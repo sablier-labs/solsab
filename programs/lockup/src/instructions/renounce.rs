@@ -11,14 +11,17 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct Renounce<'info> {
+    /// Write account: the sender of the stream.
     #[account(
       mut,
       address = stream_data.sender,
     )]
     pub sender: Signer<'info>,
 
+    /// Read account: the mint account for the stream NFT.
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Write account: the stream data account storing stream details.
     #[account(
       mut,
       seeds = [
