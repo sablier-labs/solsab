@@ -15,7 +15,7 @@ import {
   getProof,
   getRoot,
   LeafData,
-} from "../../tests/new/merkle_instant/utils/merkle";
+} from "../../tests/merkle_instant/utils/merkle";
 
 import {
   CAMPAIGN_SEED,
@@ -23,7 +23,7 @@ import {
   IPFS_CID,
   AGGREGATE_AMOUNT,
   CLAIM_AMOUNT,
-} from "../../tests/new/merkle_instant/utils/defaults";
+} from "../../tests/merkle_instant/utils/defaults";
 
 let anchorProvider: any;
 let merkleInstant: anchor.Program<SablierMerkleInstant>;
