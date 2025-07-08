@@ -25,6 +25,7 @@ pub struct CollectFees<'info> {
     pub treasury: Box<Account<'info, Treasury>>,
 }
 
+/// See the documentation of the {lib.rs#collect_fees} function.
 pub fn handler(ctx: Context<CollectFees>) -> Result<()> {
     // Calculate the amount collectable from the treasury in lamport units.
     let collectable_amount = safe_collectable_amount(&ctx.accounts.treasury.to_account_info())?;

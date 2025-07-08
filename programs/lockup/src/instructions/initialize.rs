@@ -26,7 +26,6 @@ pub struct Initialize<'info> {
       space = ANCHOR_DISCRIMINATOR_SIZE + Treasury::INIT_SPACE,
       bump
     )]
-    // TODO: merge the treasury with nft_collection_data?
     pub treasury: Box<Account<'info, Treasury>>,
 
     #[account(
@@ -44,7 +43,7 @@ pub struct Initialize<'info> {
       seeds = [NFT_COLLECTION_MINT],
       bump,
       mint::decimals = 0,
-      mint::authority = nft_collection_mint, // TODO: make Treasury the authority, instead?
+      mint::authority = nft_collection_mint,
       mint::freeze_authority = nft_collection_mint,
       mint::token_program = nft_token_program,
     )]
@@ -93,6 +92,7 @@ pub struct Initialize<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
+/// See the documentation of the {lib.rs#initialize} function.
 pub fn handler(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
     ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector)?;
     ctx.accounts.nft_collection_data.initialize(ctx.bumps.nft_collection_data)?;
