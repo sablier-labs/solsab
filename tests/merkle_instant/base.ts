@@ -26,8 +26,8 @@ import * as defaults from "./utils/defaults";
 import { getProof, getRoot, LeafData } from "./utils/merkle";
 import { CampaignData } from "./utils/types";
 
-import { SablierMerkleInstant } from "../../../target/types/sablier_merkle_instant";
-import IDL from "../../../target/idl/sablier_merkle_instant.json";
+import { SablierMerkleInstant } from "../../target/types/sablier_merkle_instant";
+import IDL from "../../target/idl/sablier_merkle_instant.json";
 
 // Programs and addresses
 export let merkleInstant: Program<SablierMerkleInstant>;

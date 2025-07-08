@@ -1,3 +1,5 @@
+import { BN } from "@coral-xyz/anchor";
+import * as token from "@solana/spl-token";
 import {
   ComputeBudgetProgram,
   Keypair,
@@ -7,12 +9,7 @@ import {
   Transaction,
   TransactionInstruction as TxIx,
 } from "@solana/web3.js";
-
-import * as token from "@solana/spl-token";
-
 import { BanksClient, BanksTransactionMeta } from "solana-bankrun";
-
-import { BN } from "@coral-xyz/anchor";
 
 export async function buildSignAndProcessTx(
   banksClient: BanksClient,

@@ -2,8 +2,8 @@ import { BN, Program } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import { PublicKey, Keypair } from "@solana/web3.js";
 
-import { SablierLockup } from "../../../target/types/sablier_lockup";
-import IDL from "../../../target/idl/sablier_lockup.json";
+import { SablierLockup } from "../../target/types/sablier_lockup";
+import IDL from "../../target/idl/sablier_lockup.json";
 
 import * as defaults from "./utils/defaults";
 import { Stream, StreamData, Salts } from "./utils/types";
