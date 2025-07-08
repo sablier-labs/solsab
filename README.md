@@ -41,14 +41,28 @@ bun install
 Build the project with:
 
 ```bash
-bun build
+bun run build
 ```
 
 Test it with:
 
 ```bash
-bun test
+bun run t
 ```
+
+## Architecture
+
+SolSab uses a monorepo structure with two main Solana programs.
+
+### Lockup
+
+Sablier Lockup is a token distribution protocol that enables onchain vesting and payments. Our flagship model is the linear stream, which distributes tokens on a continuous, by-the-second basis.
+
+The way it works is that the sender of a payment stream first deposits a specific amount of SPL, or Token2022, tokens in a program. Then, the program progressively allocates the funds to the recipient, who can access them as they become available over time. The payment rate is influenced by various factors, including the start and end times, as well as the total amount of tokens deposited.
+
+### Merkle Instant
+
+Merkle Instant is a program that enables the creation of token airdrop campaigns using Merkle trees, allowing users to instantly claim and receive their allocation through a single transaction.
 
 ## Recommended VS Code Extensions
 
