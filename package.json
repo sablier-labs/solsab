@@ -47,13 +47,13 @@
     "lint:ts:fix": "eslint --ext \"migrations/**/*.ts\" \"tests/**/*.ts\" --fix",
     "prettier:check": "prettier --check \"**/*.{json,md,svg,ts,yml}\"",
     "prettier:write": "prettier --write \"**/*.{json,md,svg,ts,yml}\"",
-    "t": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 --parallel tests/new/**/**/*.ts",
-    "t:debug": "bun run build && RUST_LOG=debug bun run ts-mocha -t 1000000 --parallel tests/new/**/**/*.ts",
+    "t": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 --parallel tests/**/**/*.ts",
+    "t:debug": "bun run build && RUST_LOG=debug bun run ts-mocha -t 1000000 --parallel tests/**/**/*.ts",
     "t:match": "bun run t --grep",
-    "t:only": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 tests/new/**/**/*.ts",
-    "t:only:debug": "bun run build && RUST_LOG=debug bun run ts-mocha -t 1000000 tests/new/**/**/*.ts",
-    "t:lk": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 --parallel tests/new/lockup/**/*.ts",
-    "t:mi": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 --parallel tests/new/merkle_instant/**/*.ts",
+    "t:only": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 tests/**/**/*.ts",
+    "t:only:debug": "bun run build && RUST_LOG=debug bun run ts-mocha -t 1000000 tests/**/**/*.ts",
+    "t:lk": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 --parallel tests/lockup/**/*.ts",
+    "t:mi": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 --parallel tests/merkle_instant/**/*.ts",
     "verify": "bash ./verify.sh"
   }
 }
