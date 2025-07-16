@@ -146,11 +146,11 @@ pub mod sablier_lockup {
     /// Initializes the program with the provided fee collector address by creating a Metaplex NFT collection.
     ///
     /// Accounts expected:
-    /// - `initializer`: The transaction signer.
-    /// - `nft_token_program`: The Token Program of the NFT collection.
+    /// - `initializer` The transaction signer.
+    /// - `nft_token_program` The Token Program of the NFT collection.
     ///
     /// Parameters:
-    /// - `fee_collector`: The address that will have the authority to collect fees.
+    /// - `fee_collector` The address that will have the authority to collect fees.
     pub fn initialize(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
         instructions::initialize::handler(ctx, fee_collector)
     }
