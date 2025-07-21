@@ -3,6 +3,7 @@ import {
   ANCHOR_ERROR__CONSTRAINT_ADDRESS as CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
 import { PublicKey } from "@solana/web3.js";
+import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { ProgramId, ZERO } from "../../../lib/constants";
 import { createATAAndFund, deriveATAAddress, getATABalanceMint } from "../../common/anchor-bankrun";
@@ -100,7 +101,7 @@ describe("clawback", () => {
                   await ctx.timeTravelTo(Campaign.EXPIRATION);
                 });
 
-                describe("when campaign creator does not have ATA", () => {
+                describe("when clawback recipient does not have ATA", () => {
                   it("should clawback", async () => {
                     await createATAAndFund(
                       ctx.banksClient,
@@ -108,46 +109,46 @@ describe("clawback", () => {
                       ctx.randomToken,
                       Amount.AGGREGATE,
                       ProgramId.TOKEN,
-                      ctx.recipient.keys.publicKey,
+                      ctx.campaignCreator.keys.publicKey,
                     );
 
                     const campaign = await ctx.createCampaign({
                       airdropTokenMint: ctx.randomToken,
-                      campaignFunder: ctx.recipient.keys,
                     });
 
-                    const campaignCreatorAta = deriveATAAddress(
+                    const clawbackRecipientAta = deriveATAAddress(
                       ctx.randomToken,
-                      ctx.campaignCreator.keys.publicKey,
+                      ctx.defaultClawbackRecipient.keys.publicKey,
                       ProgramId.TOKEN,
                     );
-                    await assertAccountNotExists(ctx, campaignCreatorAta, "Campaign Creator's ATA");
+                    await assertAccountNotExists(ctx, clawbackRecipientAta, "Clawback Recipient's ATA");
 
                     // Claim from the Campaign
                     await testClawback(ctx, {
                       airdropTokenMint: ctx.randomToken,
-                      campaign: campaign,
-                      campaignCreatorAtaExists: false,
+                      campaign,
                     });
 
-                    await assertAccountExists(ctx, campaignCreatorAta, "Campaign Creator's ATA");
+                    await assertAccountExists(ctx, clawbackRecipientAta, "Clawback Recipient's ATA");
                   });
                 });
 
-                describe("given token SPL standard", () => {
-                  it("should clawback", async () => {
-                    // Claim from the Campaign
-                    await testClawback(ctx);
+                describe("when clawback recipient has ATA", () => {
+                  describe("given token SPL standard", () => {
+                    it("should clawback", async () => {
+                      // Claim from the Campaign
+                      await testClawback(ctx);
+                    });
                   });
-                });
 
-                describe("given token 2022 standard", () => {
-                  it("should clawback", async () => {
-                    // Test the claim.
-                    await testClawback(ctx, {
-                      airdropTokenMint: ctx.dai,
-                      airdropTokenProgram: ProgramId.TOKEN_2022,
-                      campaign: ctx.defaultCampaignToken2022,
+                  describe("given token 2022 standard", () => {
+                    it("should clawback", async () => {
+                      // Test the claim.
+                      await testClawback(ctx, {
+                        airdropTokenMint: ctx.dai,
+                        airdropTokenProgram: ProgramId.TOKEN_2022,
+                        campaign: ctx.defaultCampaignToken2022,
+                      });
                     });
                   });
                 });
@@ -166,19 +167,23 @@ async function testClawback(
     campaign = ctx.defaultCampaign,
     airdropTokenMint = ctx.usdc,
     airdropTokenProgram = ProgramId.TOKEN,
-    campaignCreatorAtaExists = true,
+    clawbackRecipient = ctx.defaultClawbackRecipient.keys.publicKey,
   } = {},
 ) {
   const campaignAtaBalanceBefore = await getATABalanceMint(ctx.banksClient, campaign, airdropTokenMint);
-  const creatorAtaBalanceBefore = campaignCreatorAtaExists
-    ? await getATABalanceMint(ctx.banksClient, ctx.campaignCreator.keys.publicKey, airdropTokenMint)
-    : ZERO;
+  let clawbackRecipientAtaBalanceBefore: BN;
+  try {
+    clawbackRecipientAtaBalanceBefore = await getATABalanceMint(ctx.banksClient, clawbackRecipient, airdropTokenMint);
+  } catch {
+    clawbackRecipientAtaBalanceBefore = ZERO;
+  }
 
   await ctx.clawback({
     airdropTokenMint,
     airdropTokenProgram,
     amount: Amount.CLAWBACK,
     campaign,
+    clawbackRecipient,
   });
 
   const campaignAtaBalanceAfter = await getATABalanceMint(ctx.banksClient, campaign, airdropTokenMint);
@@ -186,12 +191,12 @@ async function testClawback(
   // Assert that the campaign token balance has decreased as expected
   assertEqualBn(campaignAtaBalanceBefore, campaignAtaBalanceAfter.add(Amount.CLAWBACK));
 
-  const creatorAtaBalanceAfter = await getATABalanceMint(
+  const clawbackRecipientAtaBalanceAfter = await getATABalanceMint(
     ctx.banksClient,
-    ctx.campaignCreator.keys.publicKey,
+    clawbackRecipient,
     airdropTokenMint,
   );
 
-  // Assert that the campaign creator's token balance has increased as expected
-  assertEqualBn(creatorAtaBalanceBefore, creatorAtaBalanceAfter.sub(Amount.CLAWBACK));
+  // Assert that the clawback recipient's token balance has increased as expected
+  assertEqualBn(clawbackRecipientAtaBalanceBefore, clawbackRecipientAtaBalanceAfter.sub(Amount.CLAWBACK));
 }

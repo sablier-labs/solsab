@@ -29,6 +29,7 @@ pub struct Clawback {
     pub amount: u64,
     pub campaign: Pubkey,
     pub campaign_creator: Pubkey,
+    pub clawback_recipient: Pubkey,
 }
 
 #[event]
