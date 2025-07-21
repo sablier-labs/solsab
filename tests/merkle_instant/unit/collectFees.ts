@@ -4,6 +4,7 @@ import { claim, collectFees, getTreasuryLamports, setUp } from "../base";
 import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";
+import { getFeeInLamports } from "../../oracles";
 
 describe("collectFees", () => {
   context("when the program is not initialized", () => {
@@ -68,7 +69,10 @@ describe("collectFees", () => {
           const treasuryLamportsAfter = await getTreasuryLamports();
           const feeRecipientLamportsAfter = await getFeeRecipientLamports();
 
-          const expectedFeesCollected = defaults.CLAIM_FEE_AMOUNT - 1_000_000; // 1 claim worth of fees minus the safety buffer
+          const expectedClaimFee = await getFeeInLamports(
+            defaults.CLAIM_FEE_USD
+          );
+          const expectedFeesCollected = expectedClaimFee - 1_000_000; // 1 claim worth of fees minus the safety buffer
 
           assert(
             treasuryLamportsAfter ===

@@ -9,7 +9,7 @@ use anchor_spl::{
 use crate::{
     state::{nft_collection_data::NftCollectionData, treasury::Treasury},
     utils::{
-        constants::{seeds::*, ANCHOR_DISCRIMINATOR_SIZE},
+        constants::{misc::ANCHOR_DISCRIMINATOR_SIZE, seeds::*},
         nft,
     },
 };

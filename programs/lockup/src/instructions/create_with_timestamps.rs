@@ -8,7 +8,7 @@ use anchor_spl::{
 use crate::{
     state::{lockup::*, nft_collection_data::NftCollectionData},
     utils::{
-        constants::{seeds::*, ANCHOR_DISCRIMINATOR_SIZE},
+        constants::{misc::ANCHOR_DISCRIMINATOR_SIZE, seeds::*},
         events::CreateLockupLinearStream,
         nft,
         transfer_helper::transfer_tokens,

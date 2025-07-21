@@ -25,11 +25,12 @@ const ErrorCode = {
   StreamAlreadyNonCancelable: 0x177b,
 
   // Withdraw
-  Overdraw: 0x177c,
-  WithdrawAmountZero: 0x177d,
+  InvalidChainlinkRound: 0x177c,
+  Overdraw: 0x177d,
+  WithdrawAmountZero: 0x177e,
 
   // Common
-  StreamDepleted: 0x177e,
+  StreamDepleted: 0x177f,
 
   // Anchor Errors
   AccountNotInitialized: 0xbc4,

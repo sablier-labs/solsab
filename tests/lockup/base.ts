@@ -17,6 +17,8 @@ import {
 import {
   banksClient,
   bankrunProvider,
+  CHAINLINK_PROGRAM_ID,
+  CHAINLINK_SOL_USD_FEED_ID,
   createUser,
   dai,
   feeCollector,
@@ -267,6 +269,8 @@ export async function withdraw({
       withdrawalRecipient,
       depositedTokenProgram,
       nftTokenProgram: token.TOKEN_PROGRAM_ID,
+      chainlinkProgram: CHAINLINK_PROGRAM_ID,
+      chainlinkSolUsdFeed: CHAINLINK_SOL_USD_FEED_ID,
     })
     .instruction();
 
@@ -304,6 +308,8 @@ export async function withdrawMax({
       withdrawalRecipient,
       depositedTokenProgram,
       nftTokenProgram: token.TOKEN_PROGRAM_ID,
+      chainlinkProgram: CHAINLINK_PROGRAM_ID,
+      chainlinkSolUsdFeed: CHAINLINK_SOL_USD_FEED_ID,
     })
     .instruction();
 

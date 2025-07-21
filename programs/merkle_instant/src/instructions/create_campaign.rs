@@ -7,7 +7,7 @@ use anchor_spl::{
 use crate::{
     state::Campaign,
     utils::{
-        constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED},
+        constants::{misc::ANCHOR_DISCRIMINATOR_SIZE, seeds::CAMPAIGN_SEED},
         events,
     },
 };

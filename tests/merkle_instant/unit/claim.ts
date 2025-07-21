@@ -33,6 +33,7 @@ import {
 import { assert, assertErrorHexCode, assertFail } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";
+import { getFeeInLamports } from "../../oracles";
 
 describe("claim", () => {
   context("when the program is not initialized", () => {
@@ -281,23 +282,27 @@ async function testClaim(
     "recipient ATA balance"
   );
 
+  const expectedFee = await getFeeInLamports(defaults.CLAIM_FEE_USD);
+
   const claimerLamportsAfter = await getLamportsOf(claimer.publicKey);
 
-  // Assert that the claimer's lamports balance has changed atleast by the claim fee amount.
+  // Assert that the claimer's lamports balance has decreased by, at least, the claim fee amount.
   // We use `<=` because we don't know in advance the gas cost.
   assert(
-    claimerLamportsAfter <=
-      claimerLamportsBefore - BigInt(defaults.CLAIM_FEE_AMOUNT),
+    claimerLamportsAfter <= claimerLamportsBefore - BigInt(expectedFee),
     "claimer lamports balance"
   );
 
   const treasuryLamportsAfter = await getLamportsOf(treasuryAddress);
 
-  // Assert that the treasury's balance has increased by the claim fee amount
+  // Assert that the Treasury has been credited with the claim fee that is within 5% of the expected fee
+  const treasuryBalanceDifference = Math.abs(
+    Number(treasuryLamportsAfter - treasuryLamportsBefore)
+  );
   assert(
-    treasuryLamportsAfter ==
-      treasuryLamportsBefore + BigInt(defaults.CLAIM_FEE_AMOUNT),
-    "treasury balance"
+    Math.abs(treasuryBalanceDifference - expectedFee) <=
+      Math.floor(expectedFee * 0.05),
+    "The Treasury hasn't received the expected claim fee"
   );
 }
 

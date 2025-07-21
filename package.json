@@ -13,7 +13,10 @@
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",
     "@solana/web3.js": "^1.98.2",
+    "@types/lodash-es": "^4.17.12",
     "anchor-bankrun": "^0.5.0",
+    "lodash-es": "^4.17.21",
+    "node-fetch": "^3.3.2",
     "solana-bankrun": "^0.4.0"
   },
   "devDependencies": {

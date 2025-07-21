@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::{state::Treasury, utils::constants::*};
+use crate::{
+    state::Treasury,
+    utils::constants::{misc::ANCHOR_DISCRIMINATOR_SIZE, seeds::TREASURY_SEED},
+};
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {

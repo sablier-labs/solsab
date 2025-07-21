@@ -6,7 +6,7 @@ use anchor_spl::{
 
 use crate::{
     state::Campaign,
-    utils::{constants::CAMPAIGN_SEED, events, transfer_helper::transfer_tokens, validations::check_clawback},
+    utils::{constants::seeds::CAMPAIGN_SEED, events, transfer_helper::transfer_tokens, validations::check_clawback},
 };
 
 #[derive(Accounts)]

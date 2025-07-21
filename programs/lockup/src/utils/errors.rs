@@ -35,12 +35,14 @@ pub enum ErrorCode {
     StreamAlreadyNonCancelable, // 0x177b
 
     // Withdraw
+    #[msg("Invalid Chainlink round!")]
+    InvalidChainlinkRound, // 0x177c
     #[msg("Attempting to withdraw more than available in the stream!")]
-    Overdraw, // 0x177c
+    Overdraw, // 0x177d
     #[msg("Can't withdraw a zero amount!")]
-    WithdrawAmountZero, // 0x177d
+    WithdrawAmountZero, // 0x177e
 
     // Common
     #[msg("Can't perform the action on a depleted stream!")]
-    StreamDepleted, // 0x177e
+    StreamDepleted, // 0x177f
 }

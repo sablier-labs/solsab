@@ -1,12 +1,22 @@
 import { BN } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
-import { PublicKey, Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import {
+  PublicKey,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  Cluster,
+  Connection,
+  clusterApiUrl,
+} from "@solana/web3.js";
 import { BankrunProvider } from "anchor-bankrun";
 import {
   BanksClient,
   Clock,
   ProgramTestContext,
   startAnchor,
+  AddedAccount,
+  AddedProgram,
+  AccountInfoBytes,
 } from "solana-bankrun";
 
 import { createATAAndFund, createMint } from "./anchor-bankrun-adapter";
@@ -27,15 +37,40 @@ export let usdc: PublicKey;
 export let dai: PublicKey;
 export let randomToken: PublicKey;
 
+// Constants
+export const CHAINLINK_PROGRAM_ID = new PublicKey(
+  "HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny"
+);
+
+export const CHAINLINK_SOL_USD_FEED_ID = new PublicKey(
+  "99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY6jZ96ynrR"
+);
+
 export async function setUp(
   programName: string,
   programId: PublicKey,
-  additionalPrograms: { name: string; programId: PublicKey }[] = []
+  addedPrograms: AddedProgram[] = [],
+  addedAccountIds: PublicKey[] = []
 ) {
-  const programs = [{ name: programName, programId }, ...additionalPrograms];
+  const programs = [
+    { name: programName, programId },
+    {
+      name: "chainlink_program",
+      programId: CHAINLINK_PROGRAM_ID,
+    },
+    ...addedPrograms,
+  ];
+  const addedAccounts = await Promise.all(
+    addedAccountIds.map((id) => fetchAccountDataAsFixture(id.toString()))
+  );
 
-  // Start Anchor context with the provided programs
-  context = await startAnchor("", programs, []);
+  // Add the Chainlink SOL/USD price feed to the Added Accounts list
+  addedAccounts.push(
+    await fetchAccountDataAsFixture(CHAINLINK_SOL_USD_FEED_ID.toString())
+  );
+
+  // Start Anchor context with the provided programs & accounts
+  context = await startAnchor("", programs, addedAccounts);
   banksClient = context.banksClient;
   bankrunProvider = new BankrunProvider(context);
   defaultBankrunPayer = bankrunProvider.wallet.payer;
@@ -143,6 +178,29 @@ export async function createUser(): Promise<User> {
 
 export async function accountExists(address: PublicKey): Promise<boolean> {
   return (await banksClient.getAccount(address)) != null;
+}
+
+export async function fetchAccountDataAsFixture(
+  address: string,
+  cluster: Cluster = "devnet"
+): Promise<AddedAccount> {
+  const connection = new Connection(clusterApiUrl(cluster), "confirmed");
+  const accountId = new PublicKey(address);
+
+  const raw = await connection.getAccountInfo(accountId);
+  if (!raw) {
+    throw new Error(`Account not found: ${address}`);
+  }
+
+  return {
+    address: accountId,
+    info: {
+      executable: raw.executable,
+      lamports: raw.lamports,
+      owner: raw.owner,
+      data: new Uint8Array(raw.data),
+    },
+  };
 }
 
 /**

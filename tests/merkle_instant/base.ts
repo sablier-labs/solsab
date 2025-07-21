@@ -10,6 +10,8 @@ import {
 import {
   banksClient,
   bankrunProvider,
+  CHAINLINK_PROGRAM_ID,
+  CHAINLINK_SOL_USD_FEED_ID,
   createUser,
   dai,
   feeCollector,
@@ -128,6 +130,8 @@ export async function claim({
       recipient: recipientAddress,
       airdropTokenMint,
       airdropTokenProgram,
+      chainlinkProgram: CHAINLINK_PROGRAM_ID,
+      chainlinkSolUsdFeed: CHAINLINK_SOL_USD_FEED_ID,
     })
     .instruction();
 
@@ -227,7 +231,7 @@ export async function createCampaign({
     campaignFunderAta,
     campaignAta,
     campaignFunder.publicKey,
-    defaults.AGGREGATE_AMOUNT,
+    defaults.AGGREGATE_AMOUNT.toNumber(),
     [],
     airdropTokenProgram
   );

@@ -1,5 +1,3 @@
-pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
-
 // Account Seeds
 pub mod seeds {
     pub const EDITION: &[u8] = b"edition";
@@ -21,4 +19,11 @@ pub mod nft {
         "https://ipfs.io/ipfs/bafkreiaidfetl2iedxjzbh2hof7dj3hdrs5l7sr643ggtjh7sb42jcj5nq";
     pub const NFT_NAME_PREFIX: &str = "Sablier LL Stream #";
     pub const NFT_SYMBOL: &str = "LL_STREAM";
+}
+
+// Miscellaneous
+pub mod misc {
+    pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
+    pub const WITHDRAWAL_FEE_USD: u64 = 1; // 1 USD
+    pub const NO_LAMPORTS_IN_1_SOL: u64 = 1_000_000_000; // 1 billion lamports in 1 SOL
 }

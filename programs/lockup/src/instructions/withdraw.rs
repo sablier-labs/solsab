@@ -1,21 +1,24 @@
 use anchor_lang::{
     prelude::*,
-    solana_program::{program::invoke, system_instruction::transfer},
+    solana_program::{program::invoke, system_instruction::transfer, sysvar::clock::Clock},
 };
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
+use chainlink_solana as chainlink;
+
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
     utils::{
-        constants::seeds::*, events::WithdrawFromLockupStream, lockup_math::get_withdrawable_amount,
-        transfer_helper::transfer_tokens, validations::check_withdraw,
+        constants::{misc::*, seeds::*},
+        events::WithdrawFromLockupStream,
+        lockup_math::get_withdrawable_amount,
+        transfer_helper::transfer_tokens,
+        validations::check_withdraw,
     },
 };
-
-const WITHDRAWAL_FEE: u64 = 10_000_000; // The fee for withdrawing from the stream, in lamports.
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
@@ -92,6 +95,12 @@ pub struct Withdraw<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
+    /// CHECK: We're reading data from this chainlink feed
+    pub chainlink_sol_usd_feed: AccountInfo<'info>,
+
+    /// CHECK: This is the Chainlink program library
+    pub chainlink_program: AccountInfo<'info>,
+
     /// Program account: the System program.
     pub system_program: Program<'info, System>,
 
@@ -117,9 +126,13 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Effect: update the stream data state.
     ctx.accounts.stream_data.withdraw(amount)?;
 
-    // Interaction: transfer the fee from the signer to the treasury.
-    let fee_collection_ix = transfer(&ctx.accounts.signer.key(), &ctx.accounts.treasury.key(), WITHDRAWAL_FEE);
-    invoke(&fee_collection_ix, &[ctx.accounts.signer.to_account_info(), ctx.accounts.treasury.to_account_info()])?;
+    // Interaction: charge the withdrawal fee.
+    charge_withdrawal_fee(
+        ctx.accounts.chainlink_program.to_account_info(),
+        ctx.accounts.chainlink_sol_usd_feed.to_account_info(),
+        ctx.accounts.signer.to_account_info(),
+        ctx.accounts.treasury.to_account_info(),
+    )?;
 
     // Interaction: transfer the tokens from the stream ATA to the recipient.
     transfer_tokens(
@@ -141,5 +154,39 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         withdrawn_amount: amount
     });
 
+    Ok(())
+}
+
+// TODO: export this into a crate that'd be imported by both the lockup and merkle_instant programs.
+fn charge_withdrawal_fee<'info>(
+    chainlink_program: AccountInfo<'info>,
+    chainlink_sol_usd_feed: AccountInfo<'info>,
+    tx_signer: AccountInfo<'info>,
+    treasury: AccountInfo<'info>,
+) -> Result<()> {
+    let round = chainlink::latest_round_data(chainlink_program.clone(), chainlink_sol_usd_feed.clone())?;
+
+    let round_timestamp: i64 = round.timestamp as i64;
+    let current_timestamp: i64 = Clock::get()?.unix_timestamp;
+    const SECONDS_IN_24_HOURS: i64 = 86400;
+    let timestamp_24h_ago = current_timestamp - SECONDS_IN_24_HOURS;
+
+    // Check: only charge the fee if the round data is valid (i.e. its timestamp is strictly within the last 24 hours).
+    // Otherwise, skip the fee charging.
+    if
+    /* current_timestamp > round_timestamp && */
+    round_timestamp > timestamp_24h_ago {
+        let decimals = chainlink::decimals(chainlink_program.clone(), chainlink_sol_usd_feed.clone())?;
+
+        // Calculate the SOL price in USD as an integer value, truncating the sub-dollar amount.
+        let sol_price_usd = (round.answer / 10_i128.pow(decimals as u32)) as u64;
+
+        // Transform the fee from USD to Lamports.
+        let fee_in_lamports = (WITHDRAWAL_FEE_USD * NO_LAMPORTS_IN_1_SOL) / sol_price_usd;
+
+        // Interaction: transfer the fee from the signer to the treasury.
+        let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);
+        invoke(&fee_charging_ix, &[tx_signer, treasury])?;
+    }
     Ok(())
 }

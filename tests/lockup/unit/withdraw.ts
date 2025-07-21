@@ -2,6 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 
 import { createATAAndFund } from "../../anchor-bankrun-adapter";
+
 import {
   cancel,
   createWithTimestampsToken2022,
@@ -35,6 +36,7 @@ import {
 } from "../utils/assertions";
 import * as defaults from "../utils/defaults";
 import { getErrorCode } from "../utils/errors";
+import { getFeeInLamports } from "../../oracles";
 
 describe("withdraw", () => {
   context("when the program is not initialized", () => {
@@ -395,14 +397,19 @@ async function postWithdrawAssertions(
   const actualStreamData = await fetchStreamData(salt);
   assertEqStreamDatas(actualStreamData, expectedStreamData);
 
+  const expectedFee = await getFeeInLamports(defaults.WITHDRAWAL_FEE_USD);
+
   // Get the Lamports balance of the Treasury after the withdrawal
   const treasuryLamportsAfter = await getTreasuryLamports();
 
-  // Assert that the Treasury's balance has been credited with the withdrawal fee
+  // Assert that the Treasury has been credited with the withdrawal fee that is within 5% of the expected fee
+  const treasuryBalanceDifference = Math.abs(
+    Number(treasuryLamportsAfter - treasuryLamportsBefore)
+  );
   assert(
-    treasuryLamportsAfter ===
-      treasuryLamportsBefore + BigInt(defaults.WITHDRAWAL_FEE_AMOUNT),
-    "The Treasury's Lamports balance hasn't been credited correctly"
+    Math.abs(treasuryBalanceDifference - expectedFee) <=
+      Math.floor(expectedFee * 0.05),
+    "The Treasury hasn't received the expected withdrawal fee"
   );
 
   // Get the withdrawal recipient's token balance
