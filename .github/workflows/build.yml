@@ -1,6 +1,6 @@
 name: Build Solana Program
 
-# Run this workflow on pushes and pull requests to any branch
+# Run this workflow on pushes and pull requests to the main branch
 on:
   push:
     branches: [main]
@@ -8,8 +8,10 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,14 +31,14 @@ jobs:
           sudo apt-get install -y build-essential pkg-config libudev-dev llvm libclang-dev protobuf-compiler libssl-dev
         shell: bash
 
-      #   - name: Cache Solana CLI
-      #     uses: actions/cache@v4
-      #     id: cache-solana-cli
-      #     with:
-      #       path: |
-      #         ~/.local/share/solana
-      #         ~/.cache/solana
-      #       key: ${{ runner.os }}-solana-stable
+      # - name: Cache Solana CLI
+      #   uses: actions/cache@v4
+      #   id: cache-solana-cli
+      #   with:
+      #     path: |
+      #       ~/.local/share/solana
+      #       ~/.cache/solana
+      #     key: ${{ runner.os }}-solana-stable
 
       - name: Install Solana CLI if not cached
         # if: steps.cache-solana-cli.outputs.cache-hit != 'true'
@@ -45,24 +47,22 @@ jobs:
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
         shell: bash
 
-      #   - name: Cache Anchor CLI
-      #     uses: actions/cache@v4
-      #     id: cache-anchor-cli
-      #     with:
-      #       path: |
-      #         ~/.cargo/bin/anchor
-      #         ~/.cargo/bin/avm
-      #       key: ${{ runner.os }}-anchor-latest
+      - name: Cache Anchor
+        uses: actions/cache@v4
+        id: cache-anchor
+        with:
+          path: |
+            ~/.cargo/bin/anchor
+          key: ${{ runner.os }}-anchor-latest
 
-      - name: Install Anchor CLI if not cached
-        # if: steps.cache-anchor-cli.outputs.cache-hit != 'true'
-        run: |
-          cargo install --git https://github.com/coral-xyz/anchor avm --force
-          avm install latest
+      - name: Install Anchor if not cached
+        if: steps.cache-anchor.outputs.cache-hit != 'true'
+        run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.31.1 anchor-cli
+
+      - name: Check that Anchor has been installed successfully
+        run: anchor --version
         shell: bash
 
-      - run: avm use latest
-        shell: bash
-
-      - run: RUSTUP_TOOLCHAIN=nightly anchor build
+      - name: Build the programs via Anchor
+        run: anchor build
         shell: bash
