@@ -12,10 +12,7 @@ use crate::{
 #[derive(Accounts)]
 pub struct Renounce<'info> {
     /// Write account: the sender of the stream.
-    #[account(
-      mut,
-      address = stream_data.sender,
-    )]
+    #[account(address = stream_data.sender)]
     pub sender: Signer<'info>,
 
     /// Read account: the mint account for the stream NFT.
