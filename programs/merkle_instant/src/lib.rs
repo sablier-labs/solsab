@@ -42,7 +42,7 @@ pub mod sablier_merkle_instant {
         instructions::claim::handler(ctx, index, amount, merkle_proof)
     }
 
-    /// Claws back the unclaimed tokens.
+    /// Claws back the unclaimed tokens from the campaign.
     ///
     /// Notes:
     /// - Emits a {Clawback} event.
@@ -68,7 +68,8 @@ pub mod sablier_merkle_instant {
     /// Collects the fees accumulated in the treasury by transferring them to the fee recipient.
     ///
     /// Notes:
-    /// - Leaves a buffer of 0.001 SOL to ensure the account remains rent-exempt after the fee collection.
+    /// - Leaves a buffer of 0.001 SOL in the treasury to ensure the account remains rent-exempt after the fee
+    /// collection.
     /// - Emits a {FeesCollected} event.
     ///
     /// Accounts expected:
@@ -77,15 +78,15 @@ pub mod sablier_merkle_instant {
     ///
     /// Requirements:
     /// - `fee_collector` must be authorized for fee collection.
+    /// - The collectable amount must not be zero.
     pub fn collect_fees(ctx: Context<CollectFees>) -> Result<()> {
         instructions::collect_fees::handler(ctx)
     }
 
-    /// Creates a new airdrop campaign with instant distribution of tokens.
+    /// Creates a new Merkle Instant airdrop campaign.
     ///
     /// Notes:
     /// - Emits a {CreateCampaign} event.
-    /// - A value of zero for `expiration` means the campaign does not expire.
     ///
     /// Accounts expected:
     /// - `creator` The transaction signer and the campaign creator.
@@ -97,7 +98,7 @@ pub mod sablier_merkle_instant {
     /// - `expiration_time` The time when the campaign expires, in seconds since the Unix epoch. A value of zero means
     /// the campaign does not expire.
     /// - `name` The name of the campaign.
-    /// - `ipfs_cid` The content identifier for indexing the contract on IPFS. An empty value may break certain UI
+    /// - `ipfs_cid` The content identifier for indexing the campaign on IPFS. An empty value may break certain UI
     /// features that depend upon the IPFS CID.
     /// - `aggregate_amount` The total amount of tokens to be distributed to all recipients.
     /// - `recipient_count` The total number of recipient addresses eligible for the airdrop.
@@ -121,21 +122,20 @@ pub mod sablier_merkle_instant {
         )
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-    //                              READ-ONLY IXS                             //
-    ////////////////////////////////////////////////////////////////////////////
-
-    /// Initializes the program with the provided fee collector address by creating a Metaplex NFT collection.
+    /// Initializes the program with the provided fee collector address.
     ///
     /// Accounts expected:
     /// - `initializer` The transaction signer.
-    /// - `nft_token_program` The Token Program of the NFT collection.
     ///
     /// Parameters:
     /// - `fee_collector` The address that will have the authority to collect fees.
     pub fn initialize(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
         instructions::initialize::handler(ctx, fee_collector)
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                              READ-ONLY IXS                             //
+    ////////////////////////////////////////////////////////////////////////////
 
     /// Retrieves the campaign details.
     ///
@@ -164,12 +164,12 @@ pub mod sablier_merkle_instant {
         instructions::has_expired::handler(ctx)
     }
 
-    /// Returns a flag indicating whether the campaign has passed the grace period.
+    /// Returns a flag indicating whether the grace period of the campaign has passed.
     ///
     /// Notes:
     /// - A return value of `false` indicates:
     /// No claim has been made yet,
-    /// OR the current timestamp does not exceed 7 days after the first claim,
+    /// OR the current timestamp does not exceed 7 days after the first claim.
     pub fn has_grace_period_passed(ctx: Context<CampaignView>) -> Result<bool> {
         instructions::has_grace_period_passed::handler(ctx)
     }
