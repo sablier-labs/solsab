@@ -24,19 +24,38 @@ jobs:
         with:
           toolchain: 1.88.0
 
-      - name: Cache Cargo dependencies
-        uses: Swatinem/rust-cache@v2
+      - name: Cache Solana installation
+        uses: actions/cache@v4
+        id: cache-solana
+        with:
+          path: ~/.local/share/solana
+          key: solana-${{ runner.os }}-v2.1.16
 
       - name: Install Solana CLI v2.1.16
-        run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.16/install)"
-          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-        shell: bash
+        if: steps.cache-solana.outputs.cache-hit != 'true'
+        run: sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.16/install)"
 
-      - name: Install Anchor CLI
+      - name: Add Solana to PATH
+        run: echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Cache Anchor installation
+        uses: actions/cache@v4
+        id: cache-anchor
+        with:
+          path: |
+            ~/.avm
+            ~/.cargo/bin/avm
+          key: anchor-${{ runner.os }}-0.31.1
+
+      - name: Install avm and Anchor CLI
+        if: steps.cache-anchor.outputs.cache-hit != 'true'
         run: |
           cargo install --git https://github.com/coral-xyz/anchor avm --force
           avm install 0.31.1
+        shell: bash
+
+      - name: Use Anchor CLI version
+        run: |
           avm use 0.31.1
           echo "$HOME/.avm/bin" >> $GITHUB_PATH
         shell: bash
