@@ -1,6 +1,5 @@
-name: Build Solana Program
+name: "CI"
 
-# Run this workflow on pushes and pull requests to the main branch
 on:
   pull_request:
   push:
@@ -13,56 +12,41 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
       - name: Get the required dependencies
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends build-essential pkg-config libudev-dev llvm libclang-dev protobuf-compiler libssl-dev
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libudev-dev llvm libclang-dev protobuf-compiler libssl-dev
         shell: bash
 
       - name: Set up Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: stable
-          components: clippy, rustfmt
+          toolchain: 1.88.0
 
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
 
-      - name: Cache Solana CLI
-        uses: actions/cache@v4
-        id: cache-solana-cli
-        with:
-          path: |
-            ~/.local/share/solana
-            ~/.cache/solana
-          key: ${{ runner.os }}-solana-stable
-
-      - name: Install Solana CLI if not cached
-        if: steps.cache-solana-cli.outputs.cache-hit != 'true'
+      - name: Install Solana CLI v2.1.16
         run: |
-          curl -sSfL https://release.anza.xyz/stable/install | sh
+          sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.16/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
         shell: bash
 
-      - name: Cache Anchor
-        uses: actions/cache@v4
-        id: cache-anchor
-        with:
-          path: |
-            ~/.cargo/bin/anchor
-          key: ${{ runner.os }}-anchor-latest
-
-      - name: Install Anchor if not cached
-        if: steps.cache-anchor.outputs.cache-hit != 'true'
-        run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.31.1 anchor-cli
-
-      - name: Check that Anchor has been installed successfully
-        run: anchor --version
+      - name: Install Anchor CLI
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --force
+          avm install 0.31.1
+          avm use 0.31.1
+          echo "$HOME/.avm/bin" >> $GITHUB_PATH
         shell: bash
 
       - name: Build the programs via Anchor
         run: anchor build
         shell: bash
+
+      - name: Log tool versions
+        run: |
+          echo "rustc: $(rustc --version)"
+          echo "solana: $(solana --version)"
+          echo "anchor: $(anchor --version)"
