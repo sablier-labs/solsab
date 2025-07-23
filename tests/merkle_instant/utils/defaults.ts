@@ -26,4 +26,5 @@ export const CLAIM_RECEIPT_SEED = "claim_receipt";
 
 // Miscellaneous
 export const CAMPAIGN_NAME = "Default Campaign Name";
-export const IPFS_CID = "QmbWqxBEKC3P8tqsKc98xmWNzrzDtRLMiMPL8wBuTGsMnR";
+export const IPFS_CID =
+  "bafkreiecpwdhvkmw4y6iihfndk7jhwjas3m5htm7nczovt6m37mucwgsrq";
