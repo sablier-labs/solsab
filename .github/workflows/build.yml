@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -17,7 +20,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libudev-dev llvm libclang-dev protobuf-compiler libssl-dev
-        shell: bash
 
       - name: Set up Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -35,7 +37,7 @@ jobs:
         if: steps.cache-solana.outputs.cache-hit != 'true'
         run: sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.16/install)"
 
-      - name: Add Solana to PATH
+      - name: Ensure Solana CLI is in PATH
         run: echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
       - name: Cache Anchor installation
@@ -52,20 +54,19 @@ jobs:
         run: |
           cargo install --git https://github.com/coral-xyz/anchor avm --force
           avm install 0.31.1
-        shell: bash
-
-      - name: Use Anchor CLI version
-        run: |
           avm use 0.31.1
-          echo "$HOME/.avm/bin" >> $GITHUB_PATH
-        shell: bash
+
+      - name: Ensure avm is in PATH
+        run: echo "$HOME/.avm/bin" >> $GITHUB_PATH
+
+      - name: Cache Rust build artifacts
+        uses: actions/cache@v4
+        id: cache-target
+        with:
+          path: target
+          key: target-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            target-${{ runner.os }}-
 
       - name: Build the programs via Anchor
         run: anchor build
-        shell: bash
-
-      - name: Log tool versions
-        run: |
-          echo "rustc: $(rustc --version)"
-          echo "solana: $(solana --version)"
-          echo "anchor: $(anchor --version)"
