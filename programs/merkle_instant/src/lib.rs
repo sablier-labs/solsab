@@ -67,8 +67,8 @@ pub mod sablier_merkle_instant {
     /// Collects the fees accumulated in the treasury by transferring them to the fee recipient.
     ///
     /// Notes:
-    /// - Leaves a buffer of 0.001 SOL in the treasury to ensure the account remains rent-exempt after the fee
-    /// collection.
+    /// - To determine the "collectable amount", we take the total SOL balance of the treasury - and deduct its
+    ///   rent-exempt minimum balance, as well as the 0.001 SOL safety buffer.
     /// - Emits a {FeesCollected} event.
     ///
     /// Accounts expected:
@@ -77,7 +77,7 @@ pub mod sablier_merkle_instant {
     ///
     /// Requirements:
     /// - `fee_collector` must be authorized for fee collection.
-    /// - The collectable amount must not be zero.
+    /// - The "collectable amount" must be greater than zero.
     pub fn collect_fees(ctx: Context<CollectFees>) -> Result<()> {
         instructions::collect_fees::handler(ctx)
     }
