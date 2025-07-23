@@ -34,9 +34,8 @@ pub mod sablier_merkle_instant {
     /// - `merkle_proof` The proof of inclusion in the Merkle tree.
     ///
     /// Requirements:
-    /// - The current time must be greater than or equal to the campaign start time.
     /// - The campaign must not have expired.
-    /// - The `index` must not be claimed already.
+    /// - The recipient's airdrop has not been claimed yet.
     /// - The Merkle proof must be valid.
     pub fn claim(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[u8; 32]>) -> Result<()> {
         instructions::claim::handler(ctx, index, amount, merkle_proof)
