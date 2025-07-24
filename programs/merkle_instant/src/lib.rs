@@ -67,8 +67,8 @@ pub mod sablier_merkle_instant {
     /// Collects the fees accumulated in the treasury by transferring them to the fee recipient.
     ///
     /// Notes:
-    /// - To determine the "collectable amount", we take the total SOL balance of the treasury - and deduct its
-    ///   rent-exempt minimum balance, as well as the 0.001 SOL safety buffer.
+    /// - To calculate the "collectable amount", it's subtracted from the treasury SOL balance the rent-exempt minimum
+    /// balance and a 0.001 SOL buffer.
     /// - Emits a {FeesCollected} event.
     ///
     /// Accounts expected:
@@ -144,7 +144,7 @@ pub mod sablier_merkle_instant {
         instructions::campaign_view::handler(ctx)
     }
 
-    /// Returns a flag indicating whether a claim has been made for a given index.
+    /// Returns a flag indicating whether a claim has been made for the given index.
     ///
     /// Accounts expected:
     /// - `campaign` The account that stores the campaign details.
