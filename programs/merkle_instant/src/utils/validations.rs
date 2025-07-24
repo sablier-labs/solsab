@@ -48,7 +48,7 @@ pub fn check_claim(
 }
 
 pub fn check_clawback(expiration_time: i64, first_claim_time: i64) -> Result<()> {
-    // Check: the grace period has passed and the campaign has not expired.
+    // Check: the grace period has not passed or the campaign has expired.
     if has_grace_period_passed(first_claim_time)? && !has_expired(expiration_time)? {
         return Err(ErrorCode::ClawbackNotAllowed.into());
     }

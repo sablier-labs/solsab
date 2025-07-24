@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::state::Campaign;
 
-// Common context that is used by multiple view instructions
+// Common context used by multiple view instructions
 #[derive(Accounts)]
 pub struct CampaignView<'info> {
     pub campaign: Box<Account<'info, Campaign>>,
