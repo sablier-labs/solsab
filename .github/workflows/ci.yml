@@ -73,6 +73,7 @@ jobs:
 
       - name: Install dependencies
         run: bun install
+
       - name: Build the programs
         run: bun run build
 
