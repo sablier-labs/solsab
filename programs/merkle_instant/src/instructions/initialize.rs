@@ -1,3 +1,11 @@
+//! Initializes the program with the provided fee collector address.
+//!
+//! Accounts expected:
+//! - `initializer` The transaction signer.
+//!
+//! Parameters:
+//! - `fee_collector` The address that will have the authority to collect fees.
+
 use anchor_lang::prelude::*;
 
 use crate::{state::Treasury, utils::constants::*};

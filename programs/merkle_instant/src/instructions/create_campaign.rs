@@ -1,3 +1,22 @@
+//! Creates a new Merkle Instant airdrop campaign.
+//!
+//! Notes:
+//! - Emits a {CreateCampaign} event.
+//!
+//! Accounts expected:
+//! - `creator` The transaction signer and the campaign creator.
+//! - `airdrop_token_mint` The mint of the airdropped token.
+//! - `airdrop_token_program` The Token Program of the airdropped token.
+//!
+//! Parameters:
+//! - `merkle_root` The Merkle root of the claim data.
+//! - `expiration_time` The time when the campaign expires, in seconds since the Unix epoch. A value of zero means
+//! the campaign does not expire.
+//! - `name` The name of the campaign.
+//! - `ipfs_cid` The content identifier for indexing the campaign on IPFS. An empty value may break certain UI
+//! features that depend upon the IPFS CID.
+//! - `aggregate_amount` The total amount of tokens to be distributed to all recipients.
+//! - `recipient_count` The total number of recipient addresses eligible for the airdrop.
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,

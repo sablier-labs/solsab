@@ -1,3 +1,17 @@
+//! Collects the fees accumulated in the treasury by transferring them to the fee recipient.
+//!
+//! Notes:
+//! - To calculate the "collectable amount", it's subtracted from the treasury SOL balance the rent-exempt minimum
+//! balance and a 0.001 SOL buffer.
+//! - Emits a {FeesCollected} event.
+//!
+//! Accounts expected:
+//! - `fee_collector` The transaction signer and the fee collector.
+//! - `fee_recipient` The address receiving the collected fees.
+//!
+//! Requirements:
+//! - `fee_collector` must be authorized for fee collection.
+//! - The "collectable amount" must be greater than zero.
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 

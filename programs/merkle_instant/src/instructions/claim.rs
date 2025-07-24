@@ -1,3 +1,24 @@
+//! Claim airdrop on behalf of eligible recipient and transfer it to the recipient ATA.
+//!
+//! Notes:
+//! - Emits a {Claim} event.
+//!
+//! Accounts expected:
+//! - `claimer` The transaction signer.
+//! - `campaign` The account that stores the campaign details.
+//! - `recipient` The address of the airdrop recipient.
+//! - `airdrop_token_mint` The mint of the airdropped token.
+//! - `airdrop_token_program` The Token Program of the airdropped token.
+//!
+//! Parameters:
+//! - `index` The index of the recipient in the Merkle tree.
+//! - `amount` The amount allocated to the recipient.
+//! - `merkle_proof` The proof of inclusion in the Merkle tree.
+//!
+//! Requirements:
+//! - The campaign must not have expired.
+//! - The recipient's airdrop has not been claimed yet.
+//! - The Merkle proof must be valid.
 use anchor_lang::{
     prelude::*,
     solana_program::{program::invoke, system_instruction::transfer},

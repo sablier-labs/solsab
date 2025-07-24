@@ -1,3 +1,23 @@
+//! Claws back the unclaimed tokens from the campaign.
+//!
+//! Notes:
+//! - Emits a {Clawback} event.
+//!
+//! Accounts expected:
+//! - `campaign` The account that stores the campaign details.
+//! - `campaign_creator` The transaction signer.
+//! - `airdrop_token_mint` The mint of the airdropped token.
+//! - `airdrop_token_program` The Token Program of the airdropped token.
+//!
+//! Parameters:
+//! - `amount` The amount to claw back.
+//!
+//! Requirements:
+//! - The signer must be the actual campaign creator.
+//! - No claim must be made,
+//! OR The current timestamp must not exceed 7 days after the first claim,
+//! OR The campaign must be expired.
+
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
