@@ -67,8 +67,8 @@ pub mod sablier_merkle_instant {
     /// Collects the fees accumulated in the treasury by transferring them to the fee recipient.
     ///
     /// Notes:
-    /// - To calculate the "collectable amount", it's subtracted from the treasury SOL balance the rent-exempt minimum
-    /// balance and a 0.001 SOL buffer.
+    /// - To calculate the "collectable amount", the rent-exempt minimum balance and a 0.001 SOL buffer are deducted
+    /// from the treasury SOL balance.
     /// - Emits a {FeesCollected} event.
     ///
     /// Accounts expected:
