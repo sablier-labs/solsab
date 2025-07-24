@@ -8,10 +8,7 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct CollectFees<'info> {
-    #[account(
-      mut,
-      address = treasury.fee_collector,
-    )]
+    #[account(address = treasury.fee_collector)]
     pub fee_collector: Signer<'info>,
 
     #[account(mut)]

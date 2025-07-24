@@ -8,10 +8,7 @@ use crate::{
 #[derive(Accounts)]
 pub struct CollectFees<'info> {
     /// Write account: the account authorized to collect fees from the treasury.
-    #[account(
-      mut,
-      address = treasury.fee_collector,
-    )]
+    #[account(address = treasury.fee_collector)]
     pub fee_collector: Signer<'info>,
 
     /// Write account: the address that will receive the collected fees.
