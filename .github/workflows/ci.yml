@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -67,19 +67,17 @@ jobs:
           key: target-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             target-${{ runner.os }}-
-      - name: Build the programs
-        run: anchor build
 
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         name: Set up Bun
+
       - name: Install dependencies
         run: bun install
+      - name: Build the programs
+        run: bun run build
+
       - name: Test Lockup
         run: bun run t:lk
+
       - name: Test Merkle Instant
         run: bun run t:mi
