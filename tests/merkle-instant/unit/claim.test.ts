@@ -80,57 +80,73 @@ describe("claim", () => {
           });
 
           describe("when the merkle proof is valid", () => {
-            describe("when the campaign expired", () => {
+            describe("when the campaign start time is in the future", () => {
               it("should revert", async () => {
-                // Time travel to when the campaign has expired
-                await ctx.timeTravelTo(Campaign.EXPIRATION);
-                await expectToThrow(ctx.claim(), "CampaignExpired");
+                // Time travel to before the campaign start time
+                await ctx.timeTravelTo(Campaign.START_TIME.sub(BN_1));
+
+                await expectToThrow(ctx.claim(), "CampaignNotStarted");
               });
             });
 
-            describe("when the campaign has not expired", () => {
-              describe("when the recipient doesn't have an ATA for the token", () => {
-                it("should claim the airdrop", async () => {
-                  // Mint the random token to the campaign creator
-                  await createATAAndFund(
-                    ctx.banksClient,
-                    ctx.defaultBankrunPayer,
-                    ctx.randomToken,
-                    Amount.AGGREGATE,
-                    ProgramId.TOKEN,
-                    ctx.campaignCreator.keys.publicKey,
-                  );
-
-                  // Create a Campaign with the random token
-                  const campaign = await ctx.createCampaign({
-                    airdropTokenMint: ctx.randomToken,
-                  });
-
-                  // Test the campaign
-                  await testClaim(campaign, ctx.recipient.keys, ctx.randomToken, ProgramId.TOKEN, false);
+            describe("when the campaign start time is not in the future", () => {
+              describe("when the campaign expired", () => {
+                it("should revert", async () => {
+                  // Time travel to when the campaign has expired
+                  await ctx.timeTravelTo(Campaign.EXPIRATION_TIME);
+                  await expectToThrow(ctx.claim(), "CampaignExpired");
                 });
               });
 
-              describe("when the recipient has an ATA for the token", () => {
-                describe("when the claimer is not the recipient", () => {
+              describe("when the campaign has not expired", () => {
+                describe("when the recipient doesn't have an ATA for the token", () => {
                   it("should claim the airdrop", async () => {
-                    // Test the claim.
-                    await testClaim(ctx.defaultCampaign, ctx.campaignCreator.keys);
+                    // Mint the random token to the campaign creator
+                    await createATAAndFund(
+                      ctx.banksClient,
+                      ctx.defaultBankrunPayer,
+                      ctx.randomToken,
+                      Amount.AGGREGATE,
+                      ProgramId.TOKEN,
+                      ctx.campaignCreator.keys.publicKey,
+                    );
+
+                    // Create a Campaign with the random token
+                    const campaign = await ctx.createCampaign({
+                      airdropTokenMint: ctx.randomToken,
+                    });
+
+                    // Test the campaign
+                    await testClaim(campaign, ctx.recipient.keys, ctx.randomToken, ProgramId.TOKEN, false);
                   });
                 });
 
-                describe("when the claimer is the recipient", () => {
-                  describe("given token SPL standard", () => {
+                describe("when the recipient has an ATA for the token", () => {
+                  describe("when the claimer is not the recipient", () => {
                     it("should claim the airdrop", async () => {
-                      // Claim from the Campaign
-                      await testClaim();
+                      // Test the claim.
+                      await testClaim(ctx.defaultCampaign, ctx.campaignCreator.keys);
                     });
                   });
 
-                  describe("given token 2022 standard", () => {
-                    it("should claim the airdrop", async () => {
-                      // Test the claim.
-                      await testClaim(ctx.defaultCampaignToken2022, ctx.recipient.keys, ctx.dai, ProgramId.TOKEN_2022);
+                  describe("when the claimer is the recipient", () => {
+                    describe("given token SPL standard", () => {
+                      it("should claim the airdrop", async () => {
+                        // Claim from the Campaign
+                        await testClaim();
+                      });
+                    });
+
+                    describe("given token 2022 standard", () => {
+                      it("should claim the airdrop", async () => {
+                        // Test the claim.
+                        await testClaim(
+                          ctx.defaultCampaignToken2022,
+                          ctx.recipient.keys,
+                          ctx.dai,
+                          ProgramId.TOKEN_2022,
+                        );
+                      });
                     });
                   });
                 });

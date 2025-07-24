@@ -9,12 +9,14 @@ use crate::{
     utils::{
         constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED},
         events,
+        validations::check_create_campaign,
     },
 };
 
 #[derive(Accounts)]
 #[instruction(
     merkle_root: [u8; 32],
+    start_time: i64,
     expiration_time: i64,
     name: String,
 )]
@@ -33,6 +35,7 @@ pub struct CreateCampaign<'info> {
         CAMPAIGN_SEED,
         creator.key().as_ref(),
         merkle_root.as_ref(),
+        start_time.to_le_bytes().as_ref(),
         expiration_time.to_le_bytes().as_ref(),
         name.as_ref(),
         airdrop_token_mint.key().as_ref(),
@@ -55,15 +58,20 @@ pub struct CreateCampaign<'info> {
     pub system_program: Program<'info, System>,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<CreateCampaign>,
     merkle_root: [u8; 32],
+    start_time: i64,
     expiration_time: i64,
     ipfs_cid: String,
     name: String,
     aggregate_amount: u64,
     recipient_count: u32,
 ) -> Result<()> {
+    // Check: validate the campaign creation.
+    check_create_campaign(expiration_time, start_time)?;
+
     // Effect: Initialize the campaign account.
     ctx.accounts.campaign.create(
         ctx.accounts.airdrop_token_mint.key(),
@@ -73,6 +81,7 @@ pub fn handler(
         ipfs_cid.clone(),
         merkle_root,
         name.clone(),
+        start_time,
     )?;
 
     // Log the campaign creation.
@@ -85,6 +94,7 @@ pub fn handler(
         ipfs_cid,
         merkle_root,
         recipient_count,
+        start_time,
         token_decimals: ctx.accounts.airdrop_token_mint.decimals,
         token_mint: ctx.accounts.airdrop_token_mint.key(),
     });

@@ -15,6 +15,7 @@ pub struct Campaign {
     pub merkle_root: [u8; 32],
     #[max_len(CAMPAIGN_NAME_SIZE as usize)]
     pub name: String,
+    pub start_time: i64,
 }
 
 impl Campaign {
@@ -38,6 +39,7 @@ impl Campaign {
         ipfs_cid: String,
         merkle_root: [u8; 32],
         name: String,
+        start_time: i64,
     ) -> Result<()> {
         self.airdrop_token_mint = airdrop_token_mint;
         self.bump = bump;
@@ -46,6 +48,7 @@ impl Campaign {
         self.ipfs_cid = ipfs_cid;
         self.merkle_root = merkle_root;
         self.name = name;
+        self.start_time = start_time;
 
         Ok(())
     }

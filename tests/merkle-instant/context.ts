@@ -156,8 +156,10 @@ export class MerkleInstantTestContext extends TestContext {
 
   async createCampaign({
     creator = this.campaignCreator,
-    name = Campaign.CAMPAIGN_NAME,
+    name = Campaign.NAME,
     campaignFunder = this.campaignCreator.keys,
+    startTime = Campaign.START_TIME,
+    expirationTime = Campaign.EXPIRATION_TIME,
     airdropTokenMint = this.usdc,
     airdropTokenProgram = ProgramId.TOKEN,
   } = {}): Promise<PublicKey> {
@@ -167,7 +169,8 @@ export class MerkleInstantTestContext extends TestContext {
         Seed.CAMPAIGN,
         creator.keys.publicKey.toBuffer(),
         Buffer.from(this.merkleRoot),
-        Campaign.EXPIRATION.toArrayLike(Buffer, "le", 8),
+        startTime.toArrayLike(Buffer, "le", 8),
+        expirationTime.toArrayLike(Buffer, "le", 8),
         Buffer.from(name),
         airdropTokenMint.toBuffer(),
       ],
@@ -177,7 +180,8 @@ export class MerkleInstantTestContext extends TestContext {
     const txIx = await this.merkleInstant.methods
       .createCampaign(
         this.merkleRoot,
-        Campaign.EXPIRATION,
+        startTime,
+        expirationTime,
         name,
         Campaign.IPFS_CID,
         Amount.AGGREGATE,
@@ -231,11 +235,12 @@ export class MerkleInstantTestContext extends TestContext {
       airdropTokenMint: this.usdc,
       bump: 0,
       creator: this.campaignCreator.keys.publicKey,
-      expirationTime: Campaign.EXPIRATION,
+      expirationTime: Campaign.EXPIRATION_TIME,
       firstClaimTime: ZERO,
       ipfsCid: Campaign.IPFS_CID,
       merkleRoot: Array.from(this.merkleRoot),
-      name: Campaign.CAMPAIGN_NAME,
+      name: Campaign.NAME,
+      startTime: Campaign.START_TIME,
     };
   }
 

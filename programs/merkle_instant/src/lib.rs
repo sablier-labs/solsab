@@ -35,6 +35,7 @@ pub mod sablier_merkle_instant {
     /// - `merkle_proof` The proof of inclusion in the Merkle tree.
     ///
     /// Requirements:
+    /// - The start time of the campaign must not be in the future.
     /// - The campaign must not have expired.
     /// - The recipient's airdrop has not been claimed yet.
     /// - The Merkle proof must be valid.
@@ -93,8 +94,12 @@ pub mod sablier_merkle_instant {
     /// - `airdrop_token_mint` The mint of the airdropped token.
     /// - `airdrop_token_program` The Token Program of the airdropped token.
     ///
+    /// Requirements:
+    /// - The start time must be strictly less than the expiration time.
+    ///
     /// Parameters:
     /// - `merkle_root` The Merkle root of the claim data.
+    /// - `start_time` The time when the campaign starts, in seconds since the Unix epoch.
     /// - `expiration_time` The time when the campaign expires, in seconds since the Unix epoch. A value of zero means
     /// the campaign does not expire.
     /// - `name` The name of the campaign.
@@ -102,9 +107,11 @@ pub mod sablier_merkle_instant {
     /// features that depend upon the IPFS CID.
     /// - `aggregate_amount` The total amount of tokens to be distributed to all recipients.
     /// - `recipient_count` The total number of recipient addresses eligible for the airdrop.
+    #[allow(clippy::too_many_arguments)]
     pub fn create_campaign(
         ctx: Context<CreateCampaign>,
         merkle_root: [u8; 32],
+        start_time: i64,
         expiration_time: i64,
         name: String,
         ipfs_cid: String,
@@ -114,6 +121,7 @@ pub mod sablier_merkle_instant {
         instructions::create_campaign::handler(
             ctx,
             merkle_root,
+            start_time,
             expiration_time,
             ipfs_cid,
             name,

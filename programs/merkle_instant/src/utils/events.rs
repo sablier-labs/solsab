@@ -10,6 +10,7 @@ pub struct CreateCampaign {
     pub ipfs_cid: String,
     pub merkle_root: [u8; 32],
     pub recipient_count: u32,
+    pub start_time: i64,
     pub token_decimals: u8,
     pub token_mint: Pubkey,
 }
