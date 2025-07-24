@@ -70,3 +70,15 @@ jobs:
 
       - name: Build the programs via Anchor
         run: anchor build
+
+      - uses: oven-sh/setup-bun@v2
+        name: Set up Bun
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Test Lockup
+        run: bun run t:lk
+
+      - name: Test Merkle Instant
+        run: bun run t:mi
