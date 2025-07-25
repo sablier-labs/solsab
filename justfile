@@ -66,10 +66,6 @@ alias bmi := build-merkle-instant
 clean globs=GLOBS_CLEAN:
     nlx del-cli "{{ globs }}"
 
-# Setup Husky - you should run this the first time you clone the repo
-setup:
-    pnpm husky
-
 # Run verification script
 verify:
     bash ./scripts/bash/verify.sh
@@ -84,14 +80,6 @@ full-check: prettier-check biome-check tsc-check rust-check
 
 # Run all code fixes
 full-write: prettier-write biome-write rust-write
-
-# Check Prettier formatting
-prettier-check globs=GLOBS_PRETTIER:
-    na prettier --check --cache "{{ globs }}"
-
-# Format using Prettier
-prettier-write globs=GLOBS_PRETTIER:
-    na prettier --write --cache "{{ globs }}"
 
 # Check Rust formatting
 rust-check:

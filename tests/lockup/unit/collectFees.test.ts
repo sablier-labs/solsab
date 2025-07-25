@@ -6,56 +6,59 @@ import { beforeAll, beforeEach, describe, it } from "vitest";
 import { MIN_LAMPORTS_BALANCE } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
 import { assertEqualBalanceSOL } from "../../common/assertions";
-import { eve, timeTravelTo } from "../../common/base";
-import { collectFees, getSenderLamports, getTreasuryLamports, setUp, withdrawMax } from "../base";
+import { LockupTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
 
 describe("collectFees", () => {
+  let ctx: LockupTestContext;
+
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
-      await setUp({ initProgram: false });
+      ctx = new LockupTestContext();
+      await ctx.setUpLockup({ initProgram: false });
     });
 
     it("should revert", async () => {
-      await expectToThrow(collectFees(), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.collectFees(), ACCOUNT_NOT_INITIALIZED);
     });
   });
 
   describe("when the program is initialized", () => {
     beforeEach(async () => {
-      await setUp();
+      ctx = new LockupTestContext();
+      await ctx.setUpLockup();
     });
 
     describe("when signer is not the authorized fee collector", () => {
       it("should revert", async () => {
-        await withdrawMultipleTimes();
-        await expectToThrow(collectFees(eve.keys), CONSTRAINT_ADDRESS);
+        await withdrawMultipleTimes(ctx);
+        await expectToThrow(ctx.collectFees(ctx.eve.keys), CONSTRAINT_ADDRESS);
       });
     });
 
     describe("when signer is the authorized fee collector", () => {
       describe("given no fees accumulated", () => {
         it("should revert", async () => {
-          await expectToThrow(collectFees(), "CantCollectZeroFees");
+          await expectToThrow(ctx.collectFees(), "CantCollectZeroFees");
         });
       });
 
       describe("given accumulated fees", () => {
         it("should collect the fees", async () => {
-          await withdrawMultipleTimes();
+          await withdrawMultipleTimes(ctx);
 
           const beforeLamports = {
-            feeRecipient: await getFeeRecipientLamports(),
-            treasury: await getTreasuryLamports(),
+            feeRecipient: await getFeeRecipientLamports(ctx),
+            treasury: await ctx.getTreasuryLamports(),
           };
 
           // Collect fees
-          await collectFees();
+          await ctx.collectFees();
 
           const afterLamports = {
-            feeRecipient: await getFeeRecipientLamports(),
-            treasury: await getTreasuryLamports(),
+            feeRecipient: await getFeeRecipientLamports(ctx),
+            treasury: await ctx.getTreasuryLamports(),
           };
 
           // 2 withdrawals worth of fees minus the minimum lamports balance (a buffer on top of the minimum rent).
@@ -69,15 +72,15 @@ describe("collectFees", () => {
   });
 });
 
-async function getFeeRecipientLamports() {
-  return await getSenderLamports();
+async function getFeeRecipientLamports(ctx: LockupTestContext) {
+  return await ctx.getSenderLamports();
 }
 
 /// Helper function to withdraw multiple times so that there are fees collected
-async function withdrawMultipleTimes() {
-  await timeTravelTo(Time.MID_26_PERCENT);
-  await withdrawMax();
-  await timeTravelTo(Time.END);
+async function withdrawMultipleTimes(ctx: LockupTestContext) {
+  await ctx.timeTravelTo(Time.MID_26_PERCENT);
+  await ctx.withdrawMax();
+  await ctx.timeTravelTo(Time.END);
   await sleepFor(7);
-  await withdrawMax();
+  await ctx.withdrawMax();
 }

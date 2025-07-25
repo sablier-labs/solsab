@@ -1,6 +1,6 @@
 import BN from "bn.js";
 import dayjs from "dayjs";
-import { sol, usdc } from "../../../lib/helpers";
+import { sol, usdc } from "../../../lib/convertors";
 
 export namespace Amount {
   export const AGGREGATE = usdc(10_000);

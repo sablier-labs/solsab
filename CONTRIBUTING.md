@@ -26,32 +26,36 @@ Ensure you have the following software installed and configured on your machine:
 
 Make sure to configure your local [Solana wallet](https://anchor-lang.com/docs/installation#solana-cli-basics).
 
-### Clone the SolSab repository:
+### Clone the repository
 
-```bash
-git clone https://github.com/sablier-labs/solsab.git && cd solsab
+```shell
+$ git clone git@github.com:sablier-labs/solsab.git && cd solsab
 ```
 
 ### Install dependencies
 
-```bash
-bun install
+```shell
+$ just install
 ```
 
-### Building
+### List available scripts
 
-Build the project:
+To see a list of all available scripts, run this command:
+
+```shell
+$ just --list
+```
+
+### Build the programs
 
 ```bash
-bun run build
+just build
 ```
 
 ### Testing
 
-Test the project:
-
 ```bash
-bun run t
+just test
 ```
 
 ## VSCode Extensions

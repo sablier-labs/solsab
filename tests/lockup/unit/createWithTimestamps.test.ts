@@ -2,42 +2,36 @@ import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from
 import BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, BN_1000, ZERO } from "../../../lib/constants";
+import { usdc } from "../../../lib/convertors";
+import { getATABalance, getMintTotalSupplyOf } from "../../common/anchor-bankrun";
 import { assertAccountExists, assertEqualBn } from "../../common/assertions";
-import { banksClient, dai, randomToken } from "../../common/base";
-import {
-  createWithTimestamps,
-  createWithTimestampsToken2022,
-  defaultStream,
-  defaultStreamToken2022,
-  fetchStreamData,
-  getATABalance,
-  getMintTotalSupplyOf,
-  getSenderTokenBalance,
-  sender,
-  setUp,
-} from "../base";
+import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { AMOUNTS, Amount, TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defaults";
 
 describe("createWithTimestamps", () => {
+  let ctx: LockupTestContext;
+
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
-      await setUp({ initProgram: false });
+      ctx = new LockupTestContext();
+      await ctx.setUpLockup({ initProgram: false });
     });
 
     it("should revert", async () => {
-      await expectToThrow(createWithTimestamps({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.createWithTimestamps({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
     });
   });
 
   describe("when the program is initialized", () => {
     beforeEach(async () => {
-      await setUp();
+      ctx = new LockupTestContext();
+      await ctx.setUpLockup();
     });
 
     describe("when deposit amount zero", () => {
       it("should revert", async () => {
-        await expectToThrow(createWithTimestamps({ depositAmount: ZERO }), "DepositAmountZero");
+        await expectToThrow(ctx.createWithTimestamps({ depositAmount: ZERO }), "DepositAmountZero");
       });
     });
 
@@ -45,7 +39,7 @@ describe("createWithTimestamps", () => {
       describe("when start time is zero", () => {
         it("should revert", async () => {
           await expectToThrow(
-            createWithTimestamps({
+            ctx.createWithTimestamps({
               timestamps: TIMESTAMPS({ start: ZERO }),
             }),
             "StartTimeNotPositive",
@@ -57,7 +51,7 @@ describe("createWithTimestamps", () => {
         describe("when start time is not positive", () => {
           it("should revert", async () => {
             await expectToThrow(
-              createWithTimestamps({
+              ctx.createWithTimestamps({
                 timestamps: TIMESTAMPS({ start: new BN(-1) }),
               }),
               "StartTimeNotPositive",
@@ -69,8 +63,8 @@ describe("createWithTimestamps", () => {
           describe("when sender lacks an ATA for deposited token", () => {
             it("should revert", async () => {
               await expectToThrow(
-                createWithTimestamps({
-                  depositTokenMint: randomToken,
+                ctx.createWithTimestamps({
+                  depositTokenMint: ctx.randomToken,
                 }),
                 ACCOUNT_NOT_INITIALIZED,
               );
@@ -81,8 +75,8 @@ describe("createWithTimestamps", () => {
             describe("when sender has an insufficient token balance", () => {
               it("should revert", async () => {
                 await expectToThrow(
-                  createWithTimestamps({
-                    depositAmount: new BN(1_000_000e6 + 1),
+                  ctx.createWithTimestamps({
+                    depositAmount: usdc(1_000_000).addn(1),
                   }),
                   0x1,
                 );
@@ -94,7 +88,7 @@ describe("createWithTimestamps", () => {
                 describe("when cliff unlock amount not zero", () => {
                   it("should revert", async () => {
                     await expectToThrow(
-                      createWithTimestamps({
+                      ctx.createWithTimestamps({
                         timestamps: TIMESTAMPS({ cliff: ZERO }),
                       }),
                       "CliffTimeZeroUnlockAmountNotZero",
@@ -105,7 +99,7 @@ describe("createWithTimestamps", () => {
                 describe("when start time not less than end time", () => {
                   it("should revert", async () => {
                     await expectToThrow(
-                      createWithTimestamps({
+                      ctx.createWithTimestamps({
                         timestamps: TIMESTAMPS({ cliff: ZERO, start: Time.END }),
                       }),
                       "StartTimeNotLessThanEndTime",
@@ -115,20 +109,20 @@ describe("createWithTimestamps", () => {
 
                 describe("when start time less than end time", () => {
                   it("should create the stream", async () => {
-                    const beforeSenderTokenBalance = await getATABalance(banksClient, sender.usdcATA);
+                    const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
 
-                    const salt = await createWithTimestamps({
+                    const salt = await ctx.createWithTimestamps({
                       timestamps: TIMESTAMPS({ cliff: ZERO }),
                       unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO, start: ZERO }),
                     });
 
-                    const expectedStream = defaultStream({
+                    const expectedStream = ctx.defaultStream({
                       salt: salt,
                     });
                     expectedStream.data.timestamps.cliff = ZERO;
                     expectedStream.data.amounts = AMOUNTS({ cliffUnlock: ZERO, startUnlock: ZERO });
 
-                    await assertStreamCreation(salt, beforeSenderTokenBalance, expectedStream);
+                    await assertStreamCreation(ctx, salt, beforeSenderTokenBalance, expectedStream);
                   });
                 });
               });
@@ -137,7 +131,7 @@ describe("createWithTimestamps", () => {
                 describe("when start time not less than cliff time", () => {
                   it("should revert", async () => {
                     await expectToThrow(
-                      createWithTimestamps({
+                      ctx.createWithTimestamps({
                         timestamps: TIMESTAMPS({ start: Time.CLIFF }),
                       }),
                       "StartTimeNotLessThanCliffTime",
@@ -149,7 +143,7 @@ describe("createWithTimestamps", () => {
                   describe("when cliff time not less than end time", () => {
                     it("should revert", async () => {
                       await expectToThrow(
-                        createWithTimestamps({
+                        ctx.createWithTimestamps({
                           timestamps: TIMESTAMPS({ cliff: Time.END }),
                         }),
                         "CliffTimeNotLessThanEndTime",
@@ -162,7 +156,7 @@ describe("createWithTimestamps", () => {
                       it("should revert", async () => {
                         const depositAmount = BN_1000;
                         await expectToThrow(
-                          createWithTimestamps({
+                          ctx.createWithTimestamps({
                             depositAmount,
                             unlockAmounts: {
                               cliff: depositAmount,
@@ -177,23 +171,24 @@ describe("createWithTimestamps", () => {
                     describe("when unlock amounts sum not exceed deposit amount", () => {
                       describe("when token SPL standard", () => {
                         it("should create the stream", async () => {
-                          const beforeSenderTokenBalance = await getATABalance(banksClient, sender.usdcATA);
+                          const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
 
-                          const salt = await createWithTimestamps();
+                          const salt = await ctx.createWithTimestamps();
 
-                          await assertStreamCreation(salt, beforeSenderTokenBalance);
+                          await assertStreamCreation(ctx, salt, beforeSenderTokenBalance);
                         });
                       });
 
                       describe("when token 2022 standard", () => {
                         it("should create the stream", async () => {
-                          const beforeSenderTokenBalance = await getSenderTokenBalance(dai);
-                          const salt = await createWithTimestampsToken2022();
+                          const beforeSenderTokenBalance = await ctx.getSenderTokenBalance(ctx.dai);
+                          const salt = await ctx.createWithTimestampsToken2022();
 
                           await assertStreamCreation(
+                            ctx,
                             salt,
                             beforeSenderTokenBalance,
-                            defaultStreamToken2022({ salt: salt }),
+                            ctx.defaultStreamToken2022({ salt: salt }),
                           );
                         });
                       });
@@ -210,33 +205,34 @@ describe("createWithTimestamps", () => {
 });
 
 async function assertStreamCreation(
+  ctx: LockupTestContext,
   salt: BN,
   beforeSenderTokenBalance: BN,
-  expectedStream = defaultStream({ salt: salt }),
+  expectedStream = ctx.defaultStream({ salt: salt }),
 ) {
-  await assertAccountExists(expectedStream.nftMintAddress, "Stream NFT Mint");
-  await assertAccountExists(expectedStream.dataAddress, "Stream Data");
-  await assertAccountExists(expectedStream.dataAta, "Stream Data ATA");
-  await assertAccountExists(expectedStream.nftMasterEdition, "Stream NFT Master Edition");
-  await assertAccountExists(expectedStream.nftMetadataAddress, "Stream NFT Metadata");
-  await assertAccountExists(expectedStream.recipientStreamNftAta, "Recipient Stream NFT ATA");
+  await assertAccountExists(ctx, expectedStream.nftMintAddress, "Stream NFT Mint");
+  await assertAccountExists(ctx, expectedStream.dataAddress, "Stream Data");
+  await assertAccountExists(ctx, expectedStream.dataAta, "Stream Data ATA");
+  await assertAccountExists(ctx, expectedStream.nftMasterEdition, "Stream NFT Master Edition");
+  await assertAccountExists(ctx, expectedStream.nftMetadataAddress, "Stream NFT Metadata");
+  await assertAccountExists(ctx, expectedStream.recipientStreamNftAta, "Recipient Stream NFT ATA");
 
   // Assert the contents of the Stream Data account
-  const actualStreamData = await fetchStreamData(salt);
+  const actualStreamData = await ctx.fetchStreamData(salt);
   assertEqStreamData(actualStreamData, expectedStream.data);
 
   // Assert that the Stream NFT Mint has the correct total supply
-  const streamNftMintTotalSupply = await getMintTotalSupplyOf(banksClient, expectedStream.nftMintAddress);
+  const streamNftMintTotalSupply = await getMintTotalSupplyOf(ctx.banksClient, expectedStream.nftMintAddress);
   assertEqualBn(streamNftMintTotalSupply, BN_1, "Stream NFT Mint total supply not 1");
 
   // Assert that the Recipient's Stream NFT ATA has the correct balance
-  const recipientStreamNftBalance = await getATABalance(banksClient, expectedStream.recipientStreamNftAta);
+  const recipientStreamNftBalance = await getATABalance(ctx.banksClient, expectedStream.recipientStreamNftAta);
   assertEqualBn(recipientStreamNftBalance, BN_1, "Stream NFT not minted");
 
   // TODO: test that the Stream NFT has been properly added to the LL NFT collection
 
   // Assert that the Sender's balance has changed correctly
   const expectedTokenBalance = beforeSenderTokenBalance.sub(Amount.DEPOSIT);
-  const afterSenderTokenBalance = await getSenderTokenBalance(expectedStream.data.depositedTokenMint);
+  const afterSenderTokenBalance = await ctx.getSenderTokenBalance(expectedStream.data.depositedTokenMint);
   assertEqualBn(expectedTokenBalance, afterSenderTokenBalance, "sender balance not updated correctly");
 }

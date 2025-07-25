@@ -3,8 +3,8 @@ import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID
 import { ComputeBudgetProgram, Keypair, type PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { beforeEach, describe, it } from "vitest";
-import { ZERO } from "../../lib/constants";
-import { sol } from "../../lib/helpers";
+import { Decimals, ZERO } from "../../lib/constants";
+import { sol } from "../../lib/convertors";
 import { type SablierLockup } from "../../target/types/sablier_lockup";
 
 let anchorProvider: anchor.AnchorProvider;
@@ -127,7 +127,6 @@ async function initSablierLockup() {
 }
 
 async function createTokenAndMintToSender(): Promise<PublicKey> {
-  const TOKEN_DECIMALS = 9;
   const freezeAuthority = null;
 
   const depositTokenMint = await createMint(
@@ -135,7 +134,7 @@ async function createTokenAndMintToSender(): Promise<PublicKey> {
     senderKeys,
     senderKeys.publicKey,
     freezeAuthority,
-    TOKEN_DECIMALS,
+    Decimals.SOL,
     Keypair.generate(),
   );
 
@@ -146,7 +145,7 @@ async function createTokenAndMintToSender(): Promise<PublicKey> {
     senderKeys.publicKey,
   );
 
-  const mintedAmount = new BN(100_000e9); // sufficient amount
+  const mintedAmount = sol(1_000_000);
   await mintTo(
     anchorProvider.connection,
     senderKeys,

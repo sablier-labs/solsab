@@ -1,4 +1,5 @@
-import { LAMPORTS_PER_SOL as raw_LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { PublicKey, LAMPORTS_PER_SOL as raw_LAMPORTS_PER_SOL } from "@solana/web3.js";
 import BN from "bn.js";
 
 export const BN_0 = new BN(0);
@@ -7,6 +8,15 @@ export const BN_1000 = new BN(1000);
 export const LAMPORTS_PER_SOL = new BN(raw_LAMPORTS_PER_SOL);
 export const MIN_LAMPORTS_BALANCE = new BN(1_000_000); // 0.001 SOL
 export const SCALING_FACTOR = new BN("1000000000000000000"); // 1e18
-export const SOL_DECIMALS = 9;
-export const USDC_DECIMALS = 6;
 export const ZERO = new BN(0);
+
+export namespace Decimals {
+  export const DAI = 9;
+  export const SOL = 9;
+  export const USDC = 6;
+}
+export namespace ProgramId {
+  export const TOKEN_2022 = TOKEN_2022_PROGRAM_ID;
+  export const TOKEN_METADATA = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+  export const TOKEN = TOKEN_PROGRAM_ID;
+}

@@ -4,30 +4,33 @@ import {
 } from "@coral-xyz/anchor-errors";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1 } from "../../../lib/constants";
-import { eve, timeTravelTo } from "../../common/base";
-import { cancel, defaultStream, fetchStreamData, renounce, salts, setUp, withdrawMax } from "../base";
+import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Time } from "../utils/defaults";
 
 describe("renounce", () => {
+  let ctx: LockupTestContext;
+
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
-      await setUp({ initProgram: false });
+      ctx = new LockupTestContext();
+      await ctx.setUpLockup({ initProgram: false });
     });
 
     it("should revert", async () => {
-      await expectToThrow(renounce({ salt: BN_1 }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.renounce({ salt: BN_1 }), ACCOUNT_NOT_INITIALIZED);
     });
   });
 
   describe("when the program is initialized", () => {
     beforeEach(async () => {
-      await setUp();
+      ctx = new LockupTestContext();
+      await ctx.setUpLockup();
     });
 
     describe("given a null stream", () => {
       it("should revert", async () => {
-        await expectToThrow(renounce({ salt: salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
+        await expectToThrow(ctx.renounce({ salt: ctx.salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
       });
     });
 
@@ -35,23 +38,23 @@ describe("renounce", () => {
       describe("given cold stream", () => {
         describe("given DEPLETED status", () => {
           it("should revert", async () => {
-            await timeTravelTo(Time.END);
-            await withdrawMax();
-            await expectToThrow(renounce(), "StreamAlreadyNonCancelable");
+            await ctx.timeTravelTo(Time.END);
+            await ctx.withdrawMax();
+            await expectToThrow(ctx.renounce(), "StreamAlreadyNonCancelable");
           });
         });
 
         describe("given CANCELED status", () => {
           it("should revert", async () => {
-            await cancel();
-            await expectToThrow(renounce(), "StreamAlreadyNonCancelable");
+            await ctx.cancel();
+            await expectToThrow(ctx.renounce(), "StreamAlreadyNonCancelable");
           });
         });
 
         describe("given SETTLED status", () => {
           it("should revert", async () => {
-            await timeTravelTo(Time.END);
-            await expectToThrow(renounce(), "StreamAlreadyNonCancelable");
+            await ctx.timeTravelTo(Time.END);
+            await expectToThrow(ctx.renounce(), "StreamAlreadyNonCancelable");
           });
         });
       });
@@ -59,23 +62,23 @@ describe("renounce", () => {
       describe("given warm stream", () => {
         describe("when signer not sender", () => {
           it("should revert", async () => {
-            await expectToThrow(renounce({ signer: eve.keys }), CONSTRAINT_ADDRESS);
+            await expectToThrow(ctx.renounce({ signer: ctx.eve.keys }), CONSTRAINT_ADDRESS);
           });
         });
 
         describe("when signer sender", () => {
           describe("given non cancelable stream", () => {
             it("should revert", async () => {
-              await expectToThrow(renounce({ salt: salts.nonCancelable }), "StreamAlreadyNonCancelable");
+              await expectToThrow(ctx.renounce({ salt: ctx.salts.nonCancelable }), "StreamAlreadyNonCancelable");
             });
           });
 
           describe("given cancelable stream", () => {
             it("should make stream non cancelable", async () => {
-              await renounce();
+              await ctx.renounce();
 
-              const actualStreamData = await fetchStreamData();
-              const expectedStreamData = defaultStream().data;
+              const actualStreamData = await ctx.fetchStreamData();
+              const expectedStreamData = ctx.defaultStream().data;
               expectedStreamData.isCancelable = false;
 
               assertEqStreamData(actualStreamData, expectedStreamData);

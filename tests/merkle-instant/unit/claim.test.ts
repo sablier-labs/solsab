@@ -1,54 +1,35 @@
 import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
-import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { assert, beforeAll, beforeEach, describe, it } from "vitest";
-import { BN_1, ZERO } from "../../../lib/constants";
+import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
 import { createATAAndFund, getATABalanceMint } from "../../common/anchor-bankrun";
 import { assertEqualBalanceSOL, assertEqualBn, assertLteBn, assertZeroBn } from "../../common/assertions";
-import {
-  banksClient,
-  dai,
-  defaultBankrunPayer,
-  getLamportsOf,
-  randomToken,
-  recipient,
-  timeTravelTo,
-  usdc,
-} from "../../common/base";
-import {
-  campaignCreator,
-  claim,
-  createCampaign,
-  defaultCampaign,
-  defaultCampaignToken2022,
-  defaultIndex,
-  fetchCampaignData,
-  merkleInstant,
-  setUp,
-  treasuryAddress,
-} from "../base";
+import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
 
 describe("claim", () => {
+  let ctx: MerkleInstantTestContext;
+
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
-      await setUp({
+      ctx = new MerkleInstantTestContext();
+      await ctx.setUpMerkleInstant({
         initProgram: false,
       });
     });
     describe("when the campaign doesn't exist", () => {
       it("should revert", async () => {
         // Passing a non-Campaign account since no Campaigns exist yet
-        await expectToThrow(claim({ campaign: new PublicKey(12345) }), ACCOUNT_NOT_INITIALIZED);
+        await expectToThrow(ctx.claim({ campaign: new PublicKey(12345) }), ACCOUNT_NOT_INITIALIZED);
       });
     });
 
     describe("when the campaign exists", () => {
       it("should revert", async () => {
-        const campaign = await createCampaign({ name: "Test Campaign" });
-        await expectToThrow(claim({ campaign: campaign }), ACCOUNT_NOT_INITIALIZED);
+        const campaign = await ctx.createCampaign({ name: "Test Campaign" });
+        await expectToThrow(ctx.claim({ campaign: campaign }), ACCOUNT_NOT_INITIALIZED);
       });
     });
   });
@@ -57,29 +38,30 @@ describe("claim", () => {
     describe("when the campaign doesn't exist", () => {
       it("should revert", async () => {
         // Claim from a non-existent Campaign
-        await expectToThrow(claim({ campaign: new PublicKey(12345) }), ACCOUNT_NOT_INITIALIZED);
+        await expectToThrow(ctx.claim({ campaign: new PublicKey(12345) }), ACCOUNT_NOT_INITIALIZED);
       });
     });
 
     describe("when the campaign exists", () => {
       beforeEach(async () => {
-        await setUp();
+        ctx = new MerkleInstantTestContext();
+        await ctx.setUpMerkleInstant();
       });
 
       describe("when the token mint is invalid", () => {
         it("should revert", async () => {
           // Claim from the Campaign with an invalid token mint
-          await expectToThrow(claim({ airdropTokenMint: dai }), ACCOUNT_NOT_INITIALIZED);
+          await expectToThrow(ctx.claim({ airdropTokenMint: ctx.dai }), ACCOUNT_NOT_INITIALIZED);
         });
       });
 
       describe("when the token mint is valid", () => {
         describe("when the airdrop has already been claimed", () => {
           it("should revert", async () => {
-            await claim();
+            await ctx.claim();
             await sleepFor(7);
             // Claim from the Campaign again
-            await expectToThrow(claim(), 0x0);
+            await expectToThrow(ctx.claim(), 0x0);
           });
         });
 
@@ -87,7 +69,7 @@ describe("claim", () => {
           describe("when the merkle proof is invalid", () => {
             it("should revert", async () => {
               await expectToThrow(
-                claim({
+                ctx.claim({
                   amount: Amount.CLAIM.sub(BN_1),
                 }),
                 "InvalidMerkleProof",
@@ -99,8 +81,8 @@ describe("claim", () => {
             describe("when the campaign expired", () => {
               it("should revert", async () => {
                 // Time travel to when the campaign has expired
-                await timeTravelTo(Time.EXPIRATION);
-                await expectToThrow(claim(), "CampaignExpired");
+                await ctx.timeTravelTo(Time.EXPIRATION);
+                await expectToThrow(ctx.claim(), "CampaignExpired");
               });
             });
 
@@ -109,21 +91,21 @@ describe("claim", () => {
                 it("should claim the airdrop", async () => {
                   // Mint the random token to the campaign creator
                   await createATAAndFund(
-                    banksClient,
-                    defaultBankrunPayer,
-                    randomToken,
+                    ctx.banksClient,
+                    ctx.defaultBankrunPayer,
+                    ctx.randomToken,
                     Amount.AGGREGATE,
-                    TOKEN_PROGRAM_ID,
-                    campaignCreator.keys.publicKey,
+                    ProgramId.TOKEN,
+                    ctx.campaignCreator.keys.publicKey,
                   );
 
                   // Create a Campaign with the random token
-                  const campaign = await createCampaign({
-                    airdropTokenMint: randomToken,
+                  const campaign = await ctx.createCampaign({
+                    airdropTokenMint: ctx.randomToken,
                   });
 
                   // Test the campaign
-                  await testClaim(campaign, recipient.keys, randomToken, TOKEN_PROGRAM_ID, false);
+                  await testClaim(ctx, campaign, ctx.recipient.keys, ctx.randomToken, ProgramId.TOKEN, false);
                 });
               });
 
@@ -131,7 +113,7 @@ describe("claim", () => {
                 describe("when the claimer is not the recipient", () => {
                   it("should claim the airdrop", async () => {
                     // Test the claim.
-                    await testClaim(defaultCampaign, campaignCreator.keys);
+                    await testClaim(ctx, ctx.defaultCampaign, ctx.campaignCreator.keys);
                   });
                 });
 
@@ -139,14 +121,20 @@ describe("claim", () => {
                   describe("given token SPL standard", () => {
                     it("should claim the airdrop", async () => {
                       // Claim from the Campaign
-                      await testClaim();
+                      await testClaim(ctx);
                     });
                   });
 
                   describe("given token 2022 standard", () => {
                     it("should claim the airdrop", async () => {
                       // Test the claim.
-                      await testClaim(defaultCampaignToken2022, recipient.keys, dai, TOKEN_2022_PROGRAM_ID);
+                      await testClaim(
+                        ctx,
+                        ctx.defaultCampaignToken2022,
+                        ctx.recipient.keys,
+                        ctx.dai,
+                        ProgramId.TOKEN_2022,
+                      );
                     });
                   });
                 });
@@ -161,74 +149,75 @@ describe("claim", () => {
 
 /// Common test function to test the claim functionality
 async function testClaim(
-  campaign = defaultCampaign,
-  claimer = recipient.keys,
-  tokenMint = usdc,
-  tokenProgram = TOKEN_PROGRAM_ID,
+  ctx: MerkleInstantTestContext,
+  campaign = ctx.defaultCampaign,
+  claimer = ctx.recipient.keys,
+  tokenMint = ctx.usdc,
+  tokenProgram = ProgramId.TOKEN,
   recipientAtaExists = true,
 ): Promise<void> {
   // Assert that the claim was not made yet.
-  assert.isFalse(await hasClaimed());
+  assert.isFalse(await hasClaimed(ctx));
 
   // Get the Campaign's data before claiming
-  const campaignDataBefore = await fetchCampaignData(campaign);
+  const campaignDataBefore = await ctx.fetchCampaignData(campaign);
 
   // Assert that the Campaign's firstClaimTime is zero before claiming
   assertZeroBn(campaignDataBefore.firstClaimTime);
 
   // Get the campaign and recipient ATA balances before claiming.
-  const campaignAtaBalanceBefore = await getATABalanceMint(banksClient, campaign, tokenMint);
+  const campaignAtaBalanceBefore = await getATABalanceMint(ctx.banksClient, campaign, tokenMint);
   const recipientAtaBalanceBefore = recipientAtaExists
-    ? await getATABalanceMint(banksClient, recipient.keys.publicKey, tokenMint)
+    ? await getATABalanceMint(ctx.banksClient, ctx.recipient.keys.publicKey, tokenMint)
     : ZERO;
 
   // Get the claimer and treasury lamports balance before claiming
-  const claimerLamportsBefore = await getLamportsOf(claimer.publicKey);
-  const treasuryLamportsBefore = await getLamportsOf(treasuryAddress);
+  const claimerLamportsBefore = await ctx.getLamportsOf(claimer.publicKey);
+  const treasuryLamportsBefore = await ctx.getLamportsOf(ctx.treasuryAddress);
 
   // Claim from the Campaign
-  await claim({
+  await ctx.claim({
     airdropTokenMint: tokenMint,
     airdropTokenProgram: tokenProgram,
     campaign: campaign,
     claimerKeys: claimer,
   });
 
-  const campaignDataAfter = await fetchCampaignData(campaign);
+  const campaignDataAfter = await ctx.fetchCampaignData(campaign);
   assertEqualBn(campaignDataAfter.firstClaimTime, Time.GENESIS);
 
   // Assert that the claim has been made
-  assert.isTrue(await hasClaimed(campaign));
+  assert.isTrue(await hasClaimed(ctx, campaign));
 
-  const campaignAtaBalanceAfter = await getATABalanceMint(banksClient, campaign, tokenMint);
+  const campaignAtaBalanceAfter = await getATABalanceMint(ctx.banksClient, campaign, tokenMint);
 
   // Assert that the Campaign's ATA balance decreased by the claim amount
   assertEqualBn(campaignAtaBalanceAfter, campaignAtaBalanceBefore.sub(Amount.CLAIM));
 
-  const recipientAtaBalanceAfter = await getATABalanceMint(banksClient, recipient.keys.publicKey, tokenMint);
+  const recipientAtaBalanceAfter = await getATABalanceMint(ctx.banksClient, ctx.recipient.keys.publicKey, tokenMint);
 
   // Assert that the recipient's ATA balance increased by the claim amount
   assertEqualBn(recipientAtaBalanceAfter, recipientAtaBalanceBefore.add(Amount.CLAIM));
 
-  const claimerLamportsAfter = await getLamportsOf(claimer.publicKey);
+  const claimerLamportsAfter = await ctx.getLamportsOf(claimer.publicKey);
 
   // Assert that the claimer's lamports balance has changed at least by the claim fee amount.
   // We use `<=` because we don't know in advance the gas cost.
   assertLteBn(claimerLamportsAfter, claimerLamportsBefore.sub(Amount.CLAIM_FEE));
 
-  const treasuryLamportsAfter = await getLamportsOf(treasuryAddress);
+  const treasuryLamportsAfter = await ctx.getLamportsOf(ctx.treasuryAddress);
 
   // Assert that the treasury's balance has increased by the claim fee amount
   assertEqualBalanceSOL(treasuryLamportsAfter, treasuryLamportsBefore.add(Amount.CLAIM_FEE));
 }
 
 // Implicitly tests the `has_claimed` Ix works.
-async function hasClaimed(campaign = defaultCampaign): Promise<boolean> {
-  return await merkleInstant.methods
-    .hasClaimed(defaultIndex)
+async function hasClaimed(ctx: MerkleInstantTestContext, campaign = ctx.defaultCampaign): Promise<boolean> {
+  return await ctx.merkleInstant.methods
+    .hasClaimed(ctx.defaultIndex)
     .accounts({
       campaign: campaign,
     })
-    .signers([defaultBankrunPayer])
+    .signers([ctx.defaultBankrunPayer])
     .view();
 }

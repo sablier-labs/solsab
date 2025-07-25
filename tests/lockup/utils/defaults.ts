@@ -1,9 +1,7 @@
-import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import dayjs from "dayjs";
 import { ZERO } from "../../../lib/constants";
-import { sol, usdc } from "../../../lib/helpers";
+import { sol, usdc } from "../../../lib/convertors";
 import type { Amounts, Timestamps, UnlockAmounts } from "./types";
 
 export namespace Amount {
@@ -14,12 +12,6 @@ export namespace Amount {
 
   export const WITHDRAW = usdc(2600);
   export const REFUND = DEPOSIT.sub(WITHDRAW);
-}
-
-export namespace ProgramId {
-  export const TOKEN_2022 = TOKEN_2022_PROGRAM_ID;
-  export const TOKEN_METADATA = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
-  export const TOKEN = TOKEN_PROGRAM_ID;
 }
 
 export namespace Seed {
