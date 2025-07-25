@@ -35,7 +35,7 @@ pub mod sablier_merkle_instant {
     /// - `merkle_proof` The proof of inclusion in the Merkle tree.
     ///
     /// Requirements:
-    /// - The start time of the campaign must not be in the future.
+    /// - The current time must be greater than or equal to the campaign start time.
     /// - The campaign must not have expired.
     /// - The recipient's airdrop has not been claimed yet.
     /// - The Merkle proof must be valid.

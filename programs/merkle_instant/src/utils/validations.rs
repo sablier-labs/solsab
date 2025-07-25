@@ -76,6 +76,7 @@ pub fn check_create_campaign(expiration_time: i64, start_time: i64) -> Result<()
     if start_time >= expiration_time {
         return Err(ErrorCode::InvalidStartOrExpirationTime.into());
     }
+
     Ok(())
 }
 
