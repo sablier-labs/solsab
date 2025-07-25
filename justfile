@@ -33,25 +33,27 @@ GLOBS_PRETTIER := "**/*.{md,yml}"
 default:
     just --list
 
-# Build all programs
+# Build programs using Anchor
 [group("build")]
 build program_name="all":
     #!/usr/bin/env sh
     if [ "{{ program_name }}" = "all" ]; then
-        anchor build
+        cmd="anchor build"
     else
-        anchor build --program-name {{ program_name }}
+        cmd="anchor build --program-name {{ program_name }}"
     fi
+    # Suppressing the annoying "Compiling" and "Downloaded" messages
+    $cmd 2>&1 | grep -v "Compiling\|Downloaded"
     echo ""
     just codegen-errors {{ program_name }}
 alias b := build
 
-# Build Lockup program only
+# Build Lockup program only using Anchor
 [group("build")]
 build-lockup: (build "sablier_lockup")
 alias blk := build-lockup
 
-# Build Merkle Instant program only
+# Build Merkle Instant program only using Anchor
 [group("build")]
 build-merkle-instant: (build "sablier_merkle_instant")
 alias bmi := build-merkle-instant

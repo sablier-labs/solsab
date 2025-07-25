@@ -28,14 +28,29 @@ jobs:
           rust-version: "nightly"
           solana-version: "2.1.21"
 
+      - name: "Cache Anchor build artifacts"
+        id: "cache-build"
+        uses: "sablier-labs/gha-utils/.github/actions/solana-cache@main"
+        with:
+          cache-path: target
+
       - name: "Build the programs"
+        if: steps.cache-build.outputs.cache-status != 'primary'
         run: "just build"
 
-      - name: "Run the code checks"
-        run: "just full-check"
+      - name: "Run the Rust code checks"
+        if: steps.cache-build.outputs.cache-status != 'primary'
+        run: "just rust-check"
+
+      - name: "Run the other code checks"
+        run: | # shell
+          just prettier-check
+          just biome-check
+          just tsc-check
 
       - name: "Run the tests"
-        run: "just test"
+        if: steps.cache-build.outputs.cache-status != 'primary'
+        run: "just test-lite"
 
       - name: "Add summary"
         run: | # shell
