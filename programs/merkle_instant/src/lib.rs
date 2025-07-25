@@ -181,4 +181,12 @@ pub mod sablier_merkle_instant {
     pub fn has_grace_period_passed(ctx: Context<CampaignView>) -> Result<bool> {
         instructions::has_grace_period_passed::handler(ctx)
     }
+
+    /// Returns a flag indicating whether the campaign has started.
+    ///
+    /// Accounts expected:
+    /// - `campaign` The account that stores the campaign details.
+    pub fn has_started(ctx: Context<CampaignView>) -> Result<bool> {
+        instructions::has_started::handler(ctx)
+    }
 }
