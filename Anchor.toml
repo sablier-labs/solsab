@@ -1,20 +1,22 @@
-[toolchain]
-
 [features]
-resolution = true
-skip-lint = false
+  resolution = true
+  skip-lint = false
 
 [programs.devnet]
-sablier_lockup = "DczGzCFQ5kHRBGVkH22HDdtduE4qaqopdc5HGLrAzfQD"
-sablier_merkle_instant = "GthZ6aQHJonsia3jpdrSBukxipyRfo9TR5ZrepGXLTQR"
+  sablier_lockup = "DczGzCFQ5kHRBGVkH22HDdtduE4qaqopdc5HGLrAzfQD"
+  sablier_merkle_instant = "GthZ6aQHJonsia3jpdrSBukxipyRfo9TR5ZrepGXLTQR"
 
 [programs.localnet]
-sablier_lockup = "DczGzCFQ5kHRBGVkH22HDdtduE4qaqopdc5HGLrAzfQD"
-sablier_merkle_instant = "Cmo3bW9vDNiESzNVgqUGzbmJZ68ncJkBMgLACaRRjXyx"
-
-[registry]
-url = "https://api.apr.dev"
+  sablier_lockup = "DczGzCFQ5kHRBGVkH22HDdtduE4qaqopdc5HGLrAzfQD"
+  sablier_merkle_instant = "Cmo3bW9vDNiESzNVgqUGzbmJZ68ncJkBMgLACaRRjXyx"
 
 [provider]
-cluster = "devnet"
-wallet = "~/.config/solana/id.json"
+  cluster = "devnet"
+  wallet = "~/.config/solana/id.json"
+
+[registry]
+  url = "https://api.apr.dev"
+
+[toolchain]
+  anchor_version = "0.31.1"
+  solana_version = "2.1.21"

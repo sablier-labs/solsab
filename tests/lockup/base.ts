@@ -1,44 +1,43 @@
-import { BN, Program } from "@coral-xyz/anchor";
+import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
-import { PublicKey, Keypair } from "@solana/web3.js";
-
-import { SablierLockup } from "../../target/types/sablier_lockup";
+import { type Keypair, PublicKey } from "@solana/web3.js";
+import BN from "bn.js";
+import { ZERO } from "../../lib/constants";
+import { ProgramName } from "../../lib/enums";
+import { getPDAAddress, toBn } from "../../lib/helpers";
 import IDL from "../../target/idl/sablier_lockup.json";
-
-import * as defaults from "./utils/defaults";
-import { Stream, StreamData, Salts } from "./utils/types";
-
+import { type SablierLockup } from "../../target/types/sablier_lockup";
+import { buildSignAndProcessTx, deriveATAAddress, getATABalance } from "../common/anchor-bankrun";
 import {
-  buildSignAndProcessTx,
-  deriveATAAddress,
-  getATABalance,
-} from "../anchor-bankrun-adapter";
-
-import {
-  banksClient,
   bankrunProvider,
+  banksClient,
+  setUp as commonSetUp,
   createUser,
   dai,
   feeCollector,
   getLamportsOf,
-  getPDAAddress,
   recipient,
-  setUp as commonSetUp,
   timeTravelTo,
   usdc,
-  User,
-} from "../common-base";
+} from "../common/base";
+import type { User } from "../common/types";
+import { AMOUNTS, Amount, ProgramId, Seed, TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "./utils/defaults";
+import type { Salts, Stream, StreamData } from "./utils/types";
 
 export {
   deriveATAAddress,
   getATABalance,
   getATABalanceMint,
   getMintTotalSupplyOf,
-} from "../anchor-bankrun-adapter";
+} from "../common/anchor-bankrun";
+
+/* -------------------------------------------------------------------------- */
+/*                              CONFIG VARIABLES                              */
+/* -------------------------------------------------------------------------- */
 
 // Programs and addresses
 export let nftCollectionDataAddress: PublicKey;
-export let lockup: Program<SablierLockup>;
+export let lockup: anchor.Program<SablierLockup>;
 export let treasuryAddress: PublicKey;
 
 // Users
@@ -47,41 +46,35 @@ export let sender: User;
 // Streams
 export let salts: Salts;
 
-/*//////////////////////////////////////////////////////////////////////////
-                                       SET-UP
-//////////////////////////////////////////////////////////////////////////*/
+/* -------------------------------------------------------------------------- */
+/*                                    SETUP                                   */
+/* -------------------------------------------------------------------------- */
 
-export async function setUp(initOrNot = true) {
+export async function setUp({ initProgram = true } = {}) {
   // Call common setup with lockup specific programs
-  await commonSetUp("sablier_lockup", new PublicKey(IDL.address), [
+  await commonSetUp(ProgramName.Lockup, new PublicKey(IDL.address), [
     {
       name: "token_metadata_program",
-      programId: defaults.TOKEN_METADATA_PROGRAM_ID,
+      programId: ProgramId.TOKEN_METADATA,
     },
   ]);
 
   // Deploy the program being tested
-  lockup = new Program<SablierLockup>(IDL, bankrunProvider);
+  lockup = new anchor.Program<SablierLockup>(IDL, bankrunProvider);
 
   // Create the sender user.
   sender = await createUser();
 
-  // Pre-calculate the address of the NFT Collection Data
-  nftCollectionDataAddress = getPDAAddress(
-    [Buffer.from(defaults.NFT_COLLECTION_DATA_SEED)],
-    lockup.programId
-  );
+  // Compute the address of the NFT Collection Data
+  nftCollectionDataAddress = getPDAAddress([Seed.NFT_COLLECTION_DATA], lockup.programId);
 
-  // Pre-calculate the address of the Treasury
-  treasuryAddress = getPDAAddress(
-    [Buffer.from(defaults.TREASURY_SEED)],
-    lockup.programId
-  );
+  // Compute the address of the Treasury
+  treasuryAddress = getPDAAddress([Seed.TREASURY], lockup.programId);
 
-  // Set the block time to APR 1, 2025
-  await timeTravelTo(defaults.APR_1_2025);
+  // Set the block time to an initial time
+  await timeTravelTo(Time.GENESIS);
 
-  if (initOrNot) {
+  if (initProgram) {
     // Initialize the SablierLockup program
     await initializeLockup();
 
@@ -96,35 +89,35 @@ export async function setUp(initOrNot = true) {
   }
 }
 
-/*//////////////////////////////////////////////////////////////////////////
-                                    TX-IX
-//////////////////////////////////////////////////////////////////////////*/
+/* -------------------------------------------------------------------------- */
+/*                                    TX-IX                                   */
+/* -------------------------------------------------------------------------- */
 
 export async function cancel({
   salt = salts.default,
   signer = sender.keys,
   depositedTokenMint = usdc,
   depositedTokenProgram = token.TOKEN_PROGRAM_ID,
-} = {}): Promise<any> {
+} = {}): Promise<void> {
   const streamNftMint = getStreamNftMintAddress(salt);
   const cancelStreamIx = await lockup.methods
     .cancel()
     .accounts({
-      sender: signer.publicKey,
       depositedTokenMint,
-      streamNftMint,
       depositedTokenProgram,
+      sender: signer.publicKey,
+      streamNftMint,
     })
     .instruction();
 
   await buildSignAndProcessTx(banksClient, cancelStreamIx, signer);
 }
 
-export async function cancelToken2022(salt: BN): Promise<any> {
+export async function cancelToken2022(salt: BN): Promise<void> {
   await cancel({
-    salt,
     depositedTokenMint: dai,
     depositedTokenProgram: token.TOKEN_2022_PROGRAM_ID,
+    salt,
   });
 }
 
@@ -140,31 +133,33 @@ export async function collectFees(signer: Keypair = feeCollector.keys) {
   await buildSignAndProcessTx(banksClient, collectFeesIx, signer);
 }
 
-export async function createWithDurations(
-  cliffDuration = defaults.CLIFF_DURATION
-): Promise<BN> {
+export async function createWithDurations({
+  cliffDuration = Time.CLIFF_DURATION,
+  salt,
+}: {
+  cliffDuration?: BN;
+  salt?: BN;
+} = {}): Promise<BN> {
   // Use the total supply as the salt for the stream
-  const salt = await getTotalSupply();
+  salt = salt ?? (await getTotalSupply());
 
   const createWithDurationsIx = await lockup.methods
     .createWithDurations(
       salt,
-      defaults.DEPOSIT_AMOUNT,
+      Amount.DEPOSIT,
       cliffDuration,
-      defaults.TOTAL_DURATION,
-      defaults.START_AMOUNT,
-      cliffDuration.eq(defaults.ZERO_BN)
-        ? defaults.ZERO_BN
-        : defaults.CLIFF_AMOUNT,
-      true
+      Time.TOTAL_DURATION,
+      Amount.START,
+      cliffDuration.isZero() ? ZERO : Amount.CLIFF,
+      true,
     )
     .accounts({
       creator: sender.keys.publicKey,
-      sender: sender.keys.publicKey,
       depositTokenMint: usdc,
-      recipient: recipient.keys.publicKey,
       depositTokenProgram: token.TOKEN_PROGRAM_ID,
       nftTokenProgram: token.TOKEN_PROGRAM_ID,
+      recipient: recipient.keys.publicKey,
+      sender: sender.keys.publicKey,
     })
     .instruction();
 
@@ -179,13 +174,14 @@ export async function createWithTimestamps({
   recipientPubKey = recipient.keys.publicKey,
   depositTokenMint = usdc,
   depositTokenProgram = token.TOKEN_PROGRAM_ID,
-  timestamps = defaults.timestamps(),
-  depositAmount = defaults.DEPOSIT_AMOUNT,
-  unlockAmounts = defaults.unlockAmounts(),
+  timestamps = TIMESTAMPS(),
+  depositAmount = Amount.DEPOSIT,
+  unlockAmounts = UNLOCK_AMOUNTS(),
   isCancelable = true,
+  salt = new BN(-1),
 } = {}): Promise<BN> {
   // Use the total supply as the salt for the stream
-  const salt = await getTotalSupply();
+  salt = salt.isNeg() ? await getTotalSupply() : salt;
 
   const txIx = await lockup.methods
     .createWithTimestamps(
@@ -196,15 +192,15 @@ export async function createWithTimestamps({
       timestamps.end,
       unlockAmounts.start,
       unlockAmounts.cliff,
-      isCancelable
+      isCancelable,
     )
     .accounts({
       creator: creator.publicKey,
-      sender: senderPubKey,
       depositTokenMint,
-      recipient: recipientPubKey,
       depositTokenProgram,
       nftTokenProgram: token.TOKEN_PROGRAM_ID,
+      recipient: recipientPubKey,
+      sender: senderPubKey,
     })
     .instruction();
 
@@ -232,10 +228,7 @@ export async function initializeLockup(): Promise<void> {
   await buildSignAndProcessTx(banksClient, initializeIx, sender.keys);
 }
 
-export async function renounce({
-  salt = salts.default,
-  signer = sender.keys,
-} = {}): Promise<any> {
+export async function renounce({ salt = salts.default, signer = sender.keys } = {}): Promise<void> {
   const streamNftMint = getStreamNftMintAddress(salt);
   const renounceIx = await lockup.methods
     .renounce()
@@ -250,38 +243,35 @@ export async function renounce({
 
 export async function withdraw({
   salt = salts.default,
-  withdrawAmount = defaults.WITHDRAW_AMOUNT,
+  withdrawAmount = Amount.WITHDRAW,
   signer = recipient.keys,
   withdrawalRecipient = recipient.keys.publicKey,
   depositedTokenMint = usdc,
   depositedTokenProgram = token.TOKEN_PROGRAM_ID,
-} = {}): Promise<any> {
+} = {}): Promise<void> {
   const streamNftMint = getStreamNftMintAddress(salt);
   const withdrawIx = await lockup.methods
     .withdraw(withdrawAmount)
     .accounts({
-      signer: signer.publicKey,
       depositedTokenMint,
+      depositedTokenProgram,
+      nftTokenProgram: token.TOKEN_PROGRAM_ID,
+      signer: signer.publicKey,
       streamNftMint,
       streamRecipient: recipient.keys.publicKey,
       withdrawalRecipient,
-      depositedTokenProgram,
-      nftTokenProgram: token.TOKEN_PROGRAM_ID,
     })
     .instruction();
 
   await buildSignAndProcessTx(banksClient, withdrawIx, signer);
 }
 
-export async function withdrawToken2022(
-  salt: BN,
-  signer: Keypair
-): Promise<any> {
+export async function withdrawToken2022(salt: BN, signer: Keypair): Promise<void> {
   await withdraw({
-    salt,
     depositedTokenMint: dai,
-    signer,
     depositedTokenProgram: token.TOKEN_2022_PROGRAM_ID,
+    salt,
+    signer,
   });
 }
 
@@ -291,89 +281,70 @@ export async function withdrawMax({
   withdrawalRecipient = recipient.keys.publicKey,
   depositedTokenMint = usdc,
   depositedTokenProgram = token.TOKEN_PROGRAM_ID,
-} = {}): Promise<any> {
+} = {}): Promise<void> {
   const streamNftMint = getStreamNftMintAddress(salt);
 
   const withdrawMaxIx = await lockup.methods
     .withdrawMax()
     .accounts({
-      signer,
       depositedTokenMint,
-      streamRecipient: recipient.keys.publicKey,
-      streamNftMint,
-      withdrawalRecipient,
       depositedTokenProgram,
       nftTokenProgram: token.TOKEN_PROGRAM_ID,
+      signer,
+      streamNftMint,
+      streamRecipient: recipient.keys.publicKey,
+      withdrawalRecipient,
     })
     .instruction();
 
   await buildSignAndProcessTx(banksClient, withdrawMaxIx, sender.keys);
 }
 
-/*//////////////////////////////////////////////////////////////////////////
-                                  HELPERS
-//////////////////////////////////////////////////////////////////////////*/
+/* -------------------------------------------------------------------------- */
+/*                                   HELPERS                                  */
+/* -------------------------------------------------------------------------- */
 
-export async function getSenderLamports(): Promise<bigint> {
+export async function getSenderLamports(): Promise<BN> {
   return await getLamportsOf(sender.keys.publicKey);
 }
 
-export async function getStreamDataAtaBalance(
-  salt = salts.default
-): Promise<BN> {
+export async function getStreamDataAtaBalance(salt = salts.default): Promise<BN> {
   return getATABalance(banksClient, getStreamDataAddress(salt));
 }
 
-export async function getTreasuryLamports(): Promise<bigint> {
+export async function getTreasuryLamports(): Promise<BN> {
   return await getLamportsOf(treasuryAddress);
 }
 
 export function defaultStream({
   salt = salts.default,
   depositedTokenMint = usdc,
-  tokenProgram = token.TOKEN_PROGRAM_ID,
+  tokenProgram = ProgramId.TOKEN,
   isCancelable = true,
   isDepleted = false,
   wasCanceled = false,
 } = {}): Stream {
   const data: StreamData = {
-    amounts: defaults.amountsAfterCreate(),
+    amounts: AMOUNTS(),
     depositedTokenMint,
-    salt,
     isCancelable,
     isDepleted,
-    timestamps: defaults.timestamps(),
+    salt,
     sender: sender.keys.publicKey,
+    timestamps: TIMESTAMPS(),
     wasCanceled,
   };
   const streamDataAddress = getStreamDataAddress(salt);
-  const streamDataAta = deriveATAAddress(
-    depositedTokenMint,
-    streamDataAddress,
-    tokenProgram
-  );
+  const streamDataAta = deriveATAAddress(depositedTokenMint, streamDataAddress, tokenProgram);
   const streamNftMint = getStreamNftMintAddress(salt);
-  const recipientStreamNftAta = deriveATAAddress(
-    streamNftMint,
-    recipient.keys.publicKey,
-    token.TOKEN_PROGRAM_ID
-  );
+  const recipientStreamNftAta = deriveATAAddress(streamNftMint, recipient.keys.publicKey, ProgramId.TOKEN);
   const streamNftMetadata = getPDAAddress(
-    [
-      Buffer.from(defaults.METADATA_SEED),
-      defaults.TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-      streamNftMint.toBuffer(),
-    ],
-    defaults.TOKEN_METADATA_PROGRAM_ID
+    [Seed.METADATA, ProgramId.TOKEN_METADATA.toBuffer(), streamNftMint.toBuffer()],
+    ProgramId.TOKEN_METADATA,
   );
   const streamNftMasterEdition = getPDAAddress(
-    [
-      Buffer.from(defaults.METADATA_SEED),
-      defaults.TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-      streamNftMint.toBuffer(),
-      Buffer.from(defaults.EDITION_SEED),
-    ],
-    defaults.TOKEN_METADATA_PROGRAM_ID
+    [Seed.METADATA, ProgramId.TOKEN_METADATA.toBuffer(), streamNftMint.toBuffer(), Seed.EDITION],
+    ProgramId.TOKEN_METADATA,
   );
 
   // Return the Stream object
@@ -396,15 +367,15 @@ export function defaultStreamToken2022({
 } = {}): Stream {
   return defaultStream({
     depositedTokenMint: dai,
-    salt,
     isCancelable,
     isDepleted,
+    salt,
+    tokenProgram: ProgramId.TOKEN_2022,
     wasCanceled,
-    tokenProgram: token.TOKEN_2022_PROGRAM_ID,
   });
 }
 
-export async function fetchStreamData(salt = salts.default): Promise<any> {
+export async function fetchStreamData(salt = salts.default): Promise<StreamData> {
   const streamDataAddress = getStreamDataAddress(salt);
   const streamDataAcc = await banksClient.getAccount(streamDataAddress);
   if (!streamDataAcc) {
@@ -414,10 +385,7 @@ export async function fetchStreamData(salt = salts.default): Promise<any> {
   // Return the Stream data decoded via the Anchor account layout
   const streamLayout = lockup.account.streamData;
 
-  return streamLayout.coder.accounts.decode(
-    "streamData",
-    Buffer.from(streamDataAcc.data)
-  );
+  return streamLayout.coder.accounts.decode<StreamData>("streamData", Buffer.from(streamDataAcc.data));
 }
 
 export async function getSenderTokenBalance(tokenMint = usdc): Promise<BN> {
@@ -427,43 +395,30 @@ export async function getSenderTokenBalance(tokenMint = usdc): Promise<BN> {
 
 function getStreamDataAddress(salt: BN): PublicKey {
   const streamNftMint = getStreamNftMintAddress(salt);
-  const streamDataSeeds = [
-    Buffer.from(defaults.STREAM_DATA_SEED),
-    streamNftMint.toBuffer(),
-  ];
+  const streamDataSeeds = [Seed.STREAM_DATA, streamNftMint.toBuffer()];
   return getPDAAddress(streamDataSeeds, lockup.programId);
 }
 
-function getStreamNftMintAddress(
-  salt: BN,
-  signer: PublicKey = sender.keys.publicKey
-): PublicKey {
+function getStreamNftMintAddress(salt: BN, signer: PublicKey = sender.keys.publicKey): PublicKey {
   // The seeds used when creating the Stream NFT Mint
-  const streamNftMintSeeds = [
-    Buffer.from(defaults.STREAM_NFT_MINT_SEED),
-    signer.toBuffer(),
-    salt.toBuffer("le", 16),
-  ];
+  const streamNftMintSeeds = [Seed.STREAM_NFT_MINT, signer.toBuffer(), salt.toBuffer("le", 16)];
 
   return getPDAAddress(streamNftMintSeeds, lockup.programId);
 }
 
 async function getTotalSupply(): Promise<BN> {
-  const nftCollectionDataAcc = await banksClient.getAccount(
-    nftCollectionDataAddress
-  );
+  const nftCollectionDataAcc = await banksClient.getAccount(nftCollectionDataAddress);
 
   if (!nftCollectionDataAcc) {
     throw new Error("NFT Collection Data account is undefined");
   }
 
   // Get the NFT Collection Data
-  const nftCollectionData =
-    lockup.account.nftCollectionData.coder.accounts.decode(
-      "nftCollectionData",
-      Buffer.from(nftCollectionDataAcc.data)
-    );
+  const nftCollectionData = lockup.account.nftCollectionData.coder.accounts.decode(
+    "nftCollectionData",
+    Buffer.from(nftCollectionDataAcc.data),
+  );
 
-  const totalSupply = new BN(nftCollectionData.totalSupply.toString(), 10);
+  const totalSupply = toBn(nftCollectionData.totalSupply);
   return totalSupply;
 }

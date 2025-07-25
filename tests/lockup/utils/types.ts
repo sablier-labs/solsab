@@ -1,42 +1,61 @@
-import { BN } from "@coral-xyz/anchor";
-import { PublicKey } from "@solana/web3.js";
-export { PublicKey } from "@solana/web3.js";
+import { type PublicKey } from "@solana/web3.js";
+import type BN from "bn.js";
 
-export interface Amounts {
+/* -------------------------------------------------------------------------- */
+/*                                PROGRAM TYPES                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Must correspond to the analogous Rust type.
+ * @see {@link file://./../../../programs/lockup/src/state/lockup.rs}
+ */
+export type Amounts = {
   cliffUnlock: BN;
   deposited: BN;
   refunded: BN;
   startUnlock: BN;
   withdrawn: BN;
-}
+};
 
-export interface Timestamps {
-  cliff: BN;
-  end: BN;
-  start: BN;
-}
-
-export interface StreamData {
+/**
+ * Must correspond to the analogous Rust type.
+ * @see {@link file://./../../../programs/lockup/src/state/lockup.rs}
+ */
+export type StreamData = {
   amounts: Amounts;
   depositedTokenMint: PublicKey;
-  salt: BN;
   isCancelable: boolean;
   isDepleted: boolean;
+  salt: BN;
   timestamps: Timestamps;
   sender: PublicKey;
   wasCanceled: boolean;
-}
+};
 
-export interface Salts {
-  // Default stream salt.
+/**
+ * Must correspond to the analogous Rust type.
+ * @see {@link file://./../../../programs/lockup/src/state/lockup.rs}
+ */
+export type Timestamps = {
+  cliff: BN;
+  end: BN;
+  start: BN;
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                 TEST TYPES                                 */
+/* -------------------------------------------------------------------------- */
+
+export type Salts = {
+  /* Default stream salt. */
   default: BN;
-  // A non-cancelable stream salt.
+  /* A non-cancelable stream salt. */
   nonCancelable: BN;
-  // A stream salt that does not exist.
+  /* A stream salt that does not exist. */
   nonExisting: BN;
-}
+};
 
-export interface Stream {
+export type Stream = {
   data: StreamData;
   dataAddress: PublicKey;
   dataAta: PublicKey;
@@ -44,9 +63,9 @@ export interface Stream {
   nftMetadataAddress: PublicKey;
   nftMintAddress: PublicKey;
   recipientStreamNftAta: PublicKey;
-}
+};
 
-export interface UnlockAmounts {
+export type UnlockAmounts = {
   cliff: BN;
   start: BN;
-}
+};

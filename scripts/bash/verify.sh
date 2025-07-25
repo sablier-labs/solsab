@@ -5,6 +5,9 @@
 #   --commit <hash>     Verify against a specific commit
 #   --cluster <url>     Specify the Solana cluster URL
 
+# Strict mode: https://gist.github.com/vncsna/64825d5609c146e80de8b1fd623011ca
+set -euo pipefail
+
 PROGRAM_ID="uwuJk35aCL3z2FzfPr8fQE1U19A8N18qdA5YfdfUbPt"
 CLUSTER=$(solana config get | grep 'RPC URL' | awk '{print $3}')
 SKIP_BUILD=false

@@ -1,0 +1,43 @@
+name: "CI"
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{github.workflow}}-${{github.ref}}
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+jobs:
+  ci:
+    runs-on: "macos-latest"
+    steps:
+      - name: "Check out the repo"
+        uses: "actions/checkout@v4"
+
+      - name: "Set up Sablier devkit and install Node.js dependencies"
+        uses: "sablier-labs/devkit/actions/setup@main"
+        with:
+          package-manager: "bun"
+
+      - name: "Set up Rust, Solana, and Anchor"
+        uses: "sablier-labs/gha-utils/.github/actions/anchor-toolchain@main"
+        with:
+          anchor-version: "0.31.1"
+          rust-version: "nightly"
+          solana-version: "2.1.21"
+
+      - name: "Build the programs"
+        run: "just build"
+
+      - name: "Run the code checks"
+        run: "just full-check"
+
+      - name: "Run the tests"
+        run: "just test"
+
+      - name: "Add summary"
+        run: | # shell
+          echo "## CI result" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY

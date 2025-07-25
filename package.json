@@ -1,7 +1,7 @@
 {
   "name": "@sablier/solsab",
-  "description": "Programs of the Sablier token distribution protocol for the Solana chain",
-  "license": "GPL-3.0-or-later",
+  "description": "Solana programs of the Sablier token distribution protocol",
+  "license": "SEE LICENSE IN LICENSE",
   "version": "1.0.0",
   "author": {
     "name": "Sablier Labs Ltd",
@@ -10,50 +10,40 @@
   "bugs": {
     "url": "https://github.com/sablier-labs/solsab/issues"
   },
-  "dependencies": {
-    "@coral-xyz/anchor": "^0.31.1",
-    "@solana/web3.js": "^1.98.2",
-    "anchor-bankrun": "^0.5.0",
-    "solana-bankrun": "^0.4.0"
-  },
   "devDependencies": {
+    "@biomejs/biome": "^2.1.2",
+    "@coral-xyz/anchor": "^0.31.1",
+    "@coral-xyz/anchor-errors": "^0.31.1",
+    "@sablier/devkit": "github:sablier-labs/devkit#main",
     "@solana/spl-token": "^0.4.13",
-    "@types/chai": "^4.3.20",
-    "@types/mocha": "^9.1.1",
+    "@solana/web3.js": "^1.98.2",
+    "@types/bn.js": "^5.2.0",
+    "@types/lodash": "^4.17.20",
     "@types/node": "^24.0.1",
-    "@typescript-eslint/eslint-plugin": "^8.35.0",
-    "@typescript-eslint/parser": "^8.35.0",
-    "chai": "^4.5.0",
-    "eslint": "^8.57.1",
-    "eslint-config-prettier": "^8.10.0",
+    "@vitest/ui": "^3.2.4",
+    "anchor-bankrun": "^0.5.0",
+    "bn.js": "^5.2.2",
+    "dayjs": "^1.11.13",
+    "husky": "^9.1.7",
     "keccak256": "^1.0.6",
+    "lint-staged": "^16.1.2",
+    "lodash": "^4.17.21",
     "merkletreejs": "^0.5.2",
-    "mocha": "^9.2.2",
     "prettier": "^2.8.8",
-    "ts-mocha": "^10.1.0",
-    "typescript": "^5.8.3"
+    "solana-bankrun": "^0.4.0",
+    "typescript": "5.8.3",
+    "viem": "^2.33.0",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=23"
+  },
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sablier-labs/solsab.git"
   },
   "scripts": {
-    "b": "bun run build",
-    "b:lk": "RUSTUP_TOOLCHAIN=nightly anchor build -p sablier_lockup",
-    "b:mi": "RUSTUP_TOOLCHAIN=nightly anchor build -p sablier_merkle_instant",
-    "build": "RUSTUP_TOOLCHAIN=nightly anchor build",
-    "clean": "rm -rf .anchor target",
-    "fmt:rust": "RUSTUP_TOOLCHAIN=nightly cargo fmt",
-    "fmt:rust:check": "RUSTUP_TOOLCHAIN=nightly cargo fmt --check",
-    "lint": "bun run fmt:rust:check && bun run lint:ts && bun run prettier:check",
-    "lint:fix": "bun run fmt:rust && bun run lint:ts:fix && bun run prettier:write",
-    "lint:ts": "eslint \"migrations/**/*.ts\" \"tests/**/*.ts\"",
-    "lint:ts:fix": "eslint --ext \"migrations/**/*.ts\" \"tests/**/*.ts\" --fix",
-    "prettier:check": "prettier --check \"**/*.{json,md,svg,ts,yml}\"",
-    "prettier:write": "prettier --write \"**/*.{json,md,svg,ts,yml}\"",
-    "t": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 --parallel tests/**/**/*.ts",
-    "t:debug": "bun run build && RUST_LOG=debug bun run ts-mocha -t 1000000 --parallel tests/**/**/*.ts",
-    "t:match": "bun run t --grep",
-    "t:only": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 tests/**/**/*.ts",
-    "t:only:debug": "bun run build && RUST_LOG=debug bun run ts-mocha -t 1000000 tests/**/**/*.ts",
-    "t:lk": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 --parallel tests/lockup/**/*.ts",
-    "t:mi": "bun run build && RUST_LOG=off bun run ts-mocha -t 1000000 --parallel tests/merkle_instant/**/*.ts",
-    "verify": "bash ./verify.sh"
+    "prepare": "bun husky"
   }
 }
