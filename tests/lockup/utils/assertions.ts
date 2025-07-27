@@ -3,16 +3,6 @@ import { ProgramErrorCode, type ProgramErrorName } from "../../../target/types/s
 import { assertEqualBn, assertEqualPublicKey, expectToThrow as baseExpectToThrow } from "../../common/assertions";
 import { type Amounts, type StreamData, type Timestamps, type UnlockAmounts } from "./types";
 
-export function assertEqAmounts(a: Amounts, b: Amounts) {
-  assertEqualBn(a.deposited, b.deposited);
-  assertEqualBn(a.refunded, b.refunded);
-  assertEqualBn(a.withdrawn, b.withdrawn);
-
-  // Unlock amounts
-  assertEqualBn(a.cliffUnlock, b.cliffUnlock);
-  assertEqualBn(a.startUnlock, b.startUnlock);
-}
-
 export function assertEqStreamData(a: StreamData, b: StreamData) {
   assertEqAmounts(a.amounts, b.amounts);
   assertEqTimestamps(a.timestamps, b.timestamps);
@@ -46,4 +36,18 @@ export function assertEqUnlockAmounts(a: UnlockAmounts, b: UnlockAmounts) {
 
 export function expectToThrow(promise: Promise<unknown>, errorNameOrCode: ProgramErrorName | number) {
   return baseExpectToThrow(promise, ProgramErrorCode, errorNameOrCode);
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               INTERNAL LOGIC                               */
+/* -------------------------------------------------------------------------- */
+
+function assertEqAmounts(a: Amounts, b: Amounts) {
+  assertEqualBn(a.deposited, b.deposited);
+  assertEqualBn(a.refunded, b.refunded);
+  assertEqualBn(a.withdrawn, b.withdrawn);
+
+  // Unlock amounts
+  assertEqualBn(a.cliffUnlock, b.cliffUnlock);
+  assertEqualBn(a.startUnlock, b.startUnlock);
 }
