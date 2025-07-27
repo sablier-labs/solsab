@@ -9,7 +9,7 @@ export const AGGREGATE_AMOUNT = new BN(10_000e6);
 export const CLAIM_AMOUNT = new BN(100e6);
 export const CLAWBACK_AMOUNT = new BN(1_000e6);
 export const CLAIM_FEE_USD = 2; // 2 USD
-export const NO_LAMPORTS_IN_1_SOL = 1_000_000_000;
+export const LAMPORTS_PER_SOL = 1_000_000_000;
 
 // Timestamps
 export const APR_1_2025 = new BN(1_743_454_800);

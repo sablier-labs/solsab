@@ -25,5 +25,5 @@ pub mod nft {
 pub mod misc {
     pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
     pub const WITHDRAWAL_FEE_USD: u64 = 1; // 1 USD
-    pub const NO_LAMPORTS_IN_1_SOL: u64 = 1_000_000_000; // 1 billion lamports in 1 SOL
+    pub const LAMPORTS_PER_SOL: u64 = 1_000_000_000; // 1 billion lamports in 1 SOL
 }

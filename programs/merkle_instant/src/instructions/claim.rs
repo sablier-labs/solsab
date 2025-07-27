@@ -93,8 +93,8 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
 
     ctx.accounts.campaign.claim()?;
 
-    // Interaction: charge the withdrawal fee.
-    charge_withdrawal_fee(
+    // Interaction: charge the claim fee.
+    charge_claim_fee(
         ctx.accounts.chainlink_program.to_account_info(),
         ctx.accounts.chainlink_sol_usd_feed.to_account_info(),
         ctx.accounts.claimer.to_account_info(),
@@ -135,7 +135,7 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
 }
 
 // TODO: export this into a crate that'd be imported by both the lockup and merkle_instant programs.
-fn charge_withdrawal_fee<'info>(
+fn charge_claim_fee<'info>(
     chainlink_program: AccountInfo<'info>,
     chainlink_sol_usd_feed: AccountInfo<'info>,
     tx_signer: AccountInfo<'info>,
@@ -159,7 +159,7 @@ fn charge_withdrawal_fee<'info>(
         let sol_price_usd = (round.answer / 10_i128.pow(decimals as u32)) as u64;
 
         // Transform the fee from USD to Lamports.
-        let fee_in_lamports = (CLAIM_FEE_USD * NO_LAMPORTS_IN_1_SOL) / sol_price_usd;
+        let fee_in_lamports = (CLAIM_FEE_USD * LAMPORTS_PER_SOL) / sol_price_usd;
 
         // Interaction: transfer the fee from the claimer to the treasury.
         let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);

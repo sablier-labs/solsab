@@ -182,7 +182,7 @@ fn charge_withdrawal_fee<'info>(
         let sol_price_usd = (round.answer / 10_i128.pow(decimals as u32)) as u64;
 
         // Transform the fee from USD to Lamports.
-        let fee_in_lamports = (WITHDRAWAL_FEE_USD * NO_LAMPORTS_IN_1_SOL) / sol_price_usd;
+        let fee_in_lamports = (WITHDRAWAL_FEE_USD * LAMPORTS_PER_SOL) / sol_price_usd;
 
         // Interaction: transfer the fee from the signer to the treasury.
         let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);

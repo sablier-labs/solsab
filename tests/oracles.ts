@@ -7,9 +7,9 @@ export async function getFeeInLamports(fee: number): Promise<number> {
     throw new Error("Invalid SOL price");
   }
 
-  const NO_LAMPORTS_IN_1_SOL = 1_000_000_000; // 1 SOL = 1 billion lamports
+  const LAMPORTS_PER_SOL = 1_000_000_000; // 1 SOL = 1 billion lamports
   // Transform the fee from USD to Lamports, truncating the sub-lamport amount
-  return Math.floor((fee * NO_LAMPORTS_IN_1_SOL) / solUsdPrice);
+  return Math.floor((fee * LAMPORTS_PER_SOL) / solUsdPrice);
 }
 
 async function getSolUsdPrice(): Promise<number> {

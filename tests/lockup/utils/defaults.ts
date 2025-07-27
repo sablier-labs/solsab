@@ -17,7 +17,7 @@ export const WITHDRAW_AMOUNT = STREAMED_AMOUNT_26_PERCENT;
 export const REFUND_AMOUNT = DEPOSIT_AMOUNT.sub(WITHDRAW_AMOUNT);
 export const CLIFF_AMOUNT = new BN(2500e6 + 1);
 export const WITHDRAWAL_FEE_USD = 1;
-export const NO_LAMPORTS_IN_1_SOL = 1_000_000_000;
+export const LAMPORTS_PER_SOL = 1_000_000_000;
 export const ZERO_BN = new BN(0);
 export const START_AMOUNT = ZERO_BN;
 
