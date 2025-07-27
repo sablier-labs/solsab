@@ -1,7 +1,7 @@
 import { assert } from "vitest";
 import { ProgramErrorCode, type ProgramErrorName } from "../../../target/types/sablier_merkle_instant_errors";
+import type { Campaign as CampaignData } from "../../../target/types/sablier_merkle_instant_structs";
 import { assertEqualBn, assertEqualPublicKey, expectToThrow as baseExpectToThrow } from "../../common/assertions";
-import { type CampaignData } from "./types";
 
 export function expectToThrow(promise: Promise<unknown>, errorNameOrCode: ProgramErrorName | number) {
   return baseExpectToThrow(promise, ProgramErrorCode, errorNameOrCode);

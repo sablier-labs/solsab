@@ -1,50 +1,11 @@
+/**
+ * @file Note that this is only a type helper and is not the actual IDL. The original
+ * IDL types can be found at @see {@link file://./../../target/types/sablier_lockup_structs.ts}.
+ */
+
 import { type PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
-
-/* -------------------------------------------------------------------------- */
-/*                                PROGRAM TYPES                               */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Must correspond to the analogous Rust type.
- * @see {@link file://./../../../programs/lockup/src/state/lockup.rs}
- */
-export type Amounts = {
-  cliffUnlock: BN;
-  deposited: BN;
-  refunded: BN;
-  startUnlock: BN;
-  withdrawn: BN;
-};
-
-/**
- * Must correspond to the analogous Rust type.
- * @see {@link file://./../../../programs/lockup/src/state/lockup.rs}
- */
-export type StreamData = {
-  amounts: Amounts;
-  depositedTokenMint: PublicKey;
-  isCancelable: boolean;
-  isDepleted: boolean;
-  salt: BN;
-  timestamps: Timestamps;
-  sender: PublicKey;
-  wasCanceled: boolean;
-};
-
-/**
- * Must correspond to the analogous Rust type.
- * @see {@link file://./../../../programs/lockup/src/state/lockup.rs}
- */
-export type Timestamps = {
-  cliff: BN;
-  end: BN;
-  start: BN;
-};
-
-/* -------------------------------------------------------------------------- */
-/*                                 TEST TYPES                                 */
-/* -------------------------------------------------------------------------- */
+import type { StreamData } from "../../../target/types/sablier_lockup_structs";
 
 export type Salts = {
   /* Default stream salt. */

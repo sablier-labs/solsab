@@ -6,17 +6,18 @@ import { ProgramId, ZERO } from "../../lib/constants";
 import { ProgramName } from "../../lib/enums";
 import { getPDAAddress, toBn } from "../../lib/helpers";
 import IDL from "../../target/idl/sablier_lockup.json";
-import { type SablierLockup } from "../../target/types/sablier_lockup";
+import { type SablierLockup as SablierLockupProgram } from "../../target/types/sablier_lockup";
+import type { StreamData } from "../../target/types/sablier_lockup_structs";
 import { buildSignAndProcessTx, deriveATAAddress, getATABalance } from "../common/anchor-bankrun";
 import { TestContext } from "../common/context";
 import type { User } from "../common/types";
 import { AMOUNTS, Amount, Seed, TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "./utils/defaults";
-import type { Salts, Stream, StreamData } from "./utils/types";
+import type { Salts, Stream } from "./utils/types";
 
 export class LockupTestContext extends TestContext {
   // Programs and addresses
   public nftCollectionDataAddress!: PublicKey;
-  public lockup!: anchor.Program<SablierLockup>;
+  public lockup!: anchor.Program<SablierLockupProgram>;
   public treasuryAddress!: PublicKey;
 
   // Users
@@ -35,7 +36,7 @@ export class LockupTestContext extends TestContext {
     ]);
 
     // Deploy the program being tested
-    this.lockup = new anchor.Program<SablierLockup>(IDL, this.bankrunProvider);
+    this.lockup = new anchor.Program<SablierLockupProgram>(IDL, this.bankrunProvider);
 
     // Create the sender user
     this.sender = await this.createUser();
@@ -295,6 +296,7 @@ export class LockupTestContext extends TestContext {
   } = {}): Stream {
     const data: StreamData = {
       amounts: AMOUNTS(),
+      bump: 0,
       depositedTokenMint,
       isCancelable,
       isDepleted,

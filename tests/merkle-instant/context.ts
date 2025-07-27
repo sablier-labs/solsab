@@ -5,17 +5,17 @@ import { ProgramId, ZERO } from "../../lib/constants";
 import { ProgramName } from "../../lib/enums";
 import { getPDAAddress } from "../../lib/helpers";
 import IDL from "../../target/idl/sablier_merkle_instant.json";
-import { type SablierMerkleInstant } from "../../target/types/sablier_merkle_instant";
+import { type SablierMerkleInstant as SablierMerkleInstantProgram } from "../../target/types/sablier_merkle_instant";
+import type { Campaign as CampaignData } from "../../target/types/sablier_merkle_instant_structs";
 import { buildSignAndProcessTx, deriveATAAddress, transfer } from "../common/anchor-bankrun";
 import { TestContext } from "../common/context";
 import type { User } from "../common/types";
 import { Amount, Campaign, Seed, Time } from "./utils/defaults";
 import { getProof, getRoot, type LeafData } from "./utils/merkle";
-import { type CampaignData } from "./utils/types";
 
 export class MerkleInstantTestContext extends TestContext {
   // Programs and addresses
-  public merkleInstant!: anchor.Program<SablierMerkleInstant>;
+  public merkleInstant!: anchor.Program<SablierMerkleInstantProgram>;
   public treasuryAddress!: PublicKey;
 
   // Users
@@ -41,7 +41,7 @@ export class MerkleInstantTestContext extends TestContext {
     await super.setUp(ProgramName.MerkleInstant, new PublicKey(IDL.address));
 
     // Deploy the program being tested
-    this.merkleInstant = new anchor.Program<SablierMerkleInstant>(IDL, this.bankrunProvider);
+    this.merkleInstant = new anchor.Program<SablierMerkleInstantProgram>(IDL, this.bankrunProvider);
 
     // Create the Campaign Creator user
     this.campaignCreator = await this.createUser();
@@ -216,6 +216,7 @@ export class MerkleInstantTestContext extends TestContext {
   defaultCampaignData(): CampaignData {
     return {
       airdropTokenMint: this.usdc,
+      bump: 0,
       creator: this.campaignCreator.keys.publicKey,
       expirationTime: Time.EXPIRATION,
       firstClaimTime: ZERO,

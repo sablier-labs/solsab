@@ -2,7 +2,8 @@ import BN from "bn.js";
 import dayjs from "dayjs";
 import { ZERO } from "../../../lib/constants";
 import { sol, usdc } from "../../../lib/convertors";
-import type { Amounts, Timestamps, UnlockAmounts } from "./types";
+import type { Amounts, Timestamps } from "../../../target/types/sablier_lockup_structs";
+import type { UnlockAmounts } from "./types";
 
 export namespace Amount {
   export const CLIFF = usdc("2500.000001");

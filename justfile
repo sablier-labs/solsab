@@ -43,9 +43,10 @@ build program_name="all":
         cmd="anchor build --program-name {{ program_name }}"
     fi
     # Suppressing the annoying "Compiling" and "Downloaded" messages
+    # Remove this once this gets implemented: https://github.com/solana-foundation/anchor/issues/3788
     $cmd 2>&1 | grep -v "Compiling\|Downloaded"
     echo ""
-    just codegen-errors {{ program_name }}
+    just codegen {{ program_name }}
 alias b := build
 
 # Build Lockup program only using Anchor
@@ -58,9 +59,10 @@ alias blk := build-lockup
 build-merkle-instant: (build "sablier_merkle_instant")
 alias bmi := build-merkle-instant
 
-# Codegen errors
-@codegen-errors program_name="all":
+# Codegen errors and struct types
+@codegen program_name="all":
     bun run ./scripts/ts/codegen-errors.ts {{ program_name }}
+    bun run ./scripts/ts/codegen-structs.ts {{ program_name }}
 
 # Clean build artifacts
 clean globs=GLOBS_CLEAN:

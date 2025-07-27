@@ -1,7 +1,8 @@
 import { assert } from "vitest";
 import { ProgramErrorCode, type ProgramErrorName } from "../../../target/types/sablier_lockup_errors";
+import type { Amounts, StreamData, Timestamps } from "../../../target/types/sablier_lockup_structs";
 import { assertEqualBn, assertEqualPublicKey, expectToThrow as baseExpectToThrow } from "../../common/assertions";
-import { type Amounts, type StreamData, type Timestamps, type UnlockAmounts } from "./types";
+import type { UnlockAmounts } from "./types";
 
 export function assertEqStreamData(a: StreamData, b: StreamData) {
   assertEqAmounts(a.amounts, b.amounts);

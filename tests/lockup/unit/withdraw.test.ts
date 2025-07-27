@@ -6,6 +6,7 @@ import { type PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
+import type { StreamData } from "../../../target/types/sablier_lockup_structs";
 import { createATAAndFund, deriveATAAddress, getATABalance } from "../../common/anchor-bankrun";
 import {
   assertAccountExists,
@@ -16,7 +17,6 @@ import {
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
-import { type StreamData } from "../utils/types";
 
 describe("withdraw", () => {
   let ctx: LockupTestContext;

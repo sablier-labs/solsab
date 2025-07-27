@@ -1,6 +1,6 @@
 import type BN from "bn.js";
 import { SCALING_FACTOR, ZERO } from "../../../lib/constants";
-import { type Amounts, type Timestamps } from "./types";
+import type { Amounts, Timestamps } from "../../../target/types/sablier_lockup_structs";
 
 /**
  * Replicates the logic of the `get_streamed_amount` function in the Solana program.
