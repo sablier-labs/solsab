@@ -108,9 +108,9 @@ function generateImports(types: IdlType[]): string[] {
       const mappedType = mapSolanaTypeToTypeScript(field.type);
 
       // Check if this field requires external type imports
-      if (mappedType === "BN" || mappedType.includes("BN[]")) {
+      if (mappedType.includes("BN")) {
         needsBN = true;
-      } else if (mappedType === "PublicKey" || mappedType.includes("PublicKey[]")) {
+      } else if (mappedType.includes("PublicKey")) {
         needsPublicKey = true;
       }
     });
