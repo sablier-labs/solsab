@@ -164,29 +164,62 @@ fn charge_withdrawal_fee<'info>(
     tx_signer: AccountInfo<'info>,
     treasury: AccountInfo<'info>,
 ) -> Result<()> {
-    let round = chainlink::latest_round_data(chainlink_program.clone(), chainlink_sol_usd_feed.clone())?;
+    // If the USD fee is 0, skip the calculations.
+    if WITHDRAWAL_FEE_USD == 0 {
+        return Ok(());
+    }
 
-    let round_timestamp: i64 = round.timestamp as i64;
-    let current_timestamp: i64 = Clock::get()?.unix_timestamp;
-    const SECONDS_IN_24_HOURS: i64 = 86400;
-    let timestamp_24h_ago = current_timestamp - SECONDS_IN_24_HOURS;
+    // Interactions: query the oracle price and the time at which it was updated.
+    let round = match chainlink::latest_round_data(chainlink_program.clone(), chainlink_sol_usd_feed.clone()) {
+        Ok(round) => round,
+        Err(_) => return Ok(()), // If the oracle call fails, skip fee charging.
+    };
 
-    // Check: only charge the fee if the round data is valid (i.e. its timestamp is strictly within the last 24 hours).
-    // Otherwise, skip the fee charging.
-    if
-    /* current_timestamp > round_timestamp && */
-    round_timestamp > timestamp_24h_ago {
-        let decimals = chainlink::decimals(chainlink_program.clone(), chainlink_sol_usd_feed.clone())?;
+    // If the price is not greater than 0, skip the calculations.
+    if round.answer <= 0 {
+        return Ok(());
+    }
 
-        // Calculate the SOL price in USD as an integer value, truncating the sub-dollar amount.
-        let sol_price_usd = (round.answer / 10_i128.pow(decimals as u32)) as u64;
+    let current_timestamp: u32 = Clock::get().unwrap().unix_timestamp as u32;
 
-        // Transform the fee from USD to Lamports.
-        let fee_in_lamports = (WITHDRAWAL_FEE_USD * LAMPORTS_PER_SOL) / sol_price_usd;
+    // Due to reorgs and latency issues, the oracle can have an timestamp that is in the future. In
+    // this case, we ignore the price and skip fee charging.
+    if current_timestamp < round.timestamp {
+        return Ok(());
+    }
 
+    // If the oracle hasn't been updated in the last 24 hours, we ignore the price and skip fee charging. This is a
+    // safety check to avoid using outdated prices.
+    const SECONDS_IN_24_HOURS: u32 = 86400;
+    if current_timestamp - round.timestamp > SECONDS_IN_24_HOURS {
+        return Ok(());
+    }
+
+    // Interactions: query the oracle decimals.
+    let oracle_decimals = match chainlink::decimals(chainlink_program.clone(), chainlink_sol_usd_feed.clone()) {
+        Ok(decimals) => decimals,
+        Err(_) => return Ok(()), // If the oracle call fails, skip fee charging.
+    };
+
+    let price = round.answer as u64;
+
+    let fee_in_lamports: u64 = match oracle_decimals {
+        8 => {
+            // If the oracle decimals are 8, calculate the fee.
+            WITHDRAWAL_FEE_USD * LAMPORTS_PER_SOL / price
+        }
+        decimals => {
+            // Otherwise, adjust the calculation to account for the oracle decimals.
+            WITHDRAWAL_FEE_USD * 10_u64.pow(10 + decimals as u32) / price
+        }
+    };
+
+    // Only charge fee if we have a valid amount
+    if fee_in_lamports > 0 {
         // Interaction: transfer the fee from the signer to the treasury.
         let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);
         invoke(&fee_charging_ix, &[tx_signer, treasury])?;
     }
+
     Ok(())
 }

@@ -8,8 +8,8 @@ pub mod seeds {
 // Miscellaneous
 pub mod misc {
     pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
-    pub const CLAIM_FEE_USD: u64 = 2; // 2 USD
-    pub const LAMPORTS_PER_SOL: u64 = 1_000_000_000; // 1 billion lamports in 1 SOL
+    pub const CLAIM_FEE_USD: u64 = 2e8 as u64; // 2 USD
+    pub const LAMPORTS_PER_SOL: u64 = 1e8 as u64; // 1 billion lamports in 1 SOL
     pub const CAMPAIGN_IPFS_CID_SIZE: usize = 59;
     pub const CAMPAIGN_NAME_SIZE: usize = 32;
 }
