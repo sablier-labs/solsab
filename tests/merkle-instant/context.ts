@@ -161,7 +161,7 @@ export class MerkleInstantTestContext extends TestContext {
         Seed.CAMPAIGN,
         creator.keys.publicKey.toBuffer(),
         Buffer.from(this.merkleRoot),
-        Time.EXPIRATION.toArrayLike(Buffer, "le", 8),
+        Campaign.EXPIRATION.toArrayLike(Buffer, "le", 8),
         Buffer.from(name),
         airdropTokenMint.toBuffer(),
       ],
@@ -169,7 +169,14 @@ export class MerkleInstantTestContext extends TestContext {
     );
 
     const txIx = await this.merkleInstant.methods
-      .createCampaign(this.merkleRoot, Time.EXPIRATION, name, Campaign.IPFS_CID, Amount.AGGREGATE, this.leaves.length)
+      .createCampaign(
+        this.merkleRoot,
+        Campaign.EXPIRATION,
+        name,
+        Campaign.IPFS_CID,
+        Amount.AGGREGATE,
+        this.leaves.length,
+      )
       .accounts({
         airdropTokenMint,
         airdropTokenProgram,
@@ -218,7 +225,7 @@ export class MerkleInstantTestContext extends TestContext {
       airdropTokenMint: this.usdc,
       bump: 0,
       creator: this.campaignCreator.keys.publicKey,
-      expirationTime: Time.EXPIRATION,
+      expirationTime: Campaign.EXPIRATION,
       firstClaimTime: ZERO,
       ipfsCid: Campaign.IPFS_CID,
       merkleRoot: Array.from(this.merkleRoot),

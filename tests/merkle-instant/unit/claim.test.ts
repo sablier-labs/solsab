@@ -7,7 +7,7 @@ import { createATAAndFund, getATABalanceMint } from "../../common/anchor-bankrun
 import { assertEqualBn, assertEqualSOLBalance, assertLteBn, assertZeroBn } from "../../common/assertions";
 import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
-import { Amount, Time } from "../utils/defaults";
+import { Amount, Campaign, Time } from "../utils/defaults";
 
 describe("claim", () => {
   let ctx: MerkleInstantTestContext;
@@ -83,7 +83,7 @@ describe("claim", () => {
             describe("when the campaign expired", () => {
               it("should revert", async () => {
                 // Time travel to when the campaign has expired
-                await ctx.timeTravelTo(Time.EXPIRATION);
+                await ctx.timeTravelTo(Campaign.EXPIRATION);
                 await expectToThrow(ctx.claim(), "CampaignExpired");
               });
             });

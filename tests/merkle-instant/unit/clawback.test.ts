@@ -9,7 +9,7 @@ import { createATAAndFund, deriveATAAddress, getATABalanceMint } from "../../com
 import { assertAccountExists, assertAccountNotExists, assertEqualBn } from "../../common/assertions";
 import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
-import { Amount, Time } from "../utils/defaults";
+import { Amount, Campaign } from "../utils/defaults";
 
 describe("clawback", () => {
   let ctx: MerkleInstantTestContext;
@@ -85,7 +85,7 @@ describe("clawback", () => {
             describe("given grace period passed", () => {
               beforeEach(async () => {
                 // Time travel to the end of the grace period
-                await ctx.timeTravelTo(Time.POST_GRACE_PERIOD);
+                await ctx.timeTravelTo(Campaign.POST_GRACE_PERIOD);
               });
 
               describe("given campaign not expired", () => {
@@ -97,7 +97,7 @@ describe("clawback", () => {
               describe("given campaign expired", () => {
                 beforeEach(async () => {
                   // Time travel to the end of the campaign
-                  await ctx.timeTravelTo(Time.EXPIRATION);
+                  await ctx.timeTravelTo(Campaign.EXPIRATION);
                 });
 
                 describe("when campaign creator does not have ATA", () => {
