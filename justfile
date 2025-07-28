@@ -45,7 +45,7 @@ build program_name="all":
     # Suppressing the annoying "Compiling" and "Downloaded" messages
     # Remove this once this gets implemented: https://github.com/solana-foundation/anchor/issues/3788
     $cmd 2>&1 | grep -v "Compiling\|Downloaded"
-    echo ""
+    echo "✅ Successful build\n"
     just codegen {{ program_name }}
 alias b := build
 

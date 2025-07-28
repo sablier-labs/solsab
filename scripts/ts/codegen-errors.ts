@@ -75,7 +75,7 @@ function genErrors(programName: string): void {
   writeGeneratedFile(content, programName, "_errors");
 }
 
-const main = createMainFunction(genErrors, "error bindings");
+const main = createMainFunction(genErrors, "TypeScript error bindings");
 
 if (require.main === module) {
   main();

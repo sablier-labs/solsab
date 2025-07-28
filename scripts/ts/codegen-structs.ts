@@ -215,7 +215,7 @@ function genStructs(programName: string): void {
 /*                                    MAIN                                    */
 /* -------------------------------------------------------------------------- */
 
-const main = createMainFunction(genStructs, "struct bindings");
+const main = createMainFunction(genStructs, "TypeScript struct bindings");
 
 if (require.main === module) {
   main();
