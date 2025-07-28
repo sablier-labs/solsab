@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(git:*)",
+      "Bash(just:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(ni:*)",
+      "mcp__http-server__*",
+      "WebFetch(domain:anthropic.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:npmjs.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:sablier.com)"
+    ],
+    "deny": ["Bash(git checkout:*)", "Bash(git reset:*)", "Bash(git unstage:*)", "Bash(rm -rf:*)"]
+  }
+}

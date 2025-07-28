@@ -1,20 +1,9 @@
 # directories
 .anchor
-build
-dist
 node_modules
+repomix
 target
 test-ledger
 
 # files
-*.env
-*.log
-*.tsbuildinfo
-.DS_Store
-.pnp.*
-bun.lock
-bun.lockb
-npm-debug.log
 package-lock.json
-pnpm-lock.yaml
-yarn.lock

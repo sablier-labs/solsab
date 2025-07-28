@@ -1,42 +1,22 @@
-import { BN } from "@coral-xyz/anchor";
-import { PublicKey } from "@solana/web3.js";
-export { PublicKey } from "@solana/web3.js";
+/**
+ * @file Note that this is only a type helper and is not the actual IDL. The original
+ * IDL types can be found at @see {@link file://./../../../target/types/sablier_lockup_structs.ts}.
+ */
 
-export interface Amounts {
-  cliffUnlock: BN;
-  deposited: BN;
-  refunded: BN;
-  startUnlock: BN;
-  withdrawn: BN;
-}
+import { type PublicKey } from "@solana/web3.js";
+import type BN from "bn.js";
+import type { StreamData } from "../../../target/types/sablier_lockup_structs";
 
-export interface Timestamps {
-  cliff: BN;
-  end: BN;
-  start: BN;
-}
-
-export interface StreamData {
-  amounts: Amounts;
-  depositedTokenMint: PublicKey;
-  salt: BN;
-  isCancelable: boolean;
-  isDepleted: boolean;
-  timestamps: Timestamps;
-  sender: PublicKey;
-  wasCanceled: boolean;
-}
-
-export interface Salts {
-  // Default stream salt.
+export type Salts = {
+  /* Default stream salt. */
   default: BN;
-  // A non-cancelable stream salt.
+  /* The salt of a non-cancelable stream. */
   nonCancelable: BN;
-  // A stream salt that does not exist.
+  /* The salt of a stream that does not exist. */
   nonExisting: BN;
-}
+};
 
-export interface Stream {
+export type Stream = {
   data: StreamData;
   dataAddress: PublicKey;
   dataAta: PublicKey;
@@ -44,9 +24,9 @@ export interface Stream {
   nftMetadataAddress: PublicKey;
   nftMintAddress: PublicKey;
   recipientStreamNftAta: PublicKey;
-}
+};
 
-export interface UnlockAmounts {
+export type UnlockAmounts = {
   cliff: BN;
   start: BN;
-}
+};

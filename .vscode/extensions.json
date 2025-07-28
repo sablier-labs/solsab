@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "amasfe.even-better-toml",
+    "biomejs.biome",
+    "esbenp.prettier-vscode",
+    "nefrob.vscode-just-syntax",
+    "stackbreak.comment-divider",
+    "rust-lang.rust-analyzer"
+  ]
+}

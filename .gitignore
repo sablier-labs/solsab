@@ -1,13 +1,9 @@
 # Anchor
 .anchor
 docker-target
-**/*.rs.bk
 target
 test-ledger
-
-# Misc
-*.env
-.DS_Store
+**/*.rs.bk
 
 # Node.js
 .npm
@@ -17,3 +13,9 @@ node_modules
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+
+# Misc
+repomix
+*.env
+*.local.json
+.DS_Store

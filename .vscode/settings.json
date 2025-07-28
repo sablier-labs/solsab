@@ -1,0 +1,20 @@
+{
+  "biome.enabled": true,
+  "editor.formatOnSave": true,
+  "eslint.enable": false,
+  "evenBetterToml.formatter.indentEntries": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "[json][ts]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[md][yml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml"
+  }
+}
