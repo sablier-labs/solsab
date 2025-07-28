@@ -15,6 +15,7 @@ export namespace Decimals {
   export const SOL = 9;
   export const USDC = 6;
 }
+
 export namespace ProgramId {
   export const TOKEN_2022 = TOKEN_2022_PROGRAM_ID;
   export const TOKEN_METADATA = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");

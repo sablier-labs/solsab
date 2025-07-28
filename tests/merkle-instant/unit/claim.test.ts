@@ -19,6 +19,7 @@ describe("claim", () => {
         initProgram: false,
       });
     });
+
     describe("when the campaign doesn't exist", () => {
       it("should revert", async () => {
         // Passing a non-Campaign account since no Campaigns exist yet
@@ -60,6 +61,7 @@ describe("claim", () => {
           it("should revert", async () => {
             await ctx.claim();
             await sleepFor(7);
+
             // Claim from the Campaign again
             await expectToThrow(ctx.claim(), 0x0);
           });

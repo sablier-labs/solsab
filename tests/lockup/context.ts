@@ -23,7 +23,7 @@ export class LockupTestContext extends TestContext {
   // Users
   public sender!: User;
 
-  // Streams
+  // Stream Salts
   public salts!: Salts;
 
   async setUpLockup({ initProgram = true } = {}) {
@@ -394,7 +394,6 @@ export class LockupTestContext extends TestContext {
       Buffer.from(nftCollectionDataAcc.data),
     );
 
-    const totalSupply = toBn(nftCollectionData.totalSupply);
-    return totalSupply;
+    return toBn(nftCollectionData.totalSupply);
   }
 }

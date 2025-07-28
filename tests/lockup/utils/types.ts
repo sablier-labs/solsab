@@ -10,9 +10,9 @@ import type { StreamData } from "../../../target/types/sablier_lockup_structs";
 export type Salts = {
   /* Default stream salt. */
   default: BN;
-  /* A non-cancelable stream salt. */
+  /* The salt of a non-cancelable stream. */
   nonCancelable: BN;
-  /* A stream salt that does not exist. */
+  /* The salt of a stream that does not exist. */
   nonExisting: BN;
 };
 

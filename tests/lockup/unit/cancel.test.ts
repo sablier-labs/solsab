@@ -63,7 +63,6 @@ describe("cancel", () => {
           describe("given CANCELED status", () => {
             it("should revert", async () => {
               await ctx.cancel();
-              // Sleep for 5 ms to allow the tx to be processed
               await sleepFor(7);
               await expectToThrow(ctx.cancel(), "StreamCanceled");
             });

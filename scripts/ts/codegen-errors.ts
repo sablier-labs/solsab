@@ -8,8 +8,8 @@
  * - Outputs to target/types/ as *_errors.ts files
  *
  * Usage:
- * - bun run codegen:errors all               (generates for all programs)
- * - bun run codegen:errors sablier_lockup    (generates for specific program)
+ * - npm run codegen:errors all             (generates for all programs)
+ * - npm run codegen:errors sablier_lockup  (generates for a specific program)
  */
 
 import {

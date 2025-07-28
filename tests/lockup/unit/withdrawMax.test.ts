@@ -32,7 +32,7 @@ describe("withdrawMax", () => {
     });
 
     describe("given a valid stream", () => {
-      describe("given end time not in future", () => {
+      describe("given end time not in the future", () => {
         it("should make the max withdrawal", async () => {
           await ctx.timeTravelTo(Time.END);
           await ctx.withdrawMax();
@@ -46,7 +46,7 @@ describe("withdrawMax", () => {
         });
       });
 
-      describe("given end time in future", () => {
+      describe("given end time in the future", () => {
         it("should make the max withdrawal", async () => {
           await ctx.timeTravelTo(Time.MID_26_PERCENT);
           await ctx.withdrawMax();

@@ -172,7 +172,6 @@ describe("createWithTimestamps", () => {
                       describe("when token SPL standard", () => {
                         it("should create the stream", async () => {
                           const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
-
                           const salt = await ctx.createWithTimestamps();
 
                           await assertStreamCreation(ctx, salt, beforeSenderTokenBalance);

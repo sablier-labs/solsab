@@ -3,7 +3,7 @@ import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID
 import { ComputeBudgetProgram, Keypair, type PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { beforeEach, describe, it } from "vitest";
-import { Decimals, ZERO } from "../../lib/constants";
+import { BN_1, Decimals, ZERO } from "../../lib/constants";
 import { sol } from "../../lib/convertors";
 import { type SablierLockup } from "../../target/types/sablier_lockup";
 
@@ -27,7 +27,7 @@ describe("SablierLockup post-deployment initialization", () => {
       depositAmount: sol(1000),
       depositTokenMint,
       isCancelable: true,
-      salt: new BN(1),
+      salt: BN_1,
       totalDuration: new BN(3600), // 1 hour
       unlockCliffAmount: ZERO,
       unlockStartAmount: ZERO,

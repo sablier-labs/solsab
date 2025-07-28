@@ -228,7 +228,7 @@ export function createMainFunction(generatorFn: (programName: string) => void, s
  * @param generatorFn - Function that generates code for a single program
  * @param successMessage - Message to display on success
  */
-export function executeCodegen(
+function executeCodegen(
   programName: ProgramName | "all",
   generatorFn: (programName: string) => void,
   successMessage: string,
