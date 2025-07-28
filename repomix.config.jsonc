@@ -6,7 +6,7 @@
   },
   "include": ["."],
   "output": {
-    "filePath": "repomix/output.txt",
-    "style": "plain"
+    "filePath": "repomix/output.md",
+    "style": "markdown"
   }
 }

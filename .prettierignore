@@ -1,6 +1,7 @@
 # directories
 .anchor
 node_modules
+repomix
 target
 test-ledger
 

@@ -11,8 +11,8 @@ import { createATAAndFund, deriveATAAddress, getATABalance } from "../../common/
 import {
   assertAccountExists,
   assertAccountNotExists,
-  assertEqualBalanceSOL,
   assertEqualBn,
+  assertEqualSOLBalance,
 } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
@@ -353,7 +353,7 @@ async function postWithdrawAssertions(
   const treasuryLamportsAfter = await ctx.getTreasuryLamports();
 
   // Assert that the Treasury's balance has been credited with the withdrawal fee
-  assertEqualBalanceSOL(treasuryLamportsAfter, treasuryLamportsBefore.add(Amount.WITHDRAW_FEE));
+  assertEqualSOLBalance(treasuryLamportsAfter, treasuryLamportsBefore.add(Amount.WITHDRAW_FEE));
 
   // Get the withdrawal recipient's token balance
   const withdrawalRecipientTokenBalance = await getATABalance(ctx.banksClient, withdrawalRecipientATA);

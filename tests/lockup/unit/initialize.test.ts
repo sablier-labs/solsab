@@ -18,7 +18,9 @@ describe("initialize", () => {
     it("should revert", async () => {
       await ctx.initializeLockup();
       await sleepFor(7);
-      await expect(ctx.initializeLockup(), "Tx succeeded when it should have reverted").rejects.toThrow("0x0");
+      await expect(ctx.initializeLockup(), "Tx succeeded when it should have reverted").rejects.toThrow(
+        "Instruction 1: custom program error: 0x0",
+      );
     });
   });
 

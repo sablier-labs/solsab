@@ -12,31 +12,31 @@ export async function assertAccountNotExists(ctx: TestContext, account: PublicKe
   assert.isFalse(await ctx.accountExists(account), `${accountName} account exists when it should not`);
 }
 
-export function assertEqualBalanceSOL(actual: BN, expected: BN, message?: string) {
-  const actualSol = actual.div(LAMPORTS_PER_SOL).toString();
-  const expectedSol = expected.div(LAMPORTS_PER_SOL).toString();
+export function assertEqualSOLBalance(left: BN, right: BN, message?: string) {
+  const actualSol = left.div(LAMPORTS_PER_SOL).toString();
+  const expectedSol = right.div(LAMPORTS_PER_SOL).toString();
   const defaultMessage = `Balance mismatch: ${actualSol} SOL !== ${expectedSol} SOL`;
-  assertEqualBn(actual, expected, message ?? defaultMessage);
+  assertEqualBn(left, right, message ?? defaultMessage);
 }
 
-export function assertEqualBn(actual: BN, expected: BN, message?: string) {
-  const defaultMessage = `BN values mismatch: ${actual.toString()} !== ${expected.toString()}`;
-  assert.isTrue(actual.eq(expected), message ?? defaultMessage);
+export function assertEqualBn(left: BN, right: BN, message?: string) {
+  const defaultMessage = `BN values mismatch: ${left.toString()} !== ${right.toString()}`;
+  assert.isTrue(left.eq(right), message ?? defaultMessage);
 }
 
-export function assertEqualPublicKey(actual: PublicKey, expected: PublicKey, message?: string) {
-  const defaultMessage = `PublicKey mismatch: ${actual.toBase58()} !== ${expected.toBase58()}`;
-  assert.isTrue(actual.equals(expected), message ?? defaultMessage);
+export function assertEqualPublicKey(left: PublicKey, right: PublicKey, message?: string) {
+  const defaultMessage = `PublicKey mismatch: ${left.toBase58()} !== ${right.toBase58()}`;
+  assert.isTrue(left.equals(right), message ?? defaultMessage);
 }
 
-export function assertLteBn(actual: BN, expected: BN, message?: string) {
-  const defaultMessage = `Expected ${actual.toString()} to be <= to ${expected.toString()}`;
-  assert.isTrue(actual.lte(expected), message ?? defaultMessage);
+export function assertLteBn(left: BN, right: BN, message?: string) {
+  const defaultMessage = `Expected ${left.toString()} to be <= to ${right.toString()}`;
+  assert.isTrue(left.lte(right), message ?? defaultMessage);
 }
 
-export function assertZeroBn(actual: BN, message?: string) {
-  const defaultMessage = `Expected ${actual.toString()} to be zero`;
-  assert.isTrue(actual.isZero(), message ?? defaultMessage);
+export function assertZeroBn(left: BN, message?: string) {
+  const defaultMessage = `Expected ${left.toString()} to be zero`;
+  assert.isTrue(left.isZero(), message ?? defaultMessage);
 }
 
 export function expectToThrow<T extends Record<string, number>>(

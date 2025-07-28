@@ -4,10 +4,10 @@ import { type Keypair, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { ProgramId, ZERO } from "../../lib/constants";
 import { ProgramName } from "../../lib/enums";
-import { getPDAAddress, toBn } from "../../lib/helpers";
+import { getPDAAddress } from "../../lib/helpers";
 import IDL from "../../target/idl/sablier_lockup.json";
 import { type SablierLockup as SablierLockupProgram } from "../../target/types/sablier_lockup";
-import type { StreamData } from "../../target/types/sablier_lockup_structs";
+import type { NftCollectionData, StreamData } from "../../target/types/sablier_lockup_structs";
 import { buildSignAndProcessTx, deriveATAAddress, getATABalance } from "../common/anchor-bankrun";
 import { TestContext } from "../common/context";
 import type { User } from "../common/types";
@@ -389,11 +389,11 @@ export class LockupTestContext extends TestContext {
     }
 
     // Get the NFT Collection Data
-    const nftCollectionData = this.lockup.account.nftCollectionData.coder.accounts.decode(
+    const nftCollectionData = this.lockup.account.nftCollectionData.coder.accounts.decode<NftCollectionData>(
       "nftCollectionData",
       Buffer.from(nftCollectionDataAcc.data),
     );
 
-    return toBn(nftCollectionData.totalSupply);
+    return nftCollectionData.totalSupply;
   }
 }

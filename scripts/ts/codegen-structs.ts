@@ -18,11 +18,43 @@ import {
   createMainFunction,
   extractIdlField,
   generateFileHeader,
-  type IdlType,
-  type IdlTypeDefinition,
   readIdlFile,
   writeGeneratedFile,
 } from "./common/codegen-utils";
+
+/* -------------------------------------------------------------------------- */
+/*                                   TYPES                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Represents a field in an Anchor IDL type definition
+ */
+type IdlField = {
+  name: string;
+  type: IdlTypeDefinition;
+};
+
+/**
+ * Represents a complete type definition from the Anchor IDL
+ */
+type IdlType = {
+  name: string;
+  type: {
+    kind: "struct" | "enum";
+    fields?: IdlField[];
+    variants?: { name: string }[];
+  };
+};
+
+/**
+ * Represents the possible type definitions in an Anchor IDL
+ *
+ * Can be one of:
+ * - string: Primitive type like "u64", "bool", "pubkey"
+ * - { defined: { name: string } }: Reference to another type in the same IDL
+ * - { array: [string, number] }: Array type with element type and size
+ */
+type IdlTypeDefinition = string | { defined: { name: string } } | { array: [string, number] };
 
 /**
  * Mapping from Rust/Solana primitive types to TypeScript equivalents
@@ -48,17 +80,9 @@ const RUST_TYPES = {
 
 type RustType = keyof typeof RUST_TYPES;
 
-/**
- * Converts snake_case field names from Rust to camelCase for TypeScript
- *
- * @example
- * - "start_unlock" → "startUnlock"
- * - "deposited_token_mint" → "depositedTokenMint"
- * - "is_cancelable" → "isCancelable"
- */
-function convertFieldName(fieldName: string): string {
-  return _.camelCase(fieldName);
-}
+/* -------------------------------------------------------------------------- */
+/*                                   HELPERS                                  */
+/* -------------------------------------------------------------------------- */
 
 /**
  * Analyzes all types and generates the necessary import statements
@@ -133,7 +157,7 @@ function generateStructType(idlType: IdlType): string {
   // Handle struct types - convert each field and create object type
   const fields = idlType.type.fields
     .map((field) => {
-      const fieldName = convertFieldName(field.name); // snake_case → camelCase
+      const fieldName = _.camelCase(field.name); // snake_case → camelCase
       const fieldType = mapSolanaTypeToTypeScript(field.type); // Rust type → TS type
       return `  ${fieldName}: ${fieldType};`;
     })
@@ -179,7 +203,7 @@ function mapSolanaTypeToTypeScript(type: IdlTypeDefinition): string {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                              MAIN FUNCTIONS                               */
+/*                               MAIN FUNCTION                                */
 /* -------------------------------------------------------------------------- */
 
 /**

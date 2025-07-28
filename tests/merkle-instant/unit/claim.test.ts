@@ -4,7 +4,7 @@ import { assert, beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
 import { createATAAndFund, getATABalanceMint } from "../../common/anchor-bankrun";
-import { assertEqualBalanceSOL, assertEqualBn, assertLteBn, assertZeroBn } from "../../common/assertions";
+import { assertEqualBn, assertEqualSOLBalance, assertLteBn, assertZeroBn } from "../../common/assertions";
 import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
@@ -210,7 +210,7 @@ async function testClaim(
   const treasuryLamportsAfter = await ctx.getLamportsOf(ctx.treasuryAddress);
 
   // Assert that the treasury's balance has increased by the claim fee amount
-  assertEqualBalanceSOL(treasuryLamportsAfter, treasuryLamportsBefore.add(Amount.CLAIM_FEE));
+  assertEqualSOLBalance(treasuryLamportsAfter, treasuryLamportsBefore.add(Amount.CLAIM_FEE));
 }
 
 // Implicitly tests the `has_claimed` Ix works.

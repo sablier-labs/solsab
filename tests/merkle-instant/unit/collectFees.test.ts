@@ -3,8 +3,8 @@ import {
   ANCHOR_ERROR__CONSTRAINT_ADDRESS as CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
 import { beforeAll, beforeEach, describe, it } from "vitest";
-import { MIN_LAMPORTS_BALANCE } from "../../../lib/constants";
-import { assertEqualBalanceSOL } from "../../common/assertions";
+import { REDUNDANCY_BUFFER } from "../../../lib/constants";
+import { assertEqualSOLBalance } from "../../common/assertions";
 import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount } from "../utils/defaults";
@@ -65,11 +65,11 @@ describe("collectFees", () => {
             treasury: await ctx.getTreasuryLamports(),
           };
 
-          // 1 claim worth of fees minus the minimum lamports balance (a buffer on top of the minimum rent).
-          const expectedFeesCollected = Amount.CLAIM_FEE.sub(MIN_LAMPORTS_BALANCE);
+          // 1 claim worth of fees minus the minimum lamports balance (a buffer on top of the redundancy buffer).
+          const expectedFeesCollected = Amount.CLAIM_FEE.sub(REDUNDANCY_BUFFER);
 
-          assertEqualBalanceSOL(afterLamports.treasury, beforeLamports.treasury.sub(expectedFeesCollected));
-          assertEqualBalanceSOL(afterLamports.feeRecipient, beforeLamports.feeRecipient.add(expectedFeesCollected));
+          assertEqualSOLBalance(afterLamports.treasury, beforeLamports.treasury.sub(expectedFeesCollected));
+          assertEqualSOLBalance(afterLamports.feeRecipient, beforeLamports.feeRecipient.add(expectedFeesCollected));
         });
       });
     });

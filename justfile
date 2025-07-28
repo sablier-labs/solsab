@@ -98,6 +98,7 @@ alias rw := rust-write
 # ============================================================================ #
 
 # Run all tests
+# To debug the Solana logs, run this as `RUST_LOG=debug just test`
 [group("test")]
 test *args: build
     na vitest run --hideSkippedTests {{args}}
@@ -107,6 +108,11 @@ alias t := test
 test-lite *args:
     na vitest run --hideSkippedTests {{args}}
 alias tl := test-lite
+
+# Run tests with UI
+test-ui *args: build
+    na vitest --hideSkippedTests --ui {{args}}
+alias tui := test-ui
 
 # Run Lockup tests only
 [group("test")]

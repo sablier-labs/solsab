@@ -31,10 +31,6 @@ We welcome contributions!
 
 For guidance on how to make PRs, see the [CONTRIBUTING](./CONTRIBUTING.md) guide.
 
-## Contributing
-
-For guidance on how to contribute to SolSab, see the [CONTRIBUTING](CONTRIBUTING.md) guide.
-
 ## License
 
 See [LICENSE.md](./LICENSE.md).

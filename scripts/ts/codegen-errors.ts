@@ -8,53 +8,18 @@
  * - Outputs to target/types/ as *_errors.ts files
  *
  * Usage:
- * - npm run codegen:errors all             (generates for all programs)
- * - npm run codegen:errors sablier_lockup  (generates for a specific program)
+ * - bun run codegen:errors all             (generates for all programs)
+ * - bun run codegen:errors sablier_lockup  (generates for a specific program)
  */
 
+import type { IdlErrorCode } from "@coral-xyz/anchor/dist/cjs/idl";
 import {
   createMainFunction,
   extractIdlField,
   generateFileHeader,
-  type IdlError,
   readIdlFile,
   writeGeneratedFile,
 } from "./common/codegen-utils";
-
-/**
- * Validates that error definitions have the required fields
- *
- * @param errors - Array of error definitions from the IDL
- * @returns True if all errors are valid
- */
-function validateErrors(errors: IdlError[]): boolean {
-  return !errors.some((e) => !e.name || !e.code);
-}
-
-/**
- * Generates TypeScript error code definitions from IDL error data
- *
- * Creates:
- * 1. ProgramErrorCode constant object mapping error names to codes
- * 2. ProgramErrorName type for type-safe error name usage
- *
- * @param errors - Array of error definitions from the IDL
- * @returns Generated TypeScript content
- */
-function generateErrorCode(errors: IdlError[]): string {
-  const errorEntries = errors.map(({ name, code }) => `  ${name}: ${code},`);
-
-  const content = [
-    ...generateFileHeader(),
-    "export const ProgramErrorCode = {",
-    ...errorEntries,
-    "} as const;",
-    "",
-    "export type ProgramErrorName = keyof typeof ProgramErrorCode;",
-  ];
-
-  return content.join("\n");
-}
 
 /**
  * Main function that generates TypeScript error definitions for a single program
@@ -70,10 +35,49 @@ function generateErrorCode(errors: IdlError[]): string {
  */
 function genErrors(programName: string): void {
   const idl = readIdlFile(programName);
-  const errors = extractIdlField<IdlError>(idl, "errors", validateErrors);
+  const errors = extractIdlField<IdlErrorCode>(idl, "errors", validateErrors);
   const content = generateErrorCode(errors);
   writeGeneratedFile(content, programName, "_errors");
 }
+
+/**
+ * Generates TypeScript error code definitions from IDL error data
+ *
+ * Creates:
+ * 1. ProgramErrorCode constant object mapping error names to codes
+ * 2. ProgramErrorName type for type-safe error name usage
+ *
+ * @param errors - Array of error definitions from the IDL
+ * @returns Generated TypeScript content
+ */
+function generateErrorCode(errors: IdlErrorCode[]): string {
+  const errorEntries = errors.map(({ name, code }) => `  ${name}: ${code},`);
+
+  const content = [
+    ...generateFileHeader(),
+    "export const ProgramErrorCode = {",
+    ...errorEntries,
+    "} as const;",
+    "",
+    "export type ProgramErrorName = keyof typeof ProgramErrorCode;",
+  ];
+
+  return content.join("\n");
+}
+
+/**
+ * Validates that error definitions have the required fields
+ *
+ * @param errors - Array of error definitions from the IDL
+ * @returns True if all errors are valid
+ */
+function validateErrors(errors: IdlErrorCode[]): boolean {
+  return !errors.some((e) => !e.name || !e.code);
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                MAIN FUNCTION                               */
+/* -------------------------------------------------------------------------- */
 
 const main = createMainFunction(genErrors, "TypeScript error bindings");
 

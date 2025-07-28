@@ -7,9 +7,10 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { Idl } from "@coral-xyz/anchor";
 import _ from "lodash";
 import { ProgramName as ProgramNameEnum } from "../../../lib/enums";
-import { type ProgramName } from "../../../lib/types";
+import type { ProgramName } from "../../../lib/types";
 
 /* -------------------------------------------------------------------------- */
 /*                                 CONSTANTS                                  */
@@ -28,91 +29,6 @@ export const TYPES_DIR = join(ROOT_DIR, "target", "types");
 export const VALID_PROGRAMS = ["all", ..._.values(ProgramNameEnum)];
 
 /* -------------------------------------------------------------------------- */
-/*                                   TYPES                                    */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Base structure of an Anchor IDL file
- */
-export type BaseIdl = {
-  address: string;
-  metadata: {
-    name: string;
-    version: string;
-    spec: string;
-    description: string;
-  };
-  instructions: unknown[];
-  accounts: unknown[];
-  events: unknown[];
-  errors?: IdlError[];
-  types?: unknown[];
-};
-
-/**
- * Configuration for a code generation operation
- */
-export type CodegenConfig = {
-  /** Name of the program to generate code for */
-  programName: string;
-  /** Field to extract from the IDL (e.g., "errors", "types") */
-  idlField: string;
-  /** File suffix for the output file (e.g., "_errors", "_structs") */
-  outputSuffix: string;
-  /** Success message to display */
-  successMessage: string;
-};
-
-/**
- * Error definition from an Anchor IDL
- */
-export type IdlError = {
-  code: number;
-  name: string;
-  msg?: string;
-};
-
-/**
- * Represents a field in an Anchor IDL type definition
- */
-export type IdlField = {
-  name: string;
-  type: IdlTypeDefinition;
-};
-
-/**
- * Result of processing an IDL file
- */
-export type IdlProcessResult<T = unknown> = {
-  /** The extracted data from the IDL */
-  data: T[];
-  /** Generated TypeScript content */
-  content: string;
-};
-
-/**
- * Represents the possible type definitions in an Anchor IDL
- *
- * Can be one of:
- * - string: Primitive type like "u64", "bool", "pubkey"
- * - { defined: { name: string } }: Reference to another type in the same IDL
- * - { array: [string, number] }: Array type with element type and size
- */
-export type IdlTypeDefinition = string | { defined: { name: string } } | { array: [string, number] };
-
-/**
- * Represents a complete type definition from the Anchor IDL
- */
-export type IdlType = {
-  name: string;
-  type: {
-    kind: "struct" | "enum";
-    fields?: IdlField[];
-    variants?: { name: string }[];
-  };
-};
-
-/* -------------------------------------------------------------------------- */
 /*                               CORE UTILITIES                              */
 /* -------------------------------------------------------------------------- */
 
@@ -126,11 +42,7 @@ export type IdlType = {
  * @returns The extracted and validated data with proper typing
  * @throws Error if the field is missing, not an array, or validation fails
  */
-export function extractIdlField<T = unknown>(
-  idl: BaseIdl,
-  fieldName: keyof BaseIdl,
-  validator?: (data: T[]) => boolean,
-): T[] {
+export function extractIdlField<T = unknown>(idl: Idl, fieldName: keyof Idl, validator?: (data: T[]) => boolean): T[] {
   const data = idl[fieldName];
 
   if (!_.isArray(data)) {
@@ -168,12 +80,12 @@ export function generateFileHeader(additionalImports: string[] = []): string[] {
  * @returns The parsed IDL object
  * @throws Error if the file cannot be read or parsed
  */
-export function readIdlFile(programName: string): BaseIdl {
+export function readIdlFile(programName: string): Idl {
   const idlPath = join(IDL_DIR, `${programName}.json`);
 
   try {
     const content = readFileSync(idlPath, { encoding: "utf-8" });
-    const parsed = JSON.parse(content) as BaseIdl;
+    const parsed = JSON.parse(content) as Idl;
 
     // Basic validation of IDL structure
     if (!parsed.address || !parsed.metadata || !parsed.metadata.name) {
