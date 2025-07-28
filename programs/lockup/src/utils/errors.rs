@@ -4,43 +4,43 @@ use anchor_lang::prelude::*;
 pub enum ErrorCode {
     // Cancel Stream
     #[msg("Can't renounce an already-renounced Stream!")]
-    StreamCanceled, // 0x1770
+    StreamCanceled,
     #[msg("Can't cancel a non-cancelable Stream!")]
-    StreamIsNotCancelable, // 0x1771
+    StreamIsNotCancelable,
     #[msg("Can't cancel a settled Stream!")]
-    StreamSettled, // 0x1772
+    StreamSettled,
 
     // Collect Fees
     #[msg("Can't collect zero fees!")]
-    CantCollectZeroFees, // 0x1773
+    CantCollectZeroFees,
 
     // Create Stream
     #[msg("Cliff time zero but unlock amount not zero!")]
-    CliffTimeZeroUnlockAmountNotZero, // 0x1774
+    CliffTimeZeroUnlockAmountNotZero,
     #[msg("Invalid cliff time of the Stream!")]
-    CliffTimeNotLessThanEndTime, // 0x1775
+    CliffTimeNotLessThanEndTime,
     #[msg("Invalid deposit amount!")]
-    DepositAmountZero, // 0x1776
+    DepositAmountZero,
     #[msg("Start time can't be zero!")]
-    StartTimeNotPositive, // 0x1777
+    StartTimeNotPositive,
     #[msg("Start time must be less than cliff time!")]
-    StartTimeNotLessThanCliffTime, // 0x1778
+    StartTimeNotLessThanCliffTime,
     #[msg("Start time must be less than end time!")]
-    StartTimeNotLessThanEndTime, // 0x1779
+    StartTimeNotLessThanEndTime,
     #[msg("Unlock amounts sum is greater than deposit amount!")]
-    UnlockAmountsSumTooHigh, // 0x177a
+    UnlockAmountsSumTooHigh,
 
     // Renounce
     #[msg("Can't renounce an already non cancelable Stream!")]
-    StreamAlreadyNonCancelable, // 0x177b
+    StreamAlreadyNonCancelable,
 
     // Withdraw
     #[msg("Attempting to withdraw more than available in the stream!")]
-    Overdraw, // 0x177c
+    Overdraw,
     #[msg("Can't withdraw a zero amount!")]
-    WithdrawAmountZero, // 0x177d
+    WithdrawAmountZero,
 
     // Common
     #[msg("Can't perform the action on a depleted stream!")]
-    StreamDepleted, // 0x177e
+    StreamDepleted,
 }

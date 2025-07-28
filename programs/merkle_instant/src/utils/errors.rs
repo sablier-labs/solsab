@@ -2,7 +2,6 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum ErrorCode {
-    // TODO: Add the corresponding 0x codes, for a better readability of the tests
     // Claim
     #[msg("Campaign has expired!")]
     CampaignExpired,
