@@ -13,12 +13,7 @@
  */
 
 import type { IdlErrorCode } from "@coral-xyz/anchor/dist/cjs/idl";
-import {
-  createMainFunction,
-  extractIdlField,
-  generateFileHeader,
-  writeGeneratedFile,
-} from "./common/codegen-utils";
+import { createMainFunction, extractIdlField, generateFileHeader, writeGeneratedFile } from "./common/codegen-utils";
 
 /**
  * Main function that generates TypeScript error definitions for a single program

@@ -14,12 +14,7 @@
  */
 
 import _ from "lodash";
-import {
-  createMainFunction,
-  extractIdlField,
-  generateFileHeader,
-  writeGeneratedFile,
-} from "./common/codegen-utils";
+import { createMainFunction, extractIdlField, generateFileHeader, writeGeneratedFile } from "./common/codegen-utils";
 
 /* -------------------------------------------------------------------------- */
 /*                                   TYPES                                    */
