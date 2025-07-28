@@ -9,8 +9,8 @@
  * - Outputs to target/types/ as *_structs.ts files
  *
  * Usage:
- * - bun run codegen:structs all          (generates for all programs)
- * - bun run codegen:structs sablier_lockup    (generates for specific program)
+ * - bun run codegen:structs all              (generates for all programs)
+ * - bun run codegen:structs sablier_lockup   (generates for specific program)
  */
 
 import _ from "lodash";

@@ -1,6 +1,6 @@
 /**
  * @file Note that this is only a type helper and is not the actual IDL. The original
- * IDL types can be found at @see {@link file://./../../target/types/sablier_lockup_structs.ts}.
+ * IDL types can be found at @see {@link file://./../../../target/types/sablier_lockup_structs.ts}.
  */
 
 import { type PublicKey } from "@solana/web3.js";
