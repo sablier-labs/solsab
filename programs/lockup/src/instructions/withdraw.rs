@@ -127,7 +127,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     ctx.accounts.stream_data.withdraw(amount)?;
 
     // Interaction: charge the withdrawal fee.
-    charge_withdrawal_fee(
+    let fee_in_lamports = charge_withdrawal_fee(
         ctx.accounts.chainlink_program.to_account_info(),
         ctx.accounts.chainlink_sol_usd_feed.to_account_info(),
         ctx.accounts.signer.to_account_info(),
@@ -149,9 +149,10 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Log the withdrawal.
     emit!(WithdrawFromLockupStream {
         deposited_token_mint: ctx.accounts.deposited_token_mint.key(),
+        fee_in_lamports,
         stream_data: ctx.accounts.stream_data.key(),
         stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
-        withdrawn_amount: amount
+        withdrawn_amount: amount,
     });
 
     Ok(())
@@ -163,21 +164,21 @@ fn charge_withdrawal_fee<'info>(
     chainlink_sol_usd_feed: AccountInfo<'info>,
     tx_signer: AccountInfo<'info>,
     treasury: AccountInfo<'info>,
-) -> Result<()> {
+) -> Result<u64> {
     // If the USD fee is 0, skip the calculations.
     if WITHDRAWAL_FEE_USD == 0 {
-        return Ok(());
+        return Ok(0);
     }
 
     // Interactions: query the oracle price and the time at which it was updated.
     let round = match chainlink::latest_round_data(chainlink_program.clone(), chainlink_sol_usd_feed.clone()) {
         Ok(round) => round,
-        Err(_) => return Ok(()), // If the oracle call fails, skip fee charging.
+        Err(_) => return Ok(0), // If the oracle call fails, skip fee charging.
     };
 
     // If the price is not greater than 0, skip the calculations.
     if round.answer <= 0 {
-        return Ok(());
+        return Ok(0);
     }
 
     let current_timestamp: u32 = Clock::get().unwrap().unix_timestamp as u32;
@@ -185,20 +186,20 @@ fn charge_withdrawal_fee<'info>(
     // Due to reorgs and latency issues, the oracle can have an timestamp that is in the future. In
     // this case, we ignore the price and skip fee charging.
     if current_timestamp < round.timestamp {
-        return Ok(());
+        return Ok(0);
     }
 
     // If the oracle hasn't been updated in the last 24 hours, we ignore the price and skip fee charging. This is a
     // safety check to avoid using outdated prices.
     const SECONDS_IN_24_HOURS: u32 = 86400;
     if current_timestamp - round.timestamp > SECONDS_IN_24_HOURS {
-        return Ok(());
+        return Ok(0);
     }
 
     // Interactions: query the oracle decimals.
     let oracle_decimals = match chainlink::decimals(chainlink_program.clone(), chainlink_sol_usd_feed.clone()) {
         Ok(decimals) => decimals,
-        Err(_) => return Ok(()), // If the oracle call fails, skip fee charging.
+        Err(_) => return Ok(0), // If the oracle call fails, skip fee charging.
     };
 
     let price = round.answer as u64;
@@ -221,5 +222,5 @@ fn charge_withdrawal_fee<'info>(
         invoke(&fee_charging_ix, &[tx_signer, treasury])?;
     }
 
-    Ok(())
+    Ok(fee_in_lamports)
 }

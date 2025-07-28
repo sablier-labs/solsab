@@ -94,7 +94,7 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
     ctx.accounts.campaign.claim()?;
 
     // Interaction: charge the claim fee.
-    charge_claim_fee(
+    let fee_in_lamports = charge_claim_fee(
         ctx.accounts.chainlink_program.to_account_info(),
         ctx.accounts.chainlink_sol_usd_feed.to_account_info(),
         ctx.accounts.claimer.to_account_info(),
@@ -127,6 +127,7 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
         campaign: campaign.key(),
         claimer: claimer.key(),
         claim_receipt: ctx.accounts.claim_receipt.key(),
+        fee_in_lamports,
         index,
         recipient: recipient.key(),
     });
@@ -140,21 +141,21 @@ fn charge_claim_fee<'info>(
     chainlink_sol_usd_feed: AccountInfo<'info>,
     tx_signer: AccountInfo<'info>,
     treasury: AccountInfo<'info>,
-) -> Result<()> {
+) -> Result<u64> {
     // If the USD fee is 0, skip the calculations.
     if CLAIM_FEE_USD == 0 {
-        return Ok(());
+        return Ok(0);
     }
 
     // Interactions: query the oracle price and the time at which it was updated.
     let round = match chainlink::latest_round_data(chainlink_program.clone(), chainlink_sol_usd_feed.clone()) {
         Ok(round) => round,
-        Err(_) => return Ok(()), // If the oracle call fails, skip fee charging.
+        Err(_) => return Ok(0), // If the oracle call fails, skip fee charging.
     };
 
     // If the price is not greater than 0, skip the calculations.
     if round.answer <= 0 {
-        return Ok(());
+        return Ok(0);
     }
 
     let current_timestamp: u32 = Clock::get().unwrap().unix_timestamp as u32;
@@ -162,20 +163,20 @@ fn charge_claim_fee<'info>(
     // Due to reorgs and latency issues, the oracle can have an timestamp that is in the future. In
     // this case, we ignore the price and skip fee charging.
     if current_timestamp < round.timestamp {
-        return Ok(());
+        return Ok(0);
     }
 
     // If the oracle hasn't been updated in the last 24 hours, we ignore the price and skip fee charging. This is a
     // safety check to avoid using outdated prices.
     const SECONDS_IN_24_HOURS: u32 = 86400;
     if current_timestamp - round.timestamp > SECONDS_IN_24_HOURS {
-        return Ok(());
+        return Ok(0);
     }
 
     // Interactions: query the oracle decimals.
     let oracle_decimals = match chainlink::decimals(chainlink_program.clone(), chainlink_sol_usd_feed.clone()) {
         Ok(decimals) => decimals,
-        Err(_) => return Ok(()), // If the oracle call fails, skip fee charging.
+        Err(_) => return Ok(0), // If the oracle call fails, skip fee charging.
     };
 
     let price = round.answer as u64;
@@ -198,5 +199,5 @@ fn charge_claim_fee<'info>(
         invoke(&fee_charging_ix, &[tx_signer, treasury])?;
     }
 
-    Ok(())
+    Ok(fee_in_lamports)
 }

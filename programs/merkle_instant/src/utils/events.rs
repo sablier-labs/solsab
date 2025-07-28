@@ -20,6 +20,7 @@ pub struct Claim {
     pub campaign: Pubkey,
     pub claimer: Pubkey,
     pub claim_receipt: Pubkey,
+    pub fee_in_lamports: u64,
     pub index: u32,
     pub recipient: Pubkey,
 }
