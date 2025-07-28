@@ -18,7 +18,6 @@ import {
   createMainFunction,
   extractIdlField,
   generateFileHeader,
-  readIdlFile,
   writeGeneratedFile,
 } from "./common/codegen-utils";
 
@@ -218,11 +217,8 @@ function mapSolanaTypeToTypeScript(type: IdlTypeDefinition): string {
  * 6. Write the result to target/types/{programName}_structs.ts
  */
 function genStructs(programName: string): void {
-  // Read and parse the IDL file
-  const idl = readIdlFile(programName);
-
   // Extract and validate type definitions
-  const types = extractIdlField<IdlType>(idl, "types");
+  const types = extractIdlField<IdlType>(programName, "types");
 
   // Generate the necessary imports and type definitions
   const imports = generateImports(types);

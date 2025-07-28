@@ -17,7 +17,6 @@ import {
   createMainFunction,
   extractIdlField,
   generateFileHeader,
-  readIdlFile,
   writeGeneratedFile,
 } from "./common/codegen-utils";
 
@@ -34,8 +33,7 @@ import {
  * @throws Error if the IDL file is malformed or missing errors
  */
 function genErrors(programName: string): void {
-  const idl = readIdlFile(programName);
-  const errors = extractIdlField<IdlErrorCode>(idl, "errors", validateErrors);
+  const errors = extractIdlField<IdlErrorCode>(programName, "errors", validateErrors);
   const content = generateErrorCode(errors);
   writeGeneratedFile(content, programName, "_errors");
 }

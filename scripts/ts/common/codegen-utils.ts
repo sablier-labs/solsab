@@ -36,13 +36,21 @@ export const VALID_PROGRAMS = ["all", ..._.values(ProgramNameEnum)];
  * Extracts a specific field from an IDL and validates it with type safety
  *
  * @template T - The expected type of the array elements
- * @param idl - The parsed IDL object
+ * @param programName - The name of the Solana program (e.g., "sablier_lockup")
  * @param fieldName - The field to extract (e.g., "errors", "types")
  * @param validator - Optional validation function for the extracted data
  * @returns The extracted and validated data with proper typing
  * @throws Error if the field is missing, not an array, or validation fails
  */
-export function extractIdlField<T = unknown>(idl: Idl, fieldName: keyof Idl, validator?: (data: T[]) => boolean): T[] {
+export function extractIdlField<T = unknown>(
+  programName: string,
+  fieldName: keyof Idl,
+  validator?: (data: T[]) => boolean,
+): T[] {
+  // Read and parse the IDL file
+  const idl = readIdlFile(programName);
+
+  // Extract the specified field
   const data = idl[fieldName];
 
   if (!_.isArray(data)) {
