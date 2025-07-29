@@ -20,7 +20,7 @@ export class MerkleInstantTestContext extends TestContext {
 
   // Users
   public campaignCreator!: User;
-  public defaultClawbackRecipient!: User;
+  public clawbackRecipient!: User;
 
   // Campaigns
   public defaultCampaign!: PublicKey;
@@ -48,7 +48,7 @@ export class MerkleInstantTestContext extends TestContext {
     this.campaignCreator = await this.createUser();
 
     // Create the Default Clawback Recipient user
-    this.defaultClawbackRecipient = await this.createUser();
+    this.clawbackRecipient = await this.createUser();
 
     // Pre-calculate the address of the Treasury
     this.treasuryAddress = getPDAAddress([Seed.TREASURY], this.merkleInstant.programId);
@@ -121,7 +121,7 @@ export class MerkleInstantTestContext extends TestContext {
     signer = this.campaignCreator.keys,
     campaign = this.defaultCampaign,
     amount = Amount.CLAWBACK,
-    clawbackRecipient = this.defaultClawbackRecipient.keys.publicKey,
+    clawbackRecipient = this.clawbackRecipient.keys.publicKey,
     airdropTokenMint = this.usdc,
     airdropTokenProgram = ProgramId.TOKEN,
   } = {}): Promise<void> {

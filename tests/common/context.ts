@@ -51,7 +51,7 @@ export class TestContext {
 
   async createUser(): Promise<User> {
     // Create the keypair for the user
-    const acc = await this.createUserAccount();
+    const acc = await this.createAccount();
 
     // Create ATAs and mint tokens for the user
     const { usdcATA, daiATA } = await this.createATAsAndFund(acc.publicKey);
@@ -63,7 +63,7 @@ export class TestContext {
     };
   }
 
-  async createUserAccount(): Promise<Keypair> {
+  async createAccount(): Promise<Keypair> {
     // Create the keypair for the user
     const acc = Keypair.generate();
 
