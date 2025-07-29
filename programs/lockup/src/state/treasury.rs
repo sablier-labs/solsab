@@ -8,7 +8,7 @@ pub struct Treasury {
 }
 
 impl Treasury {
-    // State update for the `initialize` instruction.
+    /// State update for the [`crate::sablier_lockup::initialize`] instruction.
     pub fn initialize(&mut self, bump: u8, fee_collector: Pubkey) -> Result<()> {
         self.bump = bump;
         self.fee_collector = fee_collector;

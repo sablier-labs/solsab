@@ -11,24 +11,14 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct Clawback<'info> {
+    // -------------------------------------------------------------------------- //
+    //                                USER ACCOUNTS                               //
+    // -------------------------------------------------------------------------- //
     #[account(
       mut,
       address = campaign.creator,
     )]
     pub campaign_creator: Signer<'info>,
-
-    pub campaign: Box<Account<'info, Campaign>>,
-
-    #[account(address = campaign.airdrop_token_mint)]
-    pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    #[account(
-      mut,
-      associated_token::mint = airdrop_token_mint,
-      associated_token::authority = campaign,
-      associated_token::token_program = airdrop_token_program
-    )]
-    pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// CHECK: This can be any address.
     pub clawback_recipient: UncheckedAccount<'info>,
@@ -42,9 +32,28 @@ pub struct Clawback<'info> {
     )]
     pub clawback_recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    pub system_program: Program<'info, System>,
+    // -------------------------------------------------------------------------- //
+    //                              CAMPAIGN ACCOUNTS                             //
+    // -------------------------------------------------------------------------- //
+    #[account(address = campaign.airdrop_token_mint)]
+    pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    pub campaign: Box<Account<'info, Campaign>>,
+
+    #[account(
+      mut,
+      associated_token::mint = airdrop_token_mint,
+      associated_token::authority = campaign,
+      associated_token::token_program = airdrop_token_program
+    )]
+    pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    // -------------------------------------------------------------------------- //
+    //                               PROGRAM ACCOUNTS                             //
+    // -------------------------------------------------------------------------- //
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
 }
 
 pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {

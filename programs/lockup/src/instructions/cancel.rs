@@ -14,6 +14,9 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct Cancel<'info> {
+    // -------------------------------------------------------------------------- //
+    //                               USER ACCOUNTS                                //
+    // -------------------------------------------------------------------------- //
     /// Write account: the sender of the stream who can cancel it.
     #[account(
       mut,
@@ -21,12 +24,22 @@ pub struct Cancel<'info> {
     )]
     pub sender: Signer<'info>,
 
+    /// Create if needed account: the deposited token ATA owned by the sender.
+    #[account(
+      init_if_needed,
+      payer = sender,
+      associated_token::mint = deposited_token_mint,
+      associated_token::authority = sender,
+      associated_token::token_program = deposited_token_program,
+    )]
+    pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    // -------------------------------------------------------------------------- //
+    //                              STREAM ACCOUNTS                               //
+    // -------------------------------------------------------------------------- //
     /// Read account: the mint account of the deposited token.
     #[account(address = stream_data.deposited_token_mint)]
     pub deposited_token_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    /// Read account: the mint account for the stream NFT.
-    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     /// Write account: the stream data account storing stream details.
     #[account(
@@ -41,34 +54,30 @@ pub struct Cancel<'info> {
 
     /// Write account: the deposited token ATA owned by the stream data account.
     #[account(
-        mut,
-        associated_token::mint = deposited_token_mint,
-        associated_token::authority = stream_data,
-        associated_token::token_program = deposited_token_program,
+      mut,
+      associated_token::mint = deposited_token_mint,
+      associated_token::authority = stream_data,
+      associated_token::token_program = deposited_token_program,
     )]
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    /// Create if needed account: the deposited token ATA owned by the sender.
-    #[account(
-        init_if_needed,
-        payer = sender,
-        associated_token::mint = deposited_token_mint,
-        associated_token::authority = sender,
-        associated_token::token_program = deposited_token_program,
-    )]
-    pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    /// Read account: the mint account for the stream NFT.
+    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    /// Program account: the System program.
-    pub system_program: Program<'info, System>,
+    // -------------------------------------------------------------------------- //
+    //                               PROGRAM ACCOUNTS                             //
+    // -------------------------------------------------------------------------- //
+    /// Program account: the Associated Token program.
+    pub associated_token_program: Program<'info, AssociatedToken>,
 
     /// Program account: the Token program of the deposited token.
     pub deposited_token_program: Interface<'info, TokenInterface>,
 
-    /// Program account: the Associated Token program.
-    pub associated_token_program: Program<'info, AssociatedToken>,
+    /// Program account: the System program.
+    pub system_program: Program<'info, System>,
 }
 
-/// See the documentation of the {lib.rs#cancel} function.
+/// See the documentation for [`crate::sablier_lockup::cancel`].
 pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     // Retrieve the stream amounts from storage.
     let stream_amounts = ctx.accounts.stream_data.amounts.clone();

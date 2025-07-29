@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use super::StreamView;
 use crate::utils::lockup_math::get_streamed_amount;
 
-/// See the documentation of the {lib.rs#status_of} function.
+/// See the documentation for [`crate::sablier_lockup::status_of`].
 pub fn handler(ctx: Context<StreamView>) -> Result<StreamStatus> {
     let stream_data = &ctx.accounts.stream_data;
 

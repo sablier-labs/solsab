@@ -17,7 +17,7 @@ describe("renounce", () => {
       await ctx.setUpLockup({ initProgram: false });
     });
 
-    it("should revert", async () => {
+    it("should fail", async () => {
       await expectToThrow(ctx.renounce({ salt: BN_1 }), ACCOUNT_NOT_INITIALIZED);
     });
   });
@@ -29,7 +29,7 @@ describe("renounce", () => {
     });
 
     describe("given a null stream", () => {
-      it("should revert", async () => {
+      it("should fail", async () => {
         await expectToThrow(ctx.renounce({ salt: ctx.salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
       });
     });
@@ -37,7 +37,7 @@ describe("renounce", () => {
     describe("given a valid stream", () => {
       describe("given cold stream", () => {
         describe("given DEPLETED status", () => {
-          it("should revert", async () => {
+          it("should fail", async () => {
             await ctx.timeTravelTo(Time.END);
             await ctx.withdrawMax();
             await expectToThrow(ctx.renounce(), "StreamAlreadyNonCancelable");
@@ -45,14 +45,14 @@ describe("renounce", () => {
         });
 
         describe("given CANCELED status", () => {
-          it("should revert", async () => {
+          it("should fail", async () => {
             await ctx.cancel();
             await expectToThrow(ctx.renounce(), "StreamAlreadyNonCancelable");
           });
         });
 
         describe("given SETTLED status", () => {
-          it("should revert", async () => {
+          it("should fail", async () => {
             await ctx.timeTravelTo(Time.END);
             await expectToThrow(ctx.renounce(), "StreamAlreadyNonCancelable");
           });
@@ -61,14 +61,14 @@ describe("renounce", () => {
 
       describe("given warm stream", () => {
         describe("when signer not sender", () => {
-          it("should revert", async () => {
+          it("should fail", async () => {
             await expectToThrow(ctx.renounce({ signer: ctx.eve.keys }), CONSTRAINT_ADDRESS);
           });
         });
 
         describe("when signer sender", () => {
           describe("given non cancelable stream", () => {
-            it("should revert", async () => {
+            it("should fail", async () => {
               await expectToThrow(ctx.renounce({ salt: ctx.salts.nonCancelable }), "StreamAlreadyNonCancelable");
             });
           });

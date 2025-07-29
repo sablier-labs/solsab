@@ -2,7 +2,9 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum ErrorCode {
-    // Claim
+    // -------------------------------------------------------------------------- //
+    //                                CLAIM ERRORS                                //
+    // -------------------------------------------------------------------------- //
     #[msg("Campaign has expired!")]
     CampaignExpired,
     #[msg("Invalid Merkle proof!")]
@@ -10,11 +12,15 @@ pub enum ErrorCode {
     #[msg("Campaign has not started yet!")]
     CampaignNotStarted,
 
-    // Clawback
+    // -------------------------------------------------------------------------- //
+    //                                CLAWBACK ERRORS                             //
+    // -------------------------------------------------------------------------- //
     #[msg("Clawback not allowed past the grace period and before campaign expiration!")]
     ClawbackNotAllowed,
 
-    // Collect Fees
+    // -------------------------------------------------------------------------- //
+    //                                COLLECT FEES ERRORS                         //
+    // -------------------------------------------------------------------------- //
     #[msg("Can't collect zero fees!")]
     CantCollectZeroFees,
 }

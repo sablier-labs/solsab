@@ -15,7 +15,7 @@ describe("createWithDurations", () => {
       await ctx.timeTravelTo(Time.START);
     });
 
-    it("should revert", async () => {
+    it("should fail", async () => {
       await expectToThrow(ctx.createWithDurations({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
     });
   });

@@ -16,10 +16,16 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
+    // -------------------------------------------------------------------------- //
+    //                               USER ACCOUNTS                                //
+    // -------------------------------------------------------------------------- //
     /// Write account: the initializer of the program.
     #[account(mut)]
     pub initializer: Signer<'info>,
 
+    // -------------------------------------------------------------------------- //
+    //                              SABLIER ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
     /// Create account: the treasury account that will hold the fees.
     #[account(
       init,
@@ -30,6 +36,9 @@ pub struct Initialize<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
+    // -------------------------------------------------------------------------- //
+    //                              STREAM COLLECTION ACCOUNTS                    //
+    // -------------------------------------------------------------------------- //
     /// Create account: the NFT collection data account storing collection metadata.
     #[account(
       init,
@@ -39,43 +48,6 @@ pub struct Initialize<'info> {
       bump
     )]
     pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
-
-    /// Create account: the mint account for the NFT collection.
-    #[account(
-      init,
-      payer = initializer,
-      seeds = [NFT_COLLECTION_MINT],
-      bump,
-      mint::decimals = 0,
-      mint::authority = nft_collection_mint,
-      mint::freeze_authority = nft_collection_mint,
-      mint::token_program = nft_token_program,
-    )]
-    pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    /// Create account: the ATA for the NFT collection owned by treasury.
-    #[account(
-      init,
-      payer = initializer,
-      associated_token::mint = nft_collection_mint,
-      associated_token::authority = treasury,
-      associated_token::token_program = nft_token_program
-    )]
-    pub nft_collection_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    /// Create account: the metadata account for the NFT collection.
-    #[account(
-      mut,
-      seeds = [
-        METADATA,
-        token_metadata_program.key().as_ref(),
-        nft_collection_mint.key().as_ref()
-      ],
-      bump,
-      seeds::program = token_metadata_program.key(), // TODO: why is this necessary if the program key is already added to the seeds?
-    )]
-    /// CHECK: This account will be initialized by the Metaplex program
-    pub nft_collection_metadata: UncheckedAccount<'info>,
 
     /// Create account: the master edition account for the NFT collection.
     #[account(
@@ -92,11 +64,51 @@ pub struct Initialize<'info> {
     /// CHECK: This account will be initialized by the Metaplex program
     pub nft_collection_master_edition: UncheckedAccount<'info>,
 
-    /// Program account: the Token program of the collection NFT.
-    pub nft_token_program: Interface<'info, TokenInterface>,
+    /// Create account: the metadata account for the NFT collection.
+    #[account(
+      mut,
+      seeds = [
+        METADATA,
+        token_metadata_program.key().as_ref(),
+        nft_collection_mint.key().as_ref()
+      ],
+      bump,
+      seeds::program = token_metadata_program.key(), // TODO: why is this necessary if the program key is already added to the seeds?
+    )]
+    /// CHECK: This account will be initialized by the Metaplex program
+    pub nft_collection_metadata: UncheckedAccount<'info>,
 
+    /// Create account: the mint account for the NFT collection.
+    #[account(
+      init,
+      payer = initializer,
+      seeds = [NFT_COLLECTION_MINT],
+      bump,
+      mint::authority = nft_collection_mint,
+      mint::decimals = 0,
+      mint::freeze_authority = nft_collection_mint,
+      mint::token_program = nft_token_program,
+    )]
+    pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    /// Create account: the ATA for the NFT collection owned by treasury.
+    #[account(
+      init,
+      payer = initializer,
+      associated_token::authority = treasury,
+      associated_token::mint = nft_collection_mint,
+      associated_token::token_program = nft_token_program
+    )]
+    pub nft_collection_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    // -------------------------------------------------------------------------- //
+    //                               PROGRAM ACCOUNTS                             //
+    // -------------------------------------------------------------------------- //
     /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,
+
+    /// Program account: the Token program of the collection NFT.
+    pub nft_token_program: Interface<'info, TokenInterface>,
 
     /// Program account: the System program.
     pub system_program: Program<'info, System>,
@@ -104,11 +116,14 @@ pub struct Initialize<'info> {
     /// Program account: the Token Metadata program.
     pub token_metadata_program: Program<'info, Metadata>,
 
+    // -------------------------------------------------------------------------- //
+    //                               SYSVAR ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
     /// Sysvar account: Rent.
     pub rent: Sysvar<'info, Rent>,
 }
 
-/// See the documentation of the {lib.rs#initialize} function.
+/// See the documentation for [`crate::sablier_lockup::initialize`].
 pub fn handler(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
     ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector)?;
     ctx.accounts.nft_collection_data.initialize(ctx.bumps.nft_collection_data)?;

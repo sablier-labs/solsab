@@ -18,7 +18,7 @@ describe("createWithTimestamps", () => {
       await ctx.setUpLockup({ initProgram: false });
     });
 
-    it("should revert", async () => {
+    it("should fail", async () => {
       await expectToThrow(ctx.createWithTimestamps({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
     });
   });
@@ -30,14 +30,14 @@ describe("createWithTimestamps", () => {
     });
 
     describe("when deposit amount zero", () => {
-      it("should revert", async () => {
+      it("should fail", async () => {
         await expectToThrow(ctx.createWithTimestamps({ depositAmount: ZERO }), "DepositAmountZero");
       });
     });
 
     describe("when deposit amount not zero", () => {
       describe("when start time is zero", () => {
-        it("should revert", async () => {
+        it("should fail", async () => {
           await expectToThrow(
             ctx.createWithTimestamps({
               timestamps: TIMESTAMPS({ start: ZERO }),
@@ -49,7 +49,7 @@ describe("createWithTimestamps", () => {
 
       describe("when start time is not zero", () => {
         describe("when start time is not positive", () => {
-          it("should revert", async () => {
+          it("should fail", async () => {
             await expectToThrow(
               ctx.createWithTimestamps({
                 timestamps: TIMESTAMPS({ start: new BN(-1) }),
@@ -61,7 +61,7 @@ describe("createWithTimestamps", () => {
 
         describe("when start time is positive", () => {
           describe("when sender lacks an ATA for deposited token", () => {
-            it("should revert", async () => {
+            it("should fail", async () => {
               await expectToThrow(
                 ctx.createWithTimestamps({
                   depositTokenMint: ctx.randomToken,
@@ -73,7 +73,7 @@ describe("createWithTimestamps", () => {
 
           describe("when sender has an ATA for deposited token", () => {
             describe("when sender has an insufficient token balance", () => {
-              it("should revert", async () => {
+              it("should fail", async () => {
                 await expectToThrow(
                   ctx.createWithTimestamps({
                     depositAmount: usdc(1_000_000).addn(1),
@@ -86,7 +86,7 @@ describe("createWithTimestamps", () => {
             describe("when sender has a sufficient token balance", () => {
               describe("when cliff time zero", () => {
                 describe("when cliff unlock amount not zero", () => {
-                  it("should revert", async () => {
+                  it("should fail", async () => {
                     await expectToThrow(
                       ctx.createWithTimestamps({
                         timestamps: TIMESTAMPS({ cliff: ZERO }),
@@ -97,7 +97,7 @@ describe("createWithTimestamps", () => {
                 });
 
                 describe("when start time not less than end time", () => {
-                  it("should revert", async () => {
+                  it("should fail", async () => {
                     await expectToThrow(
                       ctx.createWithTimestamps({
                         timestamps: TIMESTAMPS({ cliff: ZERO, start: Time.END }),
@@ -129,7 +129,7 @@ describe("createWithTimestamps", () => {
 
               describe("when cliff time not zero", () => {
                 describe("when start time not less than cliff time", () => {
-                  it("should revert", async () => {
+                  it("should fail", async () => {
                     await expectToThrow(
                       ctx.createWithTimestamps({
                         timestamps: TIMESTAMPS({ start: Time.CLIFF }),
@@ -141,7 +141,7 @@ describe("createWithTimestamps", () => {
 
                 describe("when start time less than cliff time", () => {
                   describe("when cliff time not less than end time", () => {
-                    it("should revert", async () => {
+                    it("should fail", async () => {
                       await expectToThrow(
                         ctx.createWithTimestamps({
                           timestamps: TIMESTAMPS({ cliff: Time.END }),
@@ -153,7 +153,7 @@ describe("createWithTimestamps", () => {
 
                   describe("when cliff time less than end time", () => {
                     describe("when unlock amounts sum exceeds deposit amount", () => {
-                      it("should revert", async () => {
+                      it("should fail", async () => {
                         const depositAmount = BN_1000;
                         await expectToThrow(
                           ctx.createWithTimestamps({

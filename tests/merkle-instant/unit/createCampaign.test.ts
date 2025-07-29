@@ -25,7 +25,7 @@ describe("createCampaign", () => {
     });
 
     describe("when the campaign already exists", () => {
-      it("should revert", async () => {
+      it("should fail", async () => {
         await expectToThrow(ctx.createCampaign(), 0x0);
       });
     });

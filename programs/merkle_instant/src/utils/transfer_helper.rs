@@ -14,7 +14,12 @@ pub fn transfer_tokens<'info>(
     signer_seeds: &[&[&[u8]]],
 ) -> Result<()> {
     // Prepare the instruction to transfer the tokens
-    let transfer_ix = TransferChecked { from, mint, to, authority };
+    let transfer_ix = TransferChecked {
+        from,
+        mint,
+        to,
+        authority,
+    };
 
     // Execute the transfer with the provided signer seeds
     let cpi_ctx = CpiContext::new_with_signer(token_program, transfer_ix, signer_seeds);

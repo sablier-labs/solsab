@@ -14,7 +14,7 @@ describe("withdrawMax", () => {
       await ctx.setUpLockup({ initProgram: false });
     });
 
-    it("should revert", async () => {
+    it("should fail", async () => {
       await expectToThrow(ctx.withdrawMax({ salt: BN_1 }), ACCOUNT_NOT_INITIALIZED);
     });
   });
@@ -26,7 +26,7 @@ describe("withdrawMax", () => {
     });
 
     describe("given a null stream", () => {
-      it("should revert", async () => {
+      it("should fail", async () => {
         await expectToThrow(ctx.withdrawMax({ salt: ctx.salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
       });
     });

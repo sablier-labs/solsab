@@ -21,14 +21,14 @@ describe("claim", () => {
     });
 
     describe("when the campaign doesn't exist", () => {
-      it("should revert", async () => {
+      it("should fail", async () => {
         // Passing a non-Campaign account since no Campaigns exist yet
         await expectToThrow(ctx.claim({ campaign: new PublicKey(12345) }), ACCOUNT_NOT_INITIALIZED);
       });
     });
 
     describe("when the campaign exists", () => {
-      it("should revert", async () => {
+      it("should fail", async () => {
         const campaign = await ctx.createCampaign({ name: "Test Campaign" });
         await expectToThrow(ctx.claim({ campaign: campaign }), ACCOUNT_NOT_INITIALIZED);
       });
@@ -37,7 +37,7 @@ describe("claim", () => {
 
   describe("when the program is initialized", () => {
     describe("when the campaign doesn't exist", () => {
-      it("should revert", async () => {
+      it("should fail", async () => {
         // Claim from a non-existent Campaign
         await expectToThrow(ctx.claim({ campaign: new PublicKey(12345) }), ACCOUNT_NOT_INITIALIZED);
       });
@@ -50,7 +50,7 @@ describe("claim", () => {
       });
 
       describe("when the token mint is invalid", () => {
-        it("should revert", async () => {
+        it("should fail", async () => {
           // Claim from the Campaign with an invalid token mint
           await expectToThrow(ctx.claim({ airdropTokenMint: ctx.dai }), ACCOUNT_NOT_INITIALIZED);
         });
@@ -58,7 +58,7 @@ describe("claim", () => {
 
       describe("when the token mint is valid", () => {
         describe("when the airdrop has already been claimed", () => {
-          it("should revert", async () => {
+          it("should fail", async () => {
             await ctx.claim();
             await sleepFor(7);
 
@@ -69,7 +69,7 @@ describe("claim", () => {
 
         describe("when the airdrop has not been claimed", () => {
           describe("when the merkle proof is invalid", () => {
-            it("should revert", async () => {
+            it("should fail", async () => {
               await expectToThrow(
                 ctx.claim({
                   amount: Amount.CLAIM.sub(BN_1),
@@ -81,7 +81,7 @@ describe("claim", () => {
 
           describe("when the merkle proof is valid", () => {
             describe("when the campaign start time is in the future", () => {
-              it("should revert", async () => {
+              it("should fail", async () => {
                 // Time travel to before the campaign start time
                 await ctx.timeTravelTo(Campaign.START_TIME.sub(BN_1));
 
@@ -91,7 +91,7 @@ describe("claim", () => {
 
             describe("when the campaign start time is not in the future", () => {
               describe("when the campaign expired", () => {
-                it("should revert", async () => {
+                it("should fail", async () => {
                   // Time travel to when the campaign has expired
                   await ctx.timeTravelTo(Campaign.EXPIRATION_TIME);
                   await expectToThrow(ctx.claim(), "CampaignExpired");

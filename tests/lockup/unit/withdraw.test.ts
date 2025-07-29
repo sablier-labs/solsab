@@ -29,7 +29,7 @@ describe("withdraw", () => {
       await ctx.timeTravelTo(Time.MID_26_PERCENT);
     });
 
-    it("should revert", async () => {
+    it("should fail", async () => {
       await expectToThrow(ctx.withdraw({ salt: BN_1 }), ACCOUNT_NOT_INITIALIZED);
     });
   });
@@ -43,21 +43,21 @@ describe("withdraw", () => {
     });
 
     describe("given a null stream", () => {
-      it("should revert", async () => {
+      it("should fail", async () => {
         await expectToThrow(ctx.withdraw({ salt: ctx.salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
       });
     });
 
     describe("given a valid stream", () => {
       describe("given an invalid deposited token mint", () => {
-        it("should revert", async () => {
+        it("should fail", async () => {
           await expectToThrow(ctx.withdraw({ depositedTokenMint: ctx.randomToken }), ACCOUNT_NOT_INITIALIZED);
         });
       });
 
       describe("given a valid deposited token mint", () => {
         describe("when stream status is DEPLETED", () => {
-          it("should revert", async () => {
+          it("should fail", async () => {
             await ctx.timeTravelTo(Time.END);
             await ctx.withdrawMax();
             await expectToThrow(ctx.withdraw(), "StreamDepleted");
@@ -66,7 +66,7 @@ describe("withdraw", () => {
 
         describe("when stream status is not DEPLETED", () => {
           describe("when zero withdraw amount", () => {
-            it("should revert", async () => {
+            it("should fail", async () => {
               await expectToThrow(
                 ctx.withdraw({
                   withdrawAmount: ZERO,
@@ -78,7 +78,7 @@ describe("withdraw", () => {
 
           describe("when non zero withdraw amount", () => {
             describe("when withdraw amount overdraws", () => {
-              it("should revert", async () => {
+              it("should fail", async () => {
                 await expectToThrow(
                   ctx.withdraw({
                     withdrawAmount: Amount.WITHDRAW.add(BN_1),
@@ -91,7 +91,7 @@ describe("withdraw", () => {
             describe("when withdraw amount does not overdraw", () => {
               describe("when withdrawal address not recipient", () => {
                 describe("when signer not recipient", () => {
-                  it("should revert", async () => {
+                  it("should fail", async () => {
                     await expectToThrow(
                       ctx.withdraw({
                         signer: ctx.sender.keys,

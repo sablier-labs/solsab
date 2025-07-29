@@ -19,58 +19,25 @@ const WITHDRAWAL_FEE: u64 = 10_000_000; // The fee for withdrawing from the stre
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
+    // -------------------------------------------------------------------------- //
+    //                               USER ACCOUNTS                                //
+    // -------------------------------------------------------------------------- //
     /// Write account: the signer of the withdrawal who pays the withdrawal fee.
     #[account(mut)]
     pub signer: Signer<'info>,
-
-    /// Read account: the mint account for the deposited token.
-    #[account(address = stream_data.deposited_token_mint)]
-    pub deposited_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     /// Read account: the recipient of the stream who owns the stream NFT.
     /// CHECK: This account must be the Stream's recipient (checked in recipient_stream_nft_ata's constraints)
     pub stream_recipient: UncheckedAccount<'info>,
 
-    /// Read account: the mint account for the stream NFT.
-    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    /// Write account: the account storing the stream data.
-    #[account(
-        mut,
-        seeds = [STREAM_DATA, stream_nft_mint.key().as_ref()],
-        bump = stream_data.bump,
-    )]
-    pub stream_data: Box<Account<'info, StreamData>>,
-
-    /// Write account: the ATA for deposited tokens owned by stream data.
-    #[account(
-        mut,
-        associated_token::mint = deposited_token_mint,
-        associated_token::authority = stream_data,
-        associated_token::token_program = deposited_token_program,
-    )]
-    pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    /// Read account: the ATA for the stream NFT owned by recipient.
-    #[account(
-        associated_token::mint = stream_nft_mint,
-        associated_token::authority = stream_recipient,
-        associated_token::token_program = nft_token_program,
-        // Dev: the below constraint is vital for making sure that the tokens are only withdrawn to the legit recipient
-        constraint = recipient_stream_nft_ata.amount == 1,
-        // TODO: are there any other ways in which one could "fake" the recipient's authority (and that need to be checked in this Ix)?
-    )]
-    pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
     /// Read account: the account that will receive the withdrawn tokens.
     #[account(
-        constraint = (
-            withdrawal_recipient.key() == stream_recipient.key() ||
-            (withdrawal_recipient.key() != stream_recipient.key() &&
-            signer.key() == stream_recipient.key())
-        )
+      constraint = (
+        withdrawal_recipient.key() == stream_recipient.key() ||
+        (withdrawal_recipient.key() != stream_recipient.key() &&
+        signer.key() == stream_recipient.key())
+      )
     )]
-
     /// CHECK: This can be any address if the signer is the stream's recipient, otherwise it must be the stream's
     /// recipient.
     pub withdrawal_recipient: UncheckedAccount<'info>,
@@ -79,12 +46,15 @@ pub struct Withdraw<'info> {
     #[account(
       init_if_needed,
       payer = signer,
-      associated_token::mint = deposited_token_mint,
       associated_token::authority = withdrawal_recipient,
+      associated_token::mint = deposited_token_mint,
       associated_token::token_program = deposited_token_program,
     )]
     pub withdrawal_recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    // -------------------------------------------------------------------------- //
+    //                              SABLIER ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
     /// Write account: the treasury account that receives the withdrawal fee
     #[account(
       mut,
@@ -93,8 +63,50 @@ pub struct Withdraw<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
-    /// Program account: the System program.
-    pub system_program: Program<'info, System>,
+    // -------------------------------------------------------------------------- //
+    //                              STREAM ACCOUNTS                               //
+    // -------------------------------------------------------------------------- //
+    /// Read account: the mint account for the deposited token.
+    #[account(address = stream_data.deposited_token_mint)]
+    pub deposited_token_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    /// Read account: the ATA for the stream NFT owned by recipient.
+    ///
+    #[account(
+      associated_token::authority = stream_recipient,
+      associated_token::mint = stream_nft_mint,
+      associated_token::token_program = nft_token_program,
+      // Dev: this constraint is vital for making sure that the tokens are only withdrawn to the legitimate recipient
+      constraint = recipient_stream_nft_ata.amount == 1,
+      // TODO: are there any other ways in which one could "fake" the recipient's authority (and that need to be checked in this Ix)?
+    )]
+    pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    /// Write account: the account storing the stream data.
+    #[account(
+      mut,
+      seeds = [STREAM_DATA, stream_nft_mint.key().as_ref()],
+      bump = stream_data.bump,
+    )]
+    pub stream_data: Box<Account<'info, StreamData>>,
+
+    /// Write account: the ATA for deposited tokens owned by stream data.
+    #[account(
+      mut,
+      associated_token::authority = stream_data,
+      associated_token::mint = deposited_token_mint,
+      associated_token::token_program = deposited_token_program,
+    )]
+    pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    /// Read account: the mint account for the stream NFT.
+    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    // -------------------------------------------------------------------------- //
+    //                               PROGRAM ACCOUNTS                             //
+    // -------------------------------------------------------------------------- //
+    /// Program account: the Associated Token program.
+    pub associated_token_program: Program<'info, AssociatedToken>,
 
     /// Program account: the Token program of the deposited token.
     pub deposited_token_program: Interface<'info, TokenInterface>,
@@ -102,11 +114,11 @@ pub struct Withdraw<'info> {
     /// Program account: the Token program of the stream NFT.
     pub nft_token_program: Interface<'info, TokenInterface>,
 
-    /// Program account: the Associated Token program.
-    pub associated_token_program: Program<'info, AssociatedToken>,
+    /// Program account: the System program.
+    pub system_program: Program<'info, System>,
 }
 
-/// See the documentation of the {lib.rs#withdraw} function.
+/// See the documentation for [`crate::sablier_lockup::withdraw`].
 pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Check: validate the withdraw.
     check_withdraw(

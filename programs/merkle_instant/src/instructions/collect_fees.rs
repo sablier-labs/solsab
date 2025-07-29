@@ -8,6 +8,9 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct CollectFees<'info> {
+    // -------------------------------------------------------------------------- //
+    //                                USER ACCOUNTS                               //
+    // -------------------------------------------------------------------------- //
     #[account(address = treasury.fee_collector)]
     pub fee_collector: Signer<'info>,
 
@@ -15,6 +18,9 @@ pub struct CollectFees<'info> {
     /// CHECK: May be any account
     pub fee_recipient: UncheckedAccount<'info>,
 
+    // -------------------------------------------------------------------------- //
+    //                              SABLIER ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
     #[account(
       mut,
       seeds = [TREASURY_SEED],
@@ -22,36 +28,39 @@ pub struct CollectFees<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
+    // -------------------------------------------------------------------------- //
+    //                               PROGRAM ACCOUNTS                             //
+    // -------------------------------------------------------------------------- //
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 
 pub fn handler(ctx: Context<CollectFees>) -> Result<()> {
     // Calculate the amount collectable from the treasury in lamport units.
-    let collectable_amount = safe_collectable_amount(&ctx.accounts.treasury.to_account_info())?;
+    let collectible_amount = safe_collectible_amount(&ctx.accounts.treasury.to_account_info())?;
 
     // Check: validate the collectable amount.
-    check_collect_fees(collectable_amount)?;
+    check_collect_fees(collectible_amount)?;
 
     // Interaction: transfer the collect amount from the treasury to the fee recipient.
-    ctx.accounts.treasury.sub_lamports(collectable_amount)?;
-    ctx.accounts.fee_recipient.add_lamports(collectable_amount)?;
+    ctx.accounts.treasury.sub_lamports(collectible_amount)?;
+    ctx.accounts.fee_recipient.add_lamports(collectible_amount)?;
 
     // Log the fee collection.
     emit!(events::FeesCollected {
         fee_collector: ctx.accounts.fee_collector.key(),
         fee_recipient: ctx.accounts.fee_recipient.key(),
-        fee_amount: collectable_amount
+        fee_amount: collectible_amount
     });
 
     Ok(())
 }
 
-// TODO: abstract this to a utils module used by both Lockup and Merkle Instant
+/// TODO: abstract this to a utils module used by both Lockup and Merkle Instant
 /// Helper function to calculate the collectable amount from an account. It takes an extra-safe approach by adding a
 /// buffer to the rent exemption, ensuring that the account balance does not fall below the rent-exempt minimum, which
 /// could otherwise make the program unusable.
-pub fn safe_collectable_amount(account: &AccountInfo) -> Result<u64> {
+pub fn safe_collectible_amount(account: &AccountInfo) -> Result<u64> {
     // Retrieve the current balance of the account.
     let current_balance = account.lamports();
 

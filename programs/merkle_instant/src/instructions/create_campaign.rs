@@ -20,9 +20,15 @@ use crate::{
     name: String,
 )]
 pub struct CreateCampaign<'info> {
+    // -------------------------------------------------------------------------- //
+    //                                USER ACCOUNTS                               //
+    // -------------------------------------------------------------------------- //
     #[account(mut)]
     pub creator: Signer<'info>,
 
+    // -------------------------------------------------------------------------- //
+    //                              CAMPAIGN ACCOUNTS                             //
+    // -------------------------------------------------------------------------- //
     #[account(mint::token_program = airdrop_token_program)]
     pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
@@ -52,6 +58,9 @@ pub struct CreateCampaign<'info> {
     )]
     pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    // -------------------------------------------------------------------------- //
+    //                               PROGRAM ACCOUNTS                             //
+    // -------------------------------------------------------------------------- //
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
