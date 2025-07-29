@@ -9,9 +9,9 @@ import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount, Campaign, Time } from "../utils/defaults";
 
-describe("claim", () => {
-  let ctx: MerkleInstantTestContext;
+let ctx: MerkleInstantTestContext;
 
+describe("claim", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new MerkleInstantTestContext();
@@ -107,7 +107,7 @@ describe("claim", () => {
                   });
 
                   // Test the campaign
-                  await testClaim(ctx, campaign, ctx.recipient.keys, ctx.randomToken, ProgramId.TOKEN, false);
+                  await testClaim(campaign, ctx.recipient.keys, ctx.randomToken, ProgramId.TOKEN, false);
                 });
               });
 
@@ -115,7 +115,7 @@ describe("claim", () => {
                 describe("when the claimer is not the recipient", () => {
                   it("should claim the airdrop", async () => {
                     // Test the claim.
-                    await testClaim(ctx, ctx.defaultCampaign, ctx.campaignCreator.keys);
+                    await testClaim(ctx.defaultCampaign, ctx.campaignCreator.keys);
                   });
                 });
 
@@ -123,20 +123,14 @@ describe("claim", () => {
                   describe("given token SPL standard", () => {
                     it("should claim the airdrop", async () => {
                       // Claim from the Campaign
-                      await testClaim(ctx);
+                      await testClaim();
                     });
                   });
 
                   describe("given token 2022 standard", () => {
                     it("should claim the airdrop", async () => {
                       // Test the claim.
-                      await testClaim(
-                        ctx,
-                        ctx.defaultCampaignToken2022,
-                        ctx.recipient.keys,
-                        ctx.dai,
-                        ProgramId.TOKEN_2022,
-                      );
+                      await testClaim(ctx.defaultCampaignToken2022, ctx.recipient.keys, ctx.dai, ProgramId.TOKEN_2022);
                     });
                   });
                 });
@@ -151,7 +145,6 @@ describe("claim", () => {
 
 /// Common test function to test the claim functionality
 async function testClaim(
-  ctx: MerkleInstantTestContext,
   campaign = ctx.defaultCampaign,
   claimer = ctx.recipient.keys,
   tokenMint = ctx.usdc,
@@ -159,7 +152,7 @@ async function testClaim(
   recipientAtaExists = true,
 ): Promise<void> {
   // Assert that the claim was not made yet.
-  assert.isFalse(await hasClaimed(ctx));
+  assert.isFalse(await hasClaimed());
 
   // Get the Campaign's data before claiming
   const campaignDataBefore = await ctx.fetchCampaignData(campaign);
@@ -189,7 +182,7 @@ async function testClaim(
   assertEqualBn(campaignDataAfter.firstClaimTime, Time.GENESIS);
 
   // Assert that the claim has been made
-  assert.isTrue(await hasClaimed(ctx, campaign));
+  assert.isTrue(await hasClaimed(campaign));
 
   const campaignAtaBalanceAfter = await getATABalanceMint(ctx.banksClient, campaign, tokenMint);
 
@@ -214,7 +207,7 @@ async function testClaim(
 }
 
 // Implicitly tests the `has_claimed` Ix works.
-async function hasClaimed(ctx: MerkleInstantTestContext, campaign = ctx.defaultCampaign): Promise<boolean> {
+async function hasClaimed(campaign = ctx.defaultCampaign): Promise<boolean> {
   return await ctx.merkleInstant.methods
     .hasClaimed(ctx.defaultIndex)
     .accounts({

@@ -5,9 +5,9 @@ import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Time } from "../utils/defaults";
 
-describe("createWithDurations", () => {
-  let ctx: LockupTestContext;
+let ctx: LockupTestContext;
 
+describe("createWithDurations", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();

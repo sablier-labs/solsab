@@ -5,9 +5,9 @@ import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
 
-describe("withdrawMax", () => {
-  let ctx: LockupTestContext;
+let ctx: LockupTestContext;
 
+describe("withdrawMax", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();

@@ -18,9 +18,9 @@ import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
 
-describe("withdraw", () => {
-  let ctx: LockupTestContext;
+let ctx: LockupTestContext;
 
+describe("withdraw", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();
@@ -161,7 +161,6 @@ describe("withdraw", () => {
                       expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
 
                       await postWithdrawAssertions(
-                        ctx,
                         ctx.salts.default,
                         treasuryLamportsBefore,
                         ctx.sender.usdcATA,
@@ -191,7 +190,6 @@ describe("withdraw", () => {
                     expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
 
                     await postWithdrawAssertions(
-                      ctx,
                       ctx.salts.default,
                       treasuryLamportsBefore,
                       ctx.recipient.usdcATA,
@@ -226,7 +224,6 @@ describe("withdraw", () => {
                       expectedStreamData.isDepleted = true;
 
                       await postWithdrawAssertions(
-                        ctx,
                         ctx.salts.default,
                         treasuryLamportsBefore,
                         ctx.recipient.usdcATA,
@@ -260,7 +257,6 @@ describe("withdraw", () => {
                         expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
 
                         await postWithdrawAssertions(
-                          ctx,
                           ctx.salts.default,
                           treasuryLamportsBefore,
                           ctx.recipient.usdcATA,
@@ -286,7 +282,6 @@ describe("withdraw", () => {
                           const expectedStreamData = ctx.defaultStream().data;
                           expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
                           await postWithdrawAssertions(
-                            ctx,
                             ctx.salts.default,
                             treasuryLamportsBefore,
                             ctx.recipient.usdcATA,
@@ -316,7 +311,6 @@ describe("withdraw", () => {
                           }).data;
                           expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
                           await postWithdrawAssertions(
-                            ctx,
                             salt,
                             treasuryLamportsBefore,
                             ctx.recipient.daiATA,
@@ -338,7 +332,6 @@ describe("withdraw", () => {
 });
 
 async function postWithdrawAssertions(
-  ctx: LockupTestContext,
   salt: BN,
   treasuryLamportsBefore: BN,
   withdrawalRecipientATA: PublicKey,

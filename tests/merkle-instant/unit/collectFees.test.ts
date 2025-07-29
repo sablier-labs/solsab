@@ -9,9 +9,9 @@ import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount } from "../utils/defaults";
 
-describe("collectFees", () => {
-  let ctx: MerkleInstantTestContext;
+let ctx: MerkleInstantTestContext;
 
+describe("collectFees", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new MerkleInstantTestContext();
@@ -53,7 +53,7 @@ describe("collectFees", () => {
           await ctx.claim({ claimerKeys: ctx.recipient.keys });
 
           const beforeLamports = {
-            feeRecipient: await getFeeRecipientLamports(ctx),
+            feeRecipient: await getFeeRecipientLamports(),
             treasury: await ctx.getTreasuryLamports(),
           };
 
@@ -61,7 +61,7 @@ describe("collectFees", () => {
           await ctx.collectFees();
 
           const afterLamports = {
-            feeRecipient: await getFeeRecipientLamports(ctx),
+            feeRecipient: await getFeeRecipientLamports(),
             treasury: await ctx.getTreasuryLamports(),
           };
 
@@ -76,6 +76,6 @@ describe("collectFees", () => {
   });
 });
 
-async function getFeeRecipientLamports(ctx: MerkleInstantTestContext) {
+async function getFeeRecipientLamports() {
   return await ctx.getLamportsOf(ctx.recipient.keys.publicKey);
 }

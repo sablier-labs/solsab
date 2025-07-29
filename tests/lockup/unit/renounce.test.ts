@@ -8,9 +8,9 @@ import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Time } from "../utils/defaults";
 
-describe("renounce", () => {
-  let ctx: LockupTestContext;
+let ctx: LockupTestContext;
 
+describe("renounce", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();
