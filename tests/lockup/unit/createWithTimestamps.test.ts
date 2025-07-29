@@ -9,9 +9,9 @@ import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { AMOUNTS, Amount, TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defaults";
 
-describe("createWithTimestamps", () => {
-  let ctx: LockupTestContext;
+let ctx: LockupTestContext;
 
+describe("createWithTimestamps", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();
@@ -122,7 +122,7 @@ describe("createWithTimestamps", () => {
                     expectedStream.data.timestamps.cliff = ZERO;
                     expectedStream.data.amounts = AMOUNTS({ cliffUnlock: ZERO, startUnlock: ZERO });
 
-                    await assertStreamCreation(ctx, salt, beforeSenderTokenBalance, expectedStream);
+                    await assertStreamCreation(salt, beforeSenderTokenBalance, expectedStream);
                   });
                 });
               });
@@ -174,7 +174,7 @@ describe("createWithTimestamps", () => {
                           const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
                           const salt = await ctx.createWithTimestamps();
 
-                          await assertStreamCreation(ctx, salt, beforeSenderTokenBalance);
+                          await assertStreamCreation(salt, beforeSenderTokenBalance);
                         });
                       });
 
@@ -184,7 +184,6 @@ describe("createWithTimestamps", () => {
                           const salt = await ctx.createWithTimestampsToken2022();
 
                           await assertStreamCreation(
-                            ctx,
                             salt,
                             beforeSenderTokenBalance,
                             ctx.defaultStreamToken2022({ salt: salt }),
@@ -204,10 +203,9 @@ describe("createWithTimestamps", () => {
 });
 
 async function assertStreamCreation(
-  ctx: LockupTestContext,
   salt: BN,
   beforeSenderTokenBalance: BN,
-  expectedStream = ctx.defaultStream({ salt: salt }),
+  expectedStream = ctx.defaultStream({ salt }),
 ) {
   await assertAccountExists(ctx, expectedStream.nftMintAddress, "Stream NFT Mint");
   await assertAccountExists(ctx, expectedStream.dataAddress, "Stream Data");

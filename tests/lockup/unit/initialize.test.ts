@@ -6,9 +6,9 @@ import { assertAccountExists, assertEqualBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { Seed } from "../utils/defaults";
 
-describe("initialize", () => {
-  let ctx: LockupTestContext;
+let ctx: LockupTestContext;
 
+describe("initialize", () => {
   beforeEach(async () => {
     ctx = new LockupTestContext();
     await ctx.setUpLockup({ initProgram: false });

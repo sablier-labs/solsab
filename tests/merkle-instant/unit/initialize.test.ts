@@ -3,9 +3,9 @@ import { sleepFor } from "../../../lib/helpers";
 import { assertAccountExists } from "../../common/assertions";
 import { MerkleInstantTestContext } from "../context";
 
-describe("initialize", () => {
-  let ctx: MerkleInstantTestContext;
+let ctx: MerkleInstantTestContext;
 
+describe("initialize", () => {
   beforeEach(async () => {
     ctx = new MerkleInstantTestContext();
     await ctx.setUpMerkleInstant({

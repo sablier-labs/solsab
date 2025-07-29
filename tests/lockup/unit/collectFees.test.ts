@@ -10,9 +10,9 @@ import { LockupTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
 
-describe("collectFees", () => {
-  let ctx: LockupTestContext;
+let ctx: LockupTestContext;
 
+describe("collectFees", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();
@@ -32,7 +32,7 @@ describe("collectFees", () => {
 
     describe("when signer is not the authorized fee collector", () => {
       it("should revert", async () => {
-        await withdrawMultipleTimes(ctx);
+        await withdrawMultipleTimes();
         await expectToThrow(ctx.collectFees(ctx.eve.keys), CONSTRAINT_ADDRESS);
       });
     });
@@ -46,10 +46,10 @@ describe("collectFees", () => {
 
       describe("given accumulated fees", () => {
         it("should collect the fees", async () => {
-          await withdrawMultipleTimes(ctx);
+          await withdrawMultipleTimes();
 
           const beforeLamports = {
-            feeRecipient: await getFeeRecipientLamports(ctx),
+            feeRecipient: await getFeeRecipientLamports(),
             treasury: await ctx.getTreasuryLamports(),
           };
 
@@ -57,7 +57,7 @@ describe("collectFees", () => {
           await ctx.collectFees();
 
           const afterLamports = {
-            feeRecipient: await getFeeRecipientLamports(ctx),
+            feeRecipient: await getFeeRecipientLamports(),
             treasury: await ctx.getTreasuryLamports(),
           };
 
@@ -72,12 +72,12 @@ describe("collectFees", () => {
   });
 });
 
-async function getFeeRecipientLamports(ctx: LockupTestContext) {
+async function getFeeRecipientLamports() {
   return await ctx.getSenderLamports();
 }
 
 /// Helper function to withdraw multiple times so that there are fees collected
-async function withdrawMultipleTimes(ctx: LockupTestContext) {
+async function withdrawMultipleTimes() {
   await ctx.timeTravelTo(Time.MID_26_PERCENT);
   await ctx.withdrawMax();
   await ctx.timeTravelTo(Time.END);

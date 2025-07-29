@@ -13,9 +13,9 @@ import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
 import { type Stream } from "../utils/types";
 
-describe("cancel", () => {
-  let ctx: LockupTestContext;
+let ctx: LockupTestContext;
 
+describe("cancel", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();
@@ -134,7 +134,7 @@ describe("cancel", () => {
                   expectedStream.data.amounts.refunded = Amount.REFUND;
 
                   // Assert the cancelation
-                  await postCancelAssertions(ctx, salt, expectedStream, ZERO);
+                  await postCancelAssertions(salt, expectedStream, ZERO);
                 });
               });
 
@@ -157,7 +157,7 @@ describe("cancel", () => {
                   expectedStream.data.amounts.refunded = Amount.DEPOSIT;
 
                   // Assert the cancelation
-                  await postCancelAssertions(ctx, ctx.salts.default, expectedStream, beforeSenderBalance);
+                  await postCancelAssertions(ctx.salts.default, expectedStream, beforeSenderBalance);
                 });
               });
 
@@ -176,7 +176,7 @@ describe("cancel", () => {
                     expectedStream.data.amounts.refunded = Amount.REFUND;
 
                     // Assert the cancelation
-                    await postCancelAssertions(ctx, ctx.salts.default, expectedStream, beforeSenderBalance);
+                    await postCancelAssertions(ctx.salts.default, expectedStream, beforeSenderBalance);
                   });
                 });
 
@@ -198,7 +198,7 @@ describe("cancel", () => {
                     expectedStream.data.amounts.refunded = Amount.REFUND;
 
                     // Assert the cancelation
-                    await postCancelAssertions(ctx, salt, expectedStream, beforeSenderBalance);
+                    await postCancelAssertions(salt, expectedStream, beforeSenderBalance);
                   });
                 });
               });
@@ -210,7 +210,7 @@ describe("cancel", () => {
   });
 });
 
-async function postCancelAssertions(ctx: LockupTestContext, salt: BN, expectedStream: Stream, beforeSenderBalance: BN) {
+async function postCancelAssertions(salt: BN, expectedStream: Stream, beforeSenderBalance: BN) {
   // Assert that the Stream state has been updated correctly
   const actualStreamData = await ctx.fetchStreamData(salt);
   assertEqStreamData(actualStreamData, expectedStream.data);

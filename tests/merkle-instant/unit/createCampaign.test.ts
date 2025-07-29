@@ -2,9 +2,9 @@ import { beforeAll, beforeEach, describe, it } from "vitest";
 import { MerkleInstantTestContext } from "../context";
 import { assertEqCampaignData, expectToThrow } from "../utils/assertions";
 
-describe("createCampaign", () => {
-  let ctx: MerkleInstantTestContext;
+let ctx: MerkleInstantTestContext;
 
+describe("createCampaign", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new MerkleInstantTestContext();
