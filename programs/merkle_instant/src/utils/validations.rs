@@ -9,10 +9,10 @@ pub fn check_claim(
     merkle_proof: Vec<[u8; 32]>,
     merkle_root: [u8; 32],
     recipient: Pubkey,
-    start_time: i64,
+    campaign_start_time: i64,
 ) -> Result<()> {
     // Check: the campaign has started.
-    if !has_started(start_time)? {
+    if !has_campaign_started(campaign_start_time)? {
         return Err(ErrorCode::CampaignNotStarted.into());
     }
 
@@ -86,7 +86,7 @@ pub fn has_expired(expiration_time: i64) -> Result<bool> {
     Ok(expiration_time > 0 && expiration_time <= current_time)
 }
 
-pub fn has_started(start_time: i64) -> Result<bool> {
+pub fn has_campaign_started(start_time: i64) -> Result<bool> {
     let current_time = Clock::get()?.unix_timestamp;
 
     Ok(start_time <= current_time)

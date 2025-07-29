@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 
 use super::CampaignView;
-use crate::utils::validations::has_started;
+use crate::utils::validations::has_campaign_started;
 
 pub fn handler(ctx: Context<CampaignView>) -> Result<bool> {
-    has_started(ctx.accounts.campaign.start_time)
+    has_campaign_started(ctx.accounts.campaign.start_time)
 }

@@ -186,7 +186,7 @@ pub mod sablier_merkle_instant {
     ///
     /// Accounts expected:
     /// - `campaign` The account that stores the campaign details.
-    pub fn has_started(ctx: Context<CampaignView>) -> Result<bool> {
-        instructions::has_started::handler(ctx)
+    pub fn has_campaign_started(ctx: Context<CampaignView>) -> Result<bool> {
+        instructions::has_campaign_started::handler(ctx)
     }
 }
