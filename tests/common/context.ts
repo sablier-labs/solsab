@@ -51,6 +51,20 @@ export class TestContext {
 
   async createUser(): Promise<User> {
     // Create the keypair for the user
+    const acc = await this.createAccount();
+
+    // Create ATAs and mint tokens for the user
+    const { usdcATA, daiATA } = await this.createATAsAndFund(acc.publicKey);
+
+    return {
+      daiATA,
+      keys: acc,
+      usdcATA,
+    };
+  }
+
+  async createAccount(): Promise<Keypair> {
+    // Create the keypair for the user
     const acc = Keypair.generate();
 
     // Set up the account info for the new keypair
@@ -65,14 +79,7 @@ export class TestContext {
     // Add account to the BanksClient context
     this.context.setAccount(acc.publicKey, accInfo);
 
-    // Create ATAs and mint tokens for the user
-    const { usdcATA, daiATA } = await this.createATAsAndFund(acc.publicKey);
-
-    return {
-      daiATA,
-      keys: acc,
-      usdcATA,
-    };
+    return acc;
   }
 
   /*//////////////////////////////////////////////////////////////////////////

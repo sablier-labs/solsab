@@ -30,14 +30,17 @@ pub struct Clawback<'info> {
     )]
     pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// CHECK: This can be any address.
+    pub clawback_recipient: UncheckedAccount<'info>,
+
     #[account(
       init_if_needed,
       payer = campaign_creator,
       associated_token::mint = airdrop_token_mint,
-      associated_token::authority = campaign_creator,
+      associated_token::authority = clawback_recipient,
       associated_token::token_program = airdrop_token_program
     )]
-    pub campaign_creator_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub clawback_recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub system_program: Program<'info, System>,
     pub airdrop_token_program: Interface<'info, TokenInterface>,
@@ -54,7 +57,7 @@ pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     // Interaction: transfer tokens from the Campaign's ATA to the campaign creator's ATA.
     transfer_tokens(
         ctx.accounts.campaign_ata.to_account_info(),
-        ctx.accounts.campaign_creator_ata.to_account_info(),
+        ctx.accounts.clawback_recipient_ata.to_account_info(),
         campaign.to_account_info(),
         airdrop_token_mint.to_account_info(),
         ctx.accounts.airdrop_token_program.to_account_info(),
@@ -72,7 +75,12 @@ pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     )?;
 
     // Log the clawback.
-    emit!(events::Clawback { amount, campaign: campaign.key(), campaign_creator: ctx.accounts.campaign_creator.key() });
+    emit!(events::Clawback {
+        amount,
+        campaign: campaign.key(),
+        campaign_creator: ctx.accounts.campaign_creator.key(),
+        clawback_recipient: ctx.accounts.clawback_recipient.key()
+    });
 
     Ok(())
 }

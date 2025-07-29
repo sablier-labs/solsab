@@ -70,6 +70,7 @@ pub struct Withdraw<'info> {
             signer.key() == stream_recipient.key())
         )
     )]
+
     /// CHECK: This can be any address if the signer is the stream's recipient, otherwise it must be the stream's
     /// recipient.
     pub withdrawal_recipient: UncheckedAccount<'info>,
