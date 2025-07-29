@@ -16,7 +16,7 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(
     merkle_root: [u8; 32],
-    start_time: i64,
+    campaign_start_time: i64,
     expiration_time: i64,
     name: String,
 )]
@@ -35,7 +35,7 @@ pub struct CreateCampaign<'info> {
         CAMPAIGN_SEED,
         creator.key().as_ref(),
         merkle_root.as_ref(),
-        start_time.to_le_bytes().as_ref(),
+        campaign_start_time.to_le_bytes().as_ref(),
         expiration_time.to_le_bytes().as_ref(),
         name.as_ref(),
         airdrop_token_mint.key().as_ref(),
@@ -62,7 +62,7 @@ pub struct CreateCampaign<'info> {
 pub fn handler(
     ctx: Context<CreateCampaign>,
     merkle_root: [u8; 32],
-    start_time: i64,
+    campaign_start_time: i64,
     expiration_time: i64,
     ipfs_cid: String,
     name: String,
@@ -70,18 +70,18 @@ pub fn handler(
     recipient_count: u32,
 ) -> Result<()> {
     // Check: validate the campaign creation.
-    check_create_campaign(expiration_time, start_time)?;
+    check_create_campaign(campaign_start_time, expiration_time)?;
 
     // Effect: Initialize the campaign account.
     ctx.accounts.campaign.create(
         ctx.accounts.airdrop_token_mint.key(),
         ctx.bumps.campaign,
+        campaign_start_time,
         ctx.accounts.creator.key(),
         expiration_time,
         ipfs_cid.clone(),
         merkle_root,
         name.clone(),
-        start_time,
     )?;
 
     // Log the campaign creation.
@@ -89,12 +89,12 @@ pub fn handler(
         aggregate_amount,
         campaign: ctx.accounts.campaign.key(),
         campaign_name: name,
+        campaign_start_time,
         creator: ctx.accounts.creator.key(),
         expiration_time,
         ipfs_cid,
         merkle_root,
         recipient_count,
-        start_time,
         token_decimals: ctx.accounts.airdrop_token_mint.decimals,
         token_mint: ctx.accounts.airdrop_token_mint.key(),
     });

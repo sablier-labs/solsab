@@ -4,12 +4,12 @@ use crate::utils::errors::ErrorCode;
 
 pub fn check_claim(
     amount: u64,
+    campaign_start_time: i64,
     expiration_time: i64,
     index: u32,
     merkle_proof: Vec<[u8; 32]>,
     merkle_root: [u8; 32],
     recipient: Pubkey,
-    campaign_start_time: i64,
 ) -> Result<()> {
     // Check: the campaign has started.
     if !has_campaign_started(campaign_start_time)? {
@@ -71,25 +71,25 @@ pub fn check_collect_fees(collectable_amount: u64) -> Result<()> {
     Ok(())
 }
 
-pub fn check_create_campaign(expiration_time: i64, start_time: i64) -> Result<()> {
+pub fn check_create_campaign(campaign_start_time: i64, expiration_time: i64) -> Result<()> {
     // Check: the start time is strictly before the expiration time.
-    if start_time >= expiration_time {
+    if campaign_start_time >= expiration_time {
         return Err(ErrorCode::InvalidStartOrExpirationTime.into());
     }
 
     Ok(())
 }
 
-pub fn has_expired(expiration_time: i64) -> Result<bool> {
-    let current_time = Clock::get()?.unix_timestamp;
-
-    Ok(expiration_time > 0 && expiration_time <= current_time)
-}
-
 pub fn has_campaign_started(start_time: i64) -> Result<bool> {
     let current_time = Clock::get()?.unix_timestamp;
 
     Ok(start_time <= current_time)
+}
+
+pub fn has_expired(expiration_time: i64) -> Result<bool> {
+    let current_time = Clock::get()?.unix_timestamp;
+
+    Ok(expiration_time > 0 && expiration_time <= current_time)
 }
 
 pub fn has_grace_period_passed(first_claim_time: i64) -> Result<bool> {

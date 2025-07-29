@@ -99,7 +99,7 @@ pub mod sablier_merkle_instant {
     ///
     /// Parameters:
     /// - `merkle_root` The Merkle root of the claim data.
-    /// - `start_time` The time when the campaign starts, in seconds since the Unix epoch.
+    /// - `campaign_start_time` The time when the campaign starts, in seconds since the Unix epoch.
     /// - `expiration_time` The time when the campaign expires, in seconds since the Unix epoch. A value of zero means
     /// the campaign does not expire.
     /// - `name` The name of the campaign.
@@ -111,7 +111,7 @@ pub mod sablier_merkle_instant {
     pub fn create_campaign(
         ctx: Context<CreateCampaign>,
         merkle_root: [u8; 32],
-        start_time: i64,
+        campaign_start_time: i64,
         expiration_time: i64,
         name: String,
         ipfs_cid: String,
@@ -121,7 +121,7 @@ pub mod sablier_merkle_instant {
         instructions::create_campaign::handler(
             ctx,
             merkle_root,
-            start_time,
+            campaign_start_time,
             expiration_time,
             ipfs_cid,
             name,

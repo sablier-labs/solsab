@@ -67,7 +67,7 @@ pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
             CAMPAIGN_SEED,
             campaign.creator.key().as_ref(),
             campaign.merkle_root.as_ref(),
-            campaign.start_time.to_le_bytes().as_ref(),
+            campaign.campaign_start_time.to_le_bytes().as_ref(),
             campaign.expiration_time.to_le_bytes().as_ref(),
             campaign.name.as_ref(),
             airdrop_token_mint.key().as_ref(),
