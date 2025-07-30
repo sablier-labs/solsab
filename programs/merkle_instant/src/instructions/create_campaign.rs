@@ -7,7 +7,7 @@ use anchor_spl::{
 use crate::{
     state::Campaign,
     utils::{
-        constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED},
+        constants::{seeds::CAMPAIGN, ANCHOR_DISCRIMINATOR_SIZE},
         events,
     },
 };
@@ -40,7 +40,7 @@ pub struct CreateCampaign<'info> {
       payer = creator,
       space = ANCHOR_DISCRIMINATOR_SIZE + Campaign::INIT_SPACE,
       seeds = [
-        CAMPAIGN_SEED,
+        CAMPAIGN,
         creator.key().as_ref(),
         merkle_root.as_ref(),
         campaign_start_time.to_le_bytes().as_ref(),

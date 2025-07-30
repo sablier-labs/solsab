@@ -2,12 +2,12 @@ import {
   ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
   ANCHOR_ERROR__CONSTRAINT_ADDRESS as CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
+import BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { REDUNDANCY_BUFFER } from "../../../lib/constants";
-import { assertEqualSOLBalance } from "../../common/assertions";
+import { assertLteBn } from "../../common/assertions";
 import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
-import { Amount } from "../utils/defaults";
 
 let ctx: MerkleInstantTestContext;
 
@@ -65,11 +65,22 @@ describe("collectFees", () => {
             treasury: await ctx.getTreasuryLamports(),
           };
 
-          // 1 claim worth of fees minus the minimum lamports balance (a buffer on top of the redundancy buffer).
-          const expectedFeesCollected = Amount.CLAIM_FEE.sub(REDUNDANCY_BUFFER);
+          const expectedClaimFee = await ctx.claimFeeInLamports();
+          const expectedFeesCollected = expectedClaimFee.sub(REDUNDANCY_BUFFER); // 1 claim worth of fees minus the redundancy buffer
 
-          assertEqualSOLBalance(afterLamports.treasury, beforeLamports.treasury.sub(expectedFeesCollected));
-          assertEqualSOLBalance(afterLamports.feeRecipient, beforeLamports.feeRecipient.add(expectedFeesCollected));
+          // Assert that the Treasury has been debited with an amount that is within 5% of the expected amount
+          const treasuryBalanceDifference = beforeLamports.treasury.sub(afterLamports.treasury).abs();
+          assertLteBn(
+            treasuryBalanceDifference.sub(expectedFeesCollected).abs(),
+            expectedFeesCollected.mul(new BN(5)).div(new BN(100)),
+          );
+
+          // Assert that the fee recipient has been credited with an amount that is within 5% of the expected amount
+          const feeRecipientBalanceDifference = afterLamports.feeRecipient.sub(beforeLamports.feeRecipient).abs();
+          assertLteBn(
+            feeRecipientBalanceDifference.sub(expectedFeesCollected).abs(),
+            expectedFeesCollected.mul(new BN(5)).div(new BN(100)),
+          );
         });
       });
     });

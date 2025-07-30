@@ -20,6 +20,4 @@
   anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
   anchor-spl = { version = "0.31.1" }
 
-  bitvec = "1.0.1"
-  # svm-merkle-tree = { git = "https://github.com/deanmlittle/svm-merkle-tree", version = "0.1.1" }
-  solana-merkle-tree = { version = "2.2.12" }
+  chainlink_solana = { git = "https://github.com/smartcontractkit/chainlink-solana", branch = "solana-2.1" }

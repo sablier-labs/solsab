@@ -2,12 +2,20 @@ import * as token from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { BankrunProvider } from "anchor-bankrun";
 import type BN from "bn.js";
-import { type AccountInfoBytes, type BanksClient, Clock, type ProgramTestContext, startAnchor } from "solana-bankrun";
-import { Decimals } from "../../lib/constants";
+import {
+  type AccountInfoBytes,
+  type AddedProgram,
+  type BanksClient,
+  Clock,
+  type ProgramTestContext,
+  startAnchor,
+} from "solana-bankrun";
+import { Decimals, ProgramId } from "../../lib/constants";
 import { dai, sol, usdc } from "../../lib/convertors";
 import { toBigInt, toBn } from "../../lib/helpers";
 import { type ProgramName } from "../../lib/types";
 import { createATAAndFund, createMint } from "./anchor-bankrun";
+import { ChainlinkMock } from "./chainlink-mock";
 import { type User } from "./types";
 
 export class TestContext {
@@ -22,6 +30,9 @@ export class TestContext {
   public feeCollector!: User;
   public recipient!: User;
 
+  // Chainlink Mock
+  public chainlinkMock: ChainlinkMock = new ChainlinkMock();
+
   // Tokens
   public dai!: PublicKey; // Token 2022
   public randomToken!: PublicKey; // Token standard
@@ -30,12 +41,22 @@ export class TestContext {
   async setUp(
     programName: ProgramName,
     programId: PublicKey,
-    additionalPrograms: { name: string; programId: PublicKey }[] = [],
-  ) {
-    const programs = [{ name: programName, programId }, ...additionalPrograms];
 
-    // Start Anchor context with the provided programs
-    this.context = await startAnchor("", programs, []);
+    addedPrograms: AddedProgram[] = [],
+  ) {
+    const programs = [
+      { name: programName, programId },
+      {
+        name: "chainlink_program",
+        programId: ProgramId.CHAINLINK_PROGRAM,
+      },
+      ...addedPrograms,
+    ];
+
+    const addedAccounts = [await this.chainlinkMock.accountData()];
+
+    // Start Anchor context with the provided programs & accounts
+    this.context = await startAnchor("", programs, addedAccounts);
     this.banksClient = this.context.banksClient;
     this.bankrunProvider = new BankrunProvider(this.context);
     this.defaultBankrunPayer = this.bankrunProvider.wallet.payer;

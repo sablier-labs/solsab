@@ -10,12 +10,14 @@ use anchor_spl::{
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
     utils::{
-        constants::seeds::*, events::WithdrawFromLockupStream, lockup_math::get_withdrawable_amount,
-        transfer_helper::transfer_tokens, validations::check_withdraw,
+        constants::{seeds::*, WITHDRAWAL_FEE_USD},
+        events::WithdrawFromLockupStream,
+        fee_calculation::convert_usd_fee_to_lamports,
+        lockup_math::get_withdrawable_amount,
+        transfer_helper::transfer_tokens,
+        validations::check_withdraw,
     },
 };
-
-const WITHDRAWAL_FEE: u64 = 10_000_000; // The fee for withdrawing from the stream, in lamports.
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
@@ -108,6 +110,16 @@ pub struct Withdraw<'info> {
     /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,
 
+    /// Read account: The Chainlink program used to retrieve on-chain price feeds.
+    /// CHECK: This is the Chainlink program.
+    #[account(address = treasury.chainlink_program)]
+    pub chainlink_program: AccountInfo<'info>,
+
+    /// Read account: The account providing the SOL/USD price feed data.
+    /// CHECK: We're reading data from this Chainlink feed.
+    #[account(address = treasury.chainlink_sol_usd_feed)]
+    pub chainlink_sol_usd_feed: AccountInfo<'info>,
+
     /// Program account: the Token program of the deposited token.
     pub deposited_token_program: Interface<'info, TokenInterface>,
 
@@ -133,9 +145,13 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Effect: update the stream data state.
     ctx.accounts.stream_data.withdraw(amount)?;
 
-    // Interaction: transfer the fee from the signer to the treasury.
-    let fee_collection_ix = transfer(&ctx.accounts.signer.key(), &ctx.accounts.treasury.key(), WITHDRAWAL_FEE);
-    invoke(&fee_collection_ix, &[ctx.accounts.signer.to_account_info(), ctx.accounts.treasury.to_account_info()])?;
+    // Interaction: charge the withdrawal fee.
+    let fee_in_lamports = charge_withdrawal_fee(
+        ctx.accounts.chainlink_program.to_account_info(),
+        ctx.accounts.chainlink_sol_usd_feed.to_account_info(),
+        ctx.accounts.signer.to_account_info(),
+        ctx.accounts.treasury.to_account_info(),
+    )?;
 
     // Interaction: transfer the tokens from the stream ATA to the recipient.
     transfer_tokens(
@@ -152,10 +168,29 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Log the withdrawal.
     emit!(WithdrawFromLockupStream {
         deposited_token_mint: ctx.accounts.deposited_token_mint.key(),
+        fee_in_lamports,
         stream_data: ctx.accounts.stream_data.key(),
         stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
-        withdrawn_amount: amount
+        withdrawn_amount: amount,
     });
 
     Ok(())
+}
+
+/// Charges the withdrawal fee in lamports.
+fn charge_withdrawal_fee<'info>(
+    chainlink_program: AccountInfo<'info>,
+    chainlink_sol_usd_feed: AccountInfo<'info>,
+    tx_signer: AccountInfo<'info>,
+    treasury: AccountInfo<'info>,
+) -> Result<u64> {
+    // Calculate the fee in lamports.
+    let fee_in_lamports: u64 =
+        convert_usd_fee_to_lamports(WITHDRAWAL_FEE_USD, chainlink_program, chainlink_sol_usd_feed);
+
+    // Interaction: transfer the fee from the signer to the treasury.
+    let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);
+    invoke(&fee_charging_ix, &[tx_signer, treasury])?;
+
+    Ok(fee_in_lamports)
 }

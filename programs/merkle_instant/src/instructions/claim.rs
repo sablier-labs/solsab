@@ -10,14 +10,13 @@ use anchor_spl::{
 use crate::{
     state::{Campaign, ClaimReceipt, Treasury},
     utils::{
-        constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED, CLAIM_RECEIPT_SEED, TREASURY_SEED},
+        constants::{seeds::*, ANCHOR_DISCRIMINATOR_SIZE, CLAIM_FEE_USD},
         events,
+        fee_calculation::convert_usd_fee_to_lamports,
         transfer_helper::transfer_tokens,
         validations::check_claim,
     },
 };
-
-const CLAIM_FEE: u64 = 30_000_000; // The fee for claiming an airdrop, in lamports.
 
 #[derive(Accounts)]
 #[instruction(index: u32)]
@@ -49,7 +48,7 @@ pub struct Claim<'info> {
     /// Write account: the treasury account that will receive the claim fee.
     #[account(
       mut,
-      seeds = [TREASURY_SEED],
+      seeds = [TREASURY],
       bump = treasury.bump
     )]
     pub treasury: Box<Account<'info, Treasury>>,
@@ -80,7 +79,7 @@ pub struct Claim<'info> {
       payer = claimer,
       space = ANCHOR_DISCRIMINATOR_SIZE + ClaimReceipt::INIT_SPACE,
       seeds = [
-        CLAIM_RECEIPT_SEED,
+        CLAIM_RECEIPT,
         campaign.key().as_ref(),
         index.to_le_bytes().as_ref(),
       ],
@@ -97,6 +96,16 @@ pub struct Claim<'info> {
     /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,
 
+    /// Read account: The Chainlink program used to retrieve on-chain price feeds.
+    /// CHECK: This is the Chainlink program.
+    #[account(address = treasury.chainlink_program)]
+    pub chainlink_program: AccountInfo<'info>,
+
+    /// Read account: The account providing the SOL/USD price feed data.
+    /// CHECK: We're reading data from this Chainlink feed.
+    #[account(address = treasury.chainlink_sol_usd_feed)]
+    pub chainlink_sol_usd_feed: AccountInfo<'info>,
+
     // -------------------------------------------------------------------------- //
     //                               SYSTEM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
@@ -110,7 +119,6 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
     let airdrop_token_mint = ctx.accounts.airdrop_token_mint.clone();
     let claimer = ctx.accounts.claimer.clone();
     let recipient = ctx.accounts.recipient.clone();
-    let treasury = ctx.accounts.treasury.clone();
 
     // Check: validate the claim.
     check_claim(
@@ -125,9 +133,13 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
 
     ctx.accounts.campaign.claim()?;
 
-    // Interaction: transfer the fee from the claimer to the treasury.
-    let fee_collection_ix = transfer(&claimer.key(), &treasury.key(), CLAIM_FEE);
-    invoke(&fee_collection_ix, &[claimer.to_account_info(), treasury.to_account_info()])?;
+    // Interaction: charge the claim fee.
+    let fee_in_lamports = charge_claim_fee(
+        ctx.accounts.chainlink_program.to_account_info(),
+        ctx.accounts.chainlink_sol_usd_feed.to_account_info(),
+        ctx.accounts.claimer.to_account_info(),
+        ctx.accounts.treasury.to_account_info(),
+    )?;
 
     // Interaction: transfer tokens from the campaign's ATA to the recipient's ATA.
     transfer_tokens(
@@ -139,7 +151,7 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
         amount,
         airdrop_token_mint.decimals,
         &[&[
-            CAMPAIGN_SEED,
+            CAMPAIGN,
             campaign.creator.key().as_ref(),
             campaign.merkle_root.as_ref(),
             campaign.campaign_start_time.to_le_bytes().as_ref(),
@@ -156,9 +168,27 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
         campaign: campaign.key(),
         claimer: claimer.key(),
         claim_receipt: ctx.accounts.claim_receipt.key(),
+        fee_in_lamports,
         index,
         recipient: recipient.key(),
     });
 
     Ok(())
+}
+
+/// Charges the claim fee in lamports.
+fn charge_claim_fee<'info>(
+    chainlink_program: AccountInfo<'info>,
+    chainlink_sol_usd_feed: AccountInfo<'info>,
+    tx_signer: AccountInfo<'info>,
+    treasury: AccountInfo<'info>,
+) -> Result<u64> {
+    // Calculate the fee in lamports.
+    let fee_in_lamports: u64 = convert_usd_fee_to_lamports(CLAIM_FEE_USD, chainlink_program, chainlink_sol_usd_feed);
+
+    // Interaction: transfer the fee from the signer to the treasury.
+    let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);
+    invoke(&fee_charging_ix, &[tx_signer, treasury])?;
+
+    Ok(fee_in_lamports)
 }
