@@ -17,8 +17,4 @@ pub enum ErrorCode {
     // Collect Fees
     #[msg("Can't collect zero fees!")]
     CantCollectZeroFees,
-
-    // Create Campaign
-    #[msg("Start time must be strictly before expiration time!")]
-    InvalidStartOrExpirationTime,
 }

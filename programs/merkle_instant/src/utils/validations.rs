@@ -71,15 +71,6 @@ pub fn check_collect_fees(collectable_amount: u64) -> Result<()> {
     Ok(())
 }
 
-pub fn check_create_campaign(campaign_start_time: i64, expiration_time: i64) -> Result<()> {
-    // Check: the start time is strictly before the expiration time.
-    if campaign_start_time >= expiration_time {
-        return Err(ErrorCode::InvalidStartOrExpirationTime.into());
-    }
-
-    Ok(())
-}
-
 pub fn has_campaign_started(start_time: i64) -> Result<bool> {
     let current_time = Clock::get()?.unix_timestamp;
 
