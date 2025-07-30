@@ -36,6 +36,7 @@ pub struct RenounceLockupStream {
 #[event]
 pub struct WithdrawFromLockupStream {
     pub deposited_token_mint: Pubkey,
+    pub fee_in_lamports: u64,
     pub stream_data: Pubkey,
     pub stream_nft_mint: Pubkey,
     pub withdrawn_amount: u64,

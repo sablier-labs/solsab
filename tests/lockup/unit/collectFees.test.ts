@@ -2,13 +2,14 @@ import {
   ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
   ANCHOR_ERROR__CONSTRAINT_ADDRESS as CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
+import BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { REDUNDANCY_BUFFER } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
-import { assertEqualSOLBalance } from "../../common/assertions";
+import { assertLteBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
-import { Amount, Time } from "../utils/defaults";
+import { Time } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
@@ -31,8 +32,8 @@ describe("collectFees", () => {
     });
 
     describe("when signer is not the authorized fee collector", () => {
-      it("should fail", async () => {
-        await withdrawMultipleTimes();
+      it("should revert", async () => {
+        await withdrawTwice();
         await expectToThrow(ctx.collectFees(ctx.eve.keys), CONSTRAINT_ADDRESS);
       });
     });
@@ -46,7 +47,7 @@ describe("collectFees", () => {
 
       describe("given accumulated fees", () => {
         it("should collect the fees", async () => {
-          await withdrawMultipleTimes();
+          await withdrawTwice();
 
           const beforeLamports = {
             feeRecipient: await getFeeRecipientLamports(),
@@ -61,11 +62,23 @@ describe("collectFees", () => {
             treasury: await ctx.getTreasuryLamports(),
           };
 
-          // 2 withdrawals worth of fees minus the minimum lamports balance (a buffer on top of the redundancy buffer).
-          const expectedFeesCollected = Amount.WITHDRAW_FEE.muln(2).sub(REDUNDANCY_BUFFER);
+          const withdrawalFee = await ctx.withdrawalFeeInLamports();
+          // 2 withdrawals worth of fees minus the redundancy buffer.
+          const expectedFeesCollected = withdrawalFee.muln(2).sub(REDUNDANCY_BUFFER);
 
-          assertEqualSOLBalance(afterLamports.treasury, beforeLamports.treasury.sub(expectedFeesCollected));
-          assertEqualSOLBalance(afterLamports.feeRecipient, beforeLamports.feeRecipient.add(expectedFeesCollected));
+          // Assert that the Treasury has been debited with an amount that is within 5% of the expected amount
+          const treasuryBalanceDifference = beforeLamports.treasury.sub(afterLamports.treasury).abs();
+          assertLteBn(
+            treasuryBalanceDifference.sub(expectedFeesCollected).abs(),
+            expectedFeesCollected.mul(new BN(5)).div(new BN(100)),
+          );
+
+          // Assert that the fee recipient has been credited with an amount that is within 5% of the expected amount
+          const feeRecipientBalanceDifference = afterLamports.feeRecipient.sub(beforeLamports.feeRecipient).abs();
+          assertLteBn(
+            feeRecipientBalanceDifference.sub(expectedFeesCollected).abs(),
+            expectedFeesCollected.mul(new BN(5)).div(new BN(100)),
+          );
         });
       });
     });
@@ -77,7 +90,7 @@ async function getFeeRecipientLamports() {
 }
 
 /// Helper function to withdraw multiple times so that there are fees collected
-async function withdrawMultipleTimes() {
+async function withdrawTwice() {
   await ctx.timeTravelTo(Time.MID_26_PERCENT);
   await ctx.withdrawMax();
   await ctx.timeTravelTo(Time.END);

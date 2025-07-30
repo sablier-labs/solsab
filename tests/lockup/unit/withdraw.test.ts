@@ -8,12 +8,7 @@ import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import type { StreamData } from "../../../target/types/sablier_lockup_structs";
 import { createATAAndFund, deriveATAAddress, getATABalance } from "../../common/anchor-bankrun";
-import {
-  assertAccountExists,
-  assertAccountNotExists,
-  assertEqualBn,
-  assertEqualSOLBalance,
-} from "../../common/assertions";
+import { assertAccountExists, assertAccountNotExists, assertEqualBn, assertLteBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
@@ -153,7 +148,10 @@ describe("withdraw", () => {
                         ctx.sender.usdcATA,
                       );
 
+                      const txSignerKeys = ctx.recipient.keys;
+                      const txSignerLamportsBefore = await ctx.getLamportsOf(txSignerKeys.publicKey);
                       await ctx.withdraw({
+                        signer: txSignerKeys,
                         withdrawalRecipient: ctx.sender.keys.publicKey,
                       });
 
@@ -162,6 +160,8 @@ describe("withdraw", () => {
 
                       await postWithdrawAssertions(
                         ctx.salts.default,
+                        txSignerKeys.publicKey,
+                        txSignerLamportsBefore,
                         treasuryLamportsBefore,
                         ctx.sender.usdcATA,
                         withdrawalRecipientATABalanceBefore,
@@ -184,13 +184,17 @@ describe("withdraw", () => {
                       ctx.recipient.usdcATA,
                     );
 
-                    await ctx.withdraw();
+                    const txSignerKeys = ctx.recipient.keys;
+                    const txSignerLamportsBefore = await ctx.getLamportsOf(txSignerKeys.publicKey);
+                    await ctx.withdraw({ signer: txSignerKeys });
 
                     const expectedStreamData = ctx.defaultStream().data;
                     expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
 
                     await postWithdrawAssertions(
                       ctx.salts.default,
+                      txSignerKeys.publicKey,
+                      txSignerLamportsBefore,
                       treasuryLamportsBefore,
                       ctx.recipient.usdcATA,
                       withdrawalRecipientATABalanceBefore,
@@ -213,8 +217,10 @@ describe("withdraw", () => {
                         ctx.recipient.usdcATA,
                       );
 
+                      const txSignerKeys = ctx.sender.keys;
+                      const txSignerLamportsBefore = await ctx.getLamportsOf(txSignerKeys.publicKey);
                       await ctx.withdraw({
-                        signer: ctx.sender.keys,
+                        signer: txSignerKeys,
                         withdrawAmount: Amount.DEPOSIT,
                       });
 
@@ -225,6 +231,8 @@ describe("withdraw", () => {
 
                       await postWithdrawAssertions(
                         ctx.salts.default,
+                        txSignerKeys.publicKey,
+                        txSignerLamportsBefore,
                         treasuryLamportsBefore,
                         ctx.recipient.usdcATA,
                         withdrawalRecipientATABalanceBefore,
@@ -247,7 +255,9 @@ describe("withdraw", () => {
                           ctx.recipient.usdcATA,
                         );
 
-                        await ctx.withdraw({ signer: ctx.sender.keys });
+                        const txSignerKeys = ctx.sender.keys;
+                        const txSignerLamportsBefore = await ctx.getLamportsOf(txSignerKeys.publicKey);
+                        await ctx.withdraw({ signer: txSignerKeys });
                         const expectedStreamData = ctx.defaultStream({
                           isCancelable: false,
                           isDepleted: true,
@@ -258,6 +268,8 @@ describe("withdraw", () => {
 
                         await postWithdrawAssertions(
                           ctx.salts.default,
+                          txSignerKeys.publicKey,
+                          txSignerLamportsBefore,
                           treasuryLamportsBefore,
                           ctx.recipient.usdcATA,
                           withdrawalRecipientATABalanceBefore,
@@ -278,11 +290,15 @@ describe("withdraw", () => {
                             ctx.recipient.usdcATA,
                           );
 
-                          await ctx.withdraw({ signer: ctx.sender.keys });
+                          const txSignerKeys = ctx.sender.keys;
+                          const txSignerLamportsBefore = await ctx.getLamportsOf(txSignerKeys.publicKey);
+                          await ctx.withdraw({ signer: txSignerKeys });
                           const expectedStreamData = ctx.defaultStream().data;
                           expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
                           await postWithdrawAssertions(
                             ctx.salts.default,
+                            txSignerKeys.publicKey,
+                            txSignerLamportsBefore,
                             treasuryLamportsBefore,
                             ctx.recipient.usdcATA,
                             withdrawalRecipientATABalanceBefore,
@@ -304,7 +320,9 @@ describe("withdraw", () => {
                             ctx.recipient.daiATA,
                           );
 
-                          await ctx.withdrawToken2022(salt, ctx.sender.keys);
+                          const txSignerKeys = ctx.sender.keys;
+                          const txSignerLamportsBefore = await ctx.getLamportsOf(txSignerKeys.publicKey);
+                          await ctx.withdrawToken2022(salt, txSignerKeys);
 
                           const expectedStreamData = ctx.defaultStreamToken2022({
                             salt: salt,
@@ -312,6 +330,8 @@ describe("withdraw", () => {
                           expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
                           await postWithdrawAssertions(
                             salt,
+                            txSignerKeys.publicKey,
+                            txSignerLamportsBefore,
                             treasuryLamportsBefore,
                             ctx.recipient.daiATA,
                             withdrawalRecipientATABalanceBefore,
@@ -333,6 +353,8 @@ describe("withdraw", () => {
 
 async function postWithdrawAssertions(
   salt: BN,
+  txSigner: PublicKey,
+  txSignerLamportsBefore: BN,
   treasuryLamportsBefore: BN,
   withdrawalRecipientATA: PublicKey,
   withdrawalRecipientATABalanceBefore: BN,
@@ -342,11 +364,18 @@ async function postWithdrawAssertions(
   const actualStreamData = await ctx.fetchStreamData(salt);
   assertEqStreamData(actualStreamData, expectedStreamData);
 
+  const expectedFee = await ctx.withdrawalFeeInLamports();
+
   // Get the Lamports balance of the Treasury after the withdrawal
   const treasuryLamportsAfter = await ctx.getTreasuryLamports();
 
-  // Assert that the Treasury's balance has been credited with the withdrawal fee
-  assertEqualSOLBalance(treasuryLamportsAfter, treasuryLamportsBefore.add(Amount.WITHDRAW_FEE));
+  // Assert that the tx signer lamports balance has decreased by, at least, the withdrawal fee amount.
+  // We use `<=` because we don't know the gas cost in advance.
+  const txSignerLamportsAfter = await ctx.getLamportsOf(txSigner);
+  assertLteBn(txSignerLamportsAfter, txSignerLamportsBefore.sub(expectedFee));
+
+  // Assert that the Treasury has been credited with the withdrawal fee.
+  assertEqualBn(treasuryLamportsAfter, treasuryLamportsBefore.add(expectedFee));
 
   // Get the withdrawal recipient's token balance
   const withdrawalRecipientTokenBalance = await getATABalance(ctx.banksClient, withdrawalRecipientATA);

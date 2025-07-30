@@ -192,7 +192,7 @@ export class LockupTestContext extends TestContext {
 
   async initializeLockup(): Promise<void> {
     const initializeIx = await this.lockup.methods
-      .initialize(this.feeCollector.keys.publicKey)
+      .initialize(this.feeCollector.keys.publicKey, ProgramId.CHAINLINK_PROGRAM, ProgramId.CHAINLINK_SOL_USD_FEED)
       .accounts({
         initializer: this.sender.keys.publicKey,
         nftTokenProgram: token.TOKEN_PROGRAM_ID,
@@ -227,6 +227,8 @@ export class LockupTestContext extends TestContext {
     const withdrawIx = await this.lockup.methods
       .withdraw(withdrawAmount)
       .accounts({
+        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM,
+        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
         depositedTokenMint,
         depositedTokenProgram,
         nftTokenProgram: token.TOKEN_PROGRAM_ID,
@@ -238,6 +240,17 @@ export class LockupTestContext extends TestContext {
       .instruction();
 
     await buildSignAndProcessTx(this.banksClient, withdrawIx, signer);
+  }
+
+  async withdrawalFeeInLamports(): Promise<BN> {
+    return await this.lockup.methods
+      .withdrawalFeeInLamports()
+      .accounts({
+        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM,
+        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
+      })
+      .signers([this.defaultBankrunPayer])
+      .view();
   }
 
   async withdrawToken2022(salt: BN, signer: Keypair): Promise<void> {
@@ -261,6 +274,8 @@ export class LockupTestContext extends TestContext {
     const withdrawMaxIx = await this.lockup.methods
       .withdrawMax()
       .accounts({
+        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM,
+        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
         depositedTokenMint,
         depositedTokenProgram,
         nftTokenProgram: token.TOKEN_PROGRAM_ID,

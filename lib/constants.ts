@@ -16,7 +16,9 @@ export namespace Decimals {
 }
 
 export namespace ProgramId {
-  export const TOKEN_2022 = TOKEN_2022_PROGRAM_ID;
-  export const TOKEN_METADATA = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+  export const CHAINLINK_PROGRAM = new PublicKey("HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny");
+  export const CHAINLINK_SOL_USD_FEED = new PublicKey("99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY6jZ96ynrR");
   export const TOKEN = TOKEN_PROGRAM_ID;
+  export const TOKEN_METADATA = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+  export const TOKEN_2022 = TOKEN_2022_PROGRAM_ID;
 }

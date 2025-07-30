@@ -4,7 +4,7 @@ import { assert, beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
 import { createATAAndFund, getATABalanceMint } from "../../common/anchor-bankrun";
-import { assertEqualBn, assertEqualSOLBalance, assertLteBn, assertZeroBn } from "../../common/assertions";
+import { assertEqualBn, assertLteBn, assertZeroBn } from "../../common/assertions";
 import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount, Campaign, Time } from "../utils/defaults";
@@ -210,16 +210,17 @@ async function testClaim(
   // Assert that the recipient's ATA balance increased by the claim amount
   assertEqualBn(recipientAtaBalanceAfter, recipientAtaBalanceBefore.add(Amount.CLAIM));
 
+  const expectedFee = await ctx.claimFeeInLamports();
   const claimerLamportsAfter = await ctx.getLamportsOf(claimer.publicKey);
 
-  // Assert that the claimer's lamports balance has changed at least by the claim fee amount.
-  // We use `<=` because we don't know in advance the gas cost.
-  assertLteBn(claimerLamportsAfter, claimerLamportsBefore.sub(Amount.CLAIM_FEE));
+  // Assert that the claimer's lamports balance has decreased by, at least, the claim fee amount.
+  // We use `<=` because we don't know the gas cost in advance.
+  assertLteBn(claimerLamportsAfter, claimerLamportsBefore.sub(expectedFee));
 
   const treasuryLamportsAfter = await ctx.getLamportsOf(ctx.treasuryAddress);
 
-  // Assert that the treasury's balance has increased by the claim fee amount
-  assertEqualSOLBalance(treasuryLamportsAfter, treasuryLamportsBefore.add(Amount.CLAIM_FEE));
+  // Assert that the Treasury has been credited with the claim fee.
+  assertEqualBn(treasuryLamportsAfter, treasuryLamportsBefore.add(expectedFee));
 }
 
 // Implicitly tests the `has_claimed` Ix works.

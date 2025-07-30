@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     state::Treasury,
-    utils::{constants::*, events, validations::check_collect_fees},
+    utils::{constants::seeds::TREASURY, events, validations::check_collect_fees},
 };
 
 #[derive(Accounts)]
@@ -25,7 +25,7 @@ pub struct CollectFees<'info> {
     /// Write account: the treasury account that holds the fees.
     #[account(
       mut,
-      seeds = [TREASURY_SEED],
+      seeds = [TREASURY],
       bump = treasury.bump,
     )]
     pub treasury: Box<Account<'info, Treasury>>,
