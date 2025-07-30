@@ -215,12 +215,9 @@ fn charge_withdrawal_fee<'info>(
         }
     };
 
-    // Only charge fee if we have a valid amount
-    if fee_in_lamports > 0 {
-        // Interaction: transfer the fee from the signer to the treasury.
-        let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);
-        invoke(&fee_charging_ix, &[tx_signer, treasury])?;
-    }
+    // Interaction: transfer the fee from the signer to the treasury.
+    let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);
+    invoke(&fee_charging_ix, &[tx_signer, treasury])?;
 
     Ok(fee_in_lamports)
 }
