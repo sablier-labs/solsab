@@ -1,17 +1,19 @@
 import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
 import { PublicKey } from "@solana/web3.js";
+import BN from "bn.js";
 import { assert, beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
 import { createATAAndFund, getATABalanceMint } from "../../common/anchor-bankrun";
-import { assertEqualBn, assertEqualSOLBalance, assertLteBn, assertZeroBn } from "../../common/assertions";
+import { assertEqualBn, assertLteBn, assertZeroBn } from "../../common/assertions";
+import { getFeeInLamports } from "../../common/oracles";
 import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount, Campaign, Time } from "../utils/defaults";
 
 let ctx: MerkleInstantTestContext;
 
-describe("claim", () => {
+describe.only("claim", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new MerkleInstantTestContext();
@@ -194,16 +196,18 @@ async function testClaim(
   // Assert that the recipient's ATA balance increased by the claim amount
   assertEqualBn(recipientAtaBalanceAfter, recipientAtaBalanceBefore.add(Amount.CLAIM));
 
+  const expectedFee = await getFeeInLamports(Amount.CLAIM_FEE_USD);
   const claimerLamportsAfter = await ctx.getLamportsOf(claimer.publicKey);
 
-  // Assert that the claimer's lamports balance has changed at least by the claim fee amount.
-  // We use `<=` because we don't know in advance the gas cost.
-  assertLteBn(claimerLamportsAfter, claimerLamportsBefore.sub(Amount.CLAIM_FEE));
+  // Assert that the claimer's lamports balance has decreased by, at least, the claim fee amount.
+  // We use `<=` because we don't know the gas cost in advance.
+  assertLteBn(claimerLamportsAfter, claimerLamportsBefore.sub(expectedFee));
 
   const treasuryLamportsAfter = await ctx.getLamportsOf(ctx.treasuryAddress);
 
-  // Assert that the treasury's balance has increased by the claim fee amount
-  assertEqualSOLBalance(treasuryLamportsAfter, treasuryLamportsBefore.add(Amount.CLAIM_FEE));
+  // Assert that the Treasury has been credited with the claim fee that is within 5% of the expected fee
+  const treasuryBalanceDifference = treasuryLamportsAfter.sub(treasuryLamportsBefore).abs();
+  assertLteBn(treasuryBalanceDifference.sub(expectedFee).abs(), expectedFee.mul(new BN(5)).div(new BN(100)));
 }
 
 // Implicitly tests the `has_claimed` Ix works.

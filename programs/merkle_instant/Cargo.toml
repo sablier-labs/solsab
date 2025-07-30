@@ -1,25 +1,23 @@
 [package]
-  name = "sablier_merkle_instant"
-  version = "0.1.0"
-  description = "Created with Anchor"
-  edition = "2021"
+name = "sablier_merkle_instant"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
 
 [lib]
-  crate-type = ["cdylib", "lib"]
-  name = "sablier_merkle_instant"
+crate-type = ["cdylib", "lib"]
+name = "sablier_merkle_instant"
 
 [features]
-  default = []
-  cpi = ["no-entrypoint"]
-  no-entrypoint = []
-  no-idl = []
-  no-log-ix-name = []
-  idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 
 [dependencies]
-  anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
-  anchor-spl = { version = "0.31.1" }
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.31.1" }
 
-  bitvec = "1.0.1"
-  # svm-merkle-tree = { git = "https://github.com/deanmlittle/svm-merkle-tree", version = "0.1.1" }
-  solana-merkle-tree = { version = "2.2.12" }
+chainlink_solana = { git = "https://github.com/smartcontractkit/chainlink-solana", branch = "solana-2.1" }

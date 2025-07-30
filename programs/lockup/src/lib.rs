@@ -151,9 +151,16 @@ pub mod sablier_lockup {
     /// - `nft_token_program` The Token Program of the NFT collection.
     ///
     /// Parameters:
-    /// - `fee_collector` The address that will have the authority to collect fees.
-    pub fn initialize(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
-        instructions::initialize::handler(ctx, fee_collector)
+    /// - `fee_collector`: The address that will have the authority to collect fees.
+    /// - `chainlink_program`: The Chainlink program library.
+    /// - `chainlink_sol_usd_feed`: The Chainlink SOL/USD price feed.
+    pub fn initialize(
+        ctx: Context<Initialize>,
+        fee_collector: Pubkey,
+        chainlink_program: Pubkey,
+        chainlink_sol_usd_feed: Pubkey,
+    ) -> Result<()> {
+        instructions::initialize::handler(ctx, fee_collector, chainlink_program, chainlink_sol_usd_feed)
     }
 
     /// Removes the right of the stream's sender to cancel the stream.
@@ -182,6 +189,8 @@ pub mod sablier_lockup {
     /// - `withdrawal_recipient` The address of the recipient receiving the withdrawn tokens.
     /// - `deposited_token_program` The Token Program of the deposited token.
     /// - `nft_token_program` The Token Program of the NFT.
+    /// - `chainlink_program` The Chainlink program library.
+    /// - `chainlink_sol_usd_feed` The Chainlink SOL/USD price feed.
     ///
     /// Parameters:
     /// - `amount` The amount to withdraw, denoted in units of the token's decimals.

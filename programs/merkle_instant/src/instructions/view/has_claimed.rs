@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{state::Campaign, utils::constants::*};
+use crate::{state::Campaign, utils::constants::seeds::CLAIM_RECEIPT_SEED};
 
 #[derive(Accounts)]
 #[instruction(_index: u32)]

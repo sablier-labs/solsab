@@ -28,6 +28,8 @@ pub mod sablier_merkle_instant {
     /// - `recipient` The address of the airdrop recipient.
     /// - `airdrop_token_mint` The mint of the airdropped token.
     /// - `airdrop_token_program` The Token Program of the airdropped token.
+    /// - `chainlink_program` The Chainlink program library.
+    /// - `chainlink_sol_usd_feed` The Chainlink SOL/USD price feed.
     ///
     /// Parameters:
     /// - `index` The index of the recipient in the Merkle tree.
@@ -129,8 +131,15 @@ pub mod sablier_merkle_instant {
     ///
     /// Parameters:
     /// - `fee_collector` The address that will have the authority to collect fees.
-    pub fn initialize(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
-        instructions::initialize::handler(ctx, fee_collector)
+    /// - `chainlink_program` The Chainlink program library.
+    /// - `chainlink_sol_usd_feed` The Chainlink SOL/USD price feed.
+    pub fn initialize(
+        ctx: Context<Initialize>,
+        fee_collector: Pubkey,
+        chainlink_program: Pubkey,
+        chainlink_sol_usd_feed: Pubkey,
+    ) -> Result<()> {
+        instructions::initialize::handler(ctx, fee_collector, chainlink_program, chainlink_sol_usd_feed)
     }
 
     ////////////////////////////////////////////////////////////////////////////

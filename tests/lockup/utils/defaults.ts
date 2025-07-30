@@ -1,7 +1,7 @@
 import BN from "bn.js";
 import dayjs from "dayjs";
 import { ZERO } from "../../../lib/constants";
-import { sol, usdc } from "../../../lib/convertors";
+import { usdc } from "../../../lib/convertors";
 import type { Amounts, Timestamps } from "../../../target/types/sablier_lockup_structs";
 import type { UnlockAmounts } from "./types";
 
@@ -9,10 +9,9 @@ export namespace Amount {
   export const CLIFF = usdc("2500.000001");
   export const DEPOSIT = usdc(10_000);
   export const START = ZERO;
-  export const WITHDRAW_FEE = sol("0.01");
-
   export const WITHDRAW = usdc(2600);
   export const REFUND = DEPOSIT.sub(WITHDRAW);
+  export const WITHDRAWAL_FEE_USD = new BN(1);
 }
 
 export namespace Seed {

@@ -1,10 +1,10 @@
 import BN from "bn.js";
 import dayjs from "dayjs";
-import { sol, usdc } from "../../../lib/convertors";
+import { usdc } from "../../../lib/convertors";
 
 export namespace Amount {
   export const AGGREGATE = usdc(10_000);
-  export const CLAIM_FEE = sol("0.03");
+  export const CLAIM_FEE_USD = new BN(2);
   export const CLAIM = usdc(100);
   export const CLAWBACK = usdc(1000);
 }

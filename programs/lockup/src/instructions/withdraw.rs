@@ -1,21 +1,24 @@
 use anchor_lang::{
     prelude::*,
-    solana_program::{program::invoke, system_instruction::transfer},
+    solana_program::{program::invoke, system_instruction::transfer, sysvar::clock::Clock},
 };
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
+use chainlink_solana as chainlink;
+
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
     utils::{
-        constants::seeds::*, events::WithdrawFromLockupStream, lockup_math::get_withdrawable_amount,
-        transfer_helper::transfer_tokens, validations::check_withdraw,
+        constants::{seeds::*, *},
+        events::WithdrawFromLockupStream,
+        lockup_math::get_withdrawable_amount,
+        transfer_helper::transfer_tokens,
+        validations::check_withdraw,
     },
 };
-
-const WITHDRAWAL_FEE: u64 = 10_000_000; // The fee for withdrawing from the stream, in lamports.
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
@@ -93,6 +96,14 @@ pub struct Withdraw<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
+    /// CHECK: This is the Chainlink program library
+    #[account(address = treasury.chainlink_program)]
+    pub chainlink_program: AccountInfo<'info>,
+
+    /// CHECK: We're reading data from this chainlink feed
+    #[account(address = treasury.chainlink_sol_usd_feed)]
+    pub chainlink_sol_usd_feed: AccountInfo<'info>,
+
     /// Program account: the System program.
     pub system_program: Program<'info, System>,
 
@@ -118,9 +129,13 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Effect: update the stream data state.
     ctx.accounts.stream_data.withdraw(amount)?;
 
-    // Interaction: transfer the fee from the signer to the treasury.
-    let fee_collection_ix = transfer(&ctx.accounts.signer.key(), &ctx.accounts.treasury.key(), WITHDRAWAL_FEE);
-    invoke(&fee_collection_ix, &[ctx.accounts.signer.to_account_info(), ctx.accounts.treasury.to_account_info()])?;
+    // Interaction: charge the withdrawal fee.
+    let fee_in_lamports = charge_withdrawal_fee(
+        ctx.accounts.chainlink_program.to_account_info(),
+        ctx.accounts.chainlink_sol_usd_feed.to_account_info(),
+        ctx.accounts.signer.to_account_info(),
+        ctx.accounts.treasury.to_account_info(),
+    )?;
 
     // Interaction: transfer the tokens from the stream ATA to the recipient.
     transfer_tokens(
@@ -137,10 +152,75 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Log the withdrawal.
     emit!(WithdrawFromLockupStream {
         deposited_token_mint: ctx.accounts.deposited_token_mint.key(),
+        fee_in_lamports,
         stream_data: ctx.accounts.stream_data.key(),
         stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
-        withdrawn_amount: amount
+        withdrawn_amount: amount,
     });
 
     Ok(())
+}
+
+// TODO: export this into a crate that'd be imported by both the lockup and merkle_instant programs.
+fn charge_withdrawal_fee<'info>(
+    chainlink_program: AccountInfo<'info>,
+    chainlink_sol_usd_feed: AccountInfo<'info>,
+    tx_signer: AccountInfo<'info>,
+    treasury: AccountInfo<'info>,
+) -> Result<u64> {
+    // If the USD fee is 0, skip the calculations.
+    if WITHDRAWAL_FEE_USD == 0 {
+        return Ok(0);
+    }
+
+    // Interactions: query the oracle price and the time at which it was updated.
+    let round = match chainlink::latest_round_data(chainlink_program.clone(), chainlink_sol_usd_feed.clone()) {
+        Ok(round) => round,
+        Err(_) => return Ok(0), // If the oracle call fails, skip fee charging.
+    };
+
+    // If the price is not greater than 0, skip the calculations.
+    if round.answer <= 0 {
+        return Ok(0);
+    }
+
+    let current_timestamp: u32 = Clock::get().unwrap().unix_timestamp as u32;
+
+    // Due to reorgs and latency issues, the oracle can have a timestamp that is in the future. In
+    // this case, we ignore the price and skip fee charging.
+    if current_timestamp < round.timestamp {
+        return Ok(0);
+    }
+
+    // If the oracle hasn't been updated in the last 24 hours, we ignore the price and skip fee charging. This is a
+    // safety check to avoid using outdated prices.
+    // const SECONDS_IN_24_HOURS: u32 = 86400;
+    // if current_timestamp - round.timestamp > SECONDS_IN_24_HOURS {
+    //     return Ok(0);
+    // }
+
+    // Interactions: query the oracle decimals.
+    let oracle_decimals = match chainlink::decimals(chainlink_program.clone(), chainlink_sol_usd_feed.clone()) {
+        Ok(decimals) => decimals,
+        Err(_) => return Ok(0), // If the oracle call fails, skip fee charging.
+    };
+
+    let price = round.answer as u64;
+
+    let fee_in_lamports: u64 = match oracle_decimals {
+        8 => {
+            // If the oracle decimals are 8, calculate the fee.
+            WITHDRAWAL_FEE_USD * LAMPORTS_PER_SOL / price
+        }
+        decimals => {
+            // Otherwise, adjust the calculation to account for the oracle decimals.
+            WITHDRAWAL_FEE_USD * 10_u64.pow(10 + decimals as u32) / price
+        }
+    };
+
+    // Interaction: transfer the fee from the signer to the treasury.
+    let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);
+    invoke(&fee_charging_ix, &[tx_signer, treasury])?;
+
+    Ok(fee_in_lamports)
 }
