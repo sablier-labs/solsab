@@ -10,8 +10,8 @@ export namespace Amount {
 }
 
 export namespace Time {
-  export const GENESIS_DAY = dayjs().add(1, "day");
-  export const GENESIS = new BN(GENESIS_DAY.unix()); // tomorrow
+  export const GENESIS_DAY = dayjs(); // today
+  export const GENESIS = new BN(GENESIS_DAY.unix());
 }
 
 export namespace Campaign {

@@ -29,7 +29,8 @@ export namespace Seed {
  */
 export namespace Time {
   export const CLIFF_DURATION = new BN(2500);
-  export const GENESIS = new BN(dayjs().add(1, "day").unix()); // tomorrow
+  export const GENESIS_DAY = dayjs(); // today
+  export const GENESIS = new BN(GENESIS_DAY.unix());
   export const START = GENESIS.add(new BN(1000));
   export const TOTAL_DURATION = new BN(10_000);
 

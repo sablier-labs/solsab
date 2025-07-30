@@ -194,10 +194,10 @@ fn charge_withdrawal_fee<'info>(
 
     // If the oracle hasn't been updated in the last 24 hours, we ignore the price and skip fee charging. This is a
     // safety check to avoid using outdated prices.
-    // const SECONDS_IN_24_HOURS: u32 = 86400;
-    // if current_timestamp - round.timestamp > SECONDS_IN_24_HOURS {
-    //     return Ok(0);
-    // }
+    const SECONDS_IN_24_HOURS: u32 = 86400;
+    if current_timestamp - round.timestamp > SECONDS_IN_24_HOURS {
+        return Ok(0);
+    }
 
     // Interactions: query the oracle decimals.
     let oracle_decimals = match chainlink::decimals(chainlink_program.clone(), chainlink_sol_usd_feed.clone()) {
