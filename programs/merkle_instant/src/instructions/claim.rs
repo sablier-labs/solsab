@@ -160,7 +160,7 @@ fn charge_claim_fee<'info>(
 
     let current_timestamp: u32 = Clock::get().unwrap().unix_timestamp as u32;
 
-    // Due to reorgs and latency issues, the oracle can have an timestamp that is in the future. In
+    // Due to reorgs and latency issues, the oracle can have a timestamp that is in the future. In
     // this case, we ignore the price and skip fee charging.
     if current_timestamp < round.timestamp {
         return Ok(0);
