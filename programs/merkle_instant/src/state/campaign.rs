@@ -2,6 +2,13 @@ use anchor_lang::prelude::*;
 
 use crate::utils::constants::*;
 
+/// Represents a Merkle Instant campaign for token airdrops.
+///
+/// Note: All timestamp fields (`campaign_start_time`, `expiration_time`, `first_claim_time`)
+/// use `i64` instead of the more intuitive `u64` to maintain compatibility with Solana's
+/// standard time representation. The Solana `Clock` struct returns Unix timestamps as `i64`,
+/// and using consistent types across the codebase prevents unnecessary type conversions and
+/// potential issues when interfacing with Solana's time-related syscalls and built-in functions.
 #[account]
 #[derive(InitSpace)]
 pub struct Campaign {
