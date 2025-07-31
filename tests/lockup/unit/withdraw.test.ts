@@ -139,7 +139,7 @@ describe("withdraw", () => {
 
                 describe("when recipient has an ATA for the Stream's asset", () => {
                   describe("when signer recipient", () => {
-                    it.only("should make the withdrawal", async () => {
+                    it("should make the withdrawal", async () => {
                       // Get the Lamports balance of the Treasury before the withdrawal
                       const treasuryLamportsBefore = await ctx.getTreasuryLamports();
 

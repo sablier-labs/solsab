@@ -10,15 +10,15 @@ export namespace Amount {
 }
 
 export namespace Time {
-  export const GENESIS_DAY = dayjs(); // today
-  export const GENESIS = new BN(GENESIS_DAY.unix());
+  export const GENESIS_TIMESTAMP = dayjs().add(1, "hour"); // 1h from now
+  export const GENESIS = new BN(GENESIS_TIMESTAMP.unix());
 }
 
 export namespace Campaign {
   export const CAMPAIGN_NAME = "HODL or Nothing";
   export const EXPIRATION = new BN(dayjs().add(10, "days").unix());
   export const IPFS_CID = "bafkreiecpwdhvkmw4y6iihfndk7jhwjas3m5htm7nczovt6m37mucwgsrq";
-  export const POST_GRACE_PERIOD = new BN(Time.GENESIS_DAY.add(7, "days").add(1, "second").unix());
+  export const POST_GRACE_PERIOD = new BN(Time.GENESIS_TIMESTAMP.add(7, "days").add(1, "second").unix());
 }
 
 export namespace Seed {

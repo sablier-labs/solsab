@@ -101,6 +101,8 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
         ctx.accounts.treasury.to_account_info(),
     )?;
 
+    msg!("Charged {} lamports as claim fee", fee_in_lamports);
+
     // Interaction: transfer tokens from the Campaign's ATA to the Recipient's ATA.
     transfer_tokens(
         ctx.accounts.campaign_ata.to_account_info(),

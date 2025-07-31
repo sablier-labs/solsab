@@ -20,8 +20,7 @@ async function getSolUsdPrice(): Promise<number> {
     try {
       return await fetchSolUsdPriceCoingecko();
     } catch (error) {
-      console.error("Failed to fetch SOL price:", error);
-      return 0;
+      throw new Error(`Failed to fetch SOL price: ${error}`);
     }
   }
 }

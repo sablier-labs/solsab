@@ -13,7 +13,7 @@ import { Amount, Campaign, Time } from "../utils/defaults";
 
 let ctx: MerkleInstantTestContext;
 
-describe.only("claim", () => {
+describe("claim", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new MerkleInstantTestContext();
