@@ -7,6 +7,8 @@ pub enum ErrorCode {
     CampaignExpired,
     #[msg("Invalid Merkle proof!")]
     InvalidMerkleProof,
+    #[msg("Campaign has not started yet!")]
+    CampaignNotStarted,
 
     // Clawback
     #[msg("Clawback not allowed past the grace period and before campaign expiration!")]

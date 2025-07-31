@@ -98,7 +98,7 @@ describe("clawback", () => {
               describe("given campaign expired", () => {
                 beforeEach(async () => {
                   // Time travel to the end of the campaign
-                  await ctx.timeTravelTo(Campaign.EXPIRATION);
+                  await ctx.timeTravelTo(Campaign.EXPIRATION_TIME);
                 });
 
                 describe("when clawback recipient does not have ATA", () => {

@@ -7,6 +7,7 @@ use crate::utils::constants::*;
 pub struct Campaign {
     pub airdrop_token_mint: Pubkey,
     pub bump: u8,
+    pub campaign_start_time: i64,
     pub creator: Pubkey,
     pub expiration_time: i64,
     pub first_claim_time: i64,
@@ -33,6 +34,7 @@ impl Campaign {
         &mut self,
         airdrop_token_mint: Pubkey,
         bump: u8,
+        campaign_start_time: i64,
         creator: Pubkey,
         expiration_time: i64,
         ipfs_cid: String,
@@ -41,6 +43,7 @@ impl Campaign {
     ) -> Result<()> {
         self.airdrop_token_mint = airdrop_token_mint;
         self.bump = bump;
+        self.campaign_start_time = campaign_start_time;
         self.creator = creator;
         self.expiration_time = expiration_time;
         self.ipfs_cid = ipfs_cid;

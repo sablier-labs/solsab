@@ -3,13 +3,19 @@ use anchor_lang::{prelude::*, solana_program::keccak::hashv as keccak};
 use crate::utils::errors::ErrorCode;
 
 pub fn check_claim(
-    expiration_time: i64,
-    merkle_root: [u8; 32],
-    index: u32,
-    recipient: Pubkey,
     amount: u64,
+    campaign_start_time: i64,
+    expiration_time: i64,
+    index: u32,
     merkle_proof: Vec<[u8; 32]>,
+    merkle_root: [u8; 32],
+    recipient: Pubkey,
 ) -> Result<()> {
+    // Check: the campaign has started.
+    if !has_campaign_started(campaign_start_time)? {
+        return Err(ErrorCode::CampaignNotStarted.into());
+    }
+
     // Check: the campaign has not expired.
     if has_expired(expiration_time)? {
         return Err(ErrorCode::CampaignExpired.into());
@@ -63,6 +69,12 @@ pub fn check_collect_fees(collectable_amount: u64) -> Result<()> {
     }
 
     Ok(())
+}
+
+pub fn has_campaign_started(start_time: i64) -> Result<bool> {
+    let current_time = Clock::get()?.unix_timestamp;
+
+    Ok(start_time <= current_time)
 }
 
 pub fn has_expired(expiration_time: i64) -> Result<bool> {

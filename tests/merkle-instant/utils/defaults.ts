@@ -15,8 +15,9 @@ export namespace Time {
 }
 
 export namespace Campaign {
-  export const CAMPAIGN_NAME = "HODL or Nothing";
-  export const EXPIRATION = new BN(dayjs().add(10, "days").unix());
+  export const NAME = "HODL or Nothing";
+  export const START_TIME = Time.GENESIS;
+  export const EXPIRATION_TIME = new BN(dayjs().add(10, "days").unix());
   export const IPFS_CID = "bafkreiecpwdhvkmw4y6iihfndk7jhwjas3m5htm7nczovt6m37mucwgsrq";
   export const POST_GRACE_PERIOD = new BN(Time.GENESIS_DAY.add(7, "days").add(1, "second").unix());
 }

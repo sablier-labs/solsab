@@ -15,6 +15,7 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(
     merkle_root: [u8; 32],
+    campaign_start_time: i64,
     expiration_time: i64,
     name: String,
 )]
@@ -33,6 +34,7 @@ pub struct CreateCampaign<'info> {
         CAMPAIGN_SEED,
         creator.key().as_ref(),
         merkle_root.as_ref(),
+        campaign_start_time.to_le_bytes().as_ref(),
         expiration_time.to_le_bytes().as_ref(),
         name.as_ref(),
         airdrop_token_mint.key().as_ref(),
@@ -55,9 +57,11 @@ pub struct CreateCampaign<'info> {
     pub system_program: Program<'info, System>,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<CreateCampaign>,
     merkle_root: [u8; 32],
+    campaign_start_time: i64,
     expiration_time: i64,
     ipfs_cid: String,
     name: String,
@@ -68,6 +72,7 @@ pub fn handler(
     ctx.accounts.campaign.create(
         ctx.accounts.airdrop_token_mint.key(),
         ctx.bumps.campaign,
+        campaign_start_time,
         ctx.accounts.creator.key(),
         expiration_time,
         ipfs_cid.clone(),
@@ -80,6 +85,7 @@ pub fn handler(
         aggregate_amount,
         campaign: ctx.accounts.campaign.key(),
         campaign_name: name,
+        campaign_start_time,
         creator: ctx.accounts.creator.key(),
         expiration_time,
         ipfs_cid,

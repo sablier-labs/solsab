@@ -5,6 +5,7 @@ pub struct CreateCampaign {
     pub aggregate_amount: u64,
     pub campaign: Pubkey,
     pub campaign_name: String,
+    pub campaign_start_time: i64,
     pub creator: Pubkey,
     pub expiration_time: i64,
     pub ipfs_cid: String,

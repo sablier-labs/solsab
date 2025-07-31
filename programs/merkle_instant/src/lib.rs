@@ -35,6 +35,7 @@ pub mod sablier_merkle_instant {
     /// - `merkle_proof` The proof of inclusion in the Merkle tree.
     ///
     /// Requirements:
+    /// - The current time must be greater than or equal to the campaign start time.
     /// - The campaign must not have expired.
     /// - The recipient's airdrop has not been claimed yet.
     /// - The Merkle proof must be valid.
@@ -95,6 +96,7 @@ pub mod sablier_merkle_instant {
     ///
     /// Parameters:
     /// - `merkle_root` The Merkle root of the claim data.
+    /// - `campaign_start_time` The time when the campaign starts, in seconds since the Unix epoch.
     /// - `expiration_time` The time when the campaign expires, in seconds since the Unix epoch. A value of zero means
     /// the campaign does not expire.
     /// - `name` The name of the campaign.
@@ -102,9 +104,11 @@ pub mod sablier_merkle_instant {
     /// features that depend upon the IPFS CID.
     /// - `aggregate_amount` The total amount of tokens to be distributed to all recipients.
     /// - `recipient_count` The total number of recipient addresses eligible for the airdrop.
+    #[allow(clippy::too_many_arguments)]
     pub fn create_campaign(
         ctx: Context<CreateCampaign>,
         merkle_root: [u8; 32],
+        campaign_start_time: i64,
         expiration_time: i64,
         name: String,
         ipfs_cid: String,
@@ -114,6 +118,7 @@ pub mod sablier_merkle_instant {
         instructions::create_campaign::handler(
             ctx,
             merkle_root,
+            campaign_start_time,
             expiration_time,
             ipfs_cid,
             name,
@@ -172,5 +177,13 @@ pub mod sablier_merkle_instant {
     /// OR the current timestamp does not exceed 7 days after the first claim.
     pub fn has_grace_period_passed(ctx: Context<CampaignView>) -> Result<bool> {
         instructions::has_grace_period_passed::handler(ctx)
+    }
+
+    /// Returns a flag indicating whether the campaign has started.
+    ///
+    /// Accounts expected:
+    /// - `campaign` The account that stores the campaign details.
+    pub fn has_campaign_started(ctx: Context<CampaignView>) -> Result<bool> {
+        instructions::has_campaign_started::handler(ctx)
     }
 }
