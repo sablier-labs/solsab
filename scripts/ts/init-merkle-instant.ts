@@ -1,6 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import type { Keypair } from "@solana/web3.js";
 import { beforeEach, describe } from "vitest";
+import { ProgramId } from "../../lib/constants";
 
 import type { SablierMerkleInstant } from "../../target/types/sablier_merkle_instant";
 
@@ -31,7 +32,7 @@ async function configureTestingEnvironment() {
 
 async function initSablierMerkleInstant() {
   await merkleInstantProgram.methods
-    .initialize(senderKeys.publicKey)
+    .initialize(senderKeys.publicKey, ProgramId.CHAINLINK_PROGRAM_ID, ProgramId.CHAINLINK_SOL_USD_FEED_ID)
     .signers([senderKeys])
     .accounts({
       initializer: senderKeys.publicKey,
