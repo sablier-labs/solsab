@@ -9,7 +9,6 @@ use crate::{
     utils::{
         constants::{ANCHOR_DISCRIMINATOR_SIZE, CAMPAIGN_SEED},
         events,
-        validations::check_create_campaign,
     },
 };
 
@@ -69,9 +68,6 @@ pub fn handler(
     aggregate_amount: u64,
     recipient_count: u32,
 ) -> Result<()> {
-    // Check: validate the campaign creation.
-    check_create_campaign(campaign_start_time, expiration_time)?;
-
     // Effect: Initialize the campaign account.
     ctx.accounts.campaign.create(
         ctx.accounts.airdrop_token_mint.key(),
