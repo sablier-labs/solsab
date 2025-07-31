@@ -159,8 +159,8 @@ pub mod sablier_merkle_instant {
     /// Calculates the claim fee in lamports, which is equivalent to $2 USD.
     ///
     /// # Accounts Expected:
-    /// - `chainlink_program` The Chainlink program library.
-    /// - `chainlink_sol_usd_feed` The Chainlink SOL/USD price feed.
+    /// - `chainlink_program`: The Chainlink program used to retrieve on-chain price feeds.
+    /// - `chainlink_sol_usd_feed`: The account providing the SOL/USD price feed data.
     pub fn claim_fee_in_lamports(ctx: Context<ClaimFeeInLamports>) -> Result<u64> {
         instructions::claim_fee_in_lamports::handler(ctx)
     }

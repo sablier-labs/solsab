@@ -10,7 +10,7 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct WithdrawalFeeInLamports<'info> {
-    /// Read account: the treasury account that receives the withdrawal fee
+    /// Read account: the treasury account that receives the withdrawal fee.
     #[account(
       mut,
       seeds = [TREASURY],
