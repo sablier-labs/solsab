@@ -179,7 +179,7 @@ pub mod sablier_lockup {
     ///
     /// Notes:
     /// - If the withdrawal recipient does not have an ATA for the deposited token, one is created.
-    /// - The signer must pay a fee in the native (SOL) token.
+    /// - The instruction charges a fee in SOL equivalent to $1.
     /// - Emits {WithdrawFromLockupStream} event.
     ///
     /// Accounts expected:

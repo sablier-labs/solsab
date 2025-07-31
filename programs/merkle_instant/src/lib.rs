@@ -20,6 +20,7 @@ pub mod sablier_merkle_instant {
     /// Claim airdrop on behalf of eligible recipient and transfer it to the recipient ATA.
     ///
     /// Notes:
+    /// - The instruction charges a fee in SOL equivalent to $2.
     /// - Emits a {Claim} event.
     ///
     /// Accounts expected:

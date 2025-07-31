@@ -190,7 +190,7 @@ fn charge_claim_fee<'info>(
         }
         decimals => {
             // Otherwise, adjust the calculation to account for the oracle decimals.
-            CLAIM_FEE_USD * 10_u64.pow(10 + decimals as u32) / price
+            CLAIM_FEE_USD * 10_u64.pow(1 + decimals as u32) / price
         }
     };
 

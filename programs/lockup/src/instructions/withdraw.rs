@@ -73,7 +73,6 @@ pub struct Withdraw<'info> {
             signer.key() == stream_recipient.key())
         )
     )]
-
     /// CHECK: This can be any address if the signer is the stream's recipient, otherwise it must be the stream's
     /// recipient.
     pub withdrawal_recipient: UncheckedAccount<'info>,
@@ -214,7 +213,7 @@ fn charge_withdrawal_fee<'info>(
         }
         decimals => {
             // Otherwise, adjust the calculation to account for the oracle decimals.
-            WITHDRAWAL_FEE_USD * 10_u64.pow(10 + decimals as u32) / price
+            WITHDRAWAL_FEE_USD * 10_u64.pow(1 + decimals as u32) / price
         }
     };
 
