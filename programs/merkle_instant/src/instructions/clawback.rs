@@ -6,7 +6,7 @@ use anchor_spl::{
 
 use crate::{
     state::Campaign,
-    utils::{constants::seeds::CAMPAIGN_SEED, events, transfer_helper::transfer_tokens, validations::check_clawback},
+    utils::{constants::seeds::CAMPAIGN, events, transfer_helper::transfer_tokens, validations::check_clawback},
 };
 
 #[derive(Accounts)]
@@ -64,7 +64,7 @@ pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
         amount,
         airdrop_token_mint.decimals,
         &[&[
-            CAMPAIGN_SEED,
+            CAMPAIGN,
             campaign.creator.key().as_ref(),
             campaign.merkle_root.as_ref(),
             campaign.expiration_time.to_le_bytes().as_ref(),

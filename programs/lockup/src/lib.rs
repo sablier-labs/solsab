@@ -189,8 +189,8 @@ pub mod sablier_lockup {
     /// - `withdrawal_recipient` The address of the recipient receiving the withdrawn tokens.
     /// - `deposited_token_program` The Token Program of the deposited token.
     /// - `nft_token_program` The Token Program of the NFT.
-    /// - `chainlink_program` The Chainlink program library.
-    /// - `chainlink_sol_usd_feed` The Chainlink SOL/USD price feed.
+    /// - `chainlink_program`: The Chainlink program used to retrieve on-chain price feeds.
+    /// - `chainlink_sol_usd_feed`: The account providing the SOL/USD price feed data.
     ///
     /// Parameters:
     /// - `amount` The amount to withdraw, denoted in units of the token's decimals.
@@ -200,6 +200,7 @@ pub mod sablier_lockup {
     /// - `withdrawal_recipient` must be the recipient if the signer is not the stream's recipient.
     /// - `amount` must be greater than zero and must not exceed the withdrawable amount.
     /// - The stream must not be Depleted.
+    /// - `chainlink_program` and `chainlink_sol_usd_feed` must match the ones stored in the treasury.
     pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         instructions::withdraw::handler(ctx, amount)
     }
@@ -263,5 +264,14 @@ pub mod sablier_lockup {
     /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
     pub fn withdrawable_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::withdrawable_amount_of::handler(ctx)
+    }
+
+    /// Calculates the withdrawal fee in lamports, which is equivalent to $1 USD.
+    ///
+    /// # Accounts Expected:
+    /// - `chainlink_program` The Chainlink program library.
+    /// - `chainlink_sol_usd_feed` The Chainlink SOL/USD price feed.
+    pub fn withdrawal_fee_in_lamports(ctx: Context<WithdrawalFeeInLamports>) -> Result<u64> {
+        instructions::withdrawal_fee_in_lamports::handler(ctx)
     }
 }

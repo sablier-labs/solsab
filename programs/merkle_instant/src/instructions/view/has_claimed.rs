@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{state::Campaign, utils::constants::seeds::CLAIM_RECEIPT_SEED};
+use crate::{state::Campaign, utils::constants::seeds::CLAIM_RECEIPT};
 
 #[derive(Accounts)]
 #[instruction(_index: u32)]
@@ -10,7 +10,7 @@ pub struct HasClaimed<'info> {
     /// CHECK: If it exists, return true, otherwise false.
     #[account(
         seeds = [
-            CLAIM_RECEIPT_SEED,
+            CLAIM_RECEIPT,
             campaign.key().as_ref(),
             _index.to_le_bytes().as_ref(),
         ],

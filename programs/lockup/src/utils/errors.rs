@@ -35,8 +35,6 @@ pub enum ErrorCode {
     StreamAlreadyNonCancelable,
 
     // Withdraw
-    #[msg("Invalid Chainlink round!")]
-    InvalidChainlinkRound,
     #[msg("Attempting to withdraw more than available in the stream!")]
     Overdraw,
     #[msg("Can't withdraw a zero amount!")]

@@ -3,7 +3,7 @@ use anchor_spl::associated_token::AssociatedToken;
 
 use crate::{
     state::Treasury,
-    utils::{constants::seeds::TREASURY_SEED, events, validations::check_collect_fees},
+    utils::{constants::seeds::TREASURY, events, validations::check_collect_fees},
 };
 
 #[derive(Accounts)]
@@ -17,7 +17,7 @@ pub struct CollectFees<'info> {
 
     #[account(
       mut,
-      seeds = [TREASURY_SEED],
+      seeds = [TREASURY],
       bump = treasury.bump,
     )]
     pub treasury: Box<Account<'info, Treasury>>,

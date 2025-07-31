@@ -1,19 +1,18 @@
 use anchor_lang::{
     prelude::*,
-    solana_program::{program::invoke, system_instruction::transfer, sysvar::clock::Clock},
+    solana_program::{program::invoke, system_instruction::transfer},
 };
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
-use chainlink_solana as chainlink;
-
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
     utils::{
-        constants::{seeds::*, *},
+        constants::{seeds::*, WITHDRAWAL_FEE_USD},
         events::WithdrawFromLockupStream,
+        fee_calculation::convert_usd_to_fee_in_lamports,
         lockup_math::get_withdrawable_amount,
         transfer_helper::transfer_tokens,
         validations::check_withdraw,
@@ -95,11 +94,13 @@ pub struct Withdraw<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
-    /// CHECK: This is the Chainlink program library
+    /// Read account: The Chainlink program used to retrieve on-chain price feeds.
+    /// CHECK: This is the Chainlink program.
     #[account(address = treasury.chainlink_program)]
     pub chainlink_program: AccountInfo<'info>,
 
-    /// CHECK: We're reading data from this chainlink feed
+    /// Read account: The account providing the SOL/USD price feed data.
+    /// CHECK: We're reading data from this Chainlink feed.
     #[account(address = treasury.chainlink_sol_usd_feed)]
     pub chainlink_sol_usd_feed: AccountInfo<'info>,
 
@@ -160,62 +161,16 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     Ok(())
 }
 
-// TODO: export this into a crate that'd be imported by both the lockup and merkle_instant programs.
+/// Charges the withdrawal fee in lamports.
 fn charge_withdrawal_fee<'info>(
     chainlink_program: AccountInfo<'info>,
     chainlink_sol_usd_feed: AccountInfo<'info>,
     tx_signer: AccountInfo<'info>,
     treasury: AccountInfo<'info>,
 ) -> Result<u64> {
-    // If the USD fee is 0, skip the calculations.
-    if WITHDRAWAL_FEE_USD == 0 {
-        return Ok(0);
-    }
-
-    // Interactions: query the oracle price and the time at which it was updated.
-    let round = match chainlink::latest_round_data(chainlink_program.clone(), chainlink_sol_usd_feed.clone()) {
-        Ok(round) => round,
-        Err(_) => return Ok(0), // If the oracle call fails, skip fee charging.
-    };
-
-    // If the price is not greater than 0, skip the calculations.
-    if round.answer <= 0 {
-        return Ok(0);
-    }
-
-    let current_timestamp: u32 = Clock::get().unwrap().unix_timestamp as u32;
-
-    // Due to reorgs and latency issues, the oracle can have a timestamp that is in the future. In
-    // this case, we ignore the price and skip fee charging.
-    if current_timestamp < round.timestamp {
-        return Ok(0);
-    }
-
-    // If the oracle hasn't been updated in the last 24 hours, we ignore the price and skip fee charging. This is a
-    // safety check to avoid using outdated prices.
-    const SECONDS_IN_24_HOURS: u32 = 86400;
-    if current_timestamp - round.timestamp > SECONDS_IN_24_HOURS {
-        return Ok(0);
-    }
-
-    // Interactions: query the oracle decimals.
-    let oracle_decimals = match chainlink::decimals(chainlink_program.clone(), chainlink_sol_usd_feed.clone()) {
-        Ok(decimals) => decimals,
-        Err(_) => return Ok(0), // If the oracle call fails, skip fee charging.
-    };
-
-    let price = round.answer as u64;
-
-    let fee_in_lamports: u64 = match oracle_decimals {
-        8 => {
-            // If the oracle decimals are 8, calculate the fee.
-            WITHDRAWAL_FEE_USD * LAMPORTS_PER_SOL / price
-        }
-        decimals => {
-            // Otherwise, adjust the calculation to account for the oracle decimals.
-            WITHDRAWAL_FEE_USD * 10_u64.pow(1 + decimals as u32) / price
-        }
-    };
+    // Calculate the fee in lamports.
+    let fee_in_lamports: u64 =
+        convert_usd_to_fee_in_lamports(WITHDRAWAL_FEE_USD, chainlink_program, chainlink_sol_usd_feed);
 
     // Interaction: transfer the fee from the signer to the treasury.
     let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);

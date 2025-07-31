@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     state::Treasury,
-    utils::constants::{seeds::TREASURY_SEED, ANCHOR_DISCRIMINATOR_SIZE},
+    utils::constants::{seeds::TREASURY, ANCHOR_DISCRIMINATOR_SIZE},
 };
 
 #[derive(Accounts)]
@@ -13,7 +13,7 @@ pub struct Initialize<'info> {
     #[account(
       init,
       payer = initializer,
-      seeds = [TREASURY_SEED],
+      seeds = [TREASURY],
       space = ANCHOR_DISCRIMINATOR_SIZE + Treasury::INIT_SPACE,
       bump
     )]

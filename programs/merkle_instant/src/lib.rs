@@ -29,8 +29,8 @@ pub mod sablier_merkle_instant {
     /// - `recipient` The address of the airdrop recipient.
     /// - `airdrop_token_mint` The mint of the airdropped token.
     /// - `airdrop_token_program` The Token Program of the airdropped token.
-    /// - `chainlink_program` The Chainlink program library.
-    /// - `chainlink_sol_usd_feed` The Chainlink SOL/USD price feed.
+    /// - `chainlink_program`: The Chainlink program used to retrieve on-chain price feeds.
+    /// - `chainlink_sol_usd_feed`: The account providing the SOL/USD price feed data.
     ///
     /// Parameters:
     /// - `index` The index of the recipient in the Merkle tree.
@@ -41,6 +41,7 @@ pub mod sablier_merkle_instant {
     /// - The campaign must not have expired.
     /// - The recipient's airdrop has not been claimed yet.
     /// - The Merkle proof must be valid.
+    /// - `chainlink_program` and `chainlink_sol_usd_feed` must match the ones stored in the treasury.
     pub fn claim(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[u8; 32]>) -> Result<()> {
         instructions::claim::handler(ctx, index, amount, merkle_proof)
     }
@@ -153,6 +154,15 @@ pub mod sablier_merkle_instant {
     /// - `campaign` The account that stores the campaign details.
     pub fn campaign_view(ctx: Context<CampaignView>) -> Result<state::Campaign> {
         instructions::campaign_view::handler(ctx)
+    }
+
+    /// Calculates the claim fee in lamports, which is equivalent to $2 USD.
+    ///
+    /// # Accounts Expected:
+    /// - `chainlink_program` The Chainlink program library.
+    /// - `chainlink_sol_usd_feed` The Chainlink SOL/USD price feed.
+    pub fn claim_fee_in_lamports(ctx: Context<ClaimFeeInLamports>) -> Result<u64> {
+        instructions::claim_fee_in_lamports::handler(ctx)
     }
 
     /// Returns a flag indicating whether a claim has been made for the given index.

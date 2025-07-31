@@ -7,7 +7,7 @@ pub const CAMPAIGN_NAME_SIZE: usize = 32;
 
 // Account Seeds
 pub mod seeds {
-    pub const CAMPAIGN_SEED: &[u8] = b"campaign";
-    pub const CLAIM_RECEIPT_SEED: &[u8] = b"claim_receipt";
-    pub const TREASURY_SEED: &[u8] = b"treasury";
+    pub const CAMPAIGN: &[u8] = b"campaign";
+    pub const CLAIM_RECEIPT: &[u8] = b"claim_receipt";
+    pub const TREASURY: &[u8] = b"treasury";
 }
