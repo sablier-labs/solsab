@@ -12,7 +12,7 @@ use crate::{
     utils::{
         constants::{seeds::*, WITHDRAWAL_FEE_USD},
         events::WithdrawFromLockupStream,
-        fee_calculation::convert_usd_to_fee_in_lamports,
+        fee_calculation::convert_usd_fee_to_lamports,
         lockup_math::get_withdrawable_amount,
         transfer_helper::transfer_tokens,
         validations::check_withdraw,
@@ -170,7 +170,7 @@ fn charge_withdrawal_fee<'info>(
 ) -> Result<u64> {
     // Calculate the fee in lamports.
     let fee_in_lamports: u64 =
-        convert_usd_to_fee_in_lamports(WITHDRAWAL_FEE_USD, chainlink_program, chainlink_sol_usd_feed);
+        convert_usd_fee_to_lamports(WITHDRAWAL_FEE_USD, chainlink_program, chainlink_sol_usd_feed);
 
     // Interaction: transfer the fee from the signer to the treasury.
     let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);

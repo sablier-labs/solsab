@@ -12,7 +12,7 @@ use crate::{
     utils::{
         constants::{seeds::*, ANCHOR_DISCRIMINATOR_SIZE, CLAIM_FEE_USD},
         events,
-        fee_calculation::convert_usd_to_fee_in_lamports,
+        fee_calculation::convert_usd_fee_to_lamports,
         transfer_helper::transfer_tokens,
         validations::check_claim,
     },
@@ -146,7 +146,7 @@ fn charge_claim_fee<'info>(
     treasury: AccountInfo<'info>,
 ) -> Result<u64> {
     // Calculate the fee in lamports.
-    let fee_in_lamports: u64 = convert_usd_to_fee_in_lamports(CLAIM_FEE_USD, chainlink_program, chainlink_sol_usd_feed);
+    let fee_in_lamports: u64 = convert_usd_fee_to_lamports(CLAIM_FEE_USD, chainlink_program, chainlink_sol_usd_feed);
 
     // Interaction: transfer the fee from the signer to the treasury.
     let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);

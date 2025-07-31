@@ -4,7 +4,7 @@ use crate::{
     state::treasury::Treasury,
     utils::{
         constants::{seeds::TREASURY, WITHDRAWAL_FEE_USD},
-        fee_calculation::convert_usd_to_fee_in_lamports,
+        fee_calculation::convert_usd_fee_to_lamports,
     },
 };
 
@@ -30,7 +30,7 @@ pub struct WithdrawalFeeInLamports<'info> {
 }
 
 pub fn handler(ctx: Context<WithdrawalFeeInLamports>) -> Result<u64> {
-    let fee_in_lamports = convert_usd_to_fee_in_lamports(
+    let fee_in_lamports = convert_usd_fee_to_lamports(
         WITHDRAWAL_FEE_USD,
         ctx.accounts.chainlink_program.to_account_info(),
         ctx.accounts.chainlink_sol_usd_feed.to_account_info(),

@@ -9,7 +9,7 @@ use chainlink_solana as chainlink;
 /// 2. The oracle price is ≤ 0.
 /// 3. The oracle's update timestamp is in the future.
 /// 4. The oracle price hasn't been updated in the last 24 hours.
-pub fn convert_usd_to_fee_in_lamports<'info>(
+pub fn convert_usd_fee_to_lamports<'info>(
     fee_usd: u64,
     chainlink_program: AccountInfo<'info>,
     chainlink_sol_usd_feed: AccountInfo<'info>,
