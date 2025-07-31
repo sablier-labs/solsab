@@ -234,13 +234,13 @@ export class MerkleInstantTestContext extends TestContext {
     return {
       airdropTokenMint: this.usdc,
       bump: 0,
+      campaignStartTime: Campaign.START_TIME,
       creator: this.campaignCreator.keys.publicKey,
       expirationTime: Campaign.EXPIRATION_TIME,
       firstClaimTime: ZERO,
       ipfsCid: Campaign.IPFS_CID,
       merkleRoot: Array.from(this.merkleRoot),
       name: Campaign.NAME,
-      startTime: Campaign.START_TIME,
     };
   }
 

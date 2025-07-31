@@ -10,7 +10,7 @@ export function expectToThrow(promise: Promise<unknown>, errorNameOrCode: Progra
 export function assertEqCampaignData(a: CampaignData, b: CampaignData) {
   assertEqualPublicKey(a.airdropTokenMint, b.airdropTokenMint);
   assertEqualPublicKey(a.creator, b.creator);
-  assertEqualBn(a.startTime, b.startTime);
+  assertEqualBn(a.campaignStartTime, b.campaignStartTime);
   assertEqualBn(a.expirationTime, b.expirationTime);
   assertEqualBn(a.firstClaimTime, b.firstClaimTime);
   assert.equal(a.ipfsCid, b.ipfsCid);
