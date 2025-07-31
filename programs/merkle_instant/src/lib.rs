@@ -133,8 +133,8 @@ pub mod sablier_merkle_instant {
     ///
     /// Parameters:
     /// - `fee_collector` The address that will have the authority to collect fees.
-    /// - `chainlink_program` The Chainlink program library.
-    /// - `chainlink_sol_usd_feed` The Chainlink SOL/USD price feed.
+    /// - `chainlink_program`: The Chainlink program used to retrieve on-chain price feeds.
+    /// - `chainlink_sol_usd_feed`: The account providing the SOL/USD price feed data.
     pub fn initialize(
         ctx: Context<Initialize>,
         fee_collector: Pubkey,
