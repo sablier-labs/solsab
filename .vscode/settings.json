@@ -3,6 +3,7 @@
   "editor.formatOnSave": true,
   "eslint.enable": false,
   "evenBetterToml.formatter.indentEntries": true,
+  "evenBetterToml.formatter.indentString": "  ",
   "typescript.tsdk": "node_modules/typescript/lib",
   "editor.codeActionsOnSave": {
     "source.fixAll.biome": "explicit",
