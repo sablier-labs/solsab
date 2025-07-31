@@ -12,7 +12,6 @@ use crate::{
 pub struct ClaimFeeInLamports<'info> {
     /// Read account: the treasury account that receives the claim fee.
     #[account(
-      mut,
       seeds = [TREASURY],
       bump = treasury.bump
     )]

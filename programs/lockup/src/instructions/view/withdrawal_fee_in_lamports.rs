@@ -12,7 +12,6 @@ use crate::{
 pub struct WithdrawalFeeInLamports<'info> {
     /// Read account: the treasury account that receives the withdrawal fee.
     #[account(
-      mut,
       seeds = [TREASURY],
       bump = treasury.bump
     )]
