@@ -108,8 +108,8 @@ export class MerkleInstantTestContext extends TestContext {
         airdropTokenMint,
         airdropTokenProgram,
         campaign: campaign,
-        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM_ID,
-        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED_ID,
+        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM,
+        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
         claimer: claimerKeys.publicKey,
         recipient: recipientAddress,
       })
@@ -215,7 +215,7 @@ export class MerkleInstantTestContext extends TestContext {
 
   async initializeMerkleInstant(): Promise<void> {
     const initializeIx = await this.merkleInstant.methods
-      .initialize(this.feeCollector.keys.publicKey, ProgramId.CHAINLINK_PROGRAM_ID, ProgramId.CHAINLINK_SOL_USD_FEED_ID)
+      .initialize(this.feeCollector.keys.publicKey, ProgramId.CHAINLINK_PROGRAM, ProgramId.CHAINLINK_SOL_USD_FEED)
       .accounts({
         initializer: this.campaignCreator.keys.publicKey,
       })

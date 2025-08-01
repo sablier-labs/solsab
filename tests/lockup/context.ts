@@ -192,7 +192,7 @@ export class LockupTestContext extends TestContext {
 
   async initializeLockup(): Promise<void> {
     const initializeIx = await this.lockup.methods
-      .initialize(this.feeCollector.keys.publicKey, ProgramId.CHAINLINK_PROGRAM_ID, ProgramId.CHAINLINK_SOL_USD_FEED_ID)
+      .initialize(this.feeCollector.keys.publicKey, ProgramId.CHAINLINK_PROGRAM, ProgramId.CHAINLINK_SOL_USD_FEED)
       .accounts({
         initializer: this.sender.keys.publicKey,
         nftTokenProgram: token.TOKEN_PROGRAM_ID,
@@ -227,8 +227,8 @@ export class LockupTestContext extends TestContext {
     const withdrawIx = await this.lockup.methods
       .withdraw(withdrawAmount)
       .accounts({
-        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM_ID,
-        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED_ID,
+        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM,
+        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
         depositedTokenMint,
         depositedTokenProgram,
         nftTokenProgram: token.TOKEN_PROGRAM_ID,
@@ -263,8 +263,8 @@ export class LockupTestContext extends TestContext {
     const withdrawMaxIx = await this.lockup.methods
       .withdrawMax()
       .accounts({
-        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM_ID,
-        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED_ID,
+        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM,
+        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
         depositedTokenMint,
         depositedTokenProgram,
         nftTokenProgram: token.TOKEN_PROGRAM_ID,

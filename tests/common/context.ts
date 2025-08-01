@@ -46,13 +46,13 @@ export class TestContext {
       { name: programName, programId },
       {
         name: "chainlink_program",
-        programId: ProgramId.CHAINLINK_PROGRAM_ID,
+        programId: ProgramId.CHAINLINK_PROGRAM,
       },
       ...addedPrograms,
     ];
 
     // Add the Chainlink SOL/USD price feed program ID to the added accounts
-    addedAccountIds.push(ProgramId.CHAINLINK_SOL_USD_FEED_ID);
+    addedAccountIds.push(ProgramId.CHAINLINK_SOL_USD_FEED);
     const addedAccounts = await Promise.all(addedAccountIds.map((id) => this.fetchAccountDataAsFixture(id.toString())));
 
     // Start Anchor context with the provided programs & accounts
