@@ -4,10 +4,10 @@ import {
 } from "@coral-xyz/anchor-errors";
 import BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
+import { feeInLamports } from "../../../lib/chainlink-mock";
 import { REDUNDANCY_BUFFER } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
 import { assertLteBn } from "../../common/assertions";
-import { getFeeInLamports } from "../../common/oracles";
 import { LockupTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
@@ -63,7 +63,7 @@ describe("collectFees", () => {
             treasury: await ctx.getTreasuryLamports(),
           };
 
-          const withdrawalFee = await getFeeInLamports(Amount.WITHDRAWAL_FEE_USD);
+          const withdrawalFee = feeInLamports(Amount.WITHDRAWAL_FEE_USD);
           // 2 withdrawals worth of fees minus the redundancy buffer.
           const expectedFeesCollected = withdrawalFee.muln(2).sub(REDUNDANCY_BUFFER);
 

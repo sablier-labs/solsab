@@ -5,11 +5,11 @@ import {
 import { type PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
+import { feeInLamports } from "../../../lib/chainlink-mock";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import type { StreamData } from "../../../target/types/sablier_lockup_structs";
 import { createATAAndFund, deriveATAAddress, getATABalance } from "../../common/anchor-bankrun";
 import { assertAccountExists, assertAccountNotExists, assertEqualBn, assertLteBn } from "../../common/assertions";
-import { getFeeInLamports } from "../../common/oracles";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
@@ -365,7 +365,7 @@ async function postWithdrawAssertions(
   const actualStreamData = await ctx.fetchStreamData(salt);
   assertEqStreamData(actualStreamData, expectedStreamData);
 
-  const expectedFee = await getFeeInLamports(Amount.WITHDRAWAL_FEE_USD);
+  const expectedFee = feeInLamports(Amount.WITHDRAWAL_FEE_USD);
 
   // Get the Lamports balance of the Treasury after the withdrawal
   const treasuryLamportsAfter = await ctx.getTreasuryLamports();

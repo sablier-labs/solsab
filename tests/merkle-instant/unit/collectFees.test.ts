@@ -4,9 +4,9 @@ import {
 } from "@coral-xyz/anchor-errors";
 import BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
+import { feeInLamports } from "../../../lib/chainlink-mock";
 import { REDUNDANCY_BUFFER } from "../../../lib/constants";
 import { assertLteBn } from "../../common/assertions";
-import { getFeeInLamports } from "../../common/oracles";
 import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount } from "../utils/defaults";
@@ -67,7 +67,7 @@ describe("collectFees", () => {
             treasury: await ctx.getTreasuryLamports(),
           };
 
-          const expectedClaimFee = await getFeeInLamports(Amount.CLAIM_FEE_USD);
+          const expectedClaimFee = feeInLamports(Amount.CLAIM_FEE_USD);
           const expectedFeesCollected = expectedClaimFee.sub(REDUNDANCY_BUFFER); // 1 claim worth of fees minus the redundancy buffer
 
           // Assert that the Treasury has been debited with an amount that is within 5% of the expected amount

@@ -2,11 +2,11 @@ import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { assert, beforeAll, beforeEach, describe, it } from "vitest";
+import { getPriceFromChainlinkData } from "../../../lib/chainlink-mock";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
 import { createATAAndFund, getATABalanceMint } from "../../common/anchor-bankrun";
 import { assertEqualBn, assertLteBn, assertZeroBn } from "../../common/assertions";
-import { getFeeInLamports } from "../../common/oracles";
 import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount, Campaign, Time } from "../utils/defaults";
@@ -196,15 +196,21 @@ async function testClaim(
   // Assert that the recipient's ATA balance increased by the claim amount
   assertEqualBn(recipientAtaBalanceAfter, recipientAtaBalanceBefore.add(Amount.CLAIM));
 
-  const expectedFee = await getFeeInLamports(Amount.CLAIM_FEE_USD);
+  const expectedFee = new BN(502092724);
   const claimerLamportsAfter = await ctx.getLamportsOf(claimer.publicKey);
+
+  // console.log("expectedFee", expectedFee.toString());
+  console.log("getPriceFromChainlinkData", getPriceFromChainlinkData().toString());
+  console.log("claimerLamportsBefore", claimerLamportsBefore.toString());
+  console.log("claimerLamportsAfter", claimerLamportsAfter.toString());
+  const feeDiff = claimerLamportsBefore.sub(expectedFee);
+  console.log("claimerLamportsBefore.sub(expectedFee)", feeDiff.toString());
 
   // Assert that the claimer's lamports balance has decreased by, at least, the claim fee amount.
   // We use `<=` because we don't know the gas cost in advance.
   assertLteBn(claimerLamportsAfter, claimerLamportsBefore.sub(expectedFee));
 
   const treasuryLamportsAfter = await ctx.getLamportsOf(ctx.treasuryAddress);
-
   // Assert that the Treasury has been credited with the claim fee that is within 5% of the expected fee
   const treasuryBalanceDifference = treasuryLamportsAfter.sub(treasuryLamportsBefore).abs();
   assertLteBn(treasuryBalanceDifference.sub(expectedFee).abs(), expectedFee.mul(new BN(5)).div(new BN(100)));

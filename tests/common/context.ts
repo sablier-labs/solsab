@@ -1,20 +1,21 @@
 import * as token from "@solana/spl-token";
-import { type Cluster, Connection, clusterApiUrl, Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import { BankrunProvider } from "anchor-bankrun";
 import type BN from "bn.js";
 import {
   type AccountInfoBytes,
-  type AddedAccount,
   type AddedProgram,
   type BanksClient,
   Clock,
   type ProgramTestContext,
   startAnchor,
 } from "solana-bankrun";
+import { mockChainlinkAccount } from "../../lib/chainlink-mock";
 import { Decimals, ProgramId } from "../../lib/constants";
 import { dai, sol, usdc } from "../../lib/convertors";
 import { toBigInt, toBn } from "../../lib/helpers";
 import { type ProgramName } from "../../lib/types";
+// import { Time } from "../merkle-instant/utils/defaults";
 import { createATAAndFund, createMint } from "./anchor-bankrun";
 import { type User } from "./types";
 
@@ -35,13 +36,7 @@ export class TestContext {
   public randomToken!: PublicKey; // Token standard
   public usdc!: PublicKey; // Token standard
 
-  async setUp(
-    programName: ProgramName,
-    programId: PublicKey,
-
-    addedPrograms: AddedProgram[] = [],
-    addedAccountIds: PublicKey[] = [],
-  ) {
+  async setUp(programName: ProgramName, programId: PublicKey, addedPrograms: AddedProgram[] = []) {
     const programs = [
       { name: programName, programId },
       {
@@ -51,9 +46,7 @@ export class TestContext {
       ...addedPrograms,
     ];
 
-    // Add the Chainlink SOL/USD price feed program ID to the added accounts
-    addedAccountIds.push(ProgramId.CHAINLINK_SOL_USD_FEED);
-    const addedAccounts = await Promise.all(addedAccountIds.map((id) => this.fetchAccountDataAsFixture(id.toString())));
+    const addedAccounts = [mockChainlinkAccount()];
 
     // Start Anchor context with the provided programs & accounts
     this.context = await startAnchor("", programs, addedAccounts);
@@ -109,26 +102,6 @@ export class TestContext {
 
   async accountExists(address: PublicKey): Promise<boolean> {
     return (await this.banksClient.getAccount(address)) !== null;
-  }
-
-  async fetchAccountDataAsFixture(address: string, cluster: Cluster = "devnet"): Promise<AddedAccount> {
-    const connection = new Connection(clusterApiUrl(cluster), "confirmed");
-    const accountId = new PublicKey(address);
-
-    const raw = await connection.getAccountInfo(accountId);
-    if (!raw) {
-      throw new Error(`Account not found: ${address}`);
-    }
-
-    return {
-      address: accountId,
-      info: {
-        data: new Uint8Array(raw.data),
-        executable: raw.executable,
-        lamports: raw.lamports,
-        owner: raw.owner,
-      },
-    };
   }
 
   async getLamportsOf(user: PublicKey): Promise<BN> {
