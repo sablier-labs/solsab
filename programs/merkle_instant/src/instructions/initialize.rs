@@ -23,8 +23,9 @@ pub struct Initialize<'info> {
     pub treasury: Box<Account<'info, Treasury>>,
 
     // -------------------------------------------------------------------------- //
-    //                               PROGRAM ACCOUNTS                             //
+    //                               SYSTEM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
+    /// Program account: the System program.
     pub system_program: Program<'info, System>,
 }
 

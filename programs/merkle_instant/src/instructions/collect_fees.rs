@@ -32,6 +32,11 @@ pub struct CollectFees<'info> {
     //                               PROGRAM ACCOUNTS                             //
     // -------------------------------------------------------------------------- //
     pub associated_token_program: Program<'info, AssociatedToken>,
+
+    // -------------------------------------------------------------------------- //
+    //                               SYSTEM ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
+    /// Program account: the System program.
     pub system_program: Program<'info, System>,
 }
 

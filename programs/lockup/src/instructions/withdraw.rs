@@ -114,6 +114,9 @@ pub struct Withdraw<'info> {
     /// Program account: the Token program of the stream NFT.
     pub nft_token_program: Interface<'info, TokenInterface>,
 
+    // -------------------------------------------------------------------------- //
+    //                               SYSTEM ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
     /// Program account: the System program.
     pub system_program: Program<'info, System>,
 }

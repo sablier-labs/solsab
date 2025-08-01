@@ -110,17 +110,17 @@ pub struct Initialize<'info> {
     /// Program account: the Token program of the collection NFT.
     pub nft_token_program: Interface<'info, TokenInterface>,
 
-    /// Program account: the System program.
-    pub system_program: Program<'info, System>,
-
     /// Program account: the Token Metadata program.
     pub token_metadata_program: Program<'info, Metadata>,
 
     // -------------------------------------------------------------------------- //
-    //                               SYSVAR ACCOUNTS                              //
+    //                               SYSTEM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
     /// Sysvar account: Rent.
     pub rent: Sysvar<'info, Rent>,
+
+    /// Program account: the System program.
+    pub system_program: Program<'info, System>,
 }
 
 /// See the documentation for [`crate::sablier_lockup::initialize`].

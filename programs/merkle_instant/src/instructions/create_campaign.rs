@@ -63,6 +63,11 @@ pub struct CreateCampaign<'info> {
     // -------------------------------------------------------------------------- //
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
+
+    // -------------------------------------------------------------------------- //
+    //                               SYSTEM ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
+    /// Program account: the System program.
     pub system_program: Program<'info, System>,
 }
 

@@ -183,15 +183,15 @@ pub struct CreateWithTimestamps<'info> {
     /// Program account: the Token program of the stream NFT.
     pub nft_token_program: Interface<'info, TokenInterface>,
 
-    /// Program account: the System program.
-    pub system_program: Program<'info, System>,
-
     /// Program account: the Token Metadata program.
     pub token_metadata_program: Program<'info, Metadata>,
 
     // -------------------------------------------------------------------------- //
-    //                               SYSVAR ACCOUNTS                              //
+    //                               SYSTEM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
+    /// Program account: the System program.
+    pub system_program: Program<'info, System>,
+
     /// Sysvar account: Rent.
     pub rent: Sysvar<'info, Rent>,
 }

@@ -73,6 +73,9 @@ pub struct Cancel<'info> {
     /// Program account: the Token program of the deposited token.
     pub deposited_token_program: Interface<'info, TokenInterface>,
 
+    // -------------------------------------------------------------------------- //
+    //                               SYSTEM ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
     /// Program account: the System program.
     pub system_program: Program<'info, System>,
 }
