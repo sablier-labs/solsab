@@ -23,13 +23,11 @@ pub struct Amounts {
     pub withdrawn: u64,
 }
 
-/// Represents the key timestamps for a Lockup stream.
+/// Groups the timestamps for a Lockup stream.
 ///
-/// Note: All timestamp fields use `i64` instead of the more intuitive `u64` to maintain
-/// compatibility with Solana's standard time representation. The Solana `Clock` struct
-/// returns Unix timestamps as `i64`, and using consistent types across the codebase
-/// prevents unnecessary type conversions and potential issues when interfacing with
-/// Solana's time-related syscalls and built-in functions.
+/// All fields use `i64`, instead of a unsigned integer, to match Solana’s `Clock` struct, which returns
+/// timestamps as `i64`. This avoids extra conversions and keeps things consistent
+/// when working with Solana’s built-in time functions.
 #[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub struct Timestamps {
     pub cliff: i64,
