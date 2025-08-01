@@ -2,6 +2,11 @@ use anchor_lang::prelude::*;
 
 use crate::utils::constants::*;
 
+/// Groups all the data for a Merkle Instant campaign.
+///
+/// All timestamp fields use `i64` instead of an unsigned integer to match Solana’s `Clock` struct,
+/// which returns timestamps as `i64`. This avoids extra conversions and keeps things consistent
+/// when working with Solana’s built-in time functions.
 #[account]
 #[derive(InitSpace)]
 pub struct Campaign {
