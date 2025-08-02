@@ -13,13 +13,13 @@ pub enum ErrorCode {
     CampaignNotStarted,
 
     // -------------------------------------------------------------------------- //
-    //                                CLAWBACK ERRORS                             //
+    //                               CLAWBACK ERRORS                              //
     // -------------------------------------------------------------------------- //
     #[msg("Clawback not allowed past the grace period and before campaign expiration!")]
     ClawbackNotAllowed,
 
     // -------------------------------------------------------------------------- //
-    //                                COLLECT FEES ERRORS                         //
+    //                             COLLECT FEES ERRORS                            //
     // -------------------------------------------------------------------------- //
     #[msg("Can't collect zero fees!")]
     CantCollectZeroFees,
