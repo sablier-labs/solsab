@@ -4,9 +4,15 @@ use crate::{state::Treasury, utils::constants::*};
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
+    // -------------------------------------------------------------------------- //
+    //                                USER ACCOUNTS                               //
+    // -------------------------------------------------------------------------- //
     #[account(mut)]
     pub initializer: Signer<'info>,
 
+    // -------------------------------------------------------------------------- //
+    //                              SABLIER ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
     #[account(
       init,
       payer = initializer,
@@ -16,6 +22,10 @@ pub struct Initialize<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
+    // -------------------------------------------------------------------------- //
+    //                               SYSTEM ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
+    /// Program account: the System program.
     pub system_program: Program<'info, System>,
 }
 

@@ -21,9 +21,9 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
     }
 
     // Calculate the sum of the unlock amounts.
-    let unlock_amounts_sum = amounts.start_unlock + amounts.cliff_unlock;
+    let unlock_amounts_sum: u64 = amounts.start_unlock + amounts.cliff_unlock;
 
-    //  If the sum of the unlock amounts is greater than or equal to the deposited amount, return the deposited
+    // If the sum of the unlock amounts is greater than or equal to the deposited amount, return the deposited
     // amount. The ">=" operator is used as a safety measure in case of a bug, as the sum of the unlock amounts
     // should never exceed the deposited amount.
     if unlock_amounts_sum >= amounts.deposited {
@@ -31,20 +31,24 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
     }
 
     // Determine the streaming start time.
-    let streaming_start_time = if amounts.cliff_unlock == 0 { timestamps.start } else { timestamps.cliff };
+    let start_time: i64 = if amounts.cliff_unlock == 0 {
+        timestamps.start
+    } else {
+        timestamps.cliff
+    };
 
     const SCALING_FACTOR: u128 = 1e18 as u128;
 
     // Calculate time variables. Scale to 18 decimals for increased precision and cast to u128 to prevent overflow.
-    let elapsed_time = (now - streaming_start_time) as u128 * SCALING_FACTOR;
-    let streamable_time_range = (timestamps.end - streaming_start_time) as u128;
-    let streamed_percentage = elapsed_time / streamable_time_range;
+    let elapsed_time = (now - start_time) as u128 * SCALING_FACTOR;
+    let streamable_range = (timestamps.end - start_time) as u128;
+    let elapsed_time_percentage = elapsed_time / streamable_range;
 
     // Calculate the streamable amount.
     let streamable_amount = (amounts.deposited - unlock_amounts_sum) as u128;
 
-    // Calculate the streamed amount. After dividing by SCALING_FACTOR, casting down to u64 is safe.
-    let streamed_amount = unlock_amounts_sum + ((streamed_percentage * streamable_amount) / SCALING_FACTOR) as u64;
+    // Calculate the streamed amount. After dividing by the scaling factor, casting down to u64 is safe.
+    let streamed_amount = unlock_amounts_sum + ((elapsed_time_percentage * streamable_amount) / SCALING_FACTOR) as u64;
 
     // Although the streamed amount should never exceed the deposited amount, this condition is checked
     // without asserting to avoid locking tokens in case of a bug. If this situation occurs, the withdrawn
@@ -56,10 +60,10 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
     streamed_amount
 }
 
-pub fn get_withdrawable_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
-    get_streamed_amount(timestamps, amounts) - amounts.withdrawn
-}
-
 pub fn get_refundable_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
     amounts.deposited - get_streamed_amount(timestamps, amounts)
+}
+
+pub fn get_withdrawable_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
+    get_streamed_amount(timestamps, amounts) - amounts.withdrawn
 }

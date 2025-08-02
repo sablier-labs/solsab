@@ -24,7 +24,7 @@ describe("cancel", () => {
       await ctx.timeTravelTo(Time.MID_26_PERCENT);
     });
 
-    it("should revert", async () => {
+    it("should fail", async () => {
       await expectToThrow(ctx.cancel({ salt: BN_1 }), ACCOUNT_NOT_INITIALIZED);
     });
   });
@@ -38,14 +38,14 @@ describe("cancel", () => {
     });
 
     describe("given a null stream", () => {
-      it("should revert", async () => {
+      it("should fail", async () => {
         await expectToThrow(ctx.cancel({ salt: ctx.salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
       });
     });
 
     describe("given a valid stream", () => {
       describe("given an invalid deposited token mint", () => {
-        it("should revert", async () => {
+        it("should fail", async () => {
           await expectToThrow(ctx.cancel({ depositedTokenMint: ctx.randomToken }), ACCOUNT_NOT_INITIALIZED);
         });
       });
@@ -53,7 +53,7 @@ describe("cancel", () => {
       describe("given a valid deposited token mint", () => {
         describe("given cold stream", () => {
           describe("given DEPLETED status", () => {
-            it("should revert", async () => {
+            it("should fail", async () => {
               await ctx.timeTravelTo(Time.END);
               await ctx.withdrawMax();
               await expectToThrow(ctx.cancel(), "StreamDepleted");
@@ -61,7 +61,7 @@ describe("cancel", () => {
           });
 
           describe("given CANCELED status", () => {
-            it("should revert", async () => {
+            it("should fail", async () => {
               await ctx.cancel();
               await sleepFor(7);
               await expectToThrow(ctx.cancel(), "StreamCanceled");
@@ -69,7 +69,7 @@ describe("cancel", () => {
           });
 
           describe("given SETTLED status", () => {
-            it("should revert", async () => {
+            it("should fail", async () => {
               await ctx.timeTravelTo(Time.END);
               await expectToThrow(ctx.cancel(), "StreamSettled");
             });
@@ -78,14 +78,14 @@ describe("cancel", () => {
 
         describe("given warm stream", () => {
           describe("when signer not sender", () => {
-            it("should revert", async () => {
+            it("should fail", async () => {
               await expectToThrow(ctx.cancel({ signer: ctx.recipient.keys }), CONSTRAINT_ADDRESS);
             });
           });
 
           describe("when signer sender", () => {
             describe("given non cancelable stream", () => {
-              it("should revert", async () => {
+              it("should fail", async () => {
                 await expectToThrow(ctx.cancel({ salt: ctx.salts.nonCancelable }), "StreamIsNotCancelable");
               });
             });

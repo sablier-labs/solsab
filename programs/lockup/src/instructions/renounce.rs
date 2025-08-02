@@ -11,13 +11,16 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct Renounce<'info> {
+    // -------------------------------------------------------------------------- //
+    //                               USER ACCOUNTS                                //
+    // -------------------------------------------------------------------------- //
     /// Write account: the sender of the stream.
     #[account(address = stream_data.sender)]
     pub sender: Signer<'info>,
 
-    /// Read account: the mint account for the stream NFT.
-    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
-
+    // -------------------------------------------------------------------------- //
+    //                               STREAM ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
     /// Write account: the stream data account storing stream details.
     #[account(
       mut,
@@ -28,9 +31,12 @@ pub struct Renounce<'info> {
       bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
+
+    /// Read account: the mint account for the stream NFT.
+    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 }
 
-/// See the documentation of the {lib.rs#renounce} function.
+/// See the documentation for [`crate::sablier_lockup::renounce`].
 pub fn handler(ctx: Context<Renounce>) -> Result<()> {
     // Check: validate the renounce.
     check_renounce(

@@ -2,7 +2,7 @@ use anchor_lang::{prelude::*, solana_program::sysvar::clock::Clock};
 
 use crate::instructions::create_with_timestamps;
 
-/// See the documentation of the {lib.rs#create_with_durations} function.
+/// See the documentation for [`crate::sablier_lockup::create_with_durations`].
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<create_with_timestamps::CreateWithTimestamps>,
@@ -15,10 +15,14 @@ pub fn handler(
     is_cancelable: bool,
 ) -> Result<()> {
     // Declare the start time as the current unix timestamp.
-    let start_time = Clock::get()?.unix_timestamp;
+    let start_time: i64 = Clock::get()?.unix_timestamp;
 
     // Calculate the cliff time by adding the cliff duration to the start time using checked math.
-    let cliff_time = if cliff_duration > 0 { start_time.checked_add(cliff_duration).unwrap() } else { 0 };
+    let cliff_time: i64 = if cliff_duration > 0 {
+        start_time.checked_add(cliff_duration).unwrap()
+    } else {
+        0
+    };
 
     // Calculate the end time by adding the total duration to the start time using checked math.
     let end_time = start_time.checked_add(total_duration).unwrap();

@@ -22,14 +22,50 @@ const CLAIM_FEE: u64 = 30_000_000; // The fee for claiming an airdrop, in lampor
 #[derive(Accounts)]
 #[instruction(index: u32)]
 pub struct Claim<'info> {
+    // -------------------------------------------------------------------------- //
+    //                                USER ACCOUNTS                               //
+    // -------------------------------------------------------------------------- //
     #[account(mut)]
     pub claimer: Signer<'info>,
+
+    /// CHECK: This account is validated during the Merkle proof verification.
+    pub recipient: UncheckedAccount<'info>,
+
+    #[account(
+      init_if_needed,
+      payer = claimer,
+      associated_token::mint = airdrop_token_mint,
+      associated_token::authority = recipient,
+      associated_token::token_program = airdrop_token_program
+    )]
+    pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    // -------------------------------------------------------------------------- //
+    //                              SABLIER ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
+    #[account(
+      mut,
+      seeds = [TREASURY_SEED],
+      bump = treasury.bump
+    )]
+    pub treasury: Box<Account<'info, Treasury>>,
+
+    // -------------------------------------------------------------------------- //
+    //                              CAMPAIGN ACCOUNTS                             //
+    // -------------------------------------------------------------------------- //
+    #[account(address = campaign.airdrop_token_mint)]
+    pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(mut)]
     pub campaign: Box<Account<'info, Campaign>>,
 
-    #[account(address = campaign.airdrop_token_mint)]
-    pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
+    #[account(
+      mut,
+      associated_token::mint = airdrop_token_mint,
+      associated_token::authority = campaign,
+      associated_token::token_program = airdrop_token_program
+    )]
+    pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
       init,
@@ -44,36 +80,17 @@ pub struct Claim<'info> {
     )]
     pub claim_receipt: Box<Account<'info, ClaimReceipt>>,
 
-    #[account(
-      mut,
-      associated_token::mint = airdrop_token_mint,
-      associated_token::authority = campaign,
-      associated_token::token_program = airdrop_token_program
-    )]
-    pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    /// CHECK: This account is validated during the Merkle proof verification.
-    pub recipient: UncheckedAccount<'info>,
-
-    #[account(
-      init_if_needed,
-      payer = claimer,
-      associated_token::mint = airdrop_token_mint,
-      associated_token::authority = recipient,
-      associated_token::token_program = airdrop_token_program
-    )]
-    pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    #[account(
-      mut,
-      seeds = [TREASURY_SEED],
-      bump = treasury.bump
-    )]
-    pub treasury: Box<Account<'info, Treasury>>,
-
-    pub system_program: Program<'info, System>,
+    // -------------------------------------------------------------------------- //
+    //                              PROGRAM ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
+
+    // -------------------------------------------------------------------------- //
+    //                               SYSTEM ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
+    /// Program account: the System program.
+    pub system_program: Program<'info, System>,
 }
 
 pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[u8; 32]>) -> Result<()> {
@@ -100,7 +117,7 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
     let fee_collection_ix = transfer(&claimer.key(), &treasury.key(), CLAIM_FEE);
     invoke(&fee_collection_ix, &[claimer.to_account_info(), treasury.to_account_info()])?;
 
-    // Interaction: transfer tokens from the Campaign's ATA to the Recipient's ATA.
+    // Interaction: transfer tokens from the campaign's ATA to the recipient's ATA.
     transfer_tokens(
         ctx.accounts.campaign_ata.to_account_info(),
         ctx.accounts.recipient_ata.to_account_info(),

@@ -83,14 +83,16 @@ full-check: prettier-check biome-check tsc-check rust-check
 # Run all code fixes
 full-write: prettier-write biome-write rust-write
 
-# Check Rust formatting
+# Run Rust checks
 rust-check:
     cargo fmt --check
+    cargo clippy -- --deny warnings
 alias rc := rust-check
 
 # Format Rust code
 rust-write:
     cargo fmt
+    cargo clippy --fix
 alias rw := rust-write
 
 # ============================================================================ #

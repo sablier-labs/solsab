@@ -1,5 +1,14 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
+#[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
+pub struct Amounts {
+    pub start_unlock: u64,
+    pub cliff_unlock: u64,
+    pub deposited: u64,
+    pub refunded: u64,
+    pub withdrawn: u64,
+}
+
 #[account]
 #[derive(InitSpace)]
 pub struct StreamData {
@@ -15,20 +24,12 @@ pub struct StreamData {
 }
 
 #[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
-pub struct Amounts {
-    pub start_unlock: u64,
-    pub cliff_unlock: u64,
-    pub deposited: u64,
-    pub refunded: u64,
-    pub withdrawn: u64,
-}
 
 /// Groups the timestamps for a Lockup stream.
 ///
 /// All fields use `i64`, instead of a unsigned integer, to match Solana’s `Clock` struct, which returns
 /// timestamps as `i64`. This avoids extra conversions and keeps things consistent
 /// when working with Solana’s built-in time functions.
-#[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub struct Timestamps {
     pub cliff: i64,
     pub end: i64,
@@ -36,7 +37,7 @@ pub struct Timestamps {
 }
 
 impl StreamData {
-    /// State update for the `cancel` instruction.
+    /// State update for the [`crate::sablier_lockup::cancel`] instruction.
     pub fn cancel(&mut self, sender_amount: u64, recipient_amount: u64) -> Result<()> {
         self.amounts.refunded = sender_amount;
         self.is_cancelable = false;
@@ -48,7 +49,7 @@ impl StreamData {
         Ok(())
     }
 
-    /// State update for the `create_with_timestamps` instruction.
+    /// State update for the [`crate::sablier_lockup::create_with_timestamps`] instruction.
     #[allow(clippy::too_many_arguments)]
     pub fn create(
         &mut self,
@@ -65,32 +66,36 @@ impl StreamData {
         start_unlock: u64,
     ) -> Result<()> {
         self.bump = bump;
-        self.amounts.cliff_unlock = cliff_unlock;
-        self.amounts.deposited = deposit_amount;
-        self.amounts.refunded = 0;
-        self.amounts.start_unlock = start_unlock;
-        self.amounts.withdrawn = 0;
+        self.amounts = Amounts {
+            cliff_unlock,
+            deposited: deposit_amount,
+            refunded: 0,
+            start_unlock,
+            withdrawn: 0,
+        };
         self.deposited_token_mint = deposited_token_mint;
         self.is_cancelable = is_cancelable;
         self.is_depleted = false;
         self.salt = salt;
         self.sender = sender;
-        self.timestamps.cliff = cliff_time;
-        self.timestamps.end = end_time;
-        self.timestamps.start = start_time;
+        self.timestamps = Timestamps {
+            cliff: cliff_time,
+            end: end_time,
+            start: start_time,
+        };
         self.was_canceled = false;
 
         Ok(())
     }
 
-    /// State update for the `renounce` instruction.
+    /// State update for the [`crate::sablier_lockup::renounce`] instruction.
     pub fn renounce(&mut self) -> Result<()> {
         self.is_cancelable = false;
 
         Ok(())
     }
 
-    /// State update for the `withdraw` instruction.
+    /// State update for the [`crate::sablier_lockup::withdraw`] instruction.
     pub fn withdraw(&mut self, amount: u64) -> Result<()> {
         self.amounts.withdrawn = self.amounts.withdrawn.checked_add(amount).expect("Withdrawn amount overflow");
 

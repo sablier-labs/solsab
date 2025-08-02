@@ -19,13 +19,12 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(salt: u128)]
 pub struct CreateWithTimestamps<'info> {
+    // -------------------------------------------------------------------------- //
+    //                                USER ACCOUNTS                               //
+    // -------------------------------------------------------------------------- //
     /// Write account: the creator and funder of the stream.
     #[account(mut)]
     pub creator: Signer<'info>,
-
-    /// Read account: the mint account for the deposit token.
-    #[account(mint::token_program = deposit_token_program)]
-    pub deposit_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     /// Write account: the creator's ATA for the deposit token.
     #[account(
@@ -36,42 +35,24 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub creator_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    /// Read account: the sender of the stream.
-    /// CHECK: The sender may be any account
-    pub sender: UncheckedAccount<'info>,
-
     /// Read account: the recipient of the stream.
     /// CHECK: The recipient may be any account
     pub recipient: UncheckedAccount<'info>,
 
+    /// Read account: the sender of the stream.
+    /// CHECK: The sender may be any account
+    pub sender: UncheckedAccount<'info>,
+
+    // -------------------------------------------------------------------------- //
+    //                         STREAM COLLECTION ACCOUNTS                         //
+    // -------------------------------------------------------------------------- //
     /// Write account: the NFT collection data storing the total supply.
     #[account(
-        mut,
-        seeds = [NFT_COLLECTION_DATA],
-        bump = nft_collection_data.bump
+      mut,
+      seeds = [NFT_COLLECTION_DATA],
+      bump = nft_collection_data.bump
     )]
     pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
-
-    /// Write account: the mint account for the NFT collection.
-    #[account(
-      seeds = [NFT_COLLECTION_MINT],
-      bump,
-    )]
-    pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    /// Write account: the metadata account for the NFT collection.
-    #[account(
-      mut,
-      seeds = [
-        METADATA,
-        token_metadata_program.key().as_ref(),
-        nft_collection_mint.key().as_ref(),
-      ],
-      seeds::program = token_metadata_program.key(),
-      bump,
-    )]
-    /// CHECK: This account will only be touched by the Metaplex program
-    pub nft_collection_metadata: UncheckedAccount<'info>,
 
     /// Write account: the master edition account for the NFT collection.
     #[account(
@@ -87,66 +68,80 @@ pub struct CreateWithTimestamps<'info> {
     /// CHECK: This account will only be touched by the Metaplex program
     pub nft_collection_master_edition: UncheckedAccount<'info>,
 
-    /// Create account: the mint account for the stream NFT.
-    #[account(
-        init,
-        payer = creator,
-        seeds = [
-          STREAM_NFT_MINT,
-          sender.key().as_ref(),
-          salt.to_le_bytes().as_ref(),
-        ],
-        bump,
-        mint::decimals = 0,
-        mint::authority = nft_collection_mint,
-        mint::freeze_authority = nft_collection_mint,
-        mint::token_program = nft_token_program,
-    )]
-    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    /// Create account: the account that will store the stream data.
-    #[account(
-        init,
-        payer = creator,
-        space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
-        seeds = [STREAM_DATA, stream_nft_mint.key().as_ref()],
-        bump
-    )]
-    pub stream_data: Box<Account<'info, StreamData>>,
-
-    /// Create account: the ATA for deposit tokens owned by stream data account.
-    #[account(
-        init,
-        payer = creator,
-        associated_token::mint = deposit_token_mint,
-        associated_token::authority = stream_data,
-        associated_token::token_program = deposit_token_program
-    )]
-    pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    /// Create account: the ATA for the stream NFT owned by the recipient.
-    #[account(
-        init,
-        payer = creator,
-        associated_token::mint = stream_nft_mint,
-        associated_token::authority = recipient,
-        associated_token::token_program = nft_token_program,
-    )]
-    pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    /// Create if needed account: the metadata account for the stream NFT.
+    /// Write account: the metadata account for the NFT collection.
     #[account(
       mut,
       seeds = [
         METADATA,
         token_metadata_program.key().as_ref(),
-        stream_nft_mint.key().as_ref()
+        nft_collection_mint.key().as_ref(),
       ],
       seeds::program = token_metadata_program.key(),
       bump,
     )]
-    /// CHECK: This account will be initialized by the Metaplex program
-    pub stream_nft_metadata: UncheckedAccount<'info>,
+    /// CHECK: This account will only be touched by the Metaplex program
+    pub nft_collection_metadata: UncheckedAccount<'info>,
+
+    /// Write account: the mint account for the NFT collection.
+    #[account(
+      seeds = [NFT_COLLECTION_MINT],
+      bump,
+    )]
+    pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    // -------------------------------------------------------------------------- //
+    //                               STREAM ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
+    /// Read account: the mint account for the deposit token.
+    #[account(mint::token_program = deposit_token_program)]
+    pub deposit_token_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    /// Create account: the mint account for the stream NFT.
+    #[account(
+      init,
+      payer = creator,
+      seeds = [
+        STREAM_NFT_MINT,
+        sender.key().as_ref(),
+        salt.to_le_bytes().as_ref(),
+      ],
+      bump,
+      mint::decimals = 0,
+      mint::authority = nft_collection_mint,
+      mint::freeze_authority = nft_collection_mint,
+      mint::token_program = nft_token_program,
+    )]
+    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    /// Create account: the ATA for the stream NFT owned by the recipient.
+    #[account(
+      init,
+      payer = creator,
+      associated_token::mint = stream_nft_mint,
+      associated_token::authority = recipient,
+      associated_token::token_program = nft_token_program,
+    )]
+    pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    /// Create account: the account that will store the stream data.
+    #[account(
+      init,
+      payer = creator,
+      space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
+      seeds = [STREAM_DATA, stream_nft_mint.key().as_ref()],
+      bump
+    )]
+    pub stream_data: Box<Account<'info, StreamData>>,
+
+    /// Create account: the ATA for deposit tokens owned by stream data account.
+    #[account(
+      init,
+      payer = creator,
+      associated_token::mint = deposit_token_mint,
+      associated_token::authority = stream_data,
+      associated_token::token_program = deposit_token_program
+    )]
+    pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// Create if needed account: the master edition account for the stream NFT.
     #[account(
@@ -162,8 +157,25 @@ pub struct CreateWithTimestamps<'info> {
     /// CHECK: This account will be initialized by the Metaplex program
     pub stream_nft_master_edition: UncheckedAccount<'info>,
 
-    /// Program account: the System program.
-    pub system_program: Program<'info, System>,
+    /// Create if needed account: the metadata account for the stream NFT.
+    #[account(
+      mut,
+      seeds = [
+        METADATA,
+        token_metadata_program.key().as_ref(),
+        stream_nft_mint.key().as_ref()
+      ],
+      seeds::program = token_metadata_program.key(),
+      bump,
+    )]
+    /// CHECK: This account will be initialized by the Metaplex program
+    pub stream_nft_metadata: UncheckedAccount<'info>,
+
+    // -------------------------------------------------------------------------- //
+    //                              PROGRAM ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
+    /// Program account: the Associated Token program.
+    pub associated_token_program: Program<'info, AssociatedToken>,
 
     /// Program account: the Token program of the deposit token.
     pub deposit_token_program: Interface<'info, TokenInterface>,
@@ -171,17 +183,20 @@ pub struct CreateWithTimestamps<'info> {
     /// Program account: the Token program of the stream NFT.
     pub nft_token_program: Interface<'info, TokenInterface>,
 
-    /// Program account: the Associated Token program.
-    pub associated_token_program: Program<'info, AssociatedToken>,
-
     /// Program account: the Token Metadata program.
     pub token_metadata_program: Program<'info, Metadata>,
+
+    // -------------------------------------------------------------------------- //
+    //                               SYSTEM ACCOUNTS                              //
+    // -------------------------------------------------------------------------- //
+    /// Program account: the System program.
+    pub system_program: Program<'info, System>,
 
     /// Sysvar account: Rent.
     pub rent: Sysvar<'info, Rent>,
 }
 
-/// See the documentation of the {lib.rs#create_with_timestamps} function.
+/// See the documentation for [`crate::sablier_lockup::create_with_timestamps`].
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,

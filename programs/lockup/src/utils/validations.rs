@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::utils::errors::ErrorCode;
 
+/// Validate the cancellation of a stream.
 pub fn check_cancel(
     is_cancelable: bool,
     is_depleted: bool,
@@ -29,16 +30,17 @@ pub fn check_cancel(
     Ok(())
 }
 
-pub fn check_collect_fees(collectable_amount: u64) -> Result<()> {
+/// Validate the collection of fees.
+pub fn check_collect_fees(collectible_amount: u64) -> Result<()> {
     // Check: the collectable amount is not zero.
-    if collectable_amount == 0 {
+    if collectible_amount == 0 {
         return Err(ErrorCode::CantCollectZeroFees.into());
     }
 
     Ok(())
 }
 
-// Validate the parameters for creating a Stream
+/// Validate the parameters for creating a Stream.
 pub fn check_create(
     deposit_amount: u64,
     start_time: i64,
@@ -80,14 +82,15 @@ pub fn check_create(
     }
 
     // Check: the sum of the start and cliff unlock amounts is not greater than the deposit amount.
-    if start_unlock + cliff_unlock > deposit_amount {
+    let total_unlock = start_unlock.checked_add(cliff_unlock).ok_or(ErrorCode::UnlockAmountsSumTooHigh)?;
+    if total_unlock > deposit_amount {
         return Err(ErrorCode::UnlockAmountsSumTooHigh.into());
     }
 
     Ok(())
 }
 
-// Validate the renounce
+/// Validate the renouncement of a stream.
 pub fn check_renounce(is_cancelable: bool, deposited_amount: u64, streamed_amount: u64) -> Result<()> {
     // Check: the stream is cancelable.
     if !is_cancelable || streamed_amount >= deposited_amount {
@@ -97,7 +100,7 @@ pub fn check_renounce(is_cancelable: bool, deposited_amount: u64, streamed_amoun
     Ok(())
 }
 
-// Validate the withdraw
+/// Validate a withdrawal from a stream.
 pub fn check_withdraw(is_depleted: bool, amount: u64, withdrawable_amount: u64) -> Result<()> {
     // Check: the stream is not depleted.
     if is_depleted {

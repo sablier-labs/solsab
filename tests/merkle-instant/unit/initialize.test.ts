@@ -14,10 +14,10 @@ describe("initialize", () => {
   });
 
   describe("given initialized", () => {
-    it("should revert", async () => {
+    it("should fail", async () => {
       await ctx.initializeMerkleInstant();
       await sleepFor(7);
-      await expect(ctx.initializeMerkleInstant(), "Tx succeeded when it should have reverted").rejects.toThrow(
+      await expect(ctx.initializeMerkleInstant(), "Tx succeeded when it should have failed").rejects.toThrow(
         "Instruction 1: custom program error: 0x0",
       );
     });

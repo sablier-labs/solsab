@@ -171,13 +171,19 @@ pub fn initialize_collection<'info>(
             symbol: COLLECTION_SYMBOL.to_string(),
             uri: COLLECTION_METADATA_URI.to_string(),
             seller_fee_basis_points: 0,
-            creators: Some(vec![Creator { address: nft_collection_mint.key(), verified: false, share: 100 }]),
+            creators: Some(vec![Creator {
+                address: nft_collection_mint.key(),
+                verified: false,
+                share: 100,
+            }]),
             collection: None,
             uses: None,
         },
         true,
         true,
-        Some(CollectionDetails::V1 { size: 0 }),
+        Some(CollectionDetails::V1 {
+            size: 0,
+        }),
     )?;
 
     // Create Master edition accounts for the Collection NFT

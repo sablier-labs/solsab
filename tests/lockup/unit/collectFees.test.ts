@@ -19,7 +19,7 @@ describe("collectFees", () => {
       await ctx.setUpLockup({ initProgram: false });
     });
 
-    it("should revert", async () => {
+    it("should fail", async () => {
       await expectToThrow(ctx.collectFees(), ACCOUNT_NOT_INITIALIZED);
     });
   });
@@ -31,7 +31,7 @@ describe("collectFees", () => {
     });
 
     describe("when signer is not the authorized fee collector", () => {
-      it("should revert", async () => {
+      it("should fail", async () => {
         await withdrawMultipleTimes();
         await expectToThrow(ctx.collectFees(ctx.eve.keys), CONSTRAINT_ADDRESS);
       });
@@ -39,7 +39,7 @@ describe("collectFees", () => {
 
     describe("when signer is the authorized fee collector", () => {
       describe("given no fees accumulated", () => {
-        it("should revert", async () => {
+        it("should fail", async () => {
           await expectToThrow(ctx.collectFees(), "CantCollectZeroFees");
         });
       });

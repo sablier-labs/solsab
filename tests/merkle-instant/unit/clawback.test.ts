@@ -23,7 +23,7 @@ describe("clawback", () => {
       });
     });
 
-    it("should revert", async () => {
+    it("should fail", async () => {
       // Passing a non-Campaign account since no Campaigns exist yet
       await expectToThrow(ctx.clawback({ campaign: new PublicKey(12345) }), ACCOUNT_NOT_INITIALIZED);
     });
@@ -36,14 +36,14 @@ describe("clawback", () => {
     });
 
     describe("when the passed campaign account is invalid", () => {
-      it("should revert", async () => {
+      it("should fail", async () => {
         await expectToThrow(ctx.clawback({ campaign: new PublicKey(12345) }), ACCOUNT_NOT_INITIALIZED);
       });
     });
 
     describe("when the passed campaign account is valid", () => {
       describe("when the passed mint is invalid", () => {
-        it("should revert", async () => {
+        it("should fail", async () => {
           await expectToThrow(
             ctx.clawback({
               airdropTokenMint: ctx.dai,
@@ -55,7 +55,7 @@ describe("clawback", () => {
 
       describe("when the passed mint is valid", () => {
         describe("when the signer is not the campaign creator", () => {
-          it("should revert", async () => {
+          it("should fail", async () => {
             await expectToThrow(
               ctx.clawback({
                 signer: ctx.eve.keys,
@@ -90,7 +90,7 @@ describe("clawback", () => {
               });
 
               describe("given campaign not expired", () => {
-                it("should revert", async () => {
+                it("should fail", async () => {
                   await expectToThrow(ctx.clawback(), "ClawbackNotAllowed");
                 });
               });

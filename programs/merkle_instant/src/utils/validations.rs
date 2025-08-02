@@ -2,6 +2,7 @@ use anchor_lang::{prelude::*, solana_program::keccak::hashv as keccak};
 
 use crate::utils::errors::ErrorCode;
 
+/// Validate the claim of a campaign.
 pub fn check_claim(
     amount: u64,
     campaign_start_time: i64,
@@ -33,15 +34,15 @@ pub fn check_claim(
     leaf_hash = keccak(&[&leaf_hash]).0;
 
     // Compute the root hash from the leaf hash and the merkle proof
-    // Dev: the below algorithm has been inspired by
-    // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/cryptography/MerkleProof.sol
+    // Dev: this algorithm has been inspired by OpenZeppelin
+    // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/utils/cryptography/MerkleProof.sol
     let mut computed_hash = leaf_hash;
     for proof_element in merkle_proof.iter() {
         if computed_hash <= *proof_element {
-            // Hash(current computed hash + current element of the merkle proof)
+            // Hash: current computed hash + current element of the merkle proof
             computed_hash = keccak(&[&computed_hash, proof_element]).0;
         } else {
-            // Hash(current element of the merkle_proof + current computed hash)
+            // Hash: current element of the merkle proof + current computed hash
             computed_hash = keccak(&[proof_element, &computed_hash]).0;
         }
     }
@@ -53,6 +54,7 @@ pub fn check_claim(
     Ok(())
 }
 
+/// Validate the clawback from a campaign.
 pub fn check_clawback(expiration_time: i64, first_claim_time: i64) -> Result<()> {
     // Check: the grace period has not passed or the campaign has expired.
     if has_grace_period_passed(first_claim_time)? && !has_expired(expiration_time)? {
@@ -62,27 +64,31 @@ pub fn check_clawback(expiration_time: i64, first_claim_time: i64) -> Result<()>
     Ok(())
 }
 
-pub fn check_collect_fees(collectable_amount: u64) -> Result<()> {
+/// Validate the collection of fees.
+pub fn check_collect_fees(collectible_amount: u64) -> Result<()> {
     // Check: the collectable amount is not zero.
-    if collectable_amount == 0 {
+    if collectible_amount == 0 {
         return Err(ErrorCode::CantCollectZeroFees.into());
     }
 
     Ok(())
 }
 
+// Helper function to return whether a campaign has started.
 pub fn has_campaign_started(start_time: i64) -> Result<bool> {
     let current_time = Clock::get()?.unix_timestamp;
 
     Ok(start_time <= current_time)
 }
 
+/// Helper function to return whether a campaign has expired.
 pub fn has_expired(expiration_time: i64) -> Result<bool> {
     let current_time = Clock::get()?.unix_timestamp;
 
     Ok(expiration_time > 0 && expiration_time <= current_time)
 }
 
+/// Helper function to return whether the grace period of a campaign has passed.
 pub fn has_grace_period_passed(first_claim_time: i64) -> Result<bool> {
     let current_time = Clock::get()?.unix_timestamp;
     let grace_period = 7 * 24 * 60 * 60; // 7 days in seconds
