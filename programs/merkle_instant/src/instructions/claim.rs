@@ -25,7 +25,7 @@ pub struct Claim<'info> {
     // -------------------------------------------------------------------------- //
     //                                USER ACCOUNTS                               //
     // -------------------------------------------------------------------------- //
-    /// Write account: the signer of the claim who pays the fee.
+    /// Write account: the signer of the claim who will pay the claim fee.
     #[account(mut)]
     pub claimer: Signer<'info>,
 
@@ -46,7 +46,7 @@ pub struct Claim<'info> {
     // -------------------------------------------------------------------------- //
     //                              SABLIER ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
-    /// Write account: the treasury account that receives the claim fee.
+    /// Write account: the treasury account that will receive the claim fee.
     #[account(
       mut,
       seeds = [TREASURY_SEED],
@@ -65,7 +65,7 @@ pub struct Claim<'info> {
     #[account(mut)]
     pub campaign: Box<Account<'info, Campaign>>,
 
-    /// Write account: the ATA for airdrop token owned by campaign.
+    /// Write account: the campaign's ATA for the airdrop token.
     #[account(
       mut,
       associated_token::mint = airdrop_token_mint,

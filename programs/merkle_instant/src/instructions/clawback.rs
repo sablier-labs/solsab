@@ -14,14 +14,14 @@ pub struct Clawback<'info> {
     // -------------------------------------------------------------------------- //
     //                                USER ACCOUNTS                               //
     // -------------------------------------------------------------------------- //
-    /// Write account: the campaign creator who can clawback tokens.
+    /// Write account: the campaign creator who will claw back the tokens.
     #[account(
       mut,
       address = campaign.creator,
     )]
     pub campaign_creator: Signer<'info>,
 
-    /// Read account: the recipient of the clawback.
+    /// Read account: the clawback recipient.
     /// CHECK: This can be any address.
     pub clawback_recipient: UncheckedAccount<'info>,
 
@@ -42,7 +42,7 @@ pub struct Clawback<'info> {
     #[account(address = campaign.airdrop_token_mint)]
     pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    /// Read account: the campaign data account.
+    /// Read account: the account storing the campaign data.
     pub campaign: Box<Account<'info, Campaign>>,
 
     /// Write account: the campaign's ATA for the airdrop token.

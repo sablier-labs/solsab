@@ -34,7 +34,7 @@ pub struct CreateCampaign<'info> {
     #[account(mint::token_program = airdrop_token_program)]
     pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    /// Create account: the campaign data account storing campaign details.
+    /// Create account: the account storing the campaign data.
     #[account(
       init,
       payer = creator,
@@ -52,7 +52,7 @@ pub struct CreateCampaign<'info> {
     )]
     pub campaign: Box<Account<'info, Campaign>>,
 
-    /// Create account: the ATA for airdrop token owned by campaign.
+    /// Create account: the campaign's ATA for the airdrop token.
     #[account(
       init,
       payer = creator,
