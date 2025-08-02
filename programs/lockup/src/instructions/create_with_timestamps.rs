@@ -44,7 +44,7 @@ pub struct CreateWithTimestamps<'info> {
     pub sender: UncheckedAccount<'info>,
 
     // -------------------------------------------------------------------------- //
-    //                              STREAM COLLECTION ACCOUNTS                    //
+    //                         STREAM COLLECTION ACCOUNTS                         //
     // -------------------------------------------------------------------------- //
     /// Write account: the NFT collection data storing the total supply.
     #[account(
@@ -90,7 +90,7 @@ pub struct CreateWithTimestamps<'info> {
     pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
 
     // -------------------------------------------------------------------------- //
-    //                              STREAM ACCOUNTS                               //
+    //                               STREAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
     /// Read account: the mint account for the deposit token.
     #[account(mint::token_program = deposit_token_program)]
@@ -172,7 +172,7 @@ pub struct CreateWithTimestamps<'info> {
     pub stream_nft_metadata: UncheckedAccount<'info>,
 
     // -------------------------------------------------------------------------- //
-    //                               PROGRAM ACCOUNTS                             //
+    //                              PROGRAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
     /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,

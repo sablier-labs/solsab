@@ -207,7 +207,8 @@ pub mod sablier_merkle_instant {
 
     /// Returns a flag indicating whether the campaign has started.
     ///
-    /// Accounts expected:
+    /// # Accounts expected:
+    ///
     /// - `campaign` The account that stores the campaign details.
     pub fn has_campaign_started(ctx: Context<CampaignView>) -> Result<bool> {
         instructions::has_campaign_started::handler(ctx)

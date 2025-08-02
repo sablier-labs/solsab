@@ -19,7 +19,7 @@ pub struct Renounce<'info> {
     pub sender: Signer<'info>,
 
     // -------------------------------------------------------------------------- //
-    //                              STREAM ACCOUNTS                               //
+    //                               STREAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
     /// Write account: the stream data account storing stream details.
     #[account(

@@ -64,7 +64,7 @@ pub struct Withdraw<'info> {
     pub treasury: Box<Account<'info, Treasury>>,
 
     // -------------------------------------------------------------------------- //
-    //                              STREAM ACCOUNTS                               //
+    //                               STREAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
     /// Read account: the mint account for the deposited token.
     #[account(address = stream_data.deposited_token_mint)]

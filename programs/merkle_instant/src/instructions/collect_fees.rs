@@ -29,7 +29,7 @@ pub struct CollectFees<'info> {
     pub treasury: Box<Account<'info, Treasury>>,
 
     // -------------------------------------------------------------------------- //
-    //                               PROGRAM ACCOUNTS                             //
+    //                              PROGRAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
     pub associated_token_program: Program<'info, AssociatedToken>,
 

@@ -256,10 +256,9 @@ pub mod sablier_lockup {
     ///
     /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
     ///
-    /// # Errors
+    /// # Requirements
     ///
-    /// This function will return an error if:
-    /// - The stream does not exist
+    /// - The stream does not exist.
     pub fn refundable_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::refundable_amount_of::handler(ctx)
     }
@@ -270,10 +269,9 @@ pub mod sablier_lockup {
     ///
     /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
     ///
-    /// # Errors
+    /// # Requirements
     ///
-    /// This function will return an error if:
-    /// - The stream does not exist
+    /// - The stream does not exist.
     pub fn status_of(ctx: Context<StreamView>) -> Result<StreamStatus> {
         instructions::status_of::handler(ctx)
     }
@@ -290,10 +288,9 @@ pub mod sablier_lockup {
     /// amount and the refunded amount. Ultimately, when the stream becomes depleted, the streamed amount is equivalent
     /// to the total amount withdrawn.
     ///
-    /// # Errors
+    /// # Requirements
     ///
-    /// This function will return an error if:
-    /// - The stream does not exist
+    /// - The stream does not exist.
     pub fn streamed_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::streamed_amount_of::handler(ctx)
     }
@@ -305,10 +302,9 @@ pub mod sablier_lockup {
     ///
     /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
     ///
-    /// # Errors
+    /// # Requirements
     ///
-    /// This function will return an error if:
-    /// - The stream does not exist
+    /// - The stream does not exist.
     pub fn withdrawable_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::withdrawable_amount_of::handler(ctx)
     }

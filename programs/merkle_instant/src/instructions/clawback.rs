@@ -49,7 +49,7 @@ pub struct Clawback<'info> {
     pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     // -------------------------------------------------------------------------- //
-    //                               PROGRAM ACCOUNTS                             //
+    //                              PROGRAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,

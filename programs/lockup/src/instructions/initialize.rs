@@ -37,7 +37,7 @@ pub struct Initialize<'info> {
     pub treasury: Box<Account<'info, Treasury>>,
 
     // -------------------------------------------------------------------------- //
-    //                              STREAM COLLECTION ACCOUNTS                    //
+    //                         STREAM COLLECTION ACCOUNTS                         //
     // -------------------------------------------------------------------------- //
     /// Create account: the NFT collection data account storing collection metadata.
     #[account(
@@ -102,7 +102,7 @@ pub struct Initialize<'info> {
     pub nft_collection_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     // -------------------------------------------------------------------------- //
-    //                               PROGRAM ACCOUNTS                             //
+    //                              PROGRAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
     /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,

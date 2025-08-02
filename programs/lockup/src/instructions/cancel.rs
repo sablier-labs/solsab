@@ -35,7 +35,7 @@ pub struct Cancel<'info> {
     pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     // -------------------------------------------------------------------------- //
-    //                              STREAM ACCOUNTS                               //
+    //                               STREAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
     /// Read account: the mint account of the deposited token.
     #[account(address = stream_data.deposited_token_mint)]
@@ -65,7 +65,7 @@ pub struct Cancel<'info> {
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
     // -------------------------------------------------------------------------- //
-    //                               PROGRAM ACCOUNTS                             //
+    //                              PROGRAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
     /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,

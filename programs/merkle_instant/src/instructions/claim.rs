@@ -41,7 +41,7 @@ pub struct Claim<'info> {
     pub recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     // -------------------------------------------------------------------------- //
-    //                               SABLIER ACCOUNTS                             //
+    //                              SABLIER ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
     #[account(
       mut,
@@ -81,7 +81,7 @@ pub struct Claim<'info> {
     pub claim_receipt: Box<Account<'info, ClaimReceipt>>,
 
     // -------------------------------------------------------------------------- //
-    //                               PROGRAM ACCOUNTS                             //
+    //                              PROGRAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
     pub airdrop_token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
