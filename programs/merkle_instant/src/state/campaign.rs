@@ -24,7 +24,7 @@ pub struct Campaign {
 }
 
 impl Campaign {
-    /// State update for the [`crate::merkle_instant::claim`] instruction.
+    /// State update for the [`crate::sablier_merkle_instant::claim`] instruction.
     pub fn claim(&mut self) -> Result<()> {
         // Update the first claim time to the current time.
         if self.first_claim_time == 0 {
@@ -34,7 +34,7 @@ impl Campaign {
         Ok(())
     }
 
-    /// State update for the [`crate::merkle_instant::create_campaign`] instruction.
+    /// State update for the [`crate::sablier_merkle_instant::create_campaign`] instruction.
     #[allow(clippy::too_many_arguments)]
     pub fn create(
         &mut self,

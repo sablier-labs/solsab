@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::AssociatedToken;
 
 use crate::{
     state::Treasury,
@@ -11,35 +10,28 @@ pub struct CollectFees<'info> {
     // -------------------------------------------------------------------------- //
     //                                USER ACCOUNTS                               //
     // -------------------------------------------------------------------------- //
+    /// Write account: the account authorized to collect fees from the treasury.
     #[account(address = treasury.fee_collector)]
     pub fee_collector: Signer<'info>,
 
-    #[account(mut)]
+    /// Write account: the address that will receive the collected fees.
     /// CHECK: May be any account
+    #[account(mut)]
     pub fee_recipient: UncheckedAccount<'info>,
 
     // -------------------------------------------------------------------------- //
     //                              SABLIER ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
+    /// Write account: the treasury account that holds the fees.
     #[account(
       mut,
       seeds = [TREASURY_SEED],
       bump = treasury.bump,
     )]
     pub treasury: Box<Account<'info, Treasury>>,
-
-    // -------------------------------------------------------------------------- //
-    //                              PROGRAM ACCOUNTS                              //
-    // -------------------------------------------------------------------------- //
-    pub associated_token_program: Program<'info, AssociatedToken>,
-
-    // -------------------------------------------------------------------------- //
-    //                               SYSTEM ACCOUNTS                              //
-    // -------------------------------------------------------------------------- //
-    /// Program account: the System program.
-    pub system_program: Program<'info, System>,
 }
 
+/// See the documentation for [`crate::sablier_merkle_instant::collect_fees`].
 pub fn handler(ctx: Context<CollectFees>) -> Result<()> {
     // Calculate the amount collectable from the treasury in lamport units.
     let collectible_amount = safe_collectible_amount(&ctx.accounts.treasury.to_account_info())?;

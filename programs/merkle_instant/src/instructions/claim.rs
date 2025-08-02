@@ -25,12 +25,15 @@ pub struct Claim<'info> {
     // -------------------------------------------------------------------------- //
     //                                USER ACCOUNTS                               //
     // -------------------------------------------------------------------------- //
+    /// Write account: the signer of the claim who pays the fee.
     #[account(mut)]
     pub claimer: Signer<'info>,
 
+    /// Read account: the recipient of the airdrop.
     /// CHECK: This account is validated during the Merkle proof verification.
     pub recipient: UncheckedAccount<'info>,
 
+    /// Create if needed account: the ATA for airdrop token owned by the recipient.
     #[account(
       init_if_needed,
       payer = claimer,
@@ -43,6 +46,7 @@ pub struct Claim<'info> {
     // -------------------------------------------------------------------------- //
     //                              SABLIER ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
+    /// Write account: the treasury account that receives the claim fee.
     #[account(
       mut,
       seeds = [TREASURY_SEED],
@@ -53,12 +57,15 @@ pub struct Claim<'info> {
     // -------------------------------------------------------------------------- //
     //                              CAMPAIGN ACCOUNTS                             //
     // -------------------------------------------------------------------------- //
+    /// Read account: the mint account of the airdrop token.
     #[account(address = campaign.airdrop_token_mint)]
     pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Write account: the account storing the campaign data.
     #[account(mut)]
     pub campaign: Box<Account<'info, Campaign>>,
 
+    /// Write account: the ATA for airdrop token owned by campaign.
     #[account(
       mut,
       associated_token::mint = airdrop_token_mint,
@@ -67,6 +74,7 @@ pub struct Claim<'info> {
     )]
     pub campaign_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Create account: the claim receipt.
     #[account(
       init,
       payer = claimer,
@@ -83,7 +91,10 @@ pub struct Claim<'info> {
     // -------------------------------------------------------------------------- //
     //                              PROGRAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
+    /// Program account: the Token program of the airdrop token.
     pub airdrop_token_program: Interface<'info, TokenInterface>,
+
+    /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,
 
     // -------------------------------------------------------------------------- //
@@ -93,6 +104,7 @@ pub struct Claim<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// See the documentation for [`crate::sablier_merkle_instant::claim`].
 pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[u8; 32]>) -> Result<()> {
     let campaign = ctx.accounts.campaign.clone();
     let airdrop_token_mint = ctx.accounts.airdrop_token_mint.clone();

@@ -8,8 +8,10 @@ pub struct HasClaimed<'info> {
     // -------------------------------------------------------------------------- //
     //                                CAMPAIGN ACCOUNTS                           //
     // -------------------------------------------------------------------------- //
+    /// Read account: the account storing the campaign data.
     pub campaign: Box<Account<'info, Campaign>>,
 
+    /// Read account: the claim receipt.
     /// CHECK: If it exists, return true, otherwise false.
     #[account(
         seeds = [
