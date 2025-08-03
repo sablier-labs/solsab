@@ -7,12 +7,14 @@ pub struct Initialize<'info> {
     // -------------------------------------------------------------------------- //
     //                                USER ACCOUNTS                               //
     // -------------------------------------------------------------------------- //
+    /// Write account: the initializer of the program.
     #[account(mut)]
     pub initializer: Signer<'info>,
 
     // -------------------------------------------------------------------------- //
     //                              SABLIER ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
+    /// Create account: the treasury account that will hold the fees.
     #[account(
       init,
       payer = initializer,
@@ -29,6 +31,7 @@ pub struct Initialize<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// See the documentation for [`crate::sablier_merkle_instant::initialize`].
 pub fn handler(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
     ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector)?;
 

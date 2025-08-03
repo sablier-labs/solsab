@@ -23,15 +23,18 @@ pub struct CreateCampaign<'info> {
     // -------------------------------------------------------------------------- //
     //                                USER ACCOUNTS                               //
     // -------------------------------------------------------------------------- //
+    /// Write account: the creator of the campaign.
     #[account(mut)]
     pub creator: Signer<'info>,
 
     // -------------------------------------------------------------------------- //
     //                              CAMPAIGN ACCOUNTS                             //
     // -------------------------------------------------------------------------- //
+    /// Read account: the mint account of the airdrop token.
     #[account(mint::token_program = airdrop_token_program)]
     pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Create account: the account storing the campaign data.
     #[account(
       init,
       payer = creator,
@@ -49,6 +52,7 @@ pub struct CreateCampaign<'info> {
     )]
     pub campaign: Box<Account<'info, Campaign>>,
 
+    /// Create account: the campaign's ATA for the airdrop token.
     #[account(
       init,
       payer = creator,
@@ -61,7 +65,10 @@ pub struct CreateCampaign<'info> {
     // -------------------------------------------------------------------------- //
     //                              PROGRAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
+    /// Program account: the Token program of the airdrop token.
     pub airdrop_token_program: Interface<'info, TokenInterface>,
+
+    /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,
 
     // -------------------------------------------------------------------------- //
@@ -71,6 +78,7 @@ pub struct CreateCampaign<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// See the documentation for [`crate::sablier_merkle_instant::create_campaign`].
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<CreateCampaign>,

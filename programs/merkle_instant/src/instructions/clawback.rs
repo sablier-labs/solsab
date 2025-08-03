@@ -14,15 +14,18 @@ pub struct Clawback<'info> {
     // -------------------------------------------------------------------------- //
     //                                USER ACCOUNTS                               //
     // -------------------------------------------------------------------------- //
+    /// Write account: the campaign creator who will claw back the tokens.
     #[account(
       mut,
       address = campaign.creator,
     )]
     pub campaign_creator: Signer<'info>,
 
+    /// Read account: the clawback recipient.
     /// CHECK: This can be any address.
     pub clawback_recipient: UncheckedAccount<'info>,
 
+    /// Create if needed account: the clawback recipient's ATA for the airdrop token.
     #[account(
       init_if_needed,
       payer = campaign_creator,
@@ -35,11 +38,14 @@ pub struct Clawback<'info> {
     // -------------------------------------------------------------------------- //
     //                              CAMPAIGN ACCOUNTS                             //
     // -------------------------------------------------------------------------- //
+    /// Read account: the mint account of the airdrop token.
     #[account(address = campaign.airdrop_token_mint)]
     pub airdrop_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Read account: the account storing the campaign data.
     pub campaign: Box<Account<'info, Campaign>>,
 
+    /// Write account: the campaign's ATA for the airdrop token.
     #[account(
       mut,
       associated_token::mint = airdrop_token_mint,
@@ -51,7 +57,10 @@ pub struct Clawback<'info> {
     // -------------------------------------------------------------------------- //
     //                              PROGRAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
+    /// Program account: the Token program of the airdrop token.
     pub airdrop_token_program: Interface<'info, TokenInterface>,
+
+    /// Program account: the Associated Token program.
     pub associated_token_program: Program<'info, AssociatedToken>,
 
     // -------------------------------------------------------------------------- //
@@ -61,6 +70,7 @@ pub struct Clawback<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// See the documentation for [`crate::sablier_merkle_instant::clawback`].
 pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     let campaign = ctx.accounts.campaign.clone();
     let airdrop_token_mint = ctx.accounts.airdrop_token_mint.clone();
