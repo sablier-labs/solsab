@@ -10,8 +10,8 @@ pub fn handler(
     deposit_amount: u64,
     cliff_duration: i64,
     total_duration: i64,
-    start_unlock: u64,
-    cliff_unlock: u64,
+    start_unlock_amount: u64,
+    cliff_unlock_amount: u64,
     is_cancelable: bool,
 ) -> Result<()> {
     // Declare the start time as the current unix timestamp.
@@ -35,8 +35,8 @@ pub fn handler(
         start_time,
         cliff_time,
         end_time,
-        start_unlock,
-        cliff_unlock,
+        start_unlock_amount,
+        cliff_unlock_amount,
         is_cancelable,
     )
 }

@@ -110,7 +110,7 @@ describe("cancel", () => {
                   );
 
                   // Create a stream with a random token
-                  const salt = await ctx.createWithTimestamps({
+                  const salt = await ctx.createWithTimestampsLl({
                     creator: ctx.sender.keys,
                     depositTokenMint: ctx.randomToken,
                     depositTokenProgram: ProgramId.TOKEN,
@@ -183,7 +183,7 @@ describe("cancel", () => {
                 describe("given token 2022 standard", () => {
                   it("should cancel the stream", async () => {
                     // Create a stream with a Token2022 mint
-                    const salt = await ctx.createWithTimestampsToken2022();
+                    const salt = await ctx.createWithTimestampsLlToken2022();
 
                     const beforeSenderBalance = await getATABalance(ctx.banksClient, ctx.sender.daiATA);
 

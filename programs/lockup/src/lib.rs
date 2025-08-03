@@ -83,14 +83,14 @@ pub mod sablier_lockup {
     ///
     /// Refer to the requirements in [`create_with_timestamps`].
     #[allow(clippy::too_many_arguments)]
-    pub fn create_with_durations(
+    pub fn create_with_durations_ll(
         ctx: Context<CreateWithTimestamps>,
         salt: u128,
         deposit_amount: u64,
         cliff_duration: i64,
         total_duration: i64,
-        start_unlock: u64,
-        cliff_unlock: u64,
+        start_unlock_amount: u64,
+        cliff_unlock_amount: u64,
         is_cancelable: bool,
     ) -> Result<()> {
         instructions::create_with_durations::handler(
@@ -99,8 +99,8 @@ pub mod sablier_lockup {
             deposit_amount,
             cliff_duration,
             total_duration,
-            start_unlock,
-            cliff_unlock,
+            start_unlock_amount,
+            cliff_unlock_amount,
             is_cancelable,
         )
     }
@@ -124,8 +124,8 @@ pub mod sablier_lockup {
     /// - `start_time` The Unix timestamp indicating the stream's start.
     /// - `cliff_time` The Unix timestamp indicating the stream's cliff.
     /// - `end_time` The Unix timestamp indicating the stream's end.
-    /// - `start_unlock` The amount to be unlocked at the start time.
-    /// - `cliff_unlock` The amount to be unlocked at the cliff time.
+    /// - `start_unlock_amount` The amount to be unlocked at the start time.
+    /// - `cliff_unlock_amount` The amount to be unlocked at the cliff time.
     /// - `is_cancelable` Indicates if the stream is cancelable.
     ///
     /// # Notes
@@ -142,18 +142,18 @@ pub mod sablier_lockup {
     /// - `deposit_amount` must be greater than zero.
     /// - `start_time` must be greater than zero and less than `end_time`.
     /// - If set, `cliff_time` must be greater than `start_time` and less than `end_time`.
-    /// - The sum of `start_unlock` and `cliff_unlock` must be less than or equal to deposit amount.
-    /// - If `cliff_time` is not set, the `cliff_unlock` amount must be zero.
+    /// - The sum of `start_unlock_amount` and `cliff_unlock_amount` must be less than or equal to deposit amount.
+    /// - If `cliff_time` is not set, the `cliff_unlock_amount` amount must be zero.
     #[allow(clippy::too_many_arguments)]
-    pub fn create_with_timestamps(
+    pub fn create_with_timestamps_ll(
         ctx: Context<CreateWithTimestamps>,
         salt: u128,
         deposit_amount: u64,
         start_time: i64,
         cliff_time: i64,
         end_time: i64,
-        start_unlock: u64,
-        cliff_unlock: u64,
+        start_unlock_amount: u64,
+        cliff_unlock_amount: u64,
         is_cancelable: bool,
     ) -> Result<()> {
         instructions::create_with_timestamps::handler(
@@ -163,8 +163,8 @@ pub mod sablier_lockup {
             start_time,
             cliff_time,
             end_time,
-            start_unlock,
-            cliff_unlock,
+            start_unlock_amount,
+            cliff_unlock_amount,
             is_cancelable,
         )
     }

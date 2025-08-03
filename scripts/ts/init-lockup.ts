@@ -87,7 +87,7 @@ async function createStream(params: CreateParams) {
   });
 
   await lockupProgram.methods
-    .createWithDurations(
+    .createWithDurationsLl(
       salt,
       depositAmount,
       cliffDuration,

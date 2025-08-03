@@ -7,7 +7,7 @@ import { Time } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
-describe("createWithDurations", () => {
+describe("createWithDurationsLl", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();
@@ -16,7 +16,7 @@ describe("createWithDurations", () => {
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.createWithDurations({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.createWithDurationsLl({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -29,7 +29,7 @@ describe("createWithDurations", () => {
 
     describe("when cliff duration not zero", () => {
       it("it should create the stream", async () => {
-        const salt = await ctx.createWithDurations();
+        const salt = await ctx.createWithDurationsLl();
 
         const actualStreamData = await ctx.fetchStreamData(salt);
         const expectedStreamData = ctx.defaultStream({ salt: salt }).data;
@@ -39,7 +39,7 @@ describe("createWithDurations", () => {
 
     describe("when cliff duration zero", () => {
       it("it should create the stream", async () => {
-        const salt = await ctx.createWithDurations({ cliffDuration: ZERO });
+        const salt = await ctx.createWithDurationsLl({ cliffDuration: ZERO });
 
         const actualStreamData = await ctx.fetchStreamData(salt);
         const expectedStreamData = ctx.defaultStream({ salt: salt }).data;
