@@ -176,7 +176,8 @@ pub mod sablier_lockup {
     /// - `initializer` The transaction signer.
     /// - `nft_token_program` The Token Program of the NFT collection.
     ///
-    /// Parameters:
+    /// # Parameters:
+    ///
     /// - `fee_collector`: The address that will have the authority to collect fees.
     /// - `chainlink_program`: The Chainlink program used to retrieve on-chain price feeds.
     /// - `chainlink_sol_usd_feed`: The account providing the SOL/USD price feed data.
@@ -321,6 +322,7 @@ pub mod sablier_lockup {
     /// Calculates the withdrawal fee in lamports, which is equivalent to $1 USD.
     ///
     /// # Accounts Expected:
+    ///
     /// - `chainlink_program`: The Chainlink program used to retrieve on-chain price feeds.
     /// - `chainlink_sol_usd_feed`: The account providing the SOL/USD price feed data.
     pub fn withdrawal_fee_in_lamports(ctx: Context<WithdrawalFeeInLamports>) -> Result<u64> {
