@@ -56,21 +56,21 @@ impl StreamData {
         deposited_token_mint: Pubkey,
         bump: u8,
         cliff_time: i64,
-        cliff_unlock: u64,
+        cliff_unlock_amount: u64,
         deposit_amount: u64,
         end_time: i64,
         salt: u128,
         is_cancelable: bool,
         sender: Pubkey,
         start_time: i64,
-        start_unlock: u64,
+        start_unlock_amount: u64,
     ) -> Result<()> {
         self.bump = bump;
         self.amounts = Amounts {
-            cliff_unlock,
+            cliff_unlock: cliff_unlock_amount,
             deposited: deposit_amount,
             refunded: 0,
-            start_unlock,
+            start_unlock: start_unlock_amount,
             withdrawn: 0,
         };
         self.deposited_token_mint = deposited_token_mint;

@@ -110,7 +110,7 @@ describe("withdraw", () => {
                     );
 
                     // Create a new stream with a random token
-                    const salt = await ctx.createWithTimestamps({
+                    const salt = await ctx.createWithTimestampsLl({
                       depositAmount: Amount.DEPOSIT,
                       depositTokenMint: ctx.randomToken,
                     });
@@ -309,7 +309,7 @@ describe("withdraw", () => {
 
                       describe("given token 2022 standard", () => {
                         it("should make the withdrawal", async () => {
-                          const salt = await ctx.createWithTimestampsToken2022();
+                          const salt = await ctx.createWithTimestampsLlToken2022();
 
                           // Get the Lamports balance of the Treasury before the withdrawal
                           const treasuryLamportsBefore = await ctx.getTreasuryLamports();

@@ -46,8 +46,8 @@ pub fn check_create(
     start_time: i64,
     cliff_time: i64,
     end_time: i64,
-    start_unlock: u64,
-    cliff_unlock: u64,
+    start_unlock_amount: u64,
+    cliff_unlock_amount: u64,
 ) -> Result<()> {
     // Check: the deposit amount is not zero.
     if deposit_amount == 0 {
@@ -77,13 +77,14 @@ pub fn check_create(
         }
     }
     // Check: the cliff unlock amount is zero when the cliff time is zero.
-    else if cliff_unlock > 0 {
+    else if cliff_unlock_amount > 0 {
         return Err(ErrorCode::CliffTimeZeroUnlockAmountNotZero.into());
     }
 
     // Check: the sum of the start and cliff unlock amounts is not greater than the deposit amount.
-    let total_unlock = start_unlock.checked_add(cliff_unlock).ok_or(ErrorCode::UnlockAmountsSumTooHigh)?;
-    if total_unlock > deposit_amount {
+    let total_unlock_amount =
+        start_unlock_amount.checked_add(cliff_unlock_amount).ok_or(ErrorCode::UnlockAmountsSumTooHigh)?;
+    if total_unlock_amount > deposit_amount {
         return Err(ErrorCode::UnlockAmountsSumTooHigh.into());
     }
 
