@@ -12,7 +12,7 @@ pub struct CampaignView<'info> {
     pub campaign: Box<Account<'info, Campaign>>,
 }
 
-/// See the documentation for [`crate::sablier_merkle_instant::campaign_view`].
+/// See the documentation for [`fn@crate::sablier_merkle_instant::campaign_view`].
 pub fn handler(ctx: Context<CampaignView>) -> Result<Campaign> {
     Ok(ctx.accounts.campaign.clone().into_inner())
 }

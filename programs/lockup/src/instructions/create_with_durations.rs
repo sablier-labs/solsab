@@ -2,7 +2,7 @@ use anchor_lang::{prelude::*, solana_program::sysvar::clock::Clock};
 
 use crate::instructions::create_with_timestamps;
 
-/// See the documentation for [`crate::sablier_lockup::create_with_durations`].
+/// See the documentation for [`fn@crate::sablier_lockup::create_with_durations_ll`].
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<create_with_timestamps::CreateWithTimestamps>,

@@ -123,7 +123,7 @@ pub struct Initialize<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// See the documentation for [`crate::sablier_lockup::initialize`].
+/// See the documentation for [`fn@crate::sablier_lockup::initialize`].
 pub fn handler(
     ctx: Context<Initialize>,
     fee_collector: Pubkey,

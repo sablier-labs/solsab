@@ -8,7 +8,7 @@ pub struct NftCollectionData {
 }
 
 impl NftCollectionData {
-    /// State update for the [`crate::sablier_lockup::create_with_timestamps`] instruction.
+    /// State update for the [`fn@crate::sablier_lockup::create_with_timestamps_ll`] instruction.
     pub fn create(&mut self) -> Result<()> {
         // The increment is safe, as it would take many years to overflow 2^64.
         self.total_supply += 1;
@@ -16,7 +16,7 @@ impl NftCollectionData {
         Ok(())
     }
 
-    /// State update for the [`crate::sablier_lockup::initialize`] instruction.
+    /// State update for the [`fn@crate::sablier_lockup::initialize`] instruction.
     pub fn initialize(&mut self, bump: u8) -> Result<()> {
         self.bump = bump;
         self.total_supply = 0;

@@ -113,7 +113,7 @@ pub struct Claim<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// See the documentation for [`crate::sablier_merkle_instant::claim`].
+/// See the documentation for [`fn@crate::sablier_merkle_instant::claim`].
 pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[u8; 32]>) -> Result<()> {
     let campaign = ctx.accounts.campaign.clone();
     let airdrop_token_mint = ctx.accounts.airdrop_token_mint.clone();

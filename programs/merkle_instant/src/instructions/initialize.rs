@@ -34,7 +34,7 @@ pub struct Initialize<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// See the documentation for [`crate::sablier_merkle_instant::initialize`].
+/// See the documentation for [`fn@crate::sablier_merkle_instant::initialize`].
 pub fn handler(
     ctx: Context<Initialize>,
     fee_collector: Pubkey,

@@ -196,7 +196,7 @@ pub struct CreateWithTimestamps<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-/// See the documentation for [`crate::sablier_lockup::create_with_timestamps`].
+/// See the documentation for [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,

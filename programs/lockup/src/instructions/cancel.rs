@@ -80,7 +80,7 @@ pub struct Cancel<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// See the documentation for [`crate::sablier_lockup::cancel`].
+/// See the documentation for [`fn@crate::sablier_lockup::cancel`].
 pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     // Retrieve the stream amounts from storage.
     let stream_amounts = ctx.accounts.stream_data.amounts.clone();

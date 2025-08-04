@@ -31,7 +31,7 @@ pub struct CollectFees<'info> {
     pub treasury: Box<Account<'info, Treasury>>,
 }
 
-/// See the documentation for [`crate::sablier_merkle_instant::collect_fees`].
+/// See the documentation for [`fn@crate::sablier_merkle_instant::collect_fees`].
 pub fn handler(ctx: Context<CollectFees>) -> Result<()> {
     // Calculate the amount collectable from the treasury in lamport units.
     let collectible_amount = safe_collectible_amount(&ctx.accounts.treasury.to_account_info())?;
