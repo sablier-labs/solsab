@@ -44,8 +44,7 @@ in mind (which any disclosure must respect to qualify as a vulnerability):
      security benefits.
 
 2. We accept campaigns created with $\texttt{start\_time} \geq \texttt{expiration\_time}$, as the program does not allow
-   claims for such campaigns, while any tokens such a campaign has been funded with can be clawed back by the campaign
-   creator.
+   claims for such campaigns. If any tokens are transferred into them, they can be clawed back by the campaign creator.
 3. The campaign funder is assumed to either be the campaign creator - or be aware of the fact that it's just the
    campaign creator who is authorized to claw back the unclaimed tokens from the campaign.
 4. Campaigns must be funded via a separate Tx after their creation. The program allows the campaign creator to clawback
