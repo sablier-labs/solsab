@@ -37,16 +37,15 @@ in mind (which any disclosure must respect to qualify as a vulnerability):
 1. Although technically possible, creating `MerkleInstant` campaigns before program initialization is acceptable and not
    considered a vulnerability due to the following reasons:
 
-   - Campaigns created before program initialization are temporarily unusable, but become fully functional immediately
-     upon the initialization.
-   - The window between program deployment and initialization is expected to be negligible, mitigating practical risks.
+   - Even though the campaigns created like that are unusable, at first, they become fully functional immediately after
+     the initialization.
+   - The time window between program deployment and initialization is expected to be negligible.
    - Implementing prevention logic for this scenario would’ve introduced unnecessary complexity without proportional
      security benefits.
 
-2. The Start time passed during campaign creation must be stricly less than the passed Expiration time. We accept the
-   risk of not validating them explicitly, because even though claims won't be possible for a campaign with
-   `start_time` >= `expiration_time`, any tokens it has been funded with will be available to be clawed back by the
-   campaign creator.
+2. We accept campaigns created with $\texttt{start\_time} \geq \texttt{expiration\_time}$, as the program does not allow
+   claims for such campaigns, while any tokens such a campaign has been funded with can be clawed back by the campaign
+   creator.
 3. The campaign funder is assumed to either be the campaign creator - or be aware of the fact that it's just the
    campaign creator who is authorized to claw back the unclaimed tokens from the campaign.
 4. Campaigns must be funded via a separate Tx after their creation. The program allows the campaign creator to clawback
