@@ -7,46 +7,49 @@ continuous process. If you believe you have found a security vulnerability, plea
 
 ## **Assumptions**
 
-The `SolSab` programs (`LockupLinear` and `MerkleInstant`) have been developed with the following assumptions in mind
-(which any disclosure must respect to qualify as a vulnerability):
+The `SolSab` programs (`sablier_lockup` and `sablier_merkle_instant`) have been developed with the following assumptions
+in mind (which any disclosure must respect to qualify as a vulnerability):
 
-### **General Assumptions:**
+### General Assumptions:
 
-1. **Program Initialization**:
-   - Programs are assumed to have been initialized before being used.
-2. **Token Support**:
-   - Only standard SPL and Token2022 tokens without any special behavior are supported. Here are some examples of tokens
-     that are **not supported**:
-     - Tokens implementing transfer fees (“fee-on-transfer” tokens).
-     - Rebase tokens, interest-bearing tokens, or tokens the balances of which can change independently of explicit
-       transfer calls.
-   - The maximum token supply must remain within reasonable limits to avoid integer over- and underflows.
-3. **Fee Collector Account Validity and Management:**
-   - The `fee_collector` specified during program initialization must be a valid Solana account.
-   - Loss of access or control over the `fee_collector` account does **not** constitute a security vulnerability.
+1. Programs are assumed to have been initialized before being used.
+2. Only standard SPL and Token2022 tokens without any special behavior are supported. Here are some examples of tokens
+   that are **not supported**:
+
+   - Tokens implementing transfer fees (“fee-on-transfer” tokens).
+   - Rebase tokens, interest-bearing tokens, or tokens the balances of which can change independently of explicit
+     transfer calls.
+
+3. The maximum token supply must remain within reasonable limits to avoid integer over- and underflows.
+4. The `fee_collector`, `chainlink_program` and `chainlink_sol_usd_feed` accounts specified during program
+   initialization must be a valid Solana account.
+5. Loss of access or control over the `fee_collector` account does **not** constitute a security vulnerability.
 
 ### **`LockupLinear` Assumptions:**
 
-1. **Token Lockup**:
-   - The total amount intended for token streaming/vesting is fully locked upon stream creation and remains locked until
-     withdrawn by the recipient or reclaimed by the creator (in the case of cancelable streams).
-2. **Stream NFT Minting**:
-   - Stream creation requires a unique “salt” to generate the Stream NFT Mint account. Collisions or duplicate salts are
-     considered a misuse by the Stream creator and not a security flaw in the program itself.
+1. The total amount for token streaming/vesting is locked upon stream creation and stays locked until the recipient
+   withdraws it - or the sender cancels the stream (if the stream is cancelable).
+2. Stream creation requires a unique “salt” to generate the Stream NFT Mint account. Collisions or duplicate salts are
+   considered a misuse by the Stream creator and not a security flaw in the program itself.
 
 ### **`MerkleInstant` Assumptions:**
 
-1. **Campaign creation before program initialization:**
-   - Although technically possible, creating `MerkleInstant` campaigns before program initialization is acceptable and
-     not considered a vulnerability due to the following reasons:
-     - Campaigns created before program initialization are temporarily unusable, but become fully functional immediately
-       upon the initialization.
-     - The window between program deployment and initialization is expected to be negligible, mitigating practical
-       risks.
-     - Implementing prevention logic for this scenario would’ve introduced unnecessary complexity without proportional
-       security benefits.
-2. **Campaign Funding and Clawbacks**:
-   - Campaigns must be funded via a separate Tx after their creation. The program allows the campaign creator to claw
-     back unclaimed tokens within the defined grace period or after expiration.
+1. Although technically possible, creating `MerkleInstant` campaigns before program initialization is acceptable andnot
+   considered a vulnerability due to the following reasons:
+
+   - Campaigns created before program initialization are temporarily unusable, but become fully functional immediately
+     upon the initialization.
+   - The window between program deployment and initialization is expected to be negligible, mitigating practical risks.
+   - Implementing prevention logic for this scenario would’ve introduced unnecessary complexity without proportional
+     security benefits.
+
+2. The Start time passed during campaign creation must be stricly less than the passed Expiration time. We accept the
+   risk of not validating them explicitly, because even though claims won't be possible for a campaign with
+   `start_time` >= `expiration_time`, any tokens it has been funded with will be available to be clawed back by the
+   campaign creator.
+3. The campaign funder is assumed to either be the campaign creator - or be aware of the fact that it's just the
+   campaign creator who is authorized to claw back the unclaimed tokens from the campaign.
+4. Campaigns must be funded via a separate Tx after their creation. The program allows the campaign creator to clawback
+   unclaimed tokens within the defined grace period or after expiration.
 
 ---
