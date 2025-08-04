@@ -33,7 +33,7 @@ pub mod sablier_lockup {
     /// - If there are any tokens left for the recipient to withdraw, the stream is marked as canceled. Otherwise, the
     /// stream is marked as depleted.
     /// - If the sender does not have an ATA for the deposited token, it is created.
-    /// - Emits a [`CancelLockupStream`] event.
+    /// - Emits a [`crate::utils::events::CancelLockupStream`] event.
     ///
     /// # Requirements
     ///
@@ -55,7 +55,7 @@ pub mod sablier_lockup {
     /// # Notes
     ///
     /// - Leaves a buffer of 0.001 SOL to ensure the account remains rent-exempt after the fee collection.
-    /// - Emits a [`FeesCollected`] event.
+    /// - Emits a [`crate::utils::events::FeesCollected`] event.
     ///
     /// # Requirements
     ///
@@ -135,7 +135,7 @@ pub mod sablier_lockup {
     /// - As long as the times are ordered, it is not an error for the start or the cliff time to be in the past.
     /// - The stream recipient is given solely by the ownership of the stream NFT, which is minted to the passed
     /// `recipient`.
-    /// - Emits a [`CreateLockupLinearStream`] event.
+    /// - Emits a [`crate::utils::events::CreateLockupLinearStream`] event.
     ///
     /// # Requirements
     ///
@@ -192,7 +192,7 @@ pub mod sablier_lockup {
     ///
     /// # Notes
     ///
-    /// - Emits a [`RenounceLockupStream`] event.
+    /// - Emits a [`crate::utils::events::RenounceLockupStream`] event.
     pub fn renounce(ctx: Context<Renounce>) -> Result<()> {
         instructions::renounce::handler(ctx)
     }
@@ -216,7 +216,7 @@ pub mod sablier_lockup {
     ///
     /// - If the withdrawal recipient does not have an ATA for the deposited token, one is created.
     /// - The signer must pay a fee in the native (SOL) token.
-    /// - Emits [`WithdrawFromLockupStream`] event.
+    /// - Emits [`crate::utils::events::WithdrawFromLockupStream`] event.
     ///
     /// # Requirements
     ///

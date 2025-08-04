@@ -37,7 +37,7 @@ pub mod sablier_merkle_instant {
     ///
     /// # Notes
     ///
-    /// - Emits a [`Claim`] event.
+    /// - Emits a [`crate::utils::events::Claim`] event.
     ///
     /// # Requirements
     ///
@@ -65,7 +65,7 @@ pub mod sablier_merkle_instant {
     ///
     /// # Notes
     ///
-    /// - Emits a [`Clawback`] event.
+    /// - Emits a [`crate::utils::events::Clawback`] event.
     ///
     /// # Requirements
     ///
@@ -87,7 +87,7 @@ pub mod sablier_merkle_instant {
     ///
     /// - To calculate the "collectable amount", the rent-exempt minimum balance and a 0.001 SOL buffer are deducted
     /// from the treasury SOL balance.
-    /// - Emits a [`FeesCollected`] event.
+    /// - Emits a [`crate::utils::events::FeesCollected`] event.
     ///
     /// # Requirements
     ///
@@ -119,7 +119,7 @@ pub mod sablier_merkle_instant {
     ///
     /// # Notes
     ///
-    /// - Emits a [`CreateCampaign`] event.
+    /// - Emits a [`crate::utils::events::CreateCampaign`] event.
     #[allow(clippy::too_many_arguments)]
     pub fn create_campaign(
         ctx: Context<CreateCampaign>,
