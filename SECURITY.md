@@ -5,7 +5,7 @@ design and testing of the protocol to guarantee its safety and reliability. Howe
 continuous process. If you believe you have found a security vulnerability, please read the
 [Bug Bounty Program](https://sablier.notion.site/bug-bounty), and share a report privately with us.
 
-## **Assumptions**
+## Assumptions
 
 The `SolSab` programs (`sablier_lockup` and `sablier_merkle_instant`) have been developed with the following assumptions
 in mind (which any disclosure must respect to qualify as a vulnerability):
@@ -25,16 +25,16 @@ in mind (which any disclosure must respect to qualify as a vulnerability):
    initialization must be a valid Solana account.
 5. Loss of access or control over the `fee_collector` account does **not** constitute a security vulnerability.
 
-### **`LockupLinear` Assumptions:**
+### `LockupLinear` Assumptions:
 
 1. The total amount for token streaming/vesting is locked upon stream creation and stays locked until the recipient
    withdraws it - or the sender cancels the stream (if the stream is cancelable).
 2. Stream creation requires a unique “salt” to generate the Stream NFT Mint account. Collisions or duplicate salts are
    considered a misuse by the Stream creator and not a security flaw in the program itself.
 
-### **`MerkleInstant` Assumptions:**
+### `MerkleInstant` Assumptions:
 
-1. Although technically possible, creating `MerkleInstant` campaigns before program initialization is acceptable andnot
+1. Although technically possible, creating `MerkleInstant` campaigns before program initialization is acceptable and not
    considered a vulnerability due to the following reasons:
 
    - Campaigns created before program initialization are temporarily unusable, but become fully functional immediately
@@ -51,5 +51,3 @@ in mind (which any disclosure must respect to qualify as a vulnerability):
    campaign creator who is authorized to claw back the unclaimed tokens from the campaign.
 4. Campaigns must be funded via a separate Tx after their creation. The program allows the campaign creator to clawback
    unclaimed tokens within the defined grace period or after expiration.
-
----
