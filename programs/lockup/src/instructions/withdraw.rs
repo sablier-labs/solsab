@@ -133,7 +133,7 @@ pub struct Withdraw<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// See the documentation for [`crate::sablier_lockup::withdraw`].
+/// See the documentation for [`fn@crate::sablier_lockup::withdraw`].
 pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Check: validate the withdraw.
     check_withdraw(

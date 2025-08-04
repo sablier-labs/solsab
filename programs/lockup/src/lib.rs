@@ -69,19 +69,19 @@ pub mod sablier_lockup {
     ///
     /// # Accounts Expected
     ///
-    /// Refer to the accounts in [`create_with_timestamps`].
+    /// Refer to the accounts in [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
     ///
     /// # Parameters
     ///
-    /// Refer to the parameters in [`create_with_timestamps`].
+    /// Refer to the parameters in [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
     ///
     /// # Notes
     ///
-    /// Refer to the notes in [`create_with_timestamps`].
+    /// Refer to the notes in [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
     ///
     /// # Requirements
     ///
-    /// Refer to the requirements in [`create_with_timestamps`].
+    /// Refer to the requirements in [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
     #[allow(clippy::too_many_arguments)]
     pub fn create_with_durations_ll(
         ctx: Context<CreateWithTimestamps>,
@@ -242,15 +242,15 @@ pub mod sablier_lockup {
     ///
     /// # Accounts Expected
     ///
-    /// Refer to the accounts in [`withdraw`].
+    /// Refer to the accounts in [`fn@crate::sablier_lockup::withdraw`].
     ///
     /// # Notes
     ///
-    /// Refer to the notes in [`withdraw`].
+    /// Refer to the notes in [`fn@crate::sablier_lockup::withdraw`].
     ///
     /// # Requirements
     ///
-    /// Refer to the requirements in [`withdraw`].
+    /// Refer to the requirements in [`fn@crate::sablier_lockup::withdraw`].
     pub fn withdraw_max(ctx: Context<Withdraw>) -> Result<()> {
         instructions::withdraw_max::handler(ctx)
     }

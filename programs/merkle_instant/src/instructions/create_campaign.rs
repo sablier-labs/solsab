@@ -78,7 +78,7 @@ pub struct CreateCampaign<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// See the documentation for [`crate::sablier_merkle_instant::create_campaign`].
+/// See the documentation for [`fn@crate::sablier_merkle_instant::create_campaign`].
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<CreateCampaign>,

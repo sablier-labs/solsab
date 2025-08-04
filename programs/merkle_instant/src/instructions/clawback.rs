@@ -70,7 +70,7 @@ pub struct Clawback<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// See the documentation for [`crate::sablier_merkle_instant::clawback`].
+/// See the documentation for [`fn@crate::sablier_merkle_instant::clawback`].
 pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     let campaign = ctx.accounts.campaign.clone();
     let airdrop_token_mint = ctx.accounts.airdrop_token_mint.clone();

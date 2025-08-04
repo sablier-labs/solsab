@@ -36,7 +36,7 @@ pub struct Renounce<'info> {
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 }
 
-/// See the documentation for [`crate::sablier_lockup::renounce`].
+/// See the documentation for [`fn@crate::sablier_lockup::renounce`].
 pub fn handler(ctx: Context<Renounce>) -> Result<()> {
     // Check: validate the renounce.
     check_renounce(

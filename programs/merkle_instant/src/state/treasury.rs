@@ -10,7 +10,7 @@ pub struct Treasury {
 }
 
 impl Treasury {
-    /// State update for the [`crate::sablier_merkle_instant::initialize`] instruction.
+    /// State update for the [`fn@crate::sablier_merkle_instant::initialize`] instruction.
     pub fn initialize(
         &mut self,
         bump: u8,

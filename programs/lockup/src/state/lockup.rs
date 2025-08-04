@@ -37,7 +37,7 @@ pub struct Timestamps {
 }
 
 impl StreamData {
-    /// State update for the [`crate::sablier_lockup::cancel`] instruction.
+    /// State update for the [`fn@crate::sablier_lockup::cancel`] instruction.
     pub fn cancel(&mut self, sender_amount: u64, recipient_amount: u64) -> Result<()> {
         self.amounts.refunded = sender_amount;
         self.is_cancelable = false;
@@ -49,7 +49,7 @@ impl StreamData {
         Ok(())
     }
 
-    /// State update for the [`crate::sablier_lockup::create_with_timestamps`] instruction.
+    /// State update for the [`fn@crate::sablier_lockup::create_with_timestamps_ll`] instruction.
     #[allow(clippy::too_many_arguments)]
     pub fn create(
         &mut self,
@@ -88,14 +88,14 @@ impl StreamData {
         Ok(())
     }
 
-    /// State update for the [`crate::sablier_lockup::renounce`] instruction.
+    /// State update for the [`fn@crate::sablier_lockup::renounce`] instruction.
     pub fn renounce(&mut self) -> Result<()> {
         self.is_cancelable = false;
 
         Ok(())
     }
 
-    /// State update for the [`crate::sablier_lockup::withdraw`] instruction.
+    /// State update for the [`fn@crate::sablier_lockup::withdraw`] instruction.
     pub fn withdraw(&mut self, amount: u64) -> Result<()> {
         self.amounts.withdrawn = self.amounts.withdrawn.checked_add(amount).expect("Withdrawn amount overflow");
 
