@@ -1,7 +1,6 @@
 import BN from "bn.js";
-import dayjs from "dayjs";
 import { ZERO } from "../../../lib/constants";
-import { sol, usdc } from "../../../lib/convertors";
+import { usdc } from "../../../lib/convertors";
 import type { Amounts, Timestamps } from "../../../target/types/sablier_lockup_structs";
 import type { UnlockAmounts } from "./types";
 
@@ -9,8 +8,6 @@ export namespace Amount {
   export const CLIFF = usdc("2500.000001");
   export const DEPOSIT = usdc(10_000);
   export const START = ZERO;
-  export const WITHDRAW_FEE = sol("0.01");
-
   export const WITHDRAW = usdc(2600);
   export const REFUND = DEPOSIT.sub(WITHDRAW);
 }
@@ -30,7 +27,8 @@ export namespace Seed {
  */
 export namespace Time {
   export const CLIFF_DURATION = new BN(2500);
-  export const GENESIS = new BN(dayjs().add(1, "day").unix()); // tomorrow
+  // We use this fixed timestamp to ensure that the mock Chainlink data is not outdated.
+  export const GENESIS = new BN(1754142441); // August 2, 2025 1:47:21 PM
   export const START = GENESIS.add(new BN(1000));
   export const TOTAL_DURATION = new BN(10_000);
 

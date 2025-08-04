@@ -124,8 +124,13 @@ pub struct Initialize<'info> {
 }
 
 /// See the documentation for [`crate::sablier_lockup::initialize`].
-pub fn handler(ctx: Context<Initialize>, fee_collector: Pubkey) -> Result<()> {
-    ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector)?;
+pub fn handler(
+    ctx: Context<Initialize>,
+    fee_collector: Pubkey,
+    chainlink_program: Pubkey,
+    chainlink_sol_usd_feed: Pubkey,
+) -> Result<()> {
+    ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector, chainlink_program, chainlink_sol_usd_feed)?;
     ctx.accounts.nft_collection_data.initialize(ctx.bumps.nft_collection_data)?;
 
     nft::initialize_collection(

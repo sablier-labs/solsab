@@ -11,7 +11,7 @@ import { AMOUNTS, Amount, TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defa
 
 let ctx: LockupTestContext;
 
-describe("createWithTimestamps", () => {
+describe("createWithTimestampsLl", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();
@@ -19,7 +19,7 @@ describe("createWithTimestamps", () => {
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.createWithTimestamps({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.createWithTimestampsLl({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -31,7 +31,7 @@ describe("createWithTimestamps", () => {
 
     describe("when deposit amount zero", () => {
       it("should fail", async () => {
-        await expectToThrow(ctx.createWithTimestamps({ depositAmount: ZERO }), "DepositAmountZero");
+        await expectToThrow(ctx.createWithTimestampsLl({ depositAmount: ZERO }), "DepositAmountZero");
       });
     });
 
@@ -39,7 +39,7 @@ describe("createWithTimestamps", () => {
       describe("when start time is zero", () => {
         it("should fail", async () => {
           await expectToThrow(
-            ctx.createWithTimestamps({
+            ctx.createWithTimestampsLl({
               timestamps: TIMESTAMPS({ start: ZERO }),
             }),
             "StartTimeNotPositive",
@@ -51,7 +51,7 @@ describe("createWithTimestamps", () => {
         describe("when start time is not positive", () => {
           it("should fail", async () => {
             await expectToThrow(
-              ctx.createWithTimestamps({
+              ctx.createWithTimestampsLl({
                 timestamps: TIMESTAMPS({ start: new BN(-1) }),
               }),
               "StartTimeNotPositive",
@@ -63,7 +63,7 @@ describe("createWithTimestamps", () => {
           describe("when sender lacks an ATA for deposited token", () => {
             it("should fail", async () => {
               await expectToThrow(
-                ctx.createWithTimestamps({
+                ctx.createWithTimestampsLl({
                   depositTokenMint: ctx.randomToken,
                 }),
                 ACCOUNT_NOT_INITIALIZED,
@@ -75,7 +75,7 @@ describe("createWithTimestamps", () => {
             describe("when sender has an insufficient token balance", () => {
               it("should fail", async () => {
                 await expectToThrow(
-                  ctx.createWithTimestamps({
+                  ctx.createWithTimestampsLl({
                     depositAmount: usdc(1_000_000).addn(1),
                   }),
                   0x1,
@@ -88,7 +88,7 @@ describe("createWithTimestamps", () => {
                 describe("when cliff unlock amount not zero", () => {
                   it("should fail", async () => {
                     await expectToThrow(
-                      ctx.createWithTimestamps({
+                      ctx.createWithTimestampsLl({
                         timestamps: TIMESTAMPS({ cliff: ZERO }),
                       }),
                       "CliffTimeZeroUnlockAmountNotZero",
@@ -99,7 +99,7 @@ describe("createWithTimestamps", () => {
                 describe("when start time not less than end time", () => {
                   it("should fail", async () => {
                     await expectToThrow(
-                      ctx.createWithTimestamps({
+                      ctx.createWithTimestampsLl({
                         timestamps: TIMESTAMPS({ cliff: ZERO, start: Time.END }),
                       }),
                       "StartTimeNotLessThanEndTime",
@@ -111,7 +111,7 @@ describe("createWithTimestamps", () => {
                   it("should create the stream", async () => {
                     const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
 
-                    const salt = await ctx.createWithTimestamps({
+                    const salt = await ctx.createWithTimestampsLl({
                       timestamps: TIMESTAMPS({ cliff: ZERO }),
                       unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO, start: ZERO }),
                     });
@@ -131,7 +131,7 @@ describe("createWithTimestamps", () => {
                 describe("when start time not less than cliff time", () => {
                   it("should fail", async () => {
                     await expectToThrow(
-                      ctx.createWithTimestamps({
+                      ctx.createWithTimestampsLl({
                         timestamps: TIMESTAMPS({ start: Time.CLIFF }),
                       }),
                       "StartTimeNotLessThanCliffTime",
@@ -143,7 +143,7 @@ describe("createWithTimestamps", () => {
                   describe("when cliff time not less than end time", () => {
                     it("should fail", async () => {
                       await expectToThrow(
-                        ctx.createWithTimestamps({
+                        ctx.createWithTimestampsLl({
                           timestamps: TIMESTAMPS({ cliff: Time.END }),
                         }),
                         "CliffTimeNotLessThanEndTime",
@@ -156,7 +156,7 @@ describe("createWithTimestamps", () => {
                       it("should fail", async () => {
                         const depositAmount = BN_1000;
                         await expectToThrow(
-                          ctx.createWithTimestamps({
+                          ctx.createWithTimestampsLl({
                             depositAmount,
                             unlockAmounts: {
                               cliff: depositAmount,
@@ -172,7 +172,7 @@ describe("createWithTimestamps", () => {
                       describe("when token SPL standard", () => {
                         it("should create the stream", async () => {
                           const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
-                          const salt = await ctx.createWithTimestamps();
+                          const salt = await ctx.createWithTimestampsLl();
 
                           await assertStreamCreation(salt, beforeSenderTokenBalance);
                         });
@@ -181,7 +181,7 @@ describe("createWithTimestamps", () => {
                       describe("when token 2022 standard", () => {
                         it("should create the stream", async () => {
                           const beforeSenderTokenBalance = await ctx.getSenderTokenBalance(ctx.dai);
-                          const salt = await ctx.createWithTimestampsToken2022();
+                          const salt = await ctx.createWithTimestampsLlToken2022();
 
                           await assertStreamCreation(
                             salt,

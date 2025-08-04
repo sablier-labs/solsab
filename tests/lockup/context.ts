@@ -54,8 +54,8 @@ export class LockupTestContext extends TestContext {
 
       // Create the default streams
       this.salts = {
-        default: await this.createWithTimestamps(),
-        nonCancelable: await this.createWithTimestamps({
+        default: await this.createWithTimestampsLl(),
+        nonCancelable: await this.createWithTimestampsLl({
           isCancelable: false,
         }),
         nonExisting: new BN(1729),
@@ -107,7 +107,7 @@ export class LockupTestContext extends TestContext {
     await buildSignAndProcessTx(this.banksClient, collectFeesIx, signer);
   }
 
-  async createWithDurations({
+  async createWithDurationsLl({
     cliffDuration = Time.CLIFF_DURATION,
     salt,
   }: {
@@ -117,8 +117,8 @@ export class LockupTestContext extends TestContext {
     // Use the total supply as the salt for the stream
     salt = salt ?? (await this.getTotalSupply());
 
-    const createWithDurationsIx = await this.lockup.methods
-      .createWithDurations(
+    const createWithDurationsLlIx = await this.lockup.methods
+      .createWithDurationsLl(
         salt,
         Amount.DEPOSIT,
         cliffDuration,
@@ -137,12 +137,12 @@ export class LockupTestContext extends TestContext {
       })
       .instruction();
 
-    await buildSignAndProcessTx(this.banksClient, createWithDurationsIx, this.sender.keys);
+    await buildSignAndProcessTx(this.banksClient, createWithDurationsLlIx, this.sender.keys);
 
     return salt;
   }
 
-  async createWithTimestamps({
+  async createWithTimestampsLl({
     creator = this.sender.keys,
     senderPubKey = this.sender.keys.publicKey,
     recipientPubKey = this.recipient.keys.publicKey,
@@ -158,7 +158,7 @@ export class LockupTestContext extends TestContext {
     salt = salt.isNeg() ? await this.getTotalSupply() : salt;
 
     const txIx = await this.lockup.methods
-      .createWithTimestamps(
+      .createWithTimestampsLl(
         salt,
         depositAmount,
         timestamps.start,
@@ -183,8 +183,8 @@ export class LockupTestContext extends TestContext {
     return salt;
   }
 
-  async createWithTimestampsToken2022(): Promise<BN> {
-    return await this.createWithTimestamps({
+  async createWithTimestampsLlToken2022(): Promise<BN> {
+    return await this.createWithTimestampsLl({
       depositTokenMint: this.dai,
       depositTokenProgram: token.TOKEN_2022_PROGRAM_ID,
     });
@@ -192,7 +192,7 @@ export class LockupTestContext extends TestContext {
 
   async initializeLockup(): Promise<void> {
     const initializeIx = await this.lockup.methods
-      .initialize(this.feeCollector.keys.publicKey)
+      .initialize(this.feeCollector.keys.publicKey, ProgramId.CHAINLINK_PROGRAM, ProgramId.CHAINLINK_SOL_USD_FEED)
       .accounts({
         initializer: this.sender.keys.publicKey,
         nftTokenProgram: token.TOKEN_PROGRAM_ID,
@@ -227,6 +227,8 @@ export class LockupTestContext extends TestContext {
     const withdrawIx = await this.lockup.methods
       .withdraw(withdrawAmount)
       .accounts({
+        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM,
+        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
         depositedTokenMint,
         depositedTokenProgram,
         nftTokenProgram: token.TOKEN_PROGRAM_ID,
@@ -238,6 +240,17 @@ export class LockupTestContext extends TestContext {
       .instruction();
 
     await buildSignAndProcessTx(this.banksClient, withdrawIx, signer);
+  }
+
+  async withdrawalFeeInLamports(): Promise<BN> {
+    return await this.lockup.methods
+      .withdrawalFeeInLamports()
+      .accounts({
+        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM,
+        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
+      })
+      .signers([this.defaultBankrunPayer])
+      .view();
   }
 
   async withdrawToken2022(salt: BN, signer: Keypair): Promise<void> {
@@ -261,6 +274,8 @@ export class LockupTestContext extends TestContext {
     const withdrawMaxIx = await this.lockup.methods
       .withdrawMax()
       .accounts({
+        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM,
+        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
         depositedTokenMint,
         depositedTokenProgram,
         nftTokenProgram: token.TOKEN_PROGRAM_ID,

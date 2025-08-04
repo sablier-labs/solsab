@@ -3,7 +3,7 @@ import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID
 import { ComputeBudgetProgram, Keypair, type PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { beforeEach, describe, it } from "vitest";
-import { BN_1, Decimals, ZERO } from "../../lib/constants";
+import { BN_1, Decimals, ProgramId, ZERO } from "../../lib/constants";
 import { sol } from "../../lib/convertors";
 import { type SablierLockup } from "../../target/types/sablier_lockup";
 
@@ -87,7 +87,7 @@ async function createStream(params: CreateParams) {
   });
 
   await lockupProgram.methods
-    .createWithDurations(
+    .createWithDurationsLl(
       salt,
       depositAmount,
       cliffDuration,
@@ -117,7 +117,7 @@ async function configureTestingEnvironment() {
 
 async function initSablierLockup() {
   await lockupProgram.methods
-    .initialize(senderKeys.publicKey)
+    .initialize(senderKeys.publicKey, ProgramId.CHAINLINK_PROGRAM, ProgramId.CHAINLINK_SOL_USD_FEED)
     .signers([senderKeys])
     .accounts({
       initializer: senderKeys.publicKey,

@@ -205,8 +205,8 @@ pub fn handler(
     start_time: i64,
     cliff_time: i64,
     end_time: i64,
-    start_unlock: u64,
-    cliff_unlock: u64,
+    start_unlock_amount: u64,
+    cliff_unlock_amount: u64,
     is_cancelable: bool,
 ) -> Result<()> {
     let deposit_token_mint = &ctx.accounts.deposit_token_mint;
@@ -214,21 +214,21 @@ pub fn handler(
     let creator_ata = &ctx.accounts.creator_ata;
 
     // Validate parameters
-    check_create(deposit_amount, start_time, cliff_time, end_time, start_unlock, cliff_unlock)?;
+    check_create(deposit_amount, start_time, cliff_time, end_time, start_unlock_amount, cliff_unlock_amount)?;
 
     // Effect: create the stream data.
     ctx.accounts.stream_data.create(
         deposit_token_mint.key(),
         ctx.bumps.stream_data,
         cliff_time,
-        cliff_unlock,
+        cliff_unlock_amount,
         deposit_amount,
         end_time,
         salt,
         is_cancelable,
         ctx.accounts.sender.key(),
         start_time,
-        start_unlock,
+        start_unlock_amount,
     )?;
 
     // Effect: mint the NFT to the recipient.

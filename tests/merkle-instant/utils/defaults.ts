@@ -1,17 +1,16 @@
 import BN from "bn.js";
 import dayjs from "dayjs";
-import { sol, usdc } from "../../../lib/convertors";
+import { usdc } from "../../../lib/convertors";
 
 export namespace Amount {
   export const AGGREGATE = usdc(10_000);
-  export const CLAIM_FEE = sol("0.03");
   export const CLAIM = usdc(100);
   export const CLAWBACK = usdc(1000);
 }
 
 export namespace Time {
-  export const GENESIS_DAY = dayjs().add(1, "day");
-  export const GENESIS = new BN(GENESIS_DAY.unix()); // tomorrow
+  // We use this fixed timestamp to ensure that the mock Chainlink data is not outdated.
+  export const GENESIS = new BN(1754142441); // August 2, 2025 1:47:21 PM
 }
 
 export namespace Campaign {
@@ -19,7 +18,8 @@ export namespace Campaign {
   export const START_TIME = Time.GENESIS;
   export const EXPIRATION_TIME = new BN(dayjs().add(10, "days").unix());
   export const IPFS_CID = "bafkreiecpwdhvkmw4y6iihfndk7jhwjas3m5htm7nczovt6m37mucwgsrq";
-  export const POST_GRACE_PERIOD = new BN(Time.GENESIS_DAY.add(7, "days").add(1, "second").unix());
+  const GRACE_PERIOD_SECONDS = new BN(7 * 24 * 60 * 60 + 1);
+  export const POST_GRACE_PERIOD = Time.GENESIS.add(GRACE_PERIOD_SECONDS);
 }
 
 export namespace Seed {
