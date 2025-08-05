@@ -30,7 +30,7 @@ in mind (which any disclosure must respect to qualify as a vulnerability):
 1. Creating a stream requires a unique "salt" to generate the Stream NFT Mint account. Collisions or duplicate salts are
    considered a misuse by the Stream creator, and not a security flaw of the program itself.
 
-### `MerkleInstant`
+### `sablier_merkle_instant`
 
 1. Creating `MerkleInstant` campaigns before program initialization is acceptable and not considered a vulnerability.
 
