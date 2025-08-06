@@ -66,8 +66,21 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts, is_deplet
     streamed_amount
 }
 
-pub fn get_refundable_amount(timestamps: &Timestamps, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {
-    amounts.deposited - get_streamed_amount(timestamps, amounts, is_depleted, was_canceled)
+pub fn get_refundable_amount(
+    timestamps: &Timestamps,
+    amounts: &Amounts,
+    is_cancelable: bool,
+    is_depleted: bool,
+    was_canceled: bool,
+) -> u64 {
+    // Note that checking for `is_cancelable` also checks if the stream `was_canceled` thanks to the protocol
+    // invariant that canceled streams are not cancelable anymore.
+    if is_cancelable && !is_depleted {
+        return amounts.deposited - get_streamed_amount(timestamps, amounts, is_depleted, was_canceled);
+    }
+
+    // Otherwise, return zero.
+    0
 }
 
 pub fn get_withdrawable_amount(
