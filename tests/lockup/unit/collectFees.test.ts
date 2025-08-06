@@ -32,7 +32,7 @@ describe("collectFees", () => {
     });
 
     describe("when signer is not the authorized fee collector", () => {
-      it("should revert", async () => {
+      it("should fail", async () => {
         await withdrawTwice();
         await expectToThrow(ctx.collectFees(ctx.eve.keys), CONSTRAINT_ADDRESS);
       });

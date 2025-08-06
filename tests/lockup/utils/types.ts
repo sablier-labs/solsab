@@ -16,6 +16,14 @@ export type Salts = {
   nonExisting: BN;
 };
 
+export const Status = {
+  Canceled: "canceled",
+  Depleted: "depleted",
+  Pending: "pending",
+  Settled: "settled",
+  Streaming: "streaming",
+} as const;
+
 export type Stream = {
   data: StreamData;
   dataAddress: PublicKey;
