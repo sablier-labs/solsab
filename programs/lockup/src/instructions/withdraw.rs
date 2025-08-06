@@ -139,7 +139,12 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     check_withdraw(
         ctx.accounts.stream_data.is_depleted,
         amount,
-        get_withdrawable_amount(&ctx.accounts.stream_data.timestamps, &ctx.accounts.stream_data.amounts),
+        get_withdrawable_amount(
+            &ctx.accounts.stream_data.timestamps,
+            &ctx.accounts.stream_data.amounts,
+            ctx.accounts.stream_data.is_depleted,
+            ctx.accounts.stream_data.was_canceled,
+        ),
     )?;
 
     // Effect: update the stream data state.
