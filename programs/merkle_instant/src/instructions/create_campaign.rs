@@ -85,8 +85,8 @@ pub fn handler(
     merkle_root: [u8; 32],
     campaign_start_time: i64,
     expiration_time: i64,
-    ipfs_cid: String,
     name: String,
+    ipfs_cid: String,
     aggregate_amount: u64,
     recipient_count: u32,
 ) -> Result<()> {

@@ -140,8 +140,8 @@ pub mod sablier_merkle_instant {
             merkle_root,
             campaign_start_time,
             expiration_time,
-            ipfs_cid,
             name,
+            ipfs_cid,
             aggregate_amount,
             recipient_count,
         )
