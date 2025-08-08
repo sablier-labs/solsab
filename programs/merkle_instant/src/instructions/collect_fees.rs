@@ -45,9 +45,9 @@ pub fn handler(ctx: Context<CollectFees>) -> Result<()> {
 
     // Log the fee collection.
     emit!(events::FeesCollected {
+        fee_amount: collectible_amount,
         fee_collector: ctx.accounts.fee_collector.key(),
         fee_recipient: ctx.accounts.fee_recipient.key(),
-        fee_amount: collectible_amount
     });
 
     Ok(())
