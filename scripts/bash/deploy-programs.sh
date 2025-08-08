@@ -203,14 +203,30 @@ done
 
 # Program initialization scripts mapping
 declare -A INIT_SCRIPTS
-INIT_SCRIPTS["sablier_lockup"]="scripts/ts/lockup-initialization.ts"
-INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/merkle-instant-initialization.ts"
+INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup.ts"
+INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
 
 # Run initialization if requested
 if [[ "$NO_INIT_FLAG" == true ]]; then
     log_info "Skipping initialization"
 else
     log_info "Running post-deployment initialization for programs: ${PROGRAMS[*]}"
+
+    # Create a temporary vitest config file for the initialization scripts
+    cat > vitest.tmp-config.ts <<'EOF'
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    environment: "node",
+    globals: true,
+    hookTimeout: 10_000, // 10 seconds
+    include: ["scripts/ts/init*.ts"],
+    reporters: ["verbose"],
+    testTimeout: 30_000, // 30 seconds
+  },
+});
+EOF
 
     for program in "${PROGRAMS[@]}"; do
         if [[ -n "${INIT_SCRIPTS[$program]:-}" ]]; then
@@ -219,13 +235,16 @@ else
 
             ANCHOR_PROVIDER_URL=https://api.devnet.solana.com \
             ANCHOR_WALLET=~/.config/solana/id.json \
-            bun run ts-mocha -p ./tsconfig.json -t 1000000 "$init_script"
+            na vitest --run -c "vitest.tmp-config.ts" "$init_script"
 
             log_success "Initialization completed for $program"
         else
             log_warning "No initialization script found for $program"
         fi
     done
+
+    # Clean up the temporary vitest config file
+    rm vitest.tmp-config.ts
 
     log_success "All initializations completed"
 fi

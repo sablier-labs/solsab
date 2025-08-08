@@ -11,7 +11,7 @@ let anchorProvider: anchor.AnchorProvider;
 let lockupProgram: anchor.Program<SablierLockup>;
 let senderKeys: Keypair;
 
-describe("SablierLockup post-deployment initialization", () => {
+describe("Sablier Lockup post-deployment initialization", () => {
   beforeEach(async () => {
     await configureTestingEnvironment();
     await initSablierLockup();
