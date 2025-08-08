@@ -212,6 +212,22 @@ if [[ "$NO_INIT_FLAG" == true ]]; then
 else
     log_info "Running post-deployment initialization for programs: ${PROGRAMS[*]}"
 
+    # Create a temporary vitest config file for the initialization scripts
+    cat > vitest.tmp-config.ts <<'EOF'
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    environment: "node",
+    globals: true,
+    hookTimeout: 10_000, // 10 seconds
+    include: ["scripts/ts/init*.ts"],
+    reporters: ["verbose"],
+    testTimeout: 30_000, // 30 seconds
+  },
+});
+EOF
+
     for program in "${PROGRAMS[@]}"; do
         if [[ -n "${INIT_SCRIPTS[$program]:-}" ]]; then
             init_script="${INIT_SCRIPTS[$program]}"
@@ -226,6 +242,9 @@ else
             log_warning "No initialization script found for $program"
         fi
     done
+
+    # Clean up the temporary vitest config file
+    rm vitest.tmp-config.ts
 
     log_success "All initializations completed"
 fi
