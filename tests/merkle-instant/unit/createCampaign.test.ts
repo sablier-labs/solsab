@@ -14,28 +14,8 @@ describe("createCampaign", () => {
     });
 
     it("should create the campaign", async () => {
-      /*
-        NOTE: This test demonstrates that campaigns can be created even when the program
-        is not initialized yet.
-
-        Any campaign created before program initialization is unusable, as users are not able to claim from it
-        (because the Claim Ix requires the Treasury account, which only exists after initialization).
-
-        While this might seem like a security concern, it's, actually, acceptable, for the following reasons:
-
-        1. In practice, we deploy and initialize the program simultaneously via scripts,
-           making it extremely unlikely for anyone to create a campaign in the brief
-           window between deployment and initialization.
-
-        2. Even if someone manages to create a campaign during this window, it would
-           only be unusable for a few moments/minutes until we complete the initialization.
-           The said campaign would then become fully functional.
-
-        3. Preventing this scenario would require complex program logic that isn't
-           justified given the minimal and recoverable risk.
-
-        Therefore, we accept this theoretical edge case in favor of simpler program implementation.
-      */
+      // Campaigns may be created prior to program initialization, but cannot be used until the initialization occurs.
+      // See SECURITY.md for details on sablier_merkle_instant assumptions.
       await testCreateCampaign(ctx);
     });
   });
