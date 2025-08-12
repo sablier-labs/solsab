@@ -7,6 +7,6 @@ export default defineConfig({
     hookTimeout: 10_000, // 10 seconds
     include: ["tests/**/*.test.ts"],
     reporters: ["verbose"],
-    testTimeout: 10_000, // 10 second
+    testTimeout: 10_000, // 10 seconds
   },
 });
