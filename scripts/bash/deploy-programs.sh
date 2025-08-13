@@ -203,8 +203,8 @@ done
 
 # Program initialization scripts mapping
 declare -A INIT_SCRIPTS
-INIT_SCRIPTS["sablier_lockup"]="scripts/ts/lockup-initialization.ts"
-INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/merkle-instant-initialization.ts"
+INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup.ts"
+INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
 
 # Run initialization if requested
 if [[ "$NO_INIT_FLAG" == true ]]; then
@@ -219,7 +219,7 @@ else
 
             ANCHOR_PROVIDER_URL=https://api.devnet.solana.com \
             ANCHOR_WALLET=~/.config/solana/id.json \
-            bun run ts-mocha -p ./tsconfig.json -t 1000000 "$init_script"
+            na vitest --run --mode scripts "$init_script"
 
             log_success "Initialization completed for $program"
         else
