@@ -14,6 +14,8 @@ describe("createCampaign", () => {
     });
 
     it("should create the campaign", async () => {
+      // Campaigns may be created prior to program initialization, but cannot be used until the initialization occurs.
+      // See SECURITY.md for details on sablier_merkle_instant assumptions.
       await testCreateCampaign(ctx);
     });
   });
