@@ -305,6 +305,14 @@ export class LockupTestContext extends TestContext {
     return Object.keys(result)[0];
   }
 
+  async streamExists(salt = this.salts.default): Promise<boolean> {
+    return await this.lockup.methods
+      .streamExists(this.sender.keys.publicKey, salt)
+      .accounts({})
+      .signers([this.defaultBankrunPayer])
+      .view();
+  }
+
   async streamedAmountOf(salt = this.salts.default): Promise<BN> {
     return await this.lockup.methods
       .streamedAmountOf()
