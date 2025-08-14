@@ -59,8 +59,8 @@ pub fn convert_usd_fee_to_lamports<'info>(
             fee_usd * LAMPORTS_PER_SOL / price
         }
         decimals => {
-            // Otherwise, adjust the calculation to account for the oracle decimals.
-            fee_usd * 10_u64.pow(1 + decimals as u32) / price
+            // Otherwise, adjust the calculation to account for the oracle decimals. `u128` is used to prevent overflow.
+            ((fee_usd as u128) * 10_u128.pow(1 + decimals as u32) / (price as u128)) as u64
         }
     };
 
