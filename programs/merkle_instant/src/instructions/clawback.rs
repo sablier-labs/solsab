@@ -78,7 +78,7 @@ pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     // Check: validate the clawback.
     check_clawback(campaign.expiration_time, campaign.first_claim_time)?;
 
-    // Interaction: transfer tokens from the Campaign's ATA to the campaign creator's ATA.
+    // Interaction: transfer tokens from the Campaign's ATA to the clawback recipient's ATA.
     transfer_tokens(
         ctx.accounts.campaign_ata.to_account_info(),
         ctx.accounts.clawback_recipient_ata.to_account_info(),
