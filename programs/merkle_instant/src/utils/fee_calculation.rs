@@ -25,10 +25,12 @@ pub fn convert_usd_fee_to_lamports<'info>(
         Err(_) => return 0, // If the oracle call fails, skip fee charging.
     };
 
-    // If the price is not greater than 0, skip the calculations.
-    if round.answer <= 0 {
+    let price = if round.answer > 0 {
+        round.answer as u64
+    } else {
+        // If the price is not greater than 0, skip the calculations.
         return 0;
-    }
+    };
 
     let current_timestamp: u32 = Clock::get().unwrap().unix_timestamp as u32;
 
@@ -50,8 +52,6 @@ pub fn convert_usd_fee_to_lamports<'info>(
         Ok(decimals) => decimals,
         Err(_) => return 0, // If the oracle call fails, skip fee charging.
     };
-
-    let price = round.answer as u64;
 
     let fee_in_lamports: u64 = match oracle_decimals {
         8 => {
