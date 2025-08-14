@@ -10,7 +10,7 @@ import { type SablierLockup as SablierLockupProgram } from "../../target/types/s
 import type { NftCollectionData, StreamData } from "../../target/types/sablier_lockup_structs";
 import { buildSignAndProcessTx, deriveATAAddress, getATABalance } from "../common/anchor-bankrun";
 import { TestContext } from "../common/context";
-import type { User } from "../common/types";
+import type { Treasury, User } from "../common/types";
 import { AMOUNTS, Amount, Seed, TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "./utils/defaults";
 import type { Salts, Stream } from "./utils/types";
 
@@ -313,6 +313,10 @@ export class LockupTestContext extends TestContext {
       })
       .signers([this.defaultBankrunPayer])
       .view();
+  }
+
+  async treasuryView(): Promise<Treasury> {
+    return await this.lockup.methods.treasuryView().accounts({}).signers([this.defaultBankrunPayer]).view();
   }
 
   async withdrawableAmountOf(salt = this.salts.default): Promise<BN> {

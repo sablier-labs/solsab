@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ZERO } from "../../../lib/constants";
 import { toBn } from "../../../lib/helpers";
-import { assertEqualBn } from "../../common/assertions";
+import { assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { getStreamedAmount } from "../utils/calculations";
 import { AMOUNTS, Amount, TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defaults";
@@ -30,7 +30,7 @@ describe("streamedAmountOf", () => {
           await ctx.cancel();
           const actualStreamedAmount = await ctx.streamedAmountOf();
           const expectedStreamedAmount = Amount.STREAMED_26_PERCENT;
-          assertEqualBn(actualStreamedAmount, expectedStreamedAmount);
+          assertEqBn(actualStreamedAmount, expectedStreamedAmount);
         });
       });
 
@@ -42,23 +42,24 @@ describe("streamedAmountOf", () => {
 
           let actualStreamedAmount = await ctx.streamedAmountOf();
           const expectedStreamedAmount = Amount.STREAMED_26_PERCENT;
-          assertEqualBn(actualStreamedAmount, expectedStreamedAmount);
+          assertEqBn(actualStreamedAmount, expectedStreamedAmount);
 
           await ctx.timeTravelTo(Time.MID_26_PERCENT.add(toBn(10)));
 
           // It should remain the same over time
           actualStreamedAmount = await ctx.streamedAmountOf();
-          assertEqualBn(actualStreamedAmount, expectedStreamedAmount);
+          assertEqBn(actualStreamedAmount, expectedStreamedAmount);
         });
       });
     });
+
     describe("given a not canceled stream", () => {
       describe("given PENDING status", () => {
         it("should return zero", async () => {
           await ctx.timeTravelTo(Time.START.sub(toBn(1)));
           const actualStreamedAmount = await ctx.streamedAmountOf();
           const expectedStreamedAmount = ZERO;
-          assertEqualBn(actualStreamedAmount, expectedStreamedAmount);
+          assertEqBn(actualStreamedAmount, expectedStreamedAmount);
         });
       });
 
@@ -68,7 +69,7 @@ describe("streamedAmountOf", () => {
 
           const actualStreamedAmount = await ctx.streamedAmountOf();
           const expectedStreamedAmount = Amount.DEPOSIT;
-          assertEqualBn(actualStreamedAmount, expectedStreamedAmount);
+          assertEqBn(actualStreamedAmount, expectedStreamedAmount);
         });
       });
 
@@ -79,7 +80,7 @@ describe("streamedAmountOf", () => {
 
           const actualStreamedAmount = await ctx.streamedAmountOf();
           const expectedStreamedAmount = Amount.DEPOSIT;
-          assertEqualBn(actualStreamedAmount, expectedStreamedAmount);
+          assertEqBn(actualStreamedAmount, expectedStreamedAmount);
         });
       });
 
@@ -94,7 +95,7 @@ describe("streamedAmountOf", () => {
 
             const actualStreamedAmount = await ctx.streamedAmountOf(salt);
             const expectedStreamedAmount = Amount.STREAMED_26_PERCENT;
-            assertEqualBn(actualStreamedAmount, expectedStreamedAmount);
+            assertEqBn(actualStreamedAmount, expectedStreamedAmount);
           });
         });
 
@@ -109,15 +110,16 @@ describe("streamedAmountOf", () => {
 
               const actualStreamedAmount = await ctx.streamedAmountOf(salt);
               const expectedStreamedAmount = startUnlockAmount;
-              assertEqualBn(actualStreamedAmount, expectedStreamedAmount);
+              assertEqBn(actualStreamedAmount, expectedStreamedAmount);
             });
           });
+
           describe("given cliff time in the present", () => {
             it("should return the correct streamed amount", async () => {
               await ctx.timeTravelTo(Time.CLIFF);
               const actualStreamedAmount = await ctx.streamedAmountOf();
               const expectedStreamedAmount = Amount.CLIFF;
-              assertEqualBn(actualStreamedAmount, expectedStreamedAmount);
+              assertEqBn(actualStreamedAmount, expectedStreamedAmount);
             });
           });
 
@@ -134,9 +136,10 @@ describe("streamedAmountOf", () => {
 
                 const actualStreamedAmount = await ctx.streamedAmountOf(salt);
                 const expectedStreamedAmount = getStreamedAmount(amounts, Time.MID_26_PERCENT, TIMESTAMPS());
-                assertEqualBn(actualStreamedAmount, expectedStreamedAmount);
+                assertEqBn(actualStreamedAmount, expectedStreamedAmount);
               });
             });
+
             describe("given start unlock amount zero", () => {
               describe("given cliff unlock amount zero", () => {
                 it("should return the correct streamed amount", async () => {
@@ -150,15 +153,16 @@ describe("streamedAmountOf", () => {
 
                   const actualStreamedAmount = await ctx.streamedAmountOf(salt);
                   const expectedStreamedAmount = getStreamedAmount(amounts, Time.MID_26_PERCENT, TIMESTAMPS());
-                  assertEqualBn(actualStreamedAmount, expectedStreamedAmount);
+                  assertEqBn(actualStreamedAmount, expectedStreamedAmount);
                 });
               });
+
               describe("given cliff unlock amount not zero", () => {
                 it("should return the correct streamed amount", async () => {
                   await ctx.timeTravelTo(Time.MID_26_PERCENT);
                   const actualStreamedAmount = await ctx.streamedAmountOf();
                   const expectedStreamedAmount = Amount.STREAMED_26_PERCENT;
-                  assertEqualBn(actualStreamedAmount, expectedStreamedAmount);
+                  assertEqBn(actualStreamedAmount, expectedStreamedAmount);
                 });
               });
             });

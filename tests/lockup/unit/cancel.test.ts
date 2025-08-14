@@ -7,7 +7,7 @@ import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
 import { createATAAndFund, deriveATAAddress, getATABalance, getATABalanceMint } from "../../common/anchor-bankrun";
-import { assertAccountNotExists, assertEqualBn } from "../../common/assertions";
+import { assertAccountNotExists, assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
@@ -223,7 +223,7 @@ async function postCancelAssertions(salt: BN, expectedStream: Stream, beforeSend
   );
 
   const actualBalanceRefunded = afterSenderBalance.sub(beforeSenderBalance);
-  assertEqualBn(actualBalanceRefunded, expectedStream.data.amounts.refunded);
+  assertEqBn(actualBalanceRefunded, expectedStream.data.amounts.refunded);
 
   // Assert the StreamData ATA balance
   const actualStreamDataBalance = await getATABalanceMint(
@@ -232,5 +232,5 @@ async function postCancelAssertions(salt: BN, expectedStream: Stream, beforeSend
     expectedStream.data.depositedTokenMint,
   );
   const expectedStreamDataBalance = expectedStream.data.amounts.deposited.sub(expectedStream.data.amounts.refunded);
-  assertEqualBn(actualStreamDataBalance, expectedStreamDataBalance);
+  assertEqBn(actualStreamDataBalance, expectedStreamDataBalance);
 }

@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, BN_1000, ZERO } from "../../../lib/constants";
 import { usdc } from "../../../lib/convertors";
 import { getATABalance, getMintTotalSupplyOf } from "../../common/anchor-bankrun";
-import { assertAccountExists, assertEqualBn } from "../../common/assertions";
+import { assertAccountExists, assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { AMOUNTS, Amount, TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defaults";
@@ -207,16 +207,16 @@ async function assertStreamCreation(
 
   // Assert that the Stream NFT Mint has the correct total supply
   const streamNftMintTotalSupply = await getMintTotalSupplyOf(ctx.banksClient, expectedStream.nftMintAddress);
-  assertEqualBn(streamNftMintTotalSupply, BN_1, "Stream NFT Mint total supply not 1");
+  assertEqBn(streamNftMintTotalSupply, BN_1, "Stream NFT Mint total supply not 1");
 
   // Assert that the Recipient's Stream NFT ATA has the correct balance
   const recipientStreamNftBalance = await getATABalance(ctx.banksClient, expectedStream.recipientStreamNftAta);
-  assertEqualBn(recipientStreamNftBalance, BN_1, "Stream NFT not minted");
+  assertEqBn(recipientStreamNftBalance, BN_1, "Stream NFT not minted");
 
   // TODO: test that the Stream NFT has been properly added to the LL NFT collection
 
   // Assert that the Sender's balance has changed correctly
   const expectedTokenBalance = beforeSenderTokenBalance.sub(Amount.DEPOSIT);
   const afterSenderTokenBalance = await ctx.getSenderTokenBalance(expectedStream.data.depositedTokenMint);
-  assertEqualBn(expectedTokenBalance, afterSenderTokenBalance, "sender balance not updated correctly");
+  assertEqBn(expectedTokenBalance, afterSenderTokenBalance, "sender balance not updated correctly");
 }

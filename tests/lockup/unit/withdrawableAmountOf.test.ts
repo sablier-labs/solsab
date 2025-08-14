@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ZERO } from "../../../lib/constants";
 import { toBn } from "../../../lib/helpers";
-import { assertEqualBn } from "../../common/assertions";
+import { assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { Amount, Time } from "../utils/defaults";
 
@@ -29,7 +29,7 @@ describe("withdrawableAmountOf", () => {
           await ctx.cancel();
           const actualWithdrawableAmount = await ctx.withdrawableAmountOf();
           const expectedWithdrawableAmount = Amount.STREAMED_26_PERCENT;
-          assertEqualBn(actualWithdrawableAmount, expectedWithdrawableAmount);
+          assertEqBn(actualWithdrawableAmount, expectedWithdrawableAmount);
         });
       });
 
@@ -40,7 +40,7 @@ describe("withdrawableAmountOf", () => {
           await ctx.withdrawMax();
           const actualWithdrawableAmount = await ctx.withdrawableAmountOf();
           const expectedWithdrawableAmount = ZERO;
-          assertEqualBn(actualWithdrawableAmount, expectedWithdrawableAmount);
+          assertEqBn(actualWithdrawableAmount, expectedWithdrawableAmount);
         });
       });
     });
@@ -51,7 +51,7 @@ describe("withdrawableAmountOf", () => {
           await ctx.timeTravelTo(Time.START.sub(toBn(1)));
           const actualWithdrawableAmount = await ctx.withdrawableAmountOf();
           const expectedWithdrawableAmount = ZERO;
-          assertEqualBn(actualWithdrawableAmount, expectedWithdrawableAmount);
+          assertEqBn(actualWithdrawableAmount, expectedWithdrawableAmount);
         });
       });
 
@@ -60,7 +60,7 @@ describe("withdrawableAmountOf", () => {
           await ctx.timeTravelTo(Time.END);
           const actualWithdrawableAmount = await ctx.withdrawableAmountOf();
           const expectedWithdrawableAmount = Amount.DEPOSIT;
-          assertEqualBn(actualWithdrawableAmount, expectedWithdrawableAmount);
+          assertEqBn(actualWithdrawableAmount, expectedWithdrawableAmount);
         });
       });
 
@@ -70,7 +70,7 @@ describe("withdrawableAmountOf", () => {
           await ctx.withdrawMax();
           const actualWithdrawableAmount = await ctx.withdrawableAmountOf();
           const expectedWithdrawableAmount = ZERO;
-          assertEqualBn(actualWithdrawableAmount, expectedWithdrawableAmount);
+          assertEqBn(actualWithdrawableAmount, expectedWithdrawableAmount);
         });
       });
 
@@ -80,7 +80,7 @@ describe("withdrawableAmountOf", () => {
             await ctx.timeTravelTo(Time.CLIFF.sub(toBn(1)));
             const actualWithdrawableAmount = await ctx.withdrawableAmountOf();
             const expectedWithdrawableAmount = ZERO;
-            assertEqualBn(actualWithdrawableAmount, expectedWithdrawableAmount);
+            assertEqBn(actualWithdrawableAmount, expectedWithdrawableAmount);
           });
         });
 
@@ -90,7 +90,7 @@ describe("withdrawableAmountOf", () => {
               await ctx.timeTravelTo(Time.MID_26_PERCENT);
               const actualWithdrawableAmount = await ctx.withdrawableAmountOf();
               const expectedWithdrawableAmount = Amount.STREAMED_26_PERCENT;
-              assertEqualBn(actualWithdrawableAmount, expectedWithdrawableAmount);
+              assertEqBn(actualWithdrawableAmount, expectedWithdrawableAmount);
             });
           });
 
@@ -100,7 +100,7 @@ describe("withdrawableAmountOf", () => {
               await ctx.withdrawMax();
               const actualWithdrawableAmount = await ctx.withdrawableAmountOf();
               const expectedWithdrawableAmount = ZERO;
-              assertEqualBn(actualWithdrawableAmount, expectedWithdrawableAmount);
+              assertEqBn(actualWithdrawableAmount, expectedWithdrawableAmount);
             });
           });
         });

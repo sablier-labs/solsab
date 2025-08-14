@@ -9,7 +9,7 @@ import { type SablierMerkleInstant as SablierMerkleInstantProgram } from "../../
 import type { Campaign as CampaignData } from "../../target/types/sablier_merkle_instant_structs";
 import { buildSignAndProcessTx, deriveATAAddress, transfer } from "../common/anchor-bankrun";
 import { TestContext } from "../common/context";
-import type { User } from "../common/types";
+import type { Treasury, User } from "../common/types";
 import { Amount, Campaign, Seed, Time } from "./utils/defaults";
 import { getProof, getRoot, type LeafData } from "./utils/merkle";
 
@@ -91,7 +91,7 @@ export class MerkleInstantTestContext extends TestContext {
   }
 
   /*//////////////////////////////////////////////////////////////////////////
-                                    TX-IX
+                            STATE-CHANGING INSTRUCTIONS
   //////////////////////////////////////////////////////////////////////////*/
 
   async claim({
@@ -237,6 +237,14 @@ export class MerkleInstantTestContext extends TestContext {
       .instruction();
 
     await buildSignAndProcessTx(this.banksClient, initializeIx, this.campaignCreator.keys);
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////
+                               READ-ONLY INSTRUCTIONS
+  //////////////////////////////////////////////////////////////////////////*/
+
+  async treasuryView(): Promise<Treasury> {
+    return await this.merkleInstant.methods.treasuryView().accounts({}).signers([this.defaultBankrunPayer]).view();
   }
 
   /*//////////////////////////////////////////////////////////////////////////

@@ -177,7 +177,7 @@ pub mod sablier_merkle_instant {
     ///
     /// - `campaign` The account that stores the campaign details.
     pub fn campaign_view(ctx: Context<CampaignView>) -> Result<state::Campaign> {
-        instructions::campaign_view::handler(ctx)
+        Ok(ctx.accounts.campaign.clone().into_inner())
     }
 
     /// Calculates the claim fee in lamports, which is equivalent to $2 USD.
@@ -233,5 +233,10 @@ pub mod sablier_merkle_instant {
     /// - `campaign` The account that stores the campaign details.
     pub fn has_campaign_started(ctx: Context<CampaignView>) -> Result<bool> {
         instructions::has_campaign_started::handler(ctx)
+    }
+
+    /// Returns the treasury details.
+    pub fn treasury_view(ctx: Context<TreasuryView>) -> Result<state::Treasury> {
+        Ok(ctx.accounts.treasury.clone().into_inner())
     }
 }

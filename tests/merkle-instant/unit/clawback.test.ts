@@ -7,7 +7,7 @@ import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { ProgramId, ZERO } from "../../../lib/constants";
 import { createATAAndFund, deriveATAAddress, getATABalanceMint } from "../../common/anchor-bankrun";
-import { assertAccountExists, assertAccountNotExists, assertEqualBn } from "../../common/assertions";
+import { assertAccountExists, assertAccountNotExists, assertEqBn } from "../../common/assertions";
 import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount, Campaign } from "../utils/defaults";
@@ -185,7 +185,7 @@ async function testClawback({
   const campaignAtaBalanceAfter = await getATABalanceMint(ctx.banksClient, campaign, airdropTokenMint);
 
   // Assert that the campaign token balance has decreased as expected
-  assertEqualBn(campaignAtaBalanceBefore, campaignAtaBalanceAfter.add(Amount.CLAWBACK));
+  assertEqBn(campaignAtaBalanceBefore, campaignAtaBalanceAfter.add(Amount.CLAWBACK));
 
   const clawbackRecipientAtaBalanceAfter = await getATABalanceMint(
     ctx.banksClient,
@@ -194,5 +194,5 @@ async function testClawback({
   );
 
   // Assert that the clawback recipient's token balance has increased as expected
-  assertEqualBn(clawbackRecipientAtaBalanceBefore, clawbackRecipientAtaBalanceAfter.sub(Amount.CLAWBACK));
+  assertEqBn(clawbackRecipientAtaBalanceBefore, clawbackRecipientAtaBalanceAfter.sub(Amount.CLAWBACK));
 }

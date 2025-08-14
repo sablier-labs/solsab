@@ -57,7 +57,7 @@ pub struct Withdraw<'info> {
     // -------------------------------------------------------------------------- //
     //                              SABLIER ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
-    /// Write account: the treasury account that receives the withdrawal fee
+    /// Write account: the treasury account that receives the withdrawal fee.
     #[account(
       mut,
       seeds = [TREASURY],

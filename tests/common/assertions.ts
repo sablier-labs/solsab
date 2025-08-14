@@ -1,8 +1,8 @@
 import { type PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
 import { assert, expect } from "vitest";
-import { LAMPORTS_PER_SOL } from "../../lib/constants";
 import { type TestContext } from "./context";
+import type { Treasury } from "./types";
 
 export async function assertAccountExists(ctx: TestContext, account: PublicKey, accountName: string) {
   assert.isTrue(await ctx.accountExists(account), `${accountName} account does not exist when it should`);
@@ -12,21 +12,21 @@ export async function assertAccountNotExists(ctx: TestContext, account: PublicKe
   assert.isFalse(await ctx.accountExists(account), `${accountName} account exists when it should not`);
 }
 
-export function assertEqualSOLBalance(left: BN, right: BN, message?: string) {
-  const actualSol = left.div(LAMPORTS_PER_SOL).toString();
-  const expectedSol = right.div(LAMPORTS_PER_SOL).toString();
-  const defaultMessage = `Balance mismatch: ${actualSol} SOL !== ${expectedSol} SOL`;
-  assertEqualBn(left, right, message ?? defaultMessage);
-}
-
-export function assertEqualBn(left: BN, right: BN, message?: string) {
+export function assertEqBn(left: BN, right: BN, message?: string) {
   const defaultMessage = `BN values mismatch: ${left.toString()} !== ${right.toString()}`;
   assert.isTrue(left.eq(right), message ?? defaultMessage);
 }
 
-export function assertEqualPublicKey(left: PublicKey, right: PublicKey, message?: string) {
+export function assertEqPublicKey(left: PublicKey, right: PublicKey, message?: string) {
   const defaultMessage = `PublicKey mismatch: ${left.toBase58()} !== ${right.toBase58()}`;
   assert.isTrue(left.equals(right), message ?? defaultMessage);
+}
+
+export function assertEqTreasury(left: Treasury, right: Treasury) {
+  assert.isTrue(left.bump === right.bump, "Bump mismatch");
+  assertEqPublicKey(left.chainlinkProgram, right.chainlinkProgram, "Chainlink program mismatch");
+  assertEqPublicKey(left.chainlinkSolUsdFeed, right.chainlinkSolUsdFeed, "Chainlink sol usd feed mismatch");
+  assertEqPublicKey(left.feeCollector, right.feeCollector, "Fee collector mismatch");
 }
 
 export function assertLteBn(left: BN, right: BN, message?: string) {

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { BN_1, ProgramId } from "../../../lib/constants";
 import { getPDAAddress, sleepFor } from "../../../lib/helpers";
 import { deriveATAAddress, getATABalance, getMintTotalSupplyOf } from "../../common/anchor-bankrun";
-import { assertAccountExists, assertEqualBn } from "../../common/assertions";
+import { assertAccountExists, assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { Seed } from "../utils/defaults";
 
@@ -36,14 +36,14 @@ describe("initialize", () => {
 
       // Assert that the Total Supply of the NFT Collection Mint is 1
       const totalSupply = await getMintTotalSupplyOf(ctx.banksClient, nftCollectionMint);
-      assertEqualBn(totalSupply, BN_1);
+      assertEqBn(totalSupply, BN_1);
 
       const nftCollectionATA = deriveATAAddress(nftCollectionMint, ctx.treasuryAddress, ProgramId.TOKEN);
       await assertAccountExists(ctx, nftCollectionATA, "NFT Collection ATA");
 
       // Assert that the NFT Collection ATA has a balance of 1
       const nftCollectionATABalance = await getATABalance(ctx.banksClient, nftCollectionATA);
-      assertEqualBn(nftCollectionATABalance, BN_1);
+      assertEqBn(nftCollectionATABalance, BN_1);
 
       const nftCollectionMintAsBuffer = nftCollectionMint.toBuffer();
 

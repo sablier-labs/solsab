@@ -1,6 +1,6 @@
 import { assert, beforeEach, describe, expect, it } from "vitest";
 import { toBn } from "../../../lib/helpers";
-import { assertEqualBn, assertLteBn } from "../../common/assertions";
+import { assertEqBn, assertLteBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { Amount, Time } from "../utils/defaults";
 import { Status } from "../utils/types";
@@ -51,7 +51,7 @@ describe("statusOf", () => {
           describe("given streamed amount equals deposited amount", () => {
             it("should return SETTLED", async () => {
               await ctx.timeTravelTo(Time.END);
-              assertEqualBn(await ctx.streamedAmountOf(), Amount.DEPOSIT);
+              assertEqBn(await ctx.streamedAmountOf(), Amount.DEPOSIT);
               assert.isTrue((await ctx.statusOf()) === Status.Settled);
             });
           });

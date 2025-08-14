@@ -305,6 +305,11 @@ pub mod sablier_lockup {
         instructions::streamed_amount_of::handler(ctx)
     }
 
+    /// Returns the treasury details.
+    pub fn treasury_view(ctx: Context<TreasuryView>) -> Result<state::Treasury> {
+        Ok(ctx.accounts.treasury.clone().into_inner())
+    }
+
     /// Calculates the amount that the recipient can withdraw from the stream, denoted in units of the token's
     /// decimals.
     ///
