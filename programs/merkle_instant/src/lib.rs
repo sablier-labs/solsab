@@ -128,8 +128,8 @@ pub mod sablier_merkle_instant {
     pub fn create_campaign(
         ctx: Context<CreateCampaign>,
         merkle_root: [u8; 32],
-        campaign_start_time: i64,
-        expiration_time: i64,
+        campaign_start_time: u64,
+        expiration_time: u64,
         name: String,
         ipfs_cid: String,
         aggregate_amount: u64,

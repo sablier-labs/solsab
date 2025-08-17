@@ -43,9 +43,9 @@ pub fn check_collect_fees(collectible_amount: u64) -> Result<()> {
 /// Validate the parameters for creating a Stream.
 pub fn check_create(
     deposit_amount: u64,
-    start_time: i64,
-    cliff_time: i64,
-    end_time: i64,
+    start_time: u64,
+    cliff_time: u64,
+    end_time: u64,
     start_unlock_amount: u64,
     cliff_unlock_amount: u64,
 ) -> Result<()> {
@@ -54,9 +54,9 @@ pub fn check_create(
         return Err(ErrorCode::DepositAmountZero.into());
     }
 
-    // Check: the start time is a positive number.
-    if start_time <= 0 {
-        return Err(ErrorCode::StartTimeNotPositive.into());
+    // Check: the start time is not zero.
+    if start_time == 0 {
+        return Err(ErrorCode::StartTimeZero.into());
     }
 
     // Check: the start time is strictly less than the end time.

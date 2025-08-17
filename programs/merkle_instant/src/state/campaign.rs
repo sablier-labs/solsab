@@ -1,21 +1,17 @@
 use anchor_lang::prelude::*;
 
-use crate::utils::constants::*;
+use crate::utils::{constants::*, time::get_current_time};
 
 /// Groups all the data for a Merkle Instant campaign.
-///
-/// All timestamp fields use `i64` instead of an unsigned integer to match Solana’s `Clock` struct,
-/// which returns timestamps as `i64`. This avoids extra conversions and keeps things consistent
-/// when working with Solana’s built-in time functions.
 #[account]
 #[derive(InitSpace)]
 pub struct Campaign {
     pub airdrop_token_mint: Pubkey,
     pub bump: u8,
-    pub campaign_start_time: i64,
+    pub campaign_start_time: u64,
     pub creator: Pubkey,
-    pub expiration_time: i64,
-    pub first_claim_time: i64,
+    pub expiration_time: u64,
+    pub first_claim_time: u64,
     #[max_len(CAMPAIGN_IPFS_CID_SIZE as usize)]
     pub ipfs_cid: String,
     pub merkle_root: [u8; 32],
@@ -28,7 +24,7 @@ impl Campaign {
     pub fn claim(&mut self) -> Result<()> {
         // Update the first claim time to the current time.
         if self.first_claim_time == 0 {
-            self.first_claim_time = Clock::get()?.unix_timestamp;
+            self.first_claim_time = get_current_time()?;
         }
 
         Ok(())
@@ -40,9 +36,9 @@ impl Campaign {
         &mut self,
         airdrop_token_mint: Pubkey,
         bump: u8,
-        campaign_start_time: i64,
+        campaign_start_time: u64,
         creator: Pubkey,
-        expiration_time: i64,
+        expiration_time: u64,
         ipfs_cid: String,
         merkle_root: [u8; 32],
         name: String,

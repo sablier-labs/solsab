@@ -1,6 +1,7 @@
-use anchor_lang::solana_program::sysvar::{clock::Clock, Sysvar};
-
-use crate::state::lockup::{Amounts, Timestamps};
+use crate::{
+    state::lockup::{Amounts, Timestamps},
+    utils::time::get_current_time,
+};
 
 pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {
     if is_depleted {
@@ -9,7 +10,7 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts, is_deplet
         return amounts.deposited - amounts.refunded;
     }
 
-    let now = Clock::get().unwrap().unix_timestamp;
+    let now = get_current_time().unwrap();
 
     // If the start time is in the future, return zero.
     if timestamps.start > now {
@@ -37,7 +38,7 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts, is_deplet
     }
 
     // Determine the streaming start time.
-    let streaming_start_time: i64 = if timestamps.cliff == 0 {
+    let streaming_start_time = if timestamps.cliff == 0 {
         timestamps.start
     } else {
         timestamps.cliff
