@@ -42,7 +42,12 @@ pub fn handler(ctx: Context<Renounce>) -> Result<()> {
     check_renounce(
         ctx.accounts.stream_data.is_cancelable,
         ctx.accounts.stream_data.amounts.deposited,
-        get_streamed_amount(&ctx.accounts.stream_data.timestamps, &ctx.accounts.stream_data.amounts),
+        get_streamed_amount(
+            &ctx.accounts.stream_data.timestamps,
+            &ctx.accounts.stream_data.amounts,
+            ctx.accounts.stream_data.is_depleted,
+            ctx.accounts.stream_data.was_canceled,
+        ),
     )?;
 
     // Effect: update the stream data state.

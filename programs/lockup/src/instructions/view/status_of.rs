@@ -23,7 +23,12 @@ pub fn handler(ctx: Context<StreamView>) -> Result<StreamStatus> {
     }
 
     // Calculate the streamed amount.
-    let streamed_amount = get_streamed_amount(&stream_data.timestamps, &stream_data.amounts);
+    let streamed_amount = get_streamed_amount(
+        &stream_data.timestamps,
+        &stream_data.amounts,
+        stream_data.is_depleted,
+        stream_data.was_canceled,
+    );
 
     if streamed_amount < stream_data.amounts.deposited {
         Ok(StreamStatus::Streaming)

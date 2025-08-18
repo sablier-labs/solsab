@@ -2,7 +2,13 @@ use anchor_lang::solana_program::sysvar::{clock::Clock, Sysvar};
 
 use crate::state::lockup::{Amounts, Timestamps};
 
-pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
+pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {
+    if is_depleted {
+        return amounts.withdrawn;
+    } else if was_canceled {
+        return amounts.deposited - amounts.refunded;
+    }
+
     let now = Clock::get().unwrap().unix_timestamp;
 
     // If the start time is in the future, return zero.
@@ -31,7 +37,7 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
     }
 
     // Determine the streaming start time.
-    let start_time: i64 = if amounts.cliff_unlock == 0 {
+    let streaming_start_time: i64 = if timestamps.cliff == 0 {
         timestamps.start
     } else {
         timestamps.cliff
@@ -40,8 +46,8 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
     const SCALING_FACTOR: u128 = 1e18 as u128;
 
     // Calculate time variables. Scale to 18 decimals for increased precision and cast to u128 to prevent overflow.
-    let elapsed_time = (now - start_time) as u128 * SCALING_FACTOR;
-    let streamable_range = (timestamps.end - start_time) as u128;
+    let elapsed_time = (now - streaming_start_time) as u128 * SCALING_FACTOR;
+    let streamable_range = (timestamps.end - streaming_start_time) as u128;
     let elapsed_time_percentage = elapsed_time / streamable_range;
 
     // Calculate the streamable amount.
@@ -54,16 +60,34 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
     // without asserting to avoid locking tokens in case of a bug. If this situation occurs, the withdrawn
     // amount is considered to be the streamed amount, and the stream is effectively frozen.
     if streamed_amount > amounts.deposited {
-        return amounts.deposited;
+        return amounts.withdrawn;
     }
 
     streamed_amount
 }
 
-pub fn get_refundable_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
-    amounts.deposited - get_streamed_amount(timestamps, amounts)
+pub fn get_refundable_amount(
+    timestamps: &Timestamps,
+    amounts: &Amounts,
+    is_cancelable: bool,
+    is_depleted: bool,
+    was_canceled: bool,
+) -> u64 {
+    // Note that checking for `is_cancelable` also checks if the stream `was_canceled` thanks to the protocol
+    // invariant that canceled streams are not cancelable anymore.
+    if is_cancelable && !is_depleted {
+        return amounts.deposited - get_streamed_amount(timestamps, amounts, is_depleted, was_canceled);
+    }
+
+    // Otherwise, return zero.
+    0
 }
 
-pub fn get_withdrawable_amount(timestamps: &Timestamps, amounts: &Amounts) -> u64 {
-    get_streamed_amount(timestamps, amounts) - amounts.withdrawn
+pub fn get_withdrawable_amount(
+    timestamps: &Timestamps,
+    amounts: &Amounts,
+    is_depleted: bool,
+    was_canceled: bool,
+) -> u64 {
+    get_streamed_amount(timestamps, amounts, is_depleted, was_canceled) - amounts.withdrawn
 }
