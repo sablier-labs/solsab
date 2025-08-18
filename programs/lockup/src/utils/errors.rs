@@ -38,7 +38,7 @@ pub enum ErrorCode {
     #[msg("Start time must be less than end time!")]
     StartTimeNotLessThanEndTime,
     #[msg("Start time can't be zero!")]
-    StartTimeNotPositive,
+    StartTimeZero,
     #[msg("Unlock amounts sum is greater than deposit amount!")]
     UnlockAmountsSumTooHigh,
 

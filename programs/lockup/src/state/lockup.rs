@@ -24,15 +24,11 @@ pub struct StreamData {
 }
 
 /// Groups the timestamps for a Lockup stream.
-///
-/// All fields use `i64`, instead of a unsigned integer, to match Solana’s `Clock` struct, which returns
-/// timestamps as `i64`. This avoids extra conversions and keeps things consistent
-/// when working with Solana’s built-in time functions.
 #[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub struct Timestamps {
-    pub cliff: i64,
-    pub end: i64,
-    pub start: i64,
+    pub cliff: u64,
+    pub end: u64,
+    pub start: u64,
 }
 
 impl StreamData {
@@ -54,14 +50,14 @@ impl StreamData {
         &mut self,
         deposited_token_mint: Pubkey,
         bump: u8,
-        cliff_time: i64,
+        cliff_time: u64,
         cliff_unlock_amount: u64,
         deposit_amount: u64,
-        end_time: i64,
+        end_time: u64,
         salt: u128,
         is_cancelable: bool,
         sender: Pubkey,
-        start_time: i64,
+        start_time: u64,
         start_unlock_amount: u64,
     ) -> Result<()> {
         self.bump = bump;

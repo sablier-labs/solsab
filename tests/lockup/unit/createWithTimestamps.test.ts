@@ -1,5 +1,5 @@
 import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
-import BN from "bn.js";
+import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, BN_1000, ZERO } from "../../../lib/constants";
 import { usdc } from "../../../lib/convertors";
@@ -42,153 +42,140 @@ describe("createWithTimestampsLl", () => {
             ctx.createWithTimestampsLl({
               timestamps: TIMESTAMPS({ start: ZERO }),
             }),
-            "StartTimeNotPositive",
+            "StartTimeZero",
           );
         });
       });
 
       describe("when start time is not zero", () => {
-        describe("when start time is not positive", () => {
+        describe("when sender lacks an ATA for deposited token", () => {
           it("should fail", async () => {
             await expectToThrow(
               ctx.createWithTimestampsLl({
-                timestamps: TIMESTAMPS({ start: new BN(-1) }),
+                depositTokenMint: ctx.randomToken,
               }),
-              "StartTimeNotPositive",
+              ACCOUNT_NOT_INITIALIZED,
             );
           });
         });
 
-        describe("when start time is positive", () => {
-          describe("when sender lacks an ATA for deposited token", () => {
+        describe("when sender has an ATA for deposited token", () => {
+          describe("when sender has an insufficient token balance", () => {
             it("should fail", async () => {
               await expectToThrow(
                 ctx.createWithTimestampsLl({
-                  depositTokenMint: ctx.randomToken,
+                  depositAmount: usdc(1_000_000).addn(1),
                 }),
-                ACCOUNT_NOT_INITIALIZED,
+                0x1,
               );
             });
           });
 
-          describe("when sender has an ATA for deposited token", () => {
-            describe("when sender has an insufficient token balance", () => {
-              it("should fail", async () => {
-                await expectToThrow(
-                  ctx.createWithTimestampsLl({
-                    depositAmount: usdc(1_000_000).addn(1),
-                  }),
-                  0x1,
-                );
+          describe("when sender has a sufficient token balance", () => {
+            describe("when cliff time zero", () => {
+              describe("when cliff unlock amount not zero", () => {
+                it("should fail", async () => {
+                  await expectToThrow(
+                    ctx.createWithTimestampsLl({
+                      timestamps: TIMESTAMPS({ cliff: ZERO }),
+                    }),
+                    "CliffTimeZeroUnlockAmountNotZero",
+                  );
+                });
+              });
+
+              describe("when start time not less than end time", () => {
+                it("should fail", async () => {
+                  await expectToThrow(
+                    ctx.createWithTimestampsLl({
+                      timestamps: TIMESTAMPS({ cliff: ZERO, start: Time.END }),
+                    }),
+                    "StartTimeNotLessThanEndTime",
+                  );
+                });
+              });
+
+              describe("when start time less than end time", () => {
+                it("should create the stream", async () => {
+                  const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
+
+                  const salt = await ctx.createWithTimestampsLl({
+                    timestamps: TIMESTAMPS({ cliff: ZERO }),
+                    unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO, start: ZERO }),
+                  });
+
+                  const expectedStream = ctx.defaultStream({
+                    salt: salt,
+                  });
+                  expectedStream.data.timestamps.cliff = ZERO;
+                  expectedStream.data.amounts = AMOUNTS({ cliffUnlock: ZERO, startUnlock: ZERO });
+
+                  await assertStreamCreation(salt, beforeSenderTokenBalance, expectedStream);
+                });
               });
             });
 
-            describe("when sender has a sufficient token balance", () => {
-              describe("when cliff time zero", () => {
-                describe("when cliff unlock amount not zero", () => {
-                  it("should fail", async () => {
-                    await expectToThrow(
-                      ctx.createWithTimestampsLl({
-                        timestamps: TIMESTAMPS({ cliff: ZERO }),
-                      }),
-                      "CliffTimeZeroUnlockAmountNotZero",
-                    );
-                  });
-                });
-
-                describe("when start time not less than end time", () => {
-                  it("should fail", async () => {
-                    await expectToThrow(
-                      ctx.createWithTimestampsLl({
-                        timestamps: TIMESTAMPS({ cliff: ZERO, start: Time.END }),
-                      }),
-                      "StartTimeNotLessThanEndTime",
-                    );
-                  });
-                });
-
-                describe("when start time less than end time", () => {
-                  it("should create the stream", async () => {
-                    const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
-
-                    const salt = await ctx.createWithTimestampsLl({
-                      timestamps: TIMESTAMPS({ cliff: ZERO }),
-                      unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO, start: ZERO }),
-                    });
-
-                    const expectedStream = ctx.defaultStream({
-                      salt: salt,
-                    });
-                    expectedStream.data.timestamps.cliff = ZERO;
-                    expectedStream.data.amounts = AMOUNTS({ cliffUnlock: ZERO, startUnlock: ZERO });
-
-                    await assertStreamCreation(salt, beforeSenderTokenBalance, expectedStream);
-                  });
+            describe("when cliff time not zero", () => {
+              describe("when start time not less than cliff time", () => {
+                it("should fail", async () => {
+                  await expectToThrow(
+                    ctx.createWithTimestampsLl({
+                      timestamps: TIMESTAMPS({ start: Time.CLIFF }),
+                    }),
+                    "StartTimeNotLessThanCliffTime",
+                  );
                 });
               });
 
-              describe("when cliff time not zero", () => {
-                describe("when start time not less than cliff time", () => {
+              describe("when start time less than cliff time", () => {
+                describe("when cliff time not less than end time", () => {
                   it("should fail", async () => {
                     await expectToThrow(
                       ctx.createWithTimestampsLl({
-                        timestamps: TIMESTAMPS({ start: Time.CLIFF }),
+                        timestamps: TIMESTAMPS({ cliff: Time.END }),
                       }),
-                      "StartTimeNotLessThanCliffTime",
+                      "CliffTimeNotLessThanEndTime",
                     );
                   });
                 });
 
-                describe("when start time less than cliff time", () => {
-                  describe("when cliff time not less than end time", () => {
+                describe("when cliff time less than end time", () => {
+                  describe("when unlock amounts sum exceeds deposit amount", () => {
                     it("should fail", async () => {
+                      const depositAmount = BN_1000;
                       await expectToThrow(
                         ctx.createWithTimestampsLl({
-                          timestamps: TIMESTAMPS({ cliff: Time.END }),
+                          depositAmount,
+                          unlockAmounts: {
+                            cliff: depositAmount,
+                            start: depositAmount,
+                          },
                         }),
-                        "CliffTimeNotLessThanEndTime",
+                        "UnlockAmountsSumTooHigh",
                       );
                     });
                   });
 
-                  describe("when cliff time less than end time", () => {
-                    describe("when unlock amounts sum exceeds deposit amount", () => {
-                      it("should fail", async () => {
-                        const depositAmount = BN_1000;
-                        await expectToThrow(
-                          ctx.createWithTimestampsLl({
-                            depositAmount,
-                            unlockAmounts: {
-                              cliff: depositAmount,
-                              start: depositAmount,
-                            },
-                          }),
-                          "UnlockAmountsSumTooHigh",
-                        );
+                  describe("when unlock amounts sum not exceed deposit amount", () => {
+                    describe("when token SPL standard", () => {
+                      it("should create the stream", async () => {
+                        const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
+                        const salt = await ctx.createWithTimestampsLl();
+
+                        await assertStreamCreation(salt, beforeSenderTokenBalance);
                       });
                     });
 
-                    describe("when unlock amounts sum not exceed deposit amount", () => {
-                      describe("when token SPL standard", () => {
-                        it("should create the stream", async () => {
-                          const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
-                          const salt = await ctx.createWithTimestampsLl();
+                    describe("when token 2022 standard", () => {
+                      it("should create the stream", async () => {
+                        const beforeSenderTokenBalance = await ctx.getSenderTokenBalance(ctx.dai);
+                        const salt = await ctx.createWithTimestampsLlToken2022();
 
-                          await assertStreamCreation(salt, beforeSenderTokenBalance);
-                        });
-                      });
-
-                      describe("when token 2022 standard", () => {
-                        it("should create the stream", async () => {
-                          const beforeSenderTokenBalance = await ctx.getSenderTokenBalance(ctx.dai);
-                          const salt = await ctx.createWithTimestampsLlToken2022();
-
-                          await assertStreamCreation(
-                            salt,
-                            beforeSenderTokenBalance,
-                            ctx.defaultStreamToken2022({ salt: salt }),
-                          );
-                        });
+                        await assertStreamCreation(
+                          salt,
+                          beforeSenderTokenBalance,
+                          ctx.defaultStreamToken2022({ salt: salt }),
+                        );
                       });
                     });
                   });

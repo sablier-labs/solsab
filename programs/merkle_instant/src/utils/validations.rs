@@ -1,12 +1,12 @@
 use anchor_lang::{prelude::*, solana_program::keccak::hashv as keccak};
 
-use crate::utils::errors::ErrorCode;
+use crate::utils::{errors::ErrorCode, time::get_current_time};
 
 /// Validate the claim of a campaign.
 pub fn check_claim(
     amount: u64,
-    campaign_start_time: i64,
-    expiration_time: i64,
+    campaign_start_time: u64,
+    expiration_time: u64,
     index: u32,
     merkle_proof: Vec<[u8; 32]>,
     merkle_root: [u8; 32],
@@ -55,7 +55,7 @@ pub fn check_claim(
 }
 
 /// Validate the clawback from a campaign.
-pub fn check_clawback(expiration_time: i64, first_claim_time: i64) -> Result<()> {
+pub fn check_clawback(expiration_time: u64, first_claim_time: u64) -> Result<()> {
     // Check: the grace period has not passed or the campaign has expired.
     if has_grace_period_passed(first_claim_time)? && !has_expired(expiration_time)? {
         return Err(ErrorCode::ClawbackNotAllowed.into());
@@ -75,22 +75,22 @@ pub fn check_collect_fees(collectible_amount: u64) -> Result<()> {
 }
 
 // Helper function to return whether a campaign has started.
-pub fn has_campaign_started(start_time: i64) -> Result<bool> {
-    let current_time = Clock::get()?.unix_timestamp;
+pub fn has_campaign_started(start_time: u64) -> Result<bool> {
+    let current_time = get_current_time()?;
 
     Ok(start_time <= current_time)
 }
 
 /// Helper function to return whether a campaign has expired.
-pub fn has_expired(expiration_time: i64) -> Result<bool> {
-    let current_time = Clock::get()?.unix_timestamp;
+pub fn has_expired(expiration_time: u64) -> Result<bool> {
+    let current_time = get_current_time()?;
 
     Ok(expiration_time > 0 && expiration_time <= current_time)
 }
 
 /// Helper function to return whether the grace period of a campaign has passed.
-pub fn has_grace_period_passed(first_claim_time: i64) -> Result<bool> {
-    let current_time = Clock::get()?.unix_timestamp;
+pub fn has_grace_period_passed(first_claim_time: u64) -> Result<bool> {
+    let current_time = get_current_time()?;
     let grace_period = 7 * 24 * 60 * 60; // 7 days in seconds
 
     Ok(first_claim_time > 0 && current_time > first_claim_time + grace_period)

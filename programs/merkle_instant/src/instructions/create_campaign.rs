@@ -15,8 +15,8 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(
     merkle_root: [u8; 32],
-    campaign_start_time: i64,
-    expiration_time: i64,
+    campaign_start_time: u64,
+    expiration_time: u64,
     name: String,
 )]
 pub struct CreateCampaign<'info> {
@@ -83,8 +83,8 @@ pub struct CreateCampaign<'info> {
 pub fn handler(
     ctx: Context<CreateCampaign>,
     merkle_root: [u8; 32],
-    campaign_start_time: i64,
-    expiration_time: i64,
+    campaign_start_time: u64,
+    expiration_time: u64,
     name: String,
     ipfs_cid: String,
     aggregate_amount: u64,
