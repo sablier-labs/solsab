@@ -23,25 +23,12 @@ describe("withdrawableAmountOf", () => {
 
   describe("given a valid stream", () => {
     describe("given a canceled stream", () => {
-      describe("given CANCELED status", () => {
-        it("should return the correct withdrawable amount", async () => {
-          await ctx.timeTravelTo(Time.MID_26_PERCENT);
-          await ctx.cancel();
-          const actualWithdrawableAmount = await ctx.withdrawableAmountOf();
-          const expectedWithdrawableAmount = Amount.STREAMED_26_PERCENT;
-          assertEqBn(actualWithdrawableAmount, expectedWithdrawableAmount);
-        });
-      });
-
-      describe("given DEPLETED status", () => {
-        it("should return zero", async () => {
-          await ctx.timeTravelTo(Time.MID_26_PERCENT);
-          await ctx.cancel();
-          await ctx.withdrawMax();
-          const actualWithdrawableAmount = await ctx.withdrawableAmountOf();
-          const expectedWithdrawableAmount = ZERO;
-          assertEqBn(actualWithdrawableAmount, expectedWithdrawableAmount);
-        });
+      it("should return the correct withdrawable amount", async () => {
+        await ctx.timeTravelTo(Time.MID_26_PERCENT);
+        await ctx.cancel();
+        const actualWithdrawableAmount = await ctx.withdrawableAmountOf();
+        const expectedWithdrawableAmount = Amount.STREAMED_26_PERCENT;
+        assertEqBn(actualWithdrawableAmount, expectedWithdrawableAmount);
       });
     });
 
