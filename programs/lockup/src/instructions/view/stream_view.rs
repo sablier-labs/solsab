@@ -9,7 +9,7 @@ pub struct StreamView<'info> {
     // -------------------------------------------------------------------------- //
     //                               STREAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
-    /// Read account: the stream data account storing stream details.
+    /// Read account: the account storing stream details.
     #[account(
       seeds = [
         STREAM_DATA,

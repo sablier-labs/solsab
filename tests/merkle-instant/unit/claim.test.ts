@@ -4,7 +4,7 @@ import { assert, beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
 import { createATAAndFund, getATABalanceMint } from "../../common/anchor-bankrun";
-import { assertEqualBn, assertLteBn, assertZeroBn } from "../../common/assertions";
+import { assertEqBn, assertLteBn, assertZeroBn } from "../../common/assertions";
 import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 import { Amount, Campaign, Time } from "../utils/defaults";
@@ -195,7 +195,7 @@ async function testClaim(
   });
 
   const campaignDataAfter = await ctx.fetchCampaignData(campaign);
-  assertEqualBn(campaignDataAfter.firstClaimTime, Time.GENESIS);
+  assertEqBn(campaignDataAfter.firstClaimTime, Time.GENESIS);
 
   // Assert that the claim has been made
   assert.isTrue(await hasClaimed(campaign));
@@ -203,12 +203,12 @@ async function testClaim(
   const campaignAtaBalanceAfter = await getATABalanceMint(ctx.banksClient, campaign, tokenMint);
 
   // Assert that the Campaign's ATA balance decreased by the claim amount
-  assertEqualBn(campaignAtaBalanceAfter, campaignAtaBalanceBefore.sub(Amount.CLAIM));
+  assertEqBn(campaignAtaBalanceAfter, campaignAtaBalanceBefore.sub(Amount.CLAIM));
 
   const recipientAtaBalanceAfter = await getATABalanceMint(ctx.banksClient, ctx.recipient.keys.publicKey, tokenMint);
 
   // Assert that the recipient's ATA balance increased by the claim amount
-  assertEqualBn(recipientAtaBalanceAfter, recipientAtaBalanceBefore.add(Amount.CLAIM));
+  assertEqBn(recipientAtaBalanceAfter, recipientAtaBalanceBefore.add(Amount.CLAIM));
 
   const expectedFee = await ctx.claimFeeInLamports();
   const claimerLamportsAfter = await ctx.getLamportsOf(claimer.publicKey);
@@ -220,7 +220,7 @@ async function testClaim(
   const treasuryLamportsAfter = await ctx.getLamportsOf(ctx.treasuryAddress);
 
   // Assert that the Treasury has been credited with the claim fee.
-  assertEqualBn(treasuryLamportsAfter, treasuryLamportsBefore.add(expectedFee));
+  assertEqBn(treasuryLamportsAfter, treasuryLamportsBefore.add(expectedFee));
 }
 
 // Implicitly tests the `has_claimed` Ix works.

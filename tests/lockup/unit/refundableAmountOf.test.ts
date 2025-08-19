@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ZERO } from "../../../lib/constants";
 import { toBn } from "../../../lib/helpers";
-import { assertEqualBn } from "../../common/assertions";
+import { assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { Amount, Time } from "../utils/defaults";
 
@@ -26,7 +26,7 @@ describe("refundableAmountOf", () => {
       it("should return zero", async () => {
         const actualRefundableAmount = await ctx.refundableAmountOf(ctx.salts.nonCancelable);
         const expectedRefundableAmount = ZERO;
-        assertEqualBn(actualRefundableAmount, expectedRefundableAmount);
+        assertEqBn(actualRefundableAmount, expectedRefundableAmount);
       });
     });
 
@@ -37,7 +37,7 @@ describe("refundableAmountOf", () => {
           await ctx.cancel();
           const actualRefundableAmount = await ctx.refundableAmountOf();
           const expectedRefundableAmount = ZERO;
-          assertEqualBn(actualRefundableAmount, expectedRefundableAmount);
+          assertEqBn(actualRefundableAmount, expectedRefundableAmount);
         });
       });
 
@@ -48,7 +48,7 @@ describe("refundableAmountOf", () => {
           await ctx.withdrawMax();
           const actualRefundableAmount = await ctx.refundableAmountOf();
           const expectedRefundableAmount = ZERO;
-          assertEqualBn(actualRefundableAmount, expectedRefundableAmount);
+          assertEqBn(actualRefundableAmount, expectedRefundableAmount);
         });
       });
 
@@ -58,7 +58,7 @@ describe("refundableAmountOf", () => {
             await ctx.timeTravelTo(Time.START.sub(toBn(1)));
             const actualRefundableAmount = await ctx.refundableAmountOf();
             const expectedRefundableAmount = Amount.DEPOSIT;
-            assertEqualBn(actualRefundableAmount, expectedRefundableAmount);
+            assertEqBn(actualRefundableAmount, expectedRefundableAmount);
           });
         });
 
@@ -67,7 +67,7 @@ describe("refundableAmountOf", () => {
             await ctx.timeTravelTo(Time.MID_26_PERCENT);
             const actualRefundableAmount = await ctx.refundableAmountOf();
             const expectedRefundableAmount = Amount.REFUND;
-            assertEqualBn(actualRefundableAmount, expectedRefundableAmount);
+            assertEqBn(actualRefundableAmount, expectedRefundableAmount);
           });
         });
 
@@ -76,7 +76,7 @@ describe("refundableAmountOf", () => {
             await ctx.timeTravelTo(Time.END);
             const actualRefundableAmount = await ctx.refundableAmountOf();
             const expectedRefundableAmount = ZERO;
-            assertEqualBn(actualRefundableAmount, expectedRefundableAmount);
+            assertEqBn(actualRefundableAmount, expectedRefundableAmount);
           });
         });
 
@@ -86,7 +86,7 @@ describe("refundableAmountOf", () => {
             await ctx.withdrawMax();
             const actualRefundableAmount = await ctx.refundableAmountOf();
             const expectedRefundableAmount = ZERO;
-            assertEqualBn(actualRefundableAmount, expectedRefundableAmount);
+            assertEqBn(actualRefundableAmount, expectedRefundableAmount);
           });
         });
       });

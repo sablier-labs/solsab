@@ -8,7 +8,7 @@ import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import type { StreamData } from "../../../target/types/sablier_lockup_structs";
 import { createATAAndFund, deriveATAAddress, getATABalance } from "../../common/anchor-bankrun";
-import { assertAccountExists, assertAccountNotExists, assertEqualBn, assertLteBn } from "../../common/assertions";
+import { assertAccountExists, assertAccountNotExists, assertEqBn, assertLteBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
@@ -375,14 +375,14 @@ async function postWithdrawAssertions(
   assertLteBn(txSignerLamportsAfter, txSignerLamportsBefore.sub(expectedFee));
 
   // Assert that the Treasury has been credited with the withdrawal fee.
-  assertEqualBn(treasuryLamportsAfter, treasuryLamportsBefore.add(expectedFee));
+  assertEqBn(treasuryLamportsAfter, treasuryLamportsBefore.add(expectedFee));
 
   // Get the withdrawal recipient's token balance
   const withdrawalRecipientTokenBalance = await getATABalance(ctx.banksClient, withdrawalRecipientATA);
 
   // Assert that the withdrawal recipient's token balance has been changed correctly
   const expectedWithdrawnAmount = expectedStreamData.amounts.withdrawn;
-  assertEqualBn(withdrawalRecipientTokenBalance, withdrawalRecipientATABalanceBefore.add(expectedWithdrawnAmount));
+  assertEqBn(withdrawalRecipientTokenBalance, withdrawalRecipientATABalanceBefore.add(expectedWithdrawnAmount));
 
   // TODO: Assert that the StreamData ATA has been changed correctly
 }
