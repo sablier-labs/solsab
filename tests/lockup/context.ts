@@ -64,7 +64,7 @@ export class LockupTestContext extends TestContext {
   }
 
   /*//////////////////////////////////////////////////////////////////////////
-                                    TX-IX
+                            STATE-CHANGING INSTRUCTIONS
   //////////////////////////////////////////////////////////////////////////*/
 
   async cancel({
@@ -242,17 +242,6 @@ export class LockupTestContext extends TestContext {
     await buildSignAndProcessTx(this.banksClient, withdrawIx, signer);
   }
 
-  async withdrawalFeeInLamports(): Promise<BN> {
-    return await this.lockup.methods
-      .withdrawalFeeInLamports()
-      .accounts({
-        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM,
-        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
-      })
-      .signers([this.defaultBankrunPayer])
-      .view();
-  }
-
   async withdrawToken2022(salt: BN, signer: Keypair): Promise<void> {
     await this.withdraw({
       depositedTokenMint: this.dai,
@@ -287,6 +276,64 @@ export class LockupTestContext extends TestContext {
       .instruction();
 
     await buildSignAndProcessTx(this.banksClient, withdrawMaxIx, this.sender.keys);
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////
+                               READ-ONLY INSTRUCTIONS
+  //////////////////////////////////////////////////////////////////////////*/
+
+  async refundableAmountOf(salt: BN = this.salts.default): Promise<BN> {
+    return await this.lockup.methods
+      .refundableAmountOf()
+      .accounts({
+        streamNftMint: this.getStreamNftMintAddress(salt),
+      })
+      .signers([this.defaultBankrunPayer])
+      .view();
+  }
+
+  async statusOf(salt = this.salts.default): Promise<string> {
+    const result = await this.lockup.methods
+      .statusOf()
+      .accounts({
+        streamNftMint: this.getStreamNftMintAddress(salt),
+      })
+      .signers([this.defaultBankrunPayer])
+      .view();
+
+    // Extract the key from the enum object
+    return Object.keys(result)[0];
+  }
+
+  async streamedAmountOf(salt = this.salts.default): Promise<BN> {
+    return await this.lockup.methods
+      .streamedAmountOf()
+      .accounts({
+        streamNftMint: this.getStreamNftMintAddress(salt),
+      })
+      .signers([this.defaultBankrunPayer])
+      .view();
+  }
+
+  async withdrawableAmountOf(salt = this.salts.default): Promise<BN> {
+    return await this.lockup.methods
+      .withdrawableAmountOf()
+      .accounts({
+        streamNftMint: this.getStreamNftMintAddress(salt),
+      })
+      .signers([this.defaultBankrunPayer])
+      .view();
+  }
+
+  async withdrawalFeeInLamports(): Promise<BN> {
+    return await this.lockup.methods
+      .withdrawalFeeInLamports()
+      .accounts({
+        chainlinkProgram: ProgramId.CHAINLINK_PROGRAM,
+        chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
+      })
+      .signers([this.defaultBankrunPayer])
+      .view();
   }
 
   /*//////////////////////////////////////////////////////////////////////////

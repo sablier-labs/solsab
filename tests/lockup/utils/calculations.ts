@@ -23,7 +23,7 @@ export function getStreamedAmount(amounts: Amounts, now: BN, timestamps: Timesta
     return amounts.deposited;
   }
 
-  const streamingStartTime = amounts.cliffUnlock.isZero() ? timestamps.start : timestamps.cliff;
+  const streamingStartTime = timestamps.cliff.isZero() ? timestamps.start : timestamps.cliff;
 
   const elapsedTime = now.sub(streamingStartTime).mul(SCALING_FACTOR);
   const streamableTimeRange = timestamps.end.sub(streamingStartTime);

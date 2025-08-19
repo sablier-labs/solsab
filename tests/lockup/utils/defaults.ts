@@ -8,6 +8,7 @@ export namespace Amount {
   export const CLIFF = usdc("2500.000001");
   export const DEPOSIT = usdc(10_000);
   export const START = ZERO;
+  export const STREAMED_26_PERCENT = usdc(2600);
   export const WITHDRAW = usdc(2600);
   export const REFUND = DEPOSIT.sub(WITHDRAW);
 }
