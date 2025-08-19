@@ -1,9 +1,9 @@
 import { assert, beforeEach, describe, expect, it } from "vitest";
-import { toBn } from "../../../lib/helpers";
-import { assertEqBn, assertLteBn } from "../../common/assertions";
-import { LockupTestContext } from "../context";
-import { Amount, Time } from "../utils/defaults";
-import { Status } from "../utils/types";
+import { toBn } from "../../../../lib/helpers";
+import { assertEqBn, assertLteBn } from "../../../common/assertions";
+import { LockupTestContext } from "../../context";
+import { Amount, Time } from "../../utils/defaults";
+import { Status } from "../../utils/types";
 
 let ctx: LockupTestContext;
 

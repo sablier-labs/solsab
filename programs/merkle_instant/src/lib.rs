@@ -198,7 +198,7 @@ pub mod sablier_merkle_instant {
     ///
     /// # Parameters
     ///
-    /// - `index` The index of the recipient in the Merkle tree.
+    /// - `_index` The index of the recipient in the Merkle tree.
     pub fn has_claimed(ctx: Context<HasClaimed>, _index: u32) -> Result<bool> {
         Ok(!ctx.accounts.claim_receipt.data_is_empty())
     }

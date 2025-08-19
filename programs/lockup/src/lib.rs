@@ -286,6 +286,16 @@ pub mod sablier_lockup {
         instructions::status_of::handler(ctx)
     }
 
+    /// Returns a flag indicating whether a stream based on the `_sender` and the `_salt` already exists.
+    ///
+    /// # Parameters
+    ///
+    /// - `_sender` The sender of the stream.
+    /// - `_salt` The unique salt used to derive the stream NFT mint address.
+    pub fn stream_exists(ctx: Context<StreamExists>, _sender: Pubkey, _salt: u128) -> Result<bool> {
+        Ok(!ctx.accounts.stream_nft_mint.data_is_empty())
+    }
+
     /// Calculates the amount streamed to the recipient, denoted in units of the token's decimals.
     ///
     /// # Accounts Expected
