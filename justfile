@@ -61,8 +61,8 @@ alias bmi := build-merkle-instant
 
 # Codegen errors and struct types
 @codegen program_name="all":
-    bun run ./scripts/ts/codegen-errors.ts {{ program_name }}
-    bun run ./scripts/ts/codegen-structs.ts {{ program_name }}
+    na run ./scripts/ts/codegen-errors.ts {{ program_name }}
+    na run ./scripts/ts/codegen-structs.ts {{ program_name }}
 
 # Clean build artifacts
 clean globs=GLOBS_CLEAN:
