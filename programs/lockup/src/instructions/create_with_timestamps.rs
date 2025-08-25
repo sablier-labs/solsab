@@ -143,7 +143,7 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    /// Write account: the master edition account for the stream NFT.
+    /// Create account: the master edition account for the stream NFT.
     #[account(
       mut,
       seeds = [
@@ -157,7 +157,7 @@ pub struct CreateWithTimestamps<'info> {
     /// CHECK: This account will be initialized by the Metaplex program
     pub stream_nft_master_edition: UncheckedAccount<'info>,
 
-    /// Write account: the metadata account for the stream NFT.
+    /// Create account: the metadata account for the stream NFT.
     #[account(
       mut,
       seeds = [
