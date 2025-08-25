@@ -82,7 +82,7 @@ pub struct CreateWithTimestamps<'info> {
     /// CHECK: This account will only be touched by the Metaplex program
     pub nft_collection_metadata: UncheckedAccount<'info>,
 
-    /// Write account: the mint account for the NFT collection.
+    /// Read account: the mint account for the NFT collection.
     #[account(
       seeds = [NFT_COLLECTION_MINT],
       bump,
@@ -143,7 +143,7 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    /// Create if needed account: the master edition account for the stream NFT.
+    /// Write account: the master edition account for the stream NFT.
     #[account(
       mut,
       seeds = [
@@ -157,7 +157,7 @@ pub struct CreateWithTimestamps<'info> {
     /// CHECK: This account will be initialized by the Metaplex program
     pub stream_nft_master_edition: UncheckedAccount<'info>,
 
-    /// Create if needed account: the metadata account for the stream NFT.
+    /// Write account: the metadata account for the stream NFT.
     #[account(
       mut,
       seeds = [
