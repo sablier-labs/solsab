@@ -1,17 +1,21 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
+    associated_token::AssociatedToken,
     metadata::{
-        create_master_edition_v3, create_metadata_accounts_v3,
-        mpl_token_metadata::types::{CollectionDetails, Creator, DataV2},
-        set_and_verify_sized_collection_item, sign_metadata, CreateMasterEditionV3, CreateMetadataAccountsV3, Metadata,
-        SetAndVerifySizedCollectionItem, SignMetadata,
+        mpl_token_metadata::types::{CollectionDetails, TokenStandard},
+        Metadata,
     },
-    token_interface::{mint_to, Mint, MintTo, TokenAccount, TokenInterface},
+    token_interface::{Mint, TokenAccount, TokenInterface},
+};
+
+use mpl_token_metadata::{
+    instructions::{CreateV1CpiBuilder, MintV1CpiBuilder, VerifyCollectionV1CpiBuilder},
+    types::{Collection, PrintSupply},
 };
 
 use crate::utils::constants::{nft::*, seeds::NFT_COLLECTION_MINT};
 
-/// Creates and mints a stream NFT with collection verification
+/// Creates and mints a stream NFT, adding it to the Stream NFT collection
 #[allow(clippy::too_many_arguments)]
 pub fn create_stream<'info>(
     stream_nft_mint: &InterfaceAccount<'info, Mint>,
@@ -20,12 +24,14 @@ pub fn create_stream<'info>(
     stream_nft_master_edition: &UncheckedAccount<'info>,
     nft_collection_metadata: &UncheckedAccount<'info>,
     nft_collection_master_edition: &UncheckedAccount<'info>,
+    recipient: &UncheckedAccount<'info>,
     recipient_stream_nft_ata: &InterfaceAccount<'info, TokenAccount>,
     creator: &Signer<'info>,
     token_metadata_program: &Program<'info, Metadata>,
     nft_token_program: &Interface<'info, TokenInterface>,
+    associated_token_program: &Program<'info, AssociatedToken>,
     system_program: &Program<'info, System>,
-    rent: &Sysvar<'info, Rent>,
+    sysvar_instructions: &UncheckedAccount<'info>,
     nft_collection_mint_bump: u8,
 ) -> Result<()> {
     // Construct the Stream NFT name using the following format:
@@ -37,86 +43,55 @@ pub fn create_stream<'info>(
     // Prepare the seeds for NFT Collection Mint
     let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[NFT_COLLECTION_MINT, &[nft_collection_mint_bump]]];
 
-    // Mint Stream NFT Token
-    mint_to(
-        CpiContext::new_with_signer(
-            nft_token_program.to_account_info(),
-            MintTo {
-                mint: stream_nft_mint.to_account_info(),
-                to: recipient_stream_nft_ata.to_account_info(),
-                authority: nft_collection_mint.to_account_info(),
-            },
-            nft_collection_mint_signer_seeds,
-        ),
-        1,
-    )?;
+    CreateV1CpiBuilder::new(&token_metadata_program.to_account_info())
+        .metadata(stream_nft_metadata)
+        .master_edition(Some(stream_nft_master_edition))
+        .mint(&stream_nft_mint.to_account_info(), false)
+        .authority(&nft_collection_mint.to_account_info())
+        .payer(&creator.to_account_info())
+        .update_authority(&nft_collection_mint.to_account_info(), false)
+        .system_program(&system_program.to_account_info())
+        .sysvar_instructions(sysvar_instructions)
+        .spl_token_program(Some(&nft_token_program.to_account_info()))
+        .name(nft_name)
+        .symbol(NFT_SYMBOL.to_string())
+        .uri(NFT_METADATA_URI.to_string())
+        .seller_fee_basis_points(0)
+        .primary_sale_happened(true)
+        .is_mutable(true)
+        .token_standard(TokenStandard::NonFungible)
+        .print_supply(PrintSupply::Zero)
+        .collection(Collection {
+            verified: false,
+            key: nft_collection_mint.key(),
+        })
+        .decimals(0)
+        .invoke_signed(nft_collection_mint_signer_seeds)?;
 
-    // Create metadata
-    create_metadata_accounts_v3(
-        CpiContext::new_with_signer(
-            token_metadata_program.to_account_info(),
-            CreateMetadataAccountsV3 {
-                metadata: stream_nft_metadata.to_account_info(),
-                mint: stream_nft_mint.to_account_info(),
-                mint_authority: nft_collection_mint.to_account_info(),
-                update_authority: nft_collection_mint.to_account_info(),
-                payer: creator.to_account_info(),
-                system_program: system_program.to_account_info(),
-                rent: rent.to_account_info(),
-            },
-            nft_collection_mint_signer_seeds,
-        ),
-        DataV2 {
-            name: nft_name,
-            symbol: NFT_SYMBOL.to_string(),
-            uri: NFT_METADATA_URI.to_string(),
-            seller_fee_basis_points: 0,
-            creators: None,
-            collection: None,
-            uses: None,
-        },
-        true,
-        true,
-        None,
-    )?;
+    MintV1CpiBuilder::new(&token_metadata_program.to_account_info())
+        .token(&recipient_stream_nft_ata.to_account_info())
+        .token_owner(Some(recipient))
+        .metadata(stream_nft_metadata)
+        .master_edition(Some(stream_nft_master_edition))
+        .mint(&stream_nft_mint.to_account_info())
+        .payer(&creator.to_account_info())
+        .authority(&nft_collection_mint.to_account_info())
+        .system_program(&system_program.to_account_info())
+        .sysvar_instructions(sysvar_instructions)
+        .spl_token_program(&nft_token_program.to_account_info())
+        .spl_ata_program(&associated_token_program.to_account_info())
+        .amount(1)
+        .invoke_signed(nft_collection_mint_signer_seeds)?;
 
-    // Create master edition
-    create_master_edition_v3(
-        CpiContext::new_with_signer(
-            token_metadata_program.to_account_info(),
-            CreateMasterEditionV3 {
-                payer: creator.to_account_info(),
-                mint: stream_nft_mint.to_account_info(),
-                edition: stream_nft_master_edition.to_account_info(),
-                mint_authority: nft_collection_mint.to_account_info(),
-                update_authority: nft_collection_mint.to_account_info(),
-                metadata: stream_nft_metadata.to_account_info(),
-                token_program: nft_token_program.to_account_info(),
-                system_program: system_program.to_account_info(),
-                rent: rent.to_account_info(),
-            },
-            nft_collection_mint_signer_seeds,
-        ),
-        Some(0),
-    )?;
-
-    // Verify the NFT as part of the collection
-    set_and_verify_sized_collection_item(
-        CpiContext::new_with_signer(
-            token_metadata_program.to_account_info(),
-            SetAndVerifySizedCollectionItem {
-                metadata: stream_nft_metadata.to_account_info(),
-                collection_authority: nft_collection_mint.to_account_info(),
-                payer: creator.to_account_info(),
-                update_authority: nft_collection_mint.to_account_info(),
-                collection_mint: nft_collection_mint.to_account_info(),
-                collection_metadata: nft_collection_metadata.to_account_info(),
-                collection_master_edition: nft_collection_master_edition.to_account_info(),
-            },
-            nft_collection_mint_signer_seeds,
-        ),
-        None,
-    )?;
+    VerifyCollectionV1CpiBuilder::new(token_metadata_program)
+        .authority(&nft_collection_mint.to_account_info())
+        .metadata(stream_nft_metadata)
+        .collection_mint(&nft_collection_mint.to_account_info())
+        .collection_metadata(Some(nft_collection_metadata))
+        .collection_master_edition(Some(nft_collection_master_edition))
+        .system_program(&system_program.to_account_info())
+        .sysvar_instructions(sysvar_instructions)
+        .invoke_signed(nft_collection_mint_signer_seeds)?;
 
     Ok(())
 }
@@ -126,95 +101,56 @@ pub fn create_stream<'info>(
 pub fn initialize_collection<'info>(
     nft_collection_mint: &InterfaceAccount<'info, Mint>,
     nft_collection_ata: &InterfaceAccount<'info, TokenAccount>,
+    nft_collection_ata_authority: &AccountInfo<'info>,
     nft_collection_metadata: &UncheckedAccount<'info>,
     nft_collection_master_edition: &UncheckedAccount<'info>,
     payer: &Signer<'info>,
     token_metadata_program: &Program<'info, Metadata>,
     nft_token_program: &Interface<'info, TokenInterface>,
+    associated_token_program: &Program<'info, AssociatedToken>,
     system_program: &Program<'info, System>,
-    rent: &Sysvar<'info, Rent>,
+    sysvar_instructions: &AccountInfo<'info>,
     nft_collection_mint_bump: u8,
 ) -> Result<()> {
     let nft_collection_mint_signer_seeds: &[&[&[u8]]] = &[&[NFT_COLLECTION_MINT, &[nft_collection_mint_bump]]];
 
-    // Mint the Collection NFT
-    mint_to(
-        CpiContext::new_with_signer(
-            nft_token_program.to_account_info(),
-            MintTo {
-                mint: nft_collection_mint.to_account_info(),
-                to: nft_collection_ata.to_account_info(),
-                authority: nft_collection_mint.to_account_info(),
-            },
-            nft_collection_mint_signer_seeds,
-        ),
-        1,
-    )?;
-
-    // Create the Metadata accounts for the Collection NFT
-    create_metadata_accounts_v3(
-        CpiContext::new_with_signer(
-            token_metadata_program.to_account_info(),
-            CreateMetadataAccountsV3 {
-                metadata: nft_collection_metadata.to_account_info(),
-                mint: nft_collection_mint.to_account_info(),
-                mint_authority: nft_collection_mint.to_account_info(),
-                update_authority: nft_collection_mint.to_account_info(),
-                payer: payer.to_account_info(),
-                system_program: system_program.to_account_info(),
-                rent: rent.to_account_info(),
-            },
-            nft_collection_mint_signer_seeds,
-        ),
-        DataV2 {
-            name: COLLECTION_NAME.to_string(),
-            symbol: COLLECTION_SYMBOL.to_string(),
-            uri: COLLECTION_METADATA_URI.to_string(),
-            seller_fee_basis_points: 0,
-            creators: Some(vec![Creator {
-                address: nft_collection_mint.key(),
-                verified: false,
-                share: 100,
-            }]),
-            collection: None,
-            uses: None,
-        },
-        true,
-        true,
-        Some(CollectionDetails::V1 {
+    CreateV1CpiBuilder::new(token_metadata_program)
+        .metadata(nft_collection_metadata)
+        .mint(&nft_collection_mint.to_account_info(), false)
+        .authority(&nft_collection_mint.to_account_info())
+        .payer(&payer.to_account_info())
+        .update_authority(&nft_collection_mint.to_account_info(), true)
+        .master_edition(Some(nft_collection_master_edition))
+        .system_program(system_program)
+        .sysvar_instructions(sysvar_instructions)
+        .spl_token_program(Some(&nft_token_program.to_account_info()))
+        .token_standard(TokenStandard::NonFungible)
+        .print_supply(PrintSupply::Zero)
+        .name(COLLECTION_NAME.to_string())
+        .symbol(COLLECTION_SYMBOL.to_string())
+        .uri(COLLECTION_METADATA_URI.to_string())
+        .collection_details(CollectionDetails::V1 {
             size: 0,
-        }),
-    )?;
+        })
+        .seller_fee_basis_points(0)
+        .primary_sale_happened(false)
+        .is_mutable(true)
+        .invoke_signed(nft_collection_mint_signer_seeds)?;
 
-    // Create Master edition accounts for the Collection NFT
-    create_master_edition_v3(
-        CpiContext::new_with_signer(
-            token_metadata_program.to_account_info(),
-            CreateMasterEditionV3 {
-                payer: payer.to_account_info(),
-                mint: nft_collection_mint.to_account_info(),
-                edition: nft_collection_master_edition.to_account_info(),
-                mint_authority: nft_collection_mint.to_account_info(),
-                update_authority: nft_collection_mint.to_account_info(),
-                metadata: nft_collection_metadata.to_account_info(),
-                token_program: nft_token_program.to_account_info(),
-                system_program: system_program.to_account_info(),
-                rent: rent.to_account_info(),
-            },
-            nft_collection_mint_signer_seeds,
-        ),
-        Some(0),
-    )?;
-
-    // Verify the collection NFT creator
-    sign_metadata(CpiContext::new_with_signer(
-        token_metadata_program.to_account_info(),
-        SignMetadata {
-            creator: nft_collection_mint.to_account_info(),
-            metadata: nft_collection_metadata.to_account_info(),
-        },
-        nft_collection_mint_signer_seeds,
-    ))?;
+    MintV1CpiBuilder::new(token_metadata_program)
+        .token(&nft_collection_ata.to_account_info())
+        .token_owner(Some(nft_collection_ata_authority))
+        .metadata(nft_collection_metadata)
+        .master_edition(Some(nft_collection_master_edition))
+        .mint(&nft_collection_mint.to_account_info())
+        .payer(&payer.to_account_info())
+        .authority(&nft_collection_mint.to_account_info())
+        .system_program(system_program)
+        .spl_token_program(&nft_token_program.to_account_info())
+        .spl_ata_program(&associated_token_program.to_account_info())
+        .sysvar_instructions(sysvar_instructions)
+        .amount(1)
+        .invoke_signed(nft_collection_mint_signer_seeds)?;
 
     Ok(())
 }

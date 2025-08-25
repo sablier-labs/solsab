@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
-import { type Keypair, PublicKey } from "@solana/web3.js";
+import { type Keypair, PublicKey, SYSVAR_INSTRUCTIONS_PUBKEY } from "@solana/web3.js";
 import BN from "bn.js";
 import { ProgramId, ZERO } from "../../lib/constants";
 import { ProgramName } from "../../lib/enums";
@@ -134,6 +134,7 @@ export class LockupTestContext extends TestContext {
         nftTokenProgram: token.TOKEN_PROGRAM_ID,
         recipient: this.recipient.keys.publicKey,
         sender: this.sender.keys.publicKey,
+        sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
       })
       .instruction();
 
@@ -175,6 +176,7 @@ export class LockupTestContext extends TestContext {
         nftTokenProgram: token.TOKEN_PROGRAM_ID,
         recipient: recipientPubKey,
         sender: senderPubKey,
+        sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
       })
       .instruction();
 
@@ -196,6 +198,7 @@ export class LockupTestContext extends TestContext {
       .accounts({
         initializer: this.sender.keys.publicKey,
         nftTokenProgram: token.TOKEN_PROGRAM_ID,
+        sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
       })
       .instruction();
 

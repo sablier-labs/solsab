@@ -116,8 +116,9 @@ pub struct Initialize<'info> {
     // -------------------------------------------------------------------------- //
     //                               SYSTEM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
-    /// Sysvar account: Rent.
-    pub rent: Sysvar<'info, Rent>,
+    /// Sysvar account: Instructions.
+    /// CHECK: this account is used exclusively by the Metaplex program
+    pub sysvar_instructions: AccountInfo<'info>,
 
     /// Program account: the System program.
     pub system_program: Program<'info, System>,
@@ -136,13 +137,15 @@ pub fn handler(
     nft::initialize_collection(
         &ctx.accounts.nft_collection_mint,
         &ctx.accounts.nft_collection_ata,
+        &ctx.accounts.treasury.to_account_info(),
         &ctx.accounts.nft_collection_metadata,
         &ctx.accounts.nft_collection_master_edition,
         &ctx.accounts.initializer,
         &ctx.accounts.token_metadata_program,
         &ctx.accounts.nft_token_program,
+        &ctx.accounts.associated_token_program,
         &ctx.accounts.system_program,
-        &ctx.accounts.rent,
+        &ctx.accounts.sysvar_instructions,
         ctx.bumps.nft_collection_mint,
     )?;
 

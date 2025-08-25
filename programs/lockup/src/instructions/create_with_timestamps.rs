@@ -84,6 +84,7 @@ pub struct CreateWithTimestamps<'info> {
 
     /// Write account: the mint account for the NFT collection.
     #[account(
+      mut,
       seeds = [NFT_COLLECTION_MINT],
       bump,
     )]
@@ -192,8 +193,9 @@ pub struct CreateWithTimestamps<'info> {
     /// Program account: the System program.
     pub system_program: Program<'info, System>,
 
-    /// Sysvar account: Rent.
-    pub rent: Sysvar<'info, Rent>,
+    /// Sysvar account: Instructions.
+    /// CHECK: this account is used exclusively by the Metaplex program
+    pub sysvar_instructions: UncheckedAccount<'info>,
 }
 
 /// See the documentation for [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
@@ -239,12 +241,14 @@ pub fn handler(
         &ctx.accounts.stream_nft_master_edition,
         &ctx.accounts.nft_collection_metadata,
         &ctx.accounts.nft_collection_master_edition,
+        &ctx.accounts.recipient,
         &ctx.accounts.recipient_stream_nft_ata,
         creator,
         &ctx.accounts.token_metadata_program,
         &ctx.accounts.nft_token_program,
+        &ctx.accounts.associated_token_program,
         &ctx.accounts.system_program,
-        &ctx.accounts.rent,
+        &ctx.accounts.sysvar_instructions,
         ctx.bumps.nft_collection_mint,
     )?;
 

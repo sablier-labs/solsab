@@ -213,7 +213,9 @@ async function assertStreamCreation(
   const recipientStreamNftBalance = await getATABalance(ctx.banksClient, expectedStream.recipientStreamNftAta);
   assertEqBn(recipientStreamNftBalance, BN_1, "Stream NFT not minted");
 
-  // TODO: test that the Stream NFT has been properly added to the LL NFT collection
+  // TODO: Assert that the Stream NFT has been properly added to the LL NFT collection
+
+  // TODO: Assert that the CollectionDetails.Size field of the LL NFT collection metadata has increased by exactly 1
 
   // Assert that the Sender's balance has changed correctly
   const expectedTokenBalance = beforeSenderTokenBalance.sub(Amount.DEPOSIT);

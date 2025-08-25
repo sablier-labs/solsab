@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { ComputeBudgetProgram, Keypair, type PublicKey } from "@solana/web3.js";
+import { ComputeBudgetProgram, Keypair, type PublicKey, SYSVAR_INSTRUCTIONS_PUBKEY } from "@solana/web3.js";
 import type BN from "bn.js";
 import { beforeEach, describe, it } from "vitest";
 import { BN_1, Decimals, ProgramId, ZERO } from "../../lib/constants";
@@ -103,6 +103,7 @@ async function createStream(params: CreateParams) {
       nftTokenProgram: TOKEN_PROGRAM_ID,
       recipient: senderKeys.publicKey,
       sender: senderKeys.publicKey,
+      sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
     })
     .preInstructions([increaseCULimitIx])
     .rpc();
@@ -123,6 +124,7 @@ async function initSablierLockup() {
     .accounts({
       initializer: senderKeys.publicKey,
       nftTokenProgram: TOKEN_PROGRAM_ID,
+      sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
     })
     .rpc();
 }
