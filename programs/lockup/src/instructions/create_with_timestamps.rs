@@ -82,9 +82,8 @@ pub struct CreateWithTimestamps<'info> {
     /// CHECK: This account will only be touched by the Metaplex program
     pub nft_collection_metadata: UncheckedAccount<'info>,
 
-    /// Write account: the mint account for the NFT collection.
+    /// Read account: the mint account for the NFT collection.
     #[account(
-      mut,
       seeds = [NFT_COLLECTION_MINT],
       bump,
     )]
