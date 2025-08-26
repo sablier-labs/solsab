@@ -118,12 +118,12 @@ alias tui := test-ui
 
 # Run Lockup tests only
 [group("test")]
-test-lockup *args="tests/lockup/**/*.test.ts":
+test-lockup *args="tests/lockup/unit{,/**}/*.test.ts":
     just test {{ args }}
 alias tlk := test-lockup
 
 # Run Merkle Instant tests only
 [group("test")]
-test-merkle-instant *args="tests/merkle-instant/**/*.test.ts":
+test-merkle-instant *args="tests/merkle-instant/unit{,/**}/*.test.ts":
     just test {{ args }}
 alias tmi := test-merkle-instant
