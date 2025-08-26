@@ -6,7 +6,9 @@ use crate::utils::{constants::*, time::get_current_time};
 #[account]
 #[derive(InitSpace)]
 pub struct Campaign {
+    pub aggregate_amount: u64,
     pub airdrop_token_mint: Pubkey,
+    pub airdrop_token_decimals: u8,
     pub bump: u8,
     pub campaign_start_time: u64,
     pub creator: Pubkey,
@@ -17,6 +19,7 @@ pub struct Campaign {
     pub merkle_root: [u8; 32],
     #[max_len(CAMPAIGN_NAME_SIZE as usize)]
     pub name: String,
+    pub recipient_count: u32,
 }
 
 impl Campaign {
@@ -34,6 +37,8 @@ impl Campaign {
     #[allow(clippy::too_many_arguments)]
     pub fn create(
         &mut self,
+        aggregate_amount: u64,
+        airdrop_token_decimals: u8,
         airdrop_token_mint: Pubkey,
         bump: u8,
         campaign_start_time: u64,
@@ -42,7 +47,10 @@ impl Campaign {
         ipfs_cid: String,
         merkle_root: [u8; 32],
         name: String,
+        recipient_count: u32,
     ) -> Result<()> {
+        self.aggregate_amount = aggregate_amount;
+        self.airdrop_token_decimals = airdrop_token_decimals;
         self.airdrop_token_mint = airdrop_token_mint;
         self.bump = bump;
         self.campaign_start_time = campaign_start_time;
@@ -51,7 +59,7 @@ impl Campaign {
         self.ipfs_cid = ipfs_cid;
         self.merkle_root = merkle_root;
         self.name = name;
-
+        self.recipient_count = recipient_count;
         Ok(())
     }
 }
