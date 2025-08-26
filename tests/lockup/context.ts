@@ -128,9 +128,9 @@ export class LockupTestContext extends TestContext {
         true,
       )
       .accounts({
-        creator: this.sender.keys.publicKey,
         depositTokenMint: this.usdc,
         depositTokenProgram: token.TOKEN_PROGRAM_ID,
+        funder: this.sender.keys.publicKey,
         nftTokenProgram: token.TOKEN_PROGRAM_ID,
         recipient: this.recipient.keys.publicKey,
         sender: this.sender.keys.publicKey,
@@ -143,7 +143,7 @@ export class LockupTestContext extends TestContext {
   }
 
   async createWithTimestampsLl({
-    creator = this.sender.keys,
+    funder = this.sender.keys,
     senderPubKey = this.sender.keys.publicKey,
     recipientPubKey = this.recipient.keys.publicKey,
     depositTokenMint = this.usdc,
@@ -169,9 +169,9 @@ export class LockupTestContext extends TestContext {
         isCancelable,
       )
       .accounts({
-        creator: creator.publicKey,
         depositTokenMint,
         depositTokenProgram,
+        funder: funder.publicKey,
         nftTokenProgram: token.TOKEN_PROGRAM_ID,
         recipient: recipientPubKey,
         sender: senderPubKey,
