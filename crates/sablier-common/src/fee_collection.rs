@@ -1,8 +1,9 @@
-use crate::utils::constants::LAMPORTS_PER_SOL;
-use anchor_lang::prelude::*;
+use crate::time::get_current_time;
+use anchor_lang::{prelude::*, solana_program::rent::Rent};
 use chainlink_solana as chainlink;
 
-// TODO: export this into a crate that'd be imported by both the lockup and merkle_instant programs.
+const LAMPORTS_PER_SOL: u64 = 1e9 as u64; // 1 billion lamports in 1 SOL
+
 /// Converts the fee amount from USD to lamports.
 /// The price is considered to be 0 if:
 /// 1. The USD fee is 0.
@@ -32,7 +33,8 @@ pub fn convert_usd_fee_to_lamports<'info>(
         return 0;
     };
 
-    let current_timestamp: u32 = Clock::get().unwrap().unix_timestamp as u32;
+    // Downcasting is safe as long as the date is before 7 February 2106 at 06:28:16 UTC.
+    let current_timestamp: u32 = get_current_time().unwrap() as u32;
 
     // Due to reorgs and latency issues, the oracle can have a timestamp that is in the future. In
     // this case, we ignore the price and skip fee charging.
@@ -65,4 +67,27 @@ pub fn convert_usd_fee_to_lamports<'info>(
     };
 
     fee_in_lamports
+}
+
+/// Helper function to calculate the amount collectable from an account. It takes an extra-safe approach by adding a
+/// buffer to the rent exemption, ensuring that the account balance does not fall below the rent-exempt minimum (which
+/// would, otherwise, make the program unusable).
+pub fn safe_collectable_amount(account: &AccountInfo) -> Result<u64> {
+    // Retrieve the current balance of the account.
+    let current_balance = account.lamports();
+
+    // Determine the size of the account's data.
+    let data_len = account.data_len();
+
+    // Retrieve the rent sysvar.
+    let rent = Rent::get()?;
+
+    // Calculate the minimum balance needed for rent exemption.
+    let rent_exempt_minimum = rent.minimum_balance(data_len);
+
+    let buffer = 1_000_000; // 0.001 SOL
+    let safe_minimum = rent_exempt_minimum.checked_add(buffer).unwrap();
+
+    // Return the collectable amount
+    Ok(current_balance.saturating_sub(safe_minimum))
 }

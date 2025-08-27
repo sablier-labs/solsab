@@ -4,7 +4,7 @@ use crate::{
     state::treasury::Treasury,
     utils::{
         constants::{seeds::TREASURY, WITHDRAWAL_FEE_USD},
-        fee_calculation::convert_usd_fee_to_lamports,
+        convert_usd_fee_to_lamports,
     },
 };
 
