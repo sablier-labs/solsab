@@ -110,7 +110,7 @@ pub mod sablier_lockup {
     ///
     /// # Accounts Expected
     ///
-    /// - `creator` The transaction signer.
+    /// - `funder` The transaction signer.
     /// - `sender` The account that will have authority to cancel or renounce the stream.
     /// - `deposit_token_mint` The mint of the tokens to be deposited.
     /// - `recipient` The address receiving the tokens, as well as the NFT owner.
@@ -130,7 +130,7 @@ pub mod sablier_lockup {
     ///
     /// # Notes
     ///
-    /// - The passed sender of the stream doesn't have to be the same as its creator.
+    /// - The passed sender of the stream doesn't have to be the same as its funder.
     /// - A cliff time of zero means there is no cliff.
     /// - As long as the times are ordered, it is not an error for the start or the cliff time to be in the past.
     /// - The stream recipient is given solely by the ownership of the stream NFT, which is minted to the passed
