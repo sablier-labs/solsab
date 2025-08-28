@@ -114,7 +114,7 @@ describe("cancel", () => {
                   // Assert the sender's ATA doesn't exist
                   await assertAccountNotExists(ctx, senderATA, "Sender's ATA");
 
-                  // Create ATA for & mint random token to the stream creator
+                  // Create ATA for & mint random token to the stream funder
                   await createATAAndFund(
                     ctx.banksClient,
                     ctx.defaultBankrunPayer,
@@ -126,9 +126,9 @@ describe("cancel", () => {
 
                   // Create a stream with a random token
                   const salt = await ctx.createWithTimestampsLl({
-                    creator: ctx.sender.keys,
                     depositTokenMint: ctx.randomToken,
                     depositTokenProgram: ProgramId.TOKEN,
+                    funder: ctx.sender.keys,
                   });
 
                   // Cancel the stream

@@ -22,18 +22,18 @@ pub struct CreateWithTimestamps<'info> {
     // -------------------------------------------------------------------------- //
     //                                USER ACCOUNTS                               //
     // -------------------------------------------------------------------------- //
-    /// Write account: the creator and funder of the stream.
+    /// Write account: the signer and the funder of the stream.
     #[account(mut)]
-    pub creator: Signer<'info>,
+    pub funder: Signer<'info>,
 
-    /// Write account: the creator's ATA for the deposit token.
+    /// Write account: the funder's ATA for the deposit token.
     #[account(
       mut,
       associated_token::mint = deposit_token_mint,
-      associated_token::authority = creator,
+      associated_token::authority = funder,
       associated_token::token_program = deposit_token_program
     )]
-    pub creator_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub funder_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// Read account: the recipient of the stream.
     /// CHECK: The recipient may be any account
@@ -99,7 +99,7 @@ pub struct CreateWithTimestamps<'info> {
     /// Create account: the mint account for the stream NFT.
     #[account(
       init,
-      payer = creator,
+      payer = funder,
       seeds = [
         STREAM_NFT_MINT,
         sender.key().as_ref(),
@@ -116,7 +116,7 @@ pub struct CreateWithTimestamps<'info> {
     /// Create account: the ATA for the stream NFT owned by the recipient.
     #[account(
       init,
-      payer = creator,
+      payer = funder,
       associated_token::mint = stream_nft_mint,
       associated_token::authority = recipient,
       associated_token::token_program = nft_token_program,
@@ -126,7 +126,7 @@ pub struct CreateWithTimestamps<'info> {
     /// Create account: the account that will store the stream data.
     #[account(
       init,
-      payer = creator,
+      payer = funder,
       space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
       seeds = [STREAM_DATA, stream_nft_mint.key().as_ref()],
       bump
@@ -136,7 +136,7 @@ pub struct CreateWithTimestamps<'info> {
     /// Create account: the ATA for deposit tokens owned by stream data account.
     #[account(
       init,
-      payer = creator,
+      payer = funder,
       associated_token::mint = deposit_token_mint,
       associated_token::authority = stream_data,
       associated_token::token_program = deposit_token_program
@@ -210,8 +210,8 @@ pub fn handler(
     is_cancelable: bool,
 ) -> Result<()> {
     let deposit_token_mint = &ctx.accounts.deposit_token_mint;
-    let creator = &ctx.accounts.creator;
-    let creator_ata = &ctx.accounts.creator_ata;
+    let funder = &ctx.accounts.funder;
+    let funder_ata = &ctx.accounts.funder_ata;
 
     // Validate parameters
     check_create(deposit_amount, start_time, cliff_time, end_time, start_unlock_amount, cliff_unlock_amount)?;
@@ -240,7 +240,7 @@ pub fn handler(
         &ctx.accounts.nft_collection_metadata,
         &ctx.accounts.nft_collection_master_edition,
         &ctx.accounts.recipient_stream_nft_ata,
-        creator,
+        funder,
         &ctx.accounts.token_metadata_program,
         &ctx.accounts.nft_token_program,
         &ctx.accounts.system_program,
@@ -253,9 +253,9 @@ pub fn handler(
 
     // Interaction: transfer tokens from the sender’s ATA to the StreamData ATA.
     transfer_tokens(
-        creator_ata.to_account_info(),
+        funder_ata.to_account_info(),
         ctx.accounts.stream_data_ata.to_account_info(),
-        creator.to_account_info(),
+        funder.to_account_info(),
         deposit_token_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
         deposit_amount,
