@@ -22,7 +22,7 @@ pub struct CreateWithTimestamps<'info> {
     // -------------------------------------------------------------------------- //
     //                                USER ACCOUNTS                               //
     // -------------------------------------------------------------------------- //
-    /// Write account: the creator and funder of the stream.
+    /// Write account: the signer and the funder of the stream.
     #[account(mut)]
     pub funder: Signer<'info>,
 
