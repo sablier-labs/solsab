@@ -91,12 +91,10 @@ pub fn handler(
     recipient_count: u32,
 ) -> Result<()> {
     let token_mint = ctx.accounts.airdrop_token_mint.key();
-    let token_decimals = ctx.accounts.airdrop_token_mint.decimals;
 
     // Effect: Initialize the campaign account.
     ctx.accounts.campaign.create(
         aggregate_amount,
-        token_decimals,
         token_mint,
         ctx.bumps.campaign,
         campaign_start_time,
@@ -119,7 +117,7 @@ pub fn handler(
         ipfs_cid,
         merkle_root,
         recipient_count,
-        token_decimals,
+        token_decimals: ctx.accounts.airdrop_token_mint.decimals,
         token_mint,
     });
 
