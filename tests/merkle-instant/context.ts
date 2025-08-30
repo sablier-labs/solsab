@@ -265,6 +265,7 @@ export class MerkleInstantTestContext extends TestContext {
 
   defaultCampaignData(): CampaignData {
     return {
+      aggregateAmount: Amount.AGGREGATE,
       airdropTokenMint: this.usdc,
       bump: 0,
       campaignStartTime: Campaign.START_TIME,
@@ -274,6 +275,7 @@ export class MerkleInstantTestContext extends TestContext {
       ipfsCid: Campaign.IPFS_CID,
       merkleRoot: Array.from(this.merkleRoot),
       name: Campaign.NAME,
+      recipientCount: this.leaves.length,
     };
   }
 

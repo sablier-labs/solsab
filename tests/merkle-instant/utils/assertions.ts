@@ -16,6 +16,7 @@ export function expectToThrow(
 }
 
 export function assertEqCampaignData(a: CampaignData, b: CampaignData) {
+  assertEqBn(a.aggregateAmount, b.aggregateAmount);
   assertEqPublicKey(a.airdropTokenMint, b.airdropTokenMint);
   assertEqPublicKey(a.creator, b.creator);
   assertEqBn(a.campaignStartTime, b.campaignStartTime);
@@ -25,4 +26,5 @@ export function assertEqCampaignData(a: CampaignData, b: CampaignData) {
   assert.equal(a.merkleRoot.length, b.merkleRoot.length);
   assert.deepEqual(a.merkleRoot, b.merkleRoot);
   assert.equal(a.name, b.name);
+  assert.equal(a.recipientCount, b.recipientCount);
 }

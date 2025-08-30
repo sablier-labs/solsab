@@ -90,9 +90,12 @@ pub fn handler(
     aggregate_amount: u64,
     recipient_count: u32,
 ) -> Result<()> {
+    let token_mint = ctx.accounts.airdrop_token_mint.key();
+
     // Effect: Initialize the campaign account.
     ctx.accounts.campaign.create(
-        ctx.accounts.airdrop_token_mint.key(),
+        aggregate_amount,
+        token_mint,
         ctx.bumps.campaign,
         campaign_start_time,
         ctx.accounts.creator.key(),
@@ -100,6 +103,7 @@ pub fn handler(
         ipfs_cid.clone(),
         merkle_root,
         name.clone(),
+        recipient_count,
     )?;
 
     // Log the campaign creation.
@@ -114,7 +118,7 @@ pub fn handler(
         merkle_root,
         recipient_count,
         token_decimals: ctx.accounts.airdrop_token_mint.decimals,
-        token_mint: ctx.accounts.airdrop_token_mint.key(),
+        token_mint,
     });
 
     Ok(())
