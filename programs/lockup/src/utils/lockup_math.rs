@@ -1,6 +1,6 @@
 use crate::{
     state::lockup::{Amounts, Timestamps},
-    utils::time::get_current_time,
+    utils::get_current_time,
 };
 
 pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {

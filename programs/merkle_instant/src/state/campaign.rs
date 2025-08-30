@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::utils::{constants::*, time::get_current_time};
+use crate::utils::{constants::*, get_current_time};
 
 /// Groups all the data for a Merkle Instant campaign.
 #[account]
