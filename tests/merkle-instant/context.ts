@@ -254,7 +254,6 @@ export class MerkleInstantTestContext extends TestContext {
   defaultCampaignData(): CampaignData {
     return {
       aggregateAmount: Amount.AGGREGATE,
-      airdropTokenDecimals: 6,
       airdropTokenMint: this.usdc,
       bump: 0,
       campaignStartTime: Campaign.START_TIME,
