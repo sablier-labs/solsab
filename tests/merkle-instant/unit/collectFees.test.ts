@@ -32,7 +32,7 @@ describe("collectFees", () => {
 
     describe("when signer is not the authorized fee collector", () => {
       it("should fail", async () => {
-        await ctx.giveFees();
+        await ctx.simulateFeeGeneration();
 
         await expectToThrow(ctx.collectFees({ signer: ctx.eve.keys }), CONSTRAINT_ADDRESS);
       });
@@ -47,7 +47,7 @@ describe("collectFees", () => {
 
       describe("given accumulated fees", () => {
         it("should collect the fees", async () => {
-          const fees = await ctx.giveFees();
+          const fees = await ctx.simulateFeeGeneration();
 
           const beforeLamports = {
             feeRecipient: await getFeeRecipientLamports(),

@@ -4,12 +4,9 @@ import {
 } from "@coral-xyz/anchor-errors";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { REDUNDANCY_BUFFER } from "../../../lib/constants";
-// import { sleepFor } from "../../../lib/helpers";
 import { assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
-
-// import { Time } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
@@ -33,7 +30,7 @@ describe("collectFees", () => {
 
     describe("when signer is not the authorized fee collector", () => {
       it("should fail", async () => {
-        await ctx.giveFees();
+        await ctx.simulateFeeGeneration();
         await expectToThrow(ctx.collectFees(ctx.eve.keys), CONSTRAINT_ADDRESS);
       });
     });
@@ -47,7 +44,7 @@ describe("collectFees", () => {
 
       describe("given accumulated fees", () => {
         it("should collect the fees", async () => {
-          const fees = await ctx.giveFees();
+          const fees = await ctx.simulateFeeGeneration();
 
           const beforeLamports = {
             feeRecipient: await getFeeRecipientLamports(),

@@ -117,7 +117,7 @@ export class TestContext {
     return toBn(balance);
   }
 
-  async giveFees(): Promise<BN> {
+  async simulateFeeGeneration(): Promise<BN> {
     const fees = sol(1);
 
     await transferLamports(
