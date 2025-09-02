@@ -16,7 +16,6 @@ import { getProof, getRoot, type LeafData } from "./utils/merkle";
 export class MerkleInstantTestContext extends TestContext {
   // Programs and addresses
   public merkleInstant!: anchor.Program<SablierMerkleInstantProgram>;
-  public treasuryAddress!: PublicKey;
 
   // Users
   public campaignCreator!: User;

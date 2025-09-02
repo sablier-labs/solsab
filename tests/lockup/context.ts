@@ -18,7 +18,6 @@ export class LockupTestContext extends TestContext {
   // Programs and addresses
   public nftCollectionDataAddress!: PublicKey;
   public lockup!: anchor.Program<SablierLockupProgram>;
-  public treasuryAddress!: PublicKey;
 
   // Users
   public sender!: User;

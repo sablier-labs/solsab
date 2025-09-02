@@ -186,9 +186,11 @@ fn charge_claim_fee<'info>(
     // Calculate the fee in lamports.
     let fee_in_lamports: u64 = convert_usd_fee_to_lamports(CLAIM_FEE_USD, chainlink_program, chainlink_sol_usd_feed);
 
-    // Interaction: transfer the fee from the signer to the treasury.
-    let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);
-    invoke(&fee_charging_ix, &[tx_signer, treasury])?;
+    if fee_in_lamports > 0 {
+        // Interaction: transfer the fee from the signer to the treasury.
+        let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);
+        invoke(&fee_charging_ix, &[tx_signer, treasury])?;
+    }
 
     Ok(fee_in_lamports)
 }

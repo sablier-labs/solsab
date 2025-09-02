@@ -179,6 +179,27 @@ export async function transfer(
   return await banksClient.processTransaction(tx);
 }
 
+export async function transferLamports(
+  banksClient: BanksClient,
+  payer: Signer,
+  fromPubkey: PublicKey,
+  toPubkey: PublicKey,
+  lamports: number | bigint,
+): Promise<BanksTransactionMeta> {
+  const tx = new Transaction().add(
+    SystemProgram.transfer({
+      fromPubkey,
+      lamports,
+      toPubkey,
+    }),
+  );
+
+  tx.recentBlockhash = await getLatestBlockhash(banksClient);
+  tx.sign(payer);
+
+  return await banksClient.processTransaction(tx);
+}
+
 /* -------------------------------------------------------------------------- */
 /*                               INTERNAL LOGIC                               */
 /* -------------------------------------------------------------------------- */

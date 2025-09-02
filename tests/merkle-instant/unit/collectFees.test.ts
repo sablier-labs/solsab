@@ -2,10 +2,9 @@ import {
   ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
   ANCHOR_ERROR__CONSTRAINT_ADDRESS as CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
-import BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { REDUNDANCY_BUFFER } from "../../../lib/constants";
-import { assertLteBn } from "../../common/assertions";
+import { assertEqBn } from "../../common/assertions";
 import { MerkleInstantTestContext } from "../context";
 import { expectToThrow } from "../utils/assertions";
 
@@ -33,8 +32,7 @@ describe("collectFees", () => {
 
     describe("when signer is not the authorized fee collector", () => {
       it("should fail", async () => {
-        // Perform a claim, generating fees
-        await ctx.claim();
+        await ctx.giveFees();
 
         await expectToThrow(ctx.collectFees({ signer: ctx.eve.keys }), CONSTRAINT_ADDRESS);
       });
@@ -49,8 +47,7 @@ describe("collectFees", () => {
 
       describe("given accumulated fees", () => {
         it("should collect the fees", async () => {
-          // Perform a claim, generating fees
-          await ctx.claim({ claimerKeys: ctx.recipient.keys });
+          const fees = await ctx.giveFees();
 
           const beforeLamports = {
             feeRecipient: await getFeeRecipientLamports(),
@@ -65,22 +62,13 @@ describe("collectFees", () => {
             treasury: await ctx.getTreasuryLamports(),
           };
 
-          const expectedClaimFee = await ctx.claimFeeInLamports();
-          const expectedFeesCollected = expectedClaimFee.sub(REDUNDANCY_BUFFER); // 1 claim worth of fees minus the redundancy buffer
+          const expectedFeesCollected = fees.sub(REDUNDANCY_BUFFER);
 
-          // Assert that the Treasury has been debited with an amount that is within 5% of the expected amount
-          const treasuryBalanceDifference = beforeLamports.treasury.sub(afterLamports.treasury).abs();
-          assertLteBn(
-            treasuryBalanceDifference.sub(expectedFeesCollected).abs(),
-            expectedFeesCollected.mul(new BN(5)).div(new BN(100)),
-          );
+          // Assert that the treasury balance has been updated correctly.
+          assertEqBn(beforeLamports.treasury.sub(afterLamports.treasury), expectedFeesCollected);
 
-          // Assert that the fee recipient has been credited with an amount that is within 5% of the expected amount
-          const feeRecipientBalanceDifference = afterLamports.feeRecipient.sub(beforeLamports.feeRecipient).abs();
-          assertLteBn(
-            feeRecipientBalanceDifference.sub(expectedFeesCollected).abs(),
-            expectedFeesCollected.mul(new BN(5)).div(new BN(100)),
-          );
+          // Assert that the recipient balance has been updated correctly.
+          assertEqBn(afterLamports.feeRecipient.sub(beforeLamports.feeRecipient), expectedFeesCollected);
         });
       });
     });
