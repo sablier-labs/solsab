@@ -1,6 +1,7 @@
 pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
 // The fee amount in USD, denominated in Chainlink's 8-decimal format for USD prices, where 1e8 is $1.
-pub const WITHDRAWAL_FEE_USD: u64 = 1e8 as u64;
+// Currently set to 0.
+pub const WITHDRAWAL_FEE_USD: u64 = 0;
 pub const LAMPORTS_PER_SOL: u64 = 1e9 as u64; // 1 billion lamports in 1 SOL
 
 // Account Seeds

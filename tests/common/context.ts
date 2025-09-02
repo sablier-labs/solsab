@@ -14,7 +14,7 @@ import { Decimals, ProgramId } from "../../lib/constants";
 import { dai, sol, usdc } from "../../lib/convertors";
 import { toBigInt, toBn } from "../../lib/helpers";
 import { type ProgramName } from "../../lib/types";
-import { createATAAndFund, createMint } from "./anchor-bankrun";
+import { createATAAndFund, createMint, transferLamports } from "./anchor-bankrun";
 import { ChainlinkMock } from "./chainlink-mock";
 import { type User } from "./types";
 
@@ -25,10 +25,11 @@ export class TestContext {
   public bankrunProvider!: BankrunProvider;
   public defaultBankrunPayer!: Keypair;
 
-  // Users - encapsulated within the context
+  // Users/Others - encapsulated within the context
   public eve!: User;
   public feeCollector!: User;
   public recipient!: User;
+  public treasuryAddress!: PublicKey;
 
   // Chainlink Mock
   public chainlinkMock: ChainlinkMock = new ChainlinkMock();
@@ -114,6 +115,20 @@ export class TestContext {
   async getLamportsOf(user: PublicKey): Promise<BN> {
     const balance = await this.banksClient.getBalance(user);
     return toBn(balance);
+  }
+
+  async simulateFeeGeneration(): Promise<BN> {
+    const fees = sol(1);
+
+    await transferLamports(
+      this.banksClient,
+      this.defaultBankrunPayer,
+      this.defaultBankrunPayer.publicKey,
+      this.treasuryAddress,
+      fees.toNumber(),
+    );
+
+    return fees;
   }
 
   async timeTravelTo(timestamp: BN) {
