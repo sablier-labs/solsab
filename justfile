@@ -68,6 +68,10 @@ alias bmi := build-merkle-instant
 clean globs=GLOBS_CLEAN:
     nlx del-cli "{{ globs }}"
 
+# Execute setup script
+setup:
+    bun setup
+
 # Run verification script
 verify:
     bash ./scripts/bash/verify.sh
@@ -92,12 +96,12 @@ alias rc := rust-check
 # Format Rust code
 rust-write:
     cargo fmt
-    cargo clippy --fix
+    cargo clippy --fix --allow-dirty
 alias rw := rust-write
 
-# ============================================================================ #
-#                                 TESTING                                      #
-# ============================================================================ #
+# ---------------------------------------------------------------------------- #
+#                                    TESTING                                   #
+# ---------------------------------------------------------------------------- #
 
 # Run all tests
 # To debug the Solana logs, run this as `RUST_LOG=debug just test`
