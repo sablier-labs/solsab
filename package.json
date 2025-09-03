@@ -44,6 +44,6 @@
     "url": "git+https://github.com/sablier-labs/solsab.git"
   },
   "scripts": {
-    "prepare": "bun husky"
+    "setup": "husky"
   }
 }

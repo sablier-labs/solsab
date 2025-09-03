@@ -7,18 +7,12 @@ Thank you for your interest in contributing to SolSab! This guide will help you 
 Ensure you have the following software installed and configured on your machine:
 
 - [Rust (Nightly)](https://rust-lang.org/tools/install)
-- [Solana CLI](https://solana.com/docs/intro/installation#install-the-solana-cli)
-- [Anchor CLI](https://solana.com/docs/intro/installation#install-anchor-cli) (Solana development framework)
+- [Solana CLI v2.1.21](https://solana.com/docs/intro/installation#install-the-solana-cli)
+- [Anchor CLI v0.31.1](https://solana.com/docs/intro/installation#install-anchor-cli) (Solana development framework)
 - [Node.js v23+](https://nodejs.org/en)
 - [Just](https://github.com/casey/just) (command runner)
 - [Bun](https://bun.sh/docs/installation) (package manager)
 - [Ni](https://github.com/antfu-collective/ni) (package manager resolver)
-
-> [!NOTE] Consider running this one-time script to install all Sablier dependencies.
->
-> ```sh
-> curl -fsSL https://raw.githubusercontent.com/sablier-labs/team-setup/main/sablier.sh | sh
-> ```
 
 ## Set Up
 
@@ -29,13 +23,19 @@ Make sure to configure your local [Solana wallet](https://anchor-lang.com/docs/i
 ### Clone the repository
 
 ```shell
-$ git clone git@github.com:sablier-labs/solsab.git && cd solsab
+git clone git@github.com:sablier-labs/solsab.git && cd solsab
 ```
 
 ### Install dependencies
 
 ```shell
-$ just install
+bun install
+```
+
+Run one-time setup script:
+
+```shell
+just setup
 ```
 
 ### List available scripts
@@ -43,13 +43,23 @@ $ just install
 To see a list of all available scripts, run this command:
 
 ```shell
-$ just --list
+just --list
 ```
 
 ### Build the programs
 
 ```bash
 just build
+```
+
+### Run full code checks
+
+<!-- prettier-ignore -->
+> [!TIP]
+>  Make sure to build the programs first.
+
+```bash
+just full-check
 ```
 
 ### Testing
