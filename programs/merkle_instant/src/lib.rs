@@ -8,7 +8,7 @@ pub mod utils;
 use crate::instructions::*;
 
 // Program ID for the Sablier Merkle Instant program, used for both localnet and devnet deployments.
-declare_id!("GrZhWdwBgZakydbyUMx1eTkCT5Eei7LC21i87Ag7Vh1D");
+declare_id!("8t2R21V3vjS1ucZzmX2memtGptjYZi2yGY3cYVa8dak7");
 
 /// Sablier Merkle Instant program for creating and managing Merkle tree-based airdrop campaigns.
 #[program]
