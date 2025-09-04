@@ -78,7 +78,14 @@ alias v := verify
 # ---------------------------------------------------------------------------- #
 
 # Run all code checks
-full-check: prettier-check biome-check tsc-check rust-check
+full-check: _check-build-artifacts prettier-check biome-check tsc-check rust-check
+
+_check-build-artifacts:
+    #!/usr/bin/env sh
+    if [ -z "$(ls -A target/idl 2>/dev/null)" ]; then
+        echo "❌ Build artifacts not found. Have you forgotten to build the programs?"
+        exit 1
+    fi
 
 # Run all code fixes
 full-write: prettier-write biome-write rust-write
