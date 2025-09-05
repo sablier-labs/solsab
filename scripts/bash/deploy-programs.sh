@@ -10,14 +10,14 @@
 #   --program PROGRAM [PROGRAM...]  Specify which program(s) to deploy
 #                                   Valid programs: sablier_lockup, sablier_merkle_instant
 #                                   Can specify one or multiple programs
-#   --no-init                       Do not run the post-deployment initialization script
+#   --setup                         Run the setup scripts (creates demo streams/campaigns) instead of just init
 #
 # EXAMPLES:
 #   ./scripts/bash/deploy-programs.sh --program sablier_lockup            # Deploy & initialize just the lockup program
 #   ./scripts/bash/deploy-programs.sh --program sablier_merkle_instant    # Deploy & initialize just the merkle_instant program
 #   ./scripts/bash/deploy-programs.sh --program lk mi                     # Deploy & initialize both programs
-#   ./scripts/bash/deploy-programs.sh --no-init --program sablier_lockup  # Deploy the lockup program without the initialization
-#   ./scripts/bash/deploy-programs.sh --no-init --program lk mi           # Deploy both programs without the initialization
+#   ./scripts/bash/deploy-programs.sh --setup --program sablier_lockup    # Deploy & setup with demo streams
+#   ./scripts/bash/deploy-programs.sh --setup --program lk mi             # Deploy & setup both programs with demo data
 #
 # WHAT THIS SCRIPT DOES:
 #   1. Switches to main branch and pulls latest changes
@@ -26,7 +26,7 @@
 #   4. Creates deployment branch and commits changes
 #   5. Deploys programs to devnet using anchor deploy -v -p <program>
 #   6. Creates separate ZIP files with IDL and types for each program
-#   7. Runs post-deployment initialization script (unless the --no-init flag has been passed)
+#   7. Runs post-deployment initialization script (init-only by default, or setup scripts with --setup flag)
 #
 # OUTPUT FILES:
 #   - {program_name}_IDL_types.zip for each deployed program
@@ -39,7 +39,7 @@ set -euo pipefail
 # - see README.md
 
 # Initialize variables
-NO_INIT_FLAG=false
+SETUP_FLAG=false
 PROGRAMS=()
 
 # Configuration
@@ -66,7 +66,7 @@ show_usage_and_exit() {
     local error_msg="$1"
     echo "❌ Error: $error_msg"
     echo ""
-    echo "Usage: $0 --program PROGRAM [PROGRAM...] [--no-init]"
+    echo "Usage: $0 --program PROGRAM [PROGRAM...] [--setup]"
     echo "Valid programs: ${VALID_PROGRAMS[*]}"
     echo "Short forms: lk=sablier_lockup, mi=sablier_merkle_instant"
     echo ""
@@ -74,7 +74,7 @@ show_usage_and_exit() {
     echo "  $0 --program lk"
     echo "  $0 --program sablier_lockup"
     echo "  $0 --program lk mi"
-    echo "  $0 --program lk --no-init"
+    echo "  $0 --program lk --setup"
     exit 1
 }
 
@@ -88,8 +88,8 @@ log_action() { echo "🎯 $1"; }
 # Parse the command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --no-init)
-            NO_INIT_FLAG=true
+        --setup)
+            SETUP_FLAG=true
             shift
             ;;
         --program)
@@ -203,25 +203,46 @@ done
 
 # Program initialization scripts mapping
 declare -A INIT_SCRIPTS
+declare -A SETUP_SCRIPTS
 INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup.ts"
 INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
+SETUP_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup-with-streams.ts"
+SETUP_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant-with-campaign.ts"
 
-# Run initialization if requested
-if [[ "$NO_INIT_FLAG" == true ]]; then
-    log_info "Skipping initialization"
+# Function to execute a script for a program
+execute_script() {
+    local program="$1"
+    local script="$2"
+    local action="$3"
+    
+    log_info "${action} $program using $script..."
+    
+    ANCHOR_PROVIDER_URL=https://api.devnet.solana.com \
+    ANCHOR_WALLET=~/.config/solana/id.json \
+    na vitest --run --mode scripts "$script"
+    
+    log_success "${action} completed for $program"
+}
+
+# Run initialization or setup
+if [[ "$SETUP_FLAG" == true ]]; then
+    log_info "Running post-deployment setup (with demo data) for programs: ${PROGRAMS[*]}"
+    
+    for program in "${PROGRAMS[@]}"; do
+        if [[ -n "${SETUP_SCRIPTS[$program]:-}" ]]; then
+            execute_script "$program" "${SETUP_SCRIPTS[$program]}" "Setting up $program with demo data"
+        else
+            log_warning "No setup script found for $program"
+        fi
+    done
+
+    log_success "All setups completed"
 else
-    log_info "Running post-deployment initialization for programs: ${PROGRAMS[*]}"
+    log_info "Running post-deployment initialization (init-only) for programs: ${PROGRAMS[*]}"
 
     for program in "${PROGRAMS[@]}"; do
         if [[ -n "${INIT_SCRIPTS[$program]:-}" ]]; then
-            init_script="${INIT_SCRIPTS[$program]}"
-            log_info "Initializing $program with $init_script..."
-
-            ANCHOR_PROVIDER_URL=https://api.devnet.solana.com \
-            ANCHOR_WALLET=~/.config/solana/id.json \
-            na vitest --run --mode scripts "$init_script"
-
-            log_success "Initialization completed for $program"
+            execute_script "$program" "${INIT_SCRIPTS[$program]}" "Initializing $program"
         else
             log_warning "No initialization script found for $program"
         fi
