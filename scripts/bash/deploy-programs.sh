@@ -11,6 +11,7 @@
 #                                   Valid programs: sablier_lockup, sablier_merkle_instant
 #                                   Can specify one or multiple programs
 #   --setup                         Run the setup scripts (creates demo streams/campaigns) instead of just init
+#   --mainnet                       Deploy to mainnet-beta (default is devnet)
 #
 # EXAMPLES:
 #   ./scripts/bash/deploy-programs.sh --program sablier_lockup            # Deploy & initialize just the lockup program
@@ -41,9 +42,11 @@ set -euo pipefail
 # Initialize variables
 SETUP_FLAG=false
 PROGRAMS=()
+MAINNET_FLAG=false
 
 # Configuration
 CLUSTER="devnet"
+PROVIDER_URL="https://api.devnet.solana.com"
 VALID_PROGRAMS=("sablier_lockup" "sablier_merkle_instant")
 
 # Program configuration mapping
@@ -66,15 +69,16 @@ show_usage_and_exit() {
     local error_msg="$1"
     echo "❌ Error: $error_msg"
     echo ""
-    echo "Usage: $0 --program PROGRAM [PROGRAM...] [--setup]"
+    echo "Usage: $0 --program PROGRAM [PROGRAM...] [--setup] [--mainnet]"
     echo "Valid programs: ${VALID_PROGRAMS[*]}"
     echo "Short forms: lk=sablier_lockup, mi=sablier_merkle_instant"
     echo ""
     echo "Examples:"
-    echo "  $0 --program lk"
+    echo "  $0 --program lk" 
     echo "  $0 --program sablier_lockup"
     echo "  $0 --program lk mi"
     echo "  $0 --program lk --setup"
+    echo "  $0 --program lk --mainnet"
     exit 1
 }
 
@@ -92,6 +96,10 @@ while [[ $# -gt 0 ]]; do
             SETUP_FLAG=true
             shift
             ;;
+        --mainnet)
+            MAINNET_FLAG=true
+            shift
+            ;;
         --program)
             shift
             # Collect all program names until we hit another flag or end of args
@@ -107,12 +115,19 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# If mainnet flag is passed, set the cluster and provider url to mainnet-beta
+if [[ "$MAINNET_FLAG" == true ]]; then
+    CLUSTER="mainnet-beta"
+    PROVIDER_URL="https://api.mainnet-beta.solana.com"
+fi
+
 # Validate input
 if [[ ${#PROGRAMS[@]} -eq 0 ]]; then
     show_usage_and_exit "No programs specified"
 fi
 
 log_action "Programs to deploy: ${PROGRAMS[*]}"
+log_info "Selected cluster: $CLUSTER ($PROVIDER_URL)"
 
 # Validate programs are supported
 for program in "${PROGRAMS[@]}"; do
@@ -127,11 +142,15 @@ log_info "Switching to main branch and pulling latest changes..."
 git switch main
 git pull
 
-# Generate keypairs for all programs
+# Generate keypairs for all programs (reuse if already present to keep same address across clusters)
 for program in "${PROGRAMS[@]}"; do
     keypair_path="target/deploy/${program}-keypair.json"
-    echo "🔑 Generating keypair for $program..."
-    solana-keygen new --outfile "$keypair_path" --no-bip39-passphrase --force
+    if [[ -f "$keypair_path" ]]; then
+        log_info "Using existing keypair for $program at $keypair_path"
+    else
+        echo "🔑 Generating keypair for $program..."
+        solana-keygen new --outfile "$keypair_path" --no-bip39-passphrase
+    fi
 done
 
 # Build preparation
@@ -149,8 +168,8 @@ for program in "${PROGRAMS[@]}"; do
 done
 
 for program in "${PROGRAMS[@]}"; do
-    echo "🚀 Deploying $program..."
-    anchor deploy -v -p "$program"
+    echo "🚀 Deploying $program to $CLUSTER..."
+    ANCHOR_PROVIDER_URL="$PROVIDER_URL" anchor deploy -v -p "$program"
 done
 
 DEPLOYMENT_BRANCH="chore/deployment"
@@ -174,9 +193,9 @@ done
 git add "${git_files_to_add[@]}"
 git commit -m "chore: deployment for ${PROGRAMS[*]}"
 
-# Close buffer accounts for safety
-log_info "Closing existing buffer accounts..."
-solana program close --buffers
+# Close buffer accounts for safety (cluster-specific)
+log_info "Closing existing buffer accounts on $CLUSTER..."
+solana program close --buffers -u "$CLUSTER"
 
 # Create zip files for each program
 for program in "${PROGRAMS[@]}"; do
@@ -217,7 +236,7 @@ execute_script() {
     
     log_info "${action} $program using $script..."
     
-    ANCHOR_PROVIDER_URL=https://api.devnet.solana.com \
+    ANCHOR_PROVIDER_URL="$PROVIDER_URL" \
     ANCHOR_WALLET=~/.config/solana/id.json \
     na vitest --run --mode scripts "$script"
     
