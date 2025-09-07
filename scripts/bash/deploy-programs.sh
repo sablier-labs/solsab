@@ -10,14 +10,14 @@
 #   --program PROGRAM [PROGRAM...]  Specify which program(s) to deploy
 #                                   Valid programs: sablier_lockup, sablier_merkle_instant
 #                                   Can specify one or multiple programs
-#   --setup                         Run the setup scripts (creates demo streams/campaigns) instead of just init
+#   --setup                         Set the program(-s) up with demo streams/campaigns upon deployment
 #   --mainnet                       Deploy to mainnet-beta (default is devnet)
 #
 # EXAMPLES:
 #   ./scripts/bash/deploy-programs.sh --program sablier_lockup            # Deploy & initialize just the lockup program
 #   ./scripts/bash/deploy-programs.sh --program sablier_merkle_instant    # Deploy & initialize just the merkle_instant program
 #   ./scripts/bash/deploy-programs.sh --program lk mi                     # Deploy & initialize both programs
-#   ./scripts/bash/deploy-programs.sh --setup --program sablier_lockup    # Deploy & setup with demo streams
+#   ./scripts/bash/deploy-programs.sh --setup --program sablier_lockup    # Deploy the lockup program & set it up with demo streams
 #   ./scripts/bash/deploy-programs.sh --setup --program lk mi             # Deploy & setup both programs with demo data
 #
 # WHAT THIS SCRIPT DOES:
@@ -229,7 +229,7 @@ SETUP_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup-with-streams.ts"
 SETUP_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant-with-campaign.ts"
 
 # Function to execute a script for a program
-execute_script() {
+run_script() {
     local program="$1"
     local script="$2"
     local action="$3"
@@ -249,7 +249,7 @@ if [[ "$SETUP_FLAG" == true ]]; then
     
     for program in "${PROGRAMS[@]}"; do
         if [[ -n "${SETUP_SCRIPTS[$program]:-}" ]]; then
-            execute_script "$program" "${SETUP_SCRIPTS[$program]}" "Setting up $program with demo data"
+            run_script "$program" "${SETUP_SCRIPTS[$program]}" "Setting up $program with demo data"
         else
             log_warning "No setup script found for $program"
         fi
@@ -261,7 +261,7 @@ else
 
     for program in "${PROGRAMS[@]}"; do
         if [[ -n "${INIT_SCRIPTS[$program]:-}" ]]; then
-            execute_script "$program" "${INIT_SCRIPTS[$program]}" "Initializing $program"
+            run_script "$program" "${INIT_SCRIPTS[$program]}" "Initializing $program"
         else
             log_warning "No initialization script found for $program"
         fi
