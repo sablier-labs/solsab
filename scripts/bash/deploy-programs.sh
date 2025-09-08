@@ -122,6 +122,11 @@ done
 if [[ "$MAINNET_FLAG" == true ]]; then
     CLUSTER="mainnet-beta"
     export ANCHOR_PROVIDER_URL="https://api.mainnet-beta.solana.com"
+    export ANCHOR_WALLET="~/.config/solana/deployer.json"
+else
+    CLUSTER="devnet"
+    export ANCHOR_PROVIDER_URL="https://api.devnet.solana.com"
+    export ANCHOR_WALLET="~/.config/solana/id.json"
 fi
 
 # Validate input
@@ -244,7 +249,6 @@ run_script() {
 
     log_info "${action} $program using $script..."
 
-    ANCHOR_WALLET=~/.config/solana/id.json \
     na vitest --run --mode scripts "$script"
 
     log_success "${action} completed for $program"
