@@ -215,13 +215,13 @@ for program in "${PROGRAMS[@]}"; do
 done
 
 
-# Program initialization scripts mapping
-declare -A INIT_SCRIPTS
-declare -A SETUP_SCRIPTS
-INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup.ts"
-INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
-SETUP_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup-with-streams.ts"
-SETUP_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant-with-campaign.ts"
+# Program deployment scripts mapping
+declare -A MAINNET_SCRIPTS
+declare -A DEVNET_SCRIPTS
+MAINNET_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup.ts"
+MAINNET_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
+DEVNET_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup-and-create-streams.ts"
+DEVNET_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant-and-create-campaign.ts"
 
 # Function to execute a script for a program
 run_script() {
@@ -242,10 +242,10 @@ if [[ "$MAINNET_FLAG" == true ]]; then
     log_info "Running post-deployment initialization (init-only) for mainnet programs: ${PROGRAMS[*]}"
 
     for program in "${PROGRAMS[@]}"; do
-        if [[ -n "${INIT_SCRIPTS[$program]:-}" ]]; then
-            run_script "$program" "${INIT_SCRIPTS[$program]}" "Initializing $program"
+        if [[ -n "${MAINNET_SCRIPTS[$program]:-}" ]]; then
+            run_script "$program" "${MAINNET_SCRIPTS[$program]}" "Initializing $program"
         else
-            log_warning "No initialization script found for $program"
+            log_warning "No mainnet script found for $program"
         fi
     done
 
@@ -254,10 +254,10 @@ else
     log_info "Running post-deployment initialization + demo data setup for devnet programs: ${PROGRAMS[*]}"
 
     for program in "${PROGRAMS[@]}"; do
-        if [[ -n "${SETUP_SCRIPTS[$program]:-}" ]]; then
-            run_script "$program" "${SETUP_SCRIPTS[$program]}" "Setting up $program with demo data"
+        if [[ -n "${DEVNET_SCRIPTS[$program]:-}" ]]; then
+            run_script "$program" "${DEVNET_SCRIPTS[$program]}" "Setting up $program with demo data"
         else
-            log_warning "No setup script found for $program"
+            log_warning "No devnet script found for $program"
         fi
     done
 
