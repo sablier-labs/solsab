@@ -8,6 +8,9 @@
     "rules": {
       "complexity": {
         "noExcessiveNestedTestSuites": "off"
+      },
+      "suspicious": {
+        "noExportsInTest": "off"
       }
     }
   }
