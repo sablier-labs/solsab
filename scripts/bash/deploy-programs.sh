@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script deploys SolSab programs to Devnet and initializes it.
+# This script deploys SolSab programs to Devnet or Mainnet, initializes them - and, optionally, sets them up with demo data.
 # It must be run from the root of the SolSab repo.
 #
 # USAGE:
@@ -9,16 +9,17 @@
 # OPTIONS:
 #   --program PROGRAM [PROGRAM...]  Specify which program(s) to deploy
 #                                   Valid programs: sablier_lockup, sablier_merkle_instant
-#                                   Can specify one or multiple programs
-#   --setup                         Set the program(-s) up with demo streams/campaigns upon deployment
+#                                   Can specify one or multiple programs, as well as their short forms (lk=sablier_lockup, mi=sablier_merkle_instant)
 #   --mainnet                       Deploy to mainnet-beta (default is devnet)
+#                                   Note: devnet deployments include demo data setup, mainnet deployments are init-only
 #
 # EXAMPLES:
 #   ./scripts/bash/deploy-programs.sh --program sablier_lockup            # Deploy & initialize just the lockup program
 #   ./scripts/bash/deploy-programs.sh --program sablier_merkle_instant    # Deploy & initialize just the merkle_instant program
 #   ./scripts/bash/deploy-programs.sh --program lk mi                     # Deploy & initialize both programs
-#   ./scripts/bash/deploy-programs.sh --setup --program sablier_lockup    # Deploy the lockup program & set it up with demo streams
-#   ./scripts/bash/deploy-programs.sh --setup --program lk mi             # Deploy & setup both programs with demo data
+#   ./scripts/bash/deploy-programs.sh --program sablier_lockup            # Deploy the lockup program to devnet & set it up with demo streams
+#   ./scripts/bash/deploy-programs.sh --mainnet --program sablier_lockup  # Deploy the lockup program to mainnet (init-only, no demo data)
+#   ./scripts/bash/deploy-programs.sh --program lk mi                     # Deploy both programs to devnet & setup with demo data
 #
 # WHAT THIS SCRIPT DOES:
 #   1. Switches to main branch and pulls latest changes
@@ -27,7 +28,7 @@
 #   4. Creates deployment branch and commits changes
 #   5. Deploys programs to devnet using anchor deploy -v -p <program>
 #   6. Creates separate ZIP files with IDL and types for each program
-#   7. Runs post-deployment initialization script (init-only by default, or setup scripts with --setup flag)
+#   7. Runs the post-deployment initialization script (setup scripts with demo data for devnet, init-only for mainnet)
 #
 # OUTPUT FILES:
 #   - {program_name}_IDL_types.zip for each deployed program
@@ -40,7 +41,6 @@ set -euo pipefail
 # - see README.md
 
 # Initialize variables
-SETUP_FLAG=false
 PROGRAMS=()
 MAINNET_FLAG=false
 
@@ -69,16 +69,15 @@ show_usage_and_exit() {
     local error_msg="$1"
     echo "❌ Error: $error_msg"
     echo ""
-    echo "Usage: $0 --program PROGRAM [PROGRAM...] [--setup] [--mainnet]"
+    echo "Usage: $0 --program PROGRAM [PROGRAM...] [--mainnet]"
     echo "Valid programs: ${VALID_PROGRAMS[*]}"
     echo "Short forms: lk=sablier_lockup, mi=sablier_merkle_instant"
     echo ""
     echo "Examples:"
-    echo "  $0 --program lk" 
-    echo "  $0 --program sablier_lockup"
-    echo "  $0 --program lk mi"
-    echo "  $0 --program lk --setup"
-    echo "  $0 --program lk --mainnet"
+    echo "  $0 --program sablier_lockup   # Deploys the Lockup program to devnet with demo data setup"
+    echo "  $0 --program lk               # The same as above"
+    echo "  $0 --program mi --mainnet     # Deploys the Merkle Instant program to mainnet (init-only, no demo data)"
+    echo "  $0 --program lk mi             # Deploys both programs to devnet with demo data setup"
     exit 1
 }
 
@@ -92,10 +91,6 @@ log_action() { echo "🎯 $1"; }
 # Parse the command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --setup)
-            SETUP_FLAG=true
-            shift
-            ;;
         --mainnet)
             MAINNET_FLAG=true
             shift
@@ -233,31 +228,19 @@ run_script() {
     local program="$1"
     local script="$2"
     local action="$3"
-    
+
     log_info "${action} $program using $script..."
-    
+
     ANCHOR_PROVIDER_URL="$PROVIDER_URL" \
     ANCHOR_WALLET=~/.config/solana/id.json \
     na vitest --run --mode scripts "$script"
-    
+
     log_success "${action} completed for $program"
 }
 
-# Run initialization or setup
-if [[ "$SETUP_FLAG" == true ]]; then
-    log_info "Running post-deployment setup (with demo data) for programs: ${PROGRAMS[*]}"
-    
-    for program in "${PROGRAMS[@]}"; do
-        if [[ -n "${SETUP_SCRIPTS[$program]:-}" ]]; then
-            run_script "$program" "${SETUP_SCRIPTS[$program]}" "Setting up $program with demo data"
-        else
-            log_warning "No setup script found for $program"
-        fi
-    done
-
-    log_success "All setups completed"
-else
-    log_info "Running post-deployment initialization (init-only) for programs: ${PROGRAMS[*]}"
+# Run initialization or initialization + demo data setup, based on the cluster we're deploying to
+if [[ "$MAINNET_FLAG" == true ]]; then
+    log_info "Running post-deployment initialization (init-only) for mainnet programs: ${PROGRAMS[*]}"
 
     for program in "${PROGRAMS[@]}"; do
         if [[ -n "${INIT_SCRIPTS[$program]:-}" ]]; then
@@ -267,7 +250,19 @@ else
         fi
     done
 
-    log_success "All initializations completed"
+    log_success "All mainnet initializations completed"
+else
+    log_info "Running post-deployment initialization + demo data setup for devnet programs: ${PROGRAMS[*]}"
+
+    for program in "${PROGRAMS[@]}"; do
+        if [[ -n "${SETUP_SCRIPTS[$program]:-}" ]]; then
+            run_script "$program" "${SETUP_SCRIPTS[$program]}" "Setting up $program with demo data"
+        else
+            log_warning "No setup script found for $program"
+        fi
+    done
+
+    log_success "All devnet initializations + demo data setups completed"
 fi
 
 echo "🎉 Deployment completed for programs: ${PROGRAMS[*]}"
