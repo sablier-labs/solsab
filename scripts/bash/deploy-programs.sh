@@ -46,7 +46,7 @@ MAINNET_FLAG=false
 
 # Configuration
 CLUSTER="devnet"
-PROVIDER_URL="https://api.devnet.solana.com"
+export ANCHOR_PROVIDER_URL="https://api.devnet.solana.com"
 VALID_PROGRAMS=("sablier_lockup" "sablier_merkle_instant")
 
 # Program configuration mapping
@@ -113,7 +113,7 @@ done
 # If mainnet flag is passed, set the cluster and provider url to mainnet-beta
 if [[ "$MAINNET_FLAG" == true ]]; then
     CLUSTER="mainnet-beta"
-    PROVIDER_URL="https://api.mainnet-beta.solana.com"
+    export ANCHOR_PROVIDER_URL="https://api.mainnet-beta.solana.com"
 fi
 
 # Validate input
@@ -122,7 +122,7 @@ if [[ ${#PROGRAMS[@]} -eq 0 ]]; then
 fi
 
 log_action "Programs to deploy: ${PROGRAMS[*]}"
-log_info "Selected cluster: $CLUSTER ($PROVIDER_URL)"
+log_info "Selected cluster: $CLUSTER ($ANCHOR_PROVIDER_URL)"
 
 # Validate programs are supported
 for program in "${PROGRAMS[@]}"; do
@@ -164,7 +164,7 @@ done
 
 for program in "${PROGRAMS[@]}"; do
     echo "🚀 Deploying $program to $CLUSTER..."
-    ANCHOR_PROVIDER_URL="$PROVIDER_URL" anchor deploy -v -p "$program"
+    anchor deploy -v -p "$program"
 done
 
 DEPLOYMENT_BRANCH="chore/deployment"
@@ -231,7 +231,6 @@ run_script() {
 
     log_info "${action} $program using $script..."
 
-    ANCHOR_PROVIDER_URL="$PROVIDER_URL" \
     ANCHOR_WALLET=~/.config/solana/id.json \
     na vitest --run --mode scripts "$script"
 
