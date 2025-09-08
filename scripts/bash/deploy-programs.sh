@@ -162,7 +162,7 @@ for program in "${PROGRAMS[@]}"; do
         fi
     else
         echo "🔑 Generating keypair for $program..."
-        solana-keygen new --outfile "$keypair_path" --no-bip39-passphrase
+        solana-keygen new --outfile "$keypair_path" --no-bip39-passphrase --force
     fi
 done
 
