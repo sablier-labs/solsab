@@ -43,6 +43,7 @@ set -euo pipefail
 # Initialize variables
 PROGRAMS=()
 MAINNET_FLAG=false
+KEEP_KEYPAIRS=false
 
 # Configuration
 CLUSTER="devnet"
@@ -69,13 +70,16 @@ show_usage_and_exit() {
     local error_msg="$1"
     echo "❌ Error: $error_msg"
     echo ""
-    echo "Usage: $0 --program PROGRAM [PROGRAM...] [--mainnet]"
+    echo "Usage: $0 --program PROGRAM [PROGRAM...] [--mainnet] [--keep-keypairs]"
     echo "Valid programs: ${VALID_PROGRAMS[*]}"
     echo "Short forms: lk=sablier_lockup, mi=sablier_merkle_instant"
     echo ""
+    echo "Flags:"
+    echo "  --keep-keypairs   Keep existing keypairs if present (default: overwrite)"
+    echo ""
     echo "Examples:"
-    echo "  $0 --program sablier_lockup   # Deploys the Lockup program to devnet with demo data setup"
-    echo "  $0 --program lk               # The same as above"
+    echo "  $0 --program sablier_lockup   # Deploys the Lockup program to devnet with demo data setup, overwriting keypair"
+    echo "  $0 --program lk --keep-keypairs # Same as above, but keeps existing keypair if present"
     echo "  $0 --program mi --mainnet     # Deploys the Merkle Instant program to mainnet (init-only, no demo data)"
     echo "  $0 --program lk mi             # Deploys both programs to devnet with demo data setup"
     exit 1
@@ -93,6 +97,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --mainnet)
             MAINNET_FLAG=true
+            shift
+            ;;
+        --keep-keypairs)
+            KEEP_KEYPAIRS=true
             shift
             ;;
         --program)
@@ -137,11 +145,16 @@ log_info "Switching to main branch and pulling latest changes..."
 git switch main
 git pull
 
-# Generate keypairs for all programs (reuse if already present to keep same address across clusters)
+# Generate keypairs for all programs (unless --keep-keypairs is set)
 for program in "${PROGRAMS[@]}"; do
     keypair_path="target/deploy/${program}-keypair.json"
-    if [[ -f "$keypair_path" ]]; then
-        log_info "Using existing keypair for $program at $keypair_path"
+    if [[ "$KEEP_KEYPAIRS" == true ]]; then
+        if [[ -f "$keypair_path" ]]; then
+            log_info "Using existing keypair for $program at $keypair_path (keeping as requested)"
+        else
+            log_error "--keep-keypairs was specified, but $keypair_path does not exist for $program. Aborting."
+            exit 1
+        fi
     else
         echo "🔑 Generating keypair for $program..."
         solana-keygen new --outfile "$keypair_path" --no-bip39-passphrase
