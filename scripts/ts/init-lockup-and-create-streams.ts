@@ -10,7 +10,7 @@ import {
   configureTestingEnvironment,
   initSablierLockup,
   lockupProgram,
-  senderKeys,
+  signerKeys,
 } from "./init-lockup";
 
 describe("Sablier Lockup post-deployment initialization with streams", () => {
@@ -101,8 +101,8 @@ async function createStream(params: CreateParams) {
       depositTokenMint,
       depositTokenProgram: TOKEN_PROGRAM_ID,
       nftTokenProgram: TOKEN_PROGRAM_ID,
-      recipient: senderKeys.publicKey,
-      sender: senderKeys.publicKey,
+      recipient: signerKeys.publicKey,
+      sender: signerKeys.publicKey,
     })
     .preInstructions([increaseCULimitIx])
     .rpc();
@@ -113,27 +113,27 @@ async function createTokenAndMintToSender(): Promise<PublicKey> {
 
   const depositTokenMint = await createMint(
     anchorProvider.connection,
-    senderKeys,
-    senderKeys.publicKey,
+    signerKeys,
+    signerKeys.publicKey,
     freezeAuthority,
     Decimals.SOL,
     Keypair.generate(),
   );
 
-  const senderATA = await getOrCreateAssociatedTokenAccount(
+  const signerATA = await getOrCreateAssociatedTokenAccount(
     anchorProvider.connection,
-    senderKeys,
+    signerKeys,
     depositTokenMint,
-    senderKeys.publicKey,
+    signerKeys.publicKey,
   );
 
   const mintedAmount = sol(1_000_000);
   await mintTo(
     anchorProvider.connection,
-    senderKeys,
+    signerKeys,
     depositTokenMint,
-    senderATA.address,
-    senderKeys,
+    signerATA.address,
+    signerKeys,
     Number(mintedAmount),
   );
 

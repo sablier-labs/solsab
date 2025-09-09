@@ -3,10 +3,10 @@ import { describe, it } from "vitest";
 import { ProgramId } from "../../lib/constants";
 import { toBn } from "../../lib/helpers";
 import {
-  campaignCreatorKeys,
   configureTestingEnvironment,
   initSablierMerkleInstant,
   merkleInstantProgram,
+  signerKeys,
 } from "./init-merkle-instant";
 
 describe("Sablier Merkle Instant post-deployment initialization with campaign", () => {
@@ -32,7 +32,7 @@ const Campaign = {
 /* -------------------------------------------------------------------------- */
 
 async function createCampaign({
-  creator = campaignCreatorKeys,
+  creator = signerKeys,
   name = Campaign.NAME,
   startTime = Campaign.START_TIME,
   expirationTime = Campaign.EXPIRATION_TIME,
@@ -41,7 +41,7 @@ async function createCampaign({
 } = {}) {
   await merkleInstantProgram.methods
     .createCampaign(Campaign.MERKLE_ROOT, startTime, expirationTime, name, Campaign.IPFS_CID, toBn(10_000), 100)
-    .signers([campaignCreatorKeys])
+    .signers([signerKeys])
     .accounts({
       airdropTokenMint,
       airdropTokenProgram,
