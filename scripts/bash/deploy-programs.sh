@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script deploys SolSab programs to Devnet or Mainnet, initializes them - and, optionally, sets them up with demo data.
+# This script deploys SolSab programs to Devnet or Mainnet, and initializes them.
 # It must be run from the root of the SolSab repo.
 #
 # USAGE:
@@ -14,21 +14,22 @@
 #                                   Note: devnet deployments include demo data setup, mainnet deployments are init-only
 #
 # EXAMPLES:
-#   ./scripts/bash/deploy-programs.sh --program sablier_lockup            # Deploy & initialize just the lockup program
-#   ./scripts/bash/deploy-programs.sh --program sablier_merkle_instant    # Deploy & initialize just the merkle_instant program
-#   ./scripts/bash/deploy-programs.sh --program lk mi                     # Deploy & initialize both programs
 #   ./scripts/bash/deploy-programs.sh --program sablier_lockup            # Deploy the lockup program to devnet & set it up with demo streams
+#   ./scripts/bash/deploy-programs.sh --program sablier_merkle_instant    # Deploy & initialize just the merkle_instant program
 #   ./scripts/bash/deploy-programs.sh --mainnet --program sablier_lockup  # Deploy the lockup program to mainnet (init-only, no demo data)
-#   ./scripts/bash/deploy-programs.sh --program lk mi                     # Deploy both programs to devnet & setup with demo data
+#   ./scripts/bash/deploy-programs.sh --program lk mi --keep-keypairs     # Deploy both programs to devnet with current keypairs & setup with demo data
 #
 # WHAT THIS SCRIPT DOES:
-#   1. Switches to main branch and pulls latest changes
-#   2. Generates new keypairs for specified programs
-#   3. Builds programs verifiably using anchor build -v -p <program>
-#   4. Creates deployment branch and commits changes
-#   5. Deploys programs to devnet using anchor deploy -v -p <program>
-#   6. Creates separate ZIP files with IDL and types for each program
-#   7. Runs the post-deployment initialization script (setup scripts with demo data for devnet, init-only for mainnet)
+#   1. Parses arguments and validates input
+#   2. Generates new keypairs for specified programs (or uses existing if --keep-keypairs)
+#   3. Cleans build artifacts and starts Colima
+#   4. Builds programs with anchor
+#   5. Deploys programs to the selected cluster (devnet/mainnet)
+#   6. Closes buffer accounts for safety
+#   7. Runs the post-deployment initialization script (demo data for devnet, init-only for mainnet)
+#   8. Switches to main branch, pulls latest changes, and syncs anchor keys
+#   9. Creates a deployment branch and commits changes
+#  10. Creates separate ZIP files with IDL and types for each program (last step)
 #
 # OUTPUT FILES:
 #   - {program_name}_IDL_types.zip for each deployed program
@@ -135,7 +136,7 @@ done
 if [[ "$MAINNET_FLAG" == true ]]; then
     CLUSTER="mainnet"
     PROVIDER_URL="https://api.mainnet-beta.solana.com"
-    # We don't want create demo streams/campaigns on mainnet
+    # We don't want to create demo streams/campaigns on mainnet
     INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup.ts"
     INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
 fi
