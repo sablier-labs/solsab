@@ -7,8 +7,8 @@ pub mod utils;
 
 use crate::instructions::*;
 
-// Program ID for the Sablier Lockup program, used for both localnet and devnet deployments.
-declare_id!("B1NkZf77LvLw5nft55LUBgyrBaTEbnEmHSCLdrsFzRe4");
+// Program ID for the Sablier Lockup program.
+declare_id!("4EauRKrNErKfsR4XetEZJNmvACGHbHnHV4R5dvJuqupC");
 
 /// Sablier Lockup program for creating and managing token streams.
 #[program]

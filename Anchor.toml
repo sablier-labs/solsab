@@ -2,16 +2,12 @@
   resolution = true
   skip-lint = false
 
-[programs.devnet]
-  sablier_lockup = "B1NkZf77LvLw5nft55LUBgyrBaTEbnEmHSCLdrsFzRe4"
-  sablier_merkle_instant = "8t2R21V3vjS1ucZzmX2memtGptjYZi2yGY3cYVa8dak7"
-
 [programs.localnet]
-  sablier_lockup = "DczGzCFQ5kHRBGVkH22HDdtduE4qaqopdc5HGLrAzfQD"
-  sablier_merkle_instant = "Cmo3bW9vDNiESzNVgqUGzbmJZ68ncJkBMgLACaRRjXyx"
+  sablier_lockup = "4EauRKrNErKfsR4XetEZJNmvACGHbHnHV4R5dvJuqupC"
+  sablier_merkle_instant = "7XrxoQejBoGouW4V3aozTSwub7xSDjYqB4Go7YLjF9rV"
 
 [provider]
-  cluster = "devnet"
+  cluster = "localnet"
   wallet = "~/.config/solana/id.json"
 
 [registry]
