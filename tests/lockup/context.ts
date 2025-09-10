@@ -1,13 +1,21 @@
 import * as anchor from "@coral-xyz/anchor";
+import {
+  type AssetV1,
+  type CollectionV1,
+  deserializeAssetV1,
+  deserializeCollectionV1,
+} from "@metaplex-foundation/mpl-core";
+import { publicKey, type RpcAccount, type SolAmount } from "@metaplex-foundation/umi";
 import * as token from "@solana/spl-token";
 import { type Keypair, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
+import { type AccountInfoBytes } from "solana-bankrun";
 import { ProgramId, ZERO } from "../../lib/constants";
 import { ProgramName } from "../../lib/enums";
 import { getPDAAddress } from "../../lib/helpers";
 import IDL from "../../target/idl/sablier_lockup.json";
 import { type SablierLockup as SablierLockupProgram } from "../../target/types/sablier_lockup";
-import type { NftCollectionData, StreamData } from "../../target/types/sablier_lockup_structs";
+import type { StreamData } from "../../target/types/sablier_lockup_structs";
 import { buildSignAndProcessTx, deriveATAAddress, getATABalance } from "../common/anchor-bankrun";
 import { TestContext } from "../common/context";
 import type { Treasury, User } from "../common/types";
@@ -16,7 +24,7 @@ import type { Salts, Stream } from "./utils/types";
 
 export class LockupTestContext extends TestContext {
   // Programs and addresses
-  public nftCollectionDataAddress!: PublicKey;
+  public nftCollectionAddress!: PublicKey;
   public lockup!: anchor.Program<SablierLockupProgram>;
   public treasuryAddress!: PublicKey;
 
@@ -30,8 +38,8 @@ export class LockupTestContext extends TestContext {
     // Call parent setup with lockup specific programs
     await super.setUp(ProgramName.Lockup, new PublicKey(IDL.address), [
       {
-        name: "token_metadata_program",
-        programId: ProgramId.TOKEN_METADATA,
+        name: "mpl_core_program",
+        programId: ProgramId.MPL_CORE,
       },
     ]);
 
@@ -42,7 +50,7 @@ export class LockupTestContext extends TestContext {
     this.sender = await this.createUser();
 
     // Compute addresses
-    this.nftCollectionDataAddress = getPDAAddress([Seed.NFT_COLLECTION_DATA], this.lockup.programId);
+    this.nftCollectionAddress = getPDAAddress([Seed.STREAM_NFT_COLLECTION], this.lockup.programId);
     this.treasuryAddress = getPDAAddress([Seed.TREASURY], this.lockup.programId);
 
     // Set the block time to the genesis time
@@ -73,14 +81,14 @@ export class LockupTestContext extends TestContext {
     depositedTokenMint = this.usdc,
     depositedTokenProgram = token.TOKEN_PROGRAM_ID,
   } = {}): Promise<void> {
-    const streamNftMint = this.getStreamNftMintAddress(salt);
+    const streamNft = this.getStreamNftAddress(salt);
     const cancelStreamIx = await this.lockup.methods
       .cancel()
       .accounts({
         depositedTokenMint,
         depositedTokenProgram,
         sender: signer.publicKey,
-        streamNftMint,
+        streamNft,
       })
       .instruction();
 
@@ -115,7 +123,7 @@ export class LockupTestContext extends TestContext {
     salt?: BN;
   } = {}): Promise<BN> {
     // Use the total supply as the salt for the stream
-    salt = salt ?? (await this.getTotalSupply());
+    salt = salt ?? (await this.getStreamNftCollectionSize());
 
     const createWithDurationsLlIx = await this.lockup.methods
       .createWithDurationsLl(
@@ -131,7 +139,6 @@ export class LockupTestContext extends TestContext {
         creator: this.sender.keys.publicKey,
         depositTokenMint: this.usdc,
         depositTokenProgram: token.TOKEN_PROGRAM_ID,
-        nftTokenProgram: token.TOKEN_PROGRAM_ID,
         recipient: this.recipient.keys.publicKey,
         sender: this.sender.keys.publicKey,
       })
@@ -155,7 +162,7 @@ export class LockupTestContext extends TestContext {
     salt = new BN(-1),
   } = {}): Promise<BN> {
     // Use the total supply as the salt for the stream
-    salt = salt.isNeg() ? await this.getTotalSupply() : salt;
+    salt = salt.isNeg() ? await this.getStreamNftCollectionSize() : salt;
 
     const txIx = await this.lockup.methods
       .createWithTimestampsLl(
@@ -172,7 +179,6 @@ export class LockupTestContext extends TestContext {
         creator: creator.publicKey,
         depositTokenMint,
         depositTokenProgram,
-        nftTokenProgram: token.TOKEN_PROGRAM_ID,
         recipient: recipientPubKey,
         sender: senderPubKey,
       })
@@ -195,20 +201,24 @@ export class LockupTestContext extends TestContext {
       .initialize(this.feeCollector.keys.publicKey, ProgramId.CHAINLINK_PROGRAM, ProgramId.CHAINLINK_SOL_USD_FEED)
       .accounts({
         initializer: this.sender.keys.publicKey,
-        nftTokenProgram: token.TOKEN_PROGRAM_ID,
       })
       .instruction();
 
     await buildSignAndProcessTx(this.banksClient, initializeIx, this.sender.keys);
   }
 
-  async renounce({ salt = this.salts.default, signer = this.sender.keys } = {}): Promise<void> {
-    const streamNftMint = this.getStreamNftMintAddress(salt);
+  async renounce({
+    salt = this.salts.default,
+    signer = this.sender.keys,
+    sender = this.sender.keys.publicKey,
+  } = {}): Promise<void> {
+    const streamNftAddress = this.getStreamNftAddress(salt, sender);
+
     const renounceIx = await this.lockup.methods
       .renounce()
       .accounts({
         sender: signer.publicKey,
-        streamNftMint,
+        streamNft: streamNftAddress,
       })
       .instruction();
 
@@ -223,7 +233,7 @@ export class LockupTestContext extends TestContext {
     depositedTokenMint = this.usdc,
     depositedTokenProgram = token.TOKEN_PROGRAM_ID,
   } = {}): Promise<void> {
-    const streamNftMint = this.getStreamNftMintAddress(salt);
+    const streamNft = this.getStreamNftAddress(salt);
     const withdrawIx = await this.lockup.methods
       .withdraw(withdrawAmount)
       .accounts({
@@ -231,10 +241,8 @@ export class LockupTestContext extends TestContext {
         chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
         depositedTokenMint,
         depositedTokenProgram,
-        nftTokenProgram: token.TOKEN_PROGRAM_ID,
         signer: signer.publicKey,
-        streamNftMint,
-        streamRecipient: this.recipient.keys.publicKey,
+        streamNft,
         withdrawalRecipient,
       })
       .instruction();
@@ -258,7 +266,7 @@ export class LockupTestContext extends TestContext {
     depositedTokenMint = this.usdc,
     depositedTokenProgram = token.TOKEN_PROGRAM_ID,
   } = {}): Promise<void> {
-    const streamNftMint = this.getStreamNftMintAddress(salt);
+    const streamNft = this.getStreamNftAddress(salt);
 
     const withdrawMaxIx = await this.lockup.methods
       .withdrawMax()
@@ -267,10 +275,8 @@ export class LockupTestContext extends TestContext {
         chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
         depositedTokenMint,
         depositedTokenProgram,
-        nftTokenProgram: token.TOKEN_PROGRAM_ID,
         signer,
-        streamNftMint,
-        streamRecipient: this.recipient.keys.publicKey,
+        streamNft,
         withdrawalRecipient,
       })
       .instruction();
@@ -286,7 +292,7 @@ export class LockupTestContext extends TestContext {
     return await this.lockup.methods
       .refundableAmountOf()
       .accounts({
-        streamNftMint: this.getStreamNftMintAddress(salt),
+        streamNft: this.getStreamNftAddress(salt),
       })
       .signers([this.defaultBankrunPayer])
       .view();
@@ -296,7 +302,7 @@ export class LockupTestContext extends TestContext {
     const result = await this.lockup.methods
       .statusOf()
       .accounts({
-        streamNftMint: this.getStreamNftMintAddress(salt),
+        streamNft: this.getStreamNftAddress(salt),
       })
       .signers([this.defaultBankrunPayer])
       .view();
@@ -317,7 +323,7 @@ export class LockupTestContext extends TestContext {
     return await this.lockup.methods
       .streamedAmountOf()
       .accounts({
-        streamNftMint: this.getStreamNftMintAddress(salt),
+        streamNft: this.getStreamNftAddress(salt),
       })
       .signers([this.defaultBankrunPayer])
       .view();
@@ -331,7 +337,7 @@ export class LockupTestContext extends TestContext {
     return await this.lockup.methods
       .withdrawableAmountOf()
       .accounts({
-        streamNftMint: this.getStreamNftMintAddress(salt),
+        streamNft: this.getStreamNftAddress(salt),
       })
       .signers([this.defaultBankrunPayer])
       .view();
@@ -374,6 +380,7 @@ export class LockupTestContext extends TestContext {
       depositedTokenMint,
       isCancelable,
       isDepleted,
+      nftAddress: this.getStreamNftAddress(salt),
       salt,
       sender: this.sender.keys.publicKey,
       timestamps: TIMESTAMPS(),
@@ -381,26 +388,16 @@ export class LockupTestContext extends TestContext {
     };
     const streamDataAddress = this.getStreamDataAddress(salt);
     const streamDataAta = deriveATAAddress(depositedTokenMint, streamDataAddress, tokenProgram);
-    const streamNftMint = this.getStreamNftMintAddress(salt);
-    const recipientStreamNftAta = deriveATAAddress(streamNftMint, this.recipient.keys.publicKey, ProgramId.TOKEN);
-    const streamNftMetadata = getPDAAddress(
-      [Seed.METADATA, ProgramId.TOKEN_METADATA.toBuffer(), streamNftMint.toBuffer()],
-      ProgramId.TOKEN_METADATA,
-    );
-    const streamNftMasterEdition = getPDAAddress(
-      [Seed.METADATA, ProgramId.TOKEN_METADATA.toBuffer(), streamNftMint.toBuffer(), Seed.EDITION],
-      ProgramId.TOKEN_METADATA,
-    );
+    const nftAddress = this.getStreamNftAddress(salt);
+    const collectionAddress = this.getStreamNftCollectionAddress();
 
     // Return the Stream object
     return {
       data,
       dataAddress: streamDataAddress,
       dataAta: streamDataAta,
-      nftMasterEdition: streamNftMasterEdition,
-      nftMetadataAddress: streamNftMetadata,
-      nftMintAddress: streamNftMint,
-      recipientStreamNftAta: recipientStreamNftAta,
+      nftAddress,
+      nftCollectionAddress: collectionAddress,
     };
   }
 
@@ -433,41 +430,72 @@ export class LockupTestContext extends TestContext {
     return streamLayout.coder.accounts.decode<StreamData>("streamData", Buffer.from(streamDataAcc.data));
   }
 
+  async fetchStreamNft(salt = this.salts.default): Promise<AssetV1> {
+    const streamNftAddress = this.getStreamNftAddress(salt);
+    const streamNftAcc = await this.fetchAccount(streamNftAddress, "Stream NFT");
+
+    const rpcAccount = this.toRpcAccount(streamNftAcc, streamNftAddress);
+    return deserializeAssetV1(rpcAccount);
+  }
+
+  async fetchStreamNftCollection(): Promise<CollectionV1> {
+    const collectionAddress = this.getStreamNftCollectionAddress();
+    const nftCollectionAcc = await this.fetchAccount(collectionAddress, "NFT Collection");
+
+    const rpcAccount = this.toRpcAccount(nftCollectionAcc, collectionAddress);
+    return deserializeCollectionV1(rpcAccount);
+  }
+
   async getSenderTokenBalance(tokenMint = this.usdc): Promise<BN> {
     const senderAta = tokenMint === this.usdc ? this.sender.usdcATA : this.sender.daiATA;
     return await getATABalance(this.banksClient, senderAta);
+  }
+
+  getStreamNftCollectionAddress(): PublicKey {
+    // The seeds used when creating the Stream NFT collection
+    const collectionSeeds = [Seed.STREAM_NFT_COLLECTION];
+
+    return getPDAAddress(collectionSeeds, this.lockup.programId);
+  }
+
+  async getStreamNftCollectionSize(): Promise<BN> {
+    const nftCollection = await this.fetchStreamNftCollection();
+    return new BN(nftCollection.numMinted);
   }
 
   /*//////////////////////////////////////////////////////////////////////////
                                 PRIVATE METHODS
   //////////////////////////////////////////////////////////////////////////*/
 
+  private async fetchAccount(address: PublicKey, accountName: string = "Account"): Promise<AccountInfoBytes> {
+    const account = await this.banksClient.getAccount(address);
+    if (!account) {
+      throw new Error(`${accountName} account is undefined`);
+    }
+
+    return account;
+  }
+
   private getStreamDataAddress(salt: BN): PublicKey {
-    const streamNftMint = this.getStreamNftMintAddress(salt);
-    const streamDataSeeds = [Seed.STREAM_DATA, streamNftMint.toBuffer()];
+    const streamNftAddress = this.getStreamNftAddress(salt);
+    const streamDataSeeds = [Seed.STREAM_DATA, streamNftAddress.toBuffer()];
     return getPDAAddress(streamDataSeeds, this.lockup.programId);
   }
 
-  private getStreamNftMintAddress(salt: BN, signer: PublicKey = this.sender.keys.publicKey): PublicKey {
-    // The seeds used when creating the Stream NFT Mint
-    const streamNftMintSeeds = [Seed.STREAM_NFT_MINT, signer.toBuffer(), salt.toBuffer("le", 16)];
+  private getStreamNftAddress(salt: BN, sender: PublicKey = this.sender.keys.publicKey): PublicKey {
+    // The seeds used when creating the Stream NFT
+    const streamNftSeeds = [Seed.STREAM_NFT, sender.toBuffer(), salt.toBuffer("le", 16)];
 
-    return getPDAAddress(streamNftMintSeeds, this.lockup.programId);
+    return getPDAAddress(streamNftSeeds, this.lockup.programId);
   }
 
-  private async getTotalSupply(): Promise<BN> {
-    const nftCollectionDataAcc = await this.banksClient.getAccount(this.nftCollectionDataAddress);
-
-    if (!nftCollectionDataAcc) {
-      throw new Error("NFT Collection Data account is undefined");
-    }
-
-    // Get the NFT Collection Data
-    const nftCollectionData = this.lockup.account.nftCollectionData.coder.accounts.decode<NftCollectionData>(
-      "nftCollectionData",
-      Buffer.from(nftCollectionDataAcc.data),
-    );
-
-    return nftCollectionData.totalSupply;
+  private toRpcAccount(accInfo: AccountInfoBytes, accAddress: PublicKey): RpcAccount {
+    return {
+      data: accInfo.data,
+      executable: accInfo.executable,
+      lamports: accInfo.lamports as unknown as SolAmount,
+      owner: publicKey(accInfo.owner.toString()),
+      publicKey: publicKey(accAddress.toString()),
+    };
   }
 }

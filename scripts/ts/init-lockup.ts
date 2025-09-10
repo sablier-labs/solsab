@@ -100,7 +100,6 @@ async function createStream(params: CreateParams) {
     .accounts({
       depositTokenMint,
       depositTokenProgram: TOKEN_PROGRAM_ID,
-      nftTokenProgram: TOKEN_PROGRAM_ID,
       recipient: senderKeys.publicKey,
       sender: senderKeys.publicKey,
     })
@@ -122,7 +121,6 @@ async function initSablierLockup() {
     .signers([senderKeys])
     .accounts({
       initializer: senderKeys.publicKey,
-      nftTokenProgram: TOKEN_PROGRAM_ID,
     })
     .rpc();
 }

@@ -28,10 +28,8 @@ export type Stream = {
   data: StreamData;
   dataAddress: PublicKey;
   dataAta: PublicKey;
-  nftMasterEdition: PublicKey;
-  nftMetadataAddress: PublicKey;
-  nftMintAddress: PublicKey;
-  recipientStreamNftAta: PublicKey;
+  nftAddress: PublicKey;
+  nftCollectionAddress: PublicKey;
 };
 
 export type UnlockAmounts = {

@@ -14,6 +14,7 @@
     "@biomejs/biome": "^2.1.2",
     "@coral-xyz/anchor": "^0.31.1",
     "@coral-xyz/anchor-errors": "^0.31.1",
+    "@metaplex-foundation/mpl-core": "1.5.0",
     "@sablier/devkit": "github:sablier-labs/devkit#main",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.2",

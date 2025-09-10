@@ -3,6 +3,7 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
+use mpl_core::accounts::BaseAssetV1;
 
 use crate::{
     state::lockup::StreamData,
@@ -24,7 +25,7 @@ pub struct Cancel<'info> {
     )]
     pub sender: Signer<'info>,
 
-    /// Create if needed account: the deposited token ATA owned by the sender.
+    /// Create-if-needed account: the deposited token ATA owned by the sender.
     #[account(
       init_if_needed,
       payer = sender,
@@ -46,7 +47,7 @@ pub struct Cancel<'info> {
       mut,
       seeds = [
         STREAM_DATA,
-        stream_nft_mint.key().as_ref()
+        stream_nft.key().as_ref()
       ],
       bump = stream_data.bump,
     )]
@@ -61,8 +62,8 @@ pub struct Cancel<'info> {
     )]
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    /// Read account: the mint account for the stream NFT.
-    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
+    /// Read account: the NFT representing the stream.
+    pub stream_nft: Box<Account<'info, BaseAssetV1>>,
 
     // -------------------------------------------------------------------------- //
     //                              PROGRAM ACCOUNTS                              //
@@ -120,7 +121,7 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
         ctx.accounts.deposited_token_program.to_account_info(),
         sender_amount,
         ctx.accounts.deposited_token_mint.decimals,
-        &[&[STREAM_DATA, ctx.accounts.stream_nft_mint.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
+        &[&[STREAM_DATA, ctx.accounts.stream_nft.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
     )?;
 
     // Log the cancellation.
@@ -129,7 +130,7 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
         recipient_amount,
         sender_amount,
         stream_data: ctx.accounts.stream_data.key(),
-        stream_nft_mint: ctx.accounts.stream_nft_mint.key()
+        stream_nft: ctx.accounts.stream_nft.key()
     });
 
     Ok(())

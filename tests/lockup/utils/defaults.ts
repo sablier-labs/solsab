@@ -14,12 +14,9 @@ export namespace Amount {
 }
 
 export namespace Seed {
-  export const EDITION = Buffer.from("edition");
-  export const METADATA = Buffer.from("metadata");
-  export const NFT_COLLECTION_DATA = Buffer.from("nft_collection_data");
-  export const NFT_COLLECTION_MINT = Buffer.from("nft_collection_mint");
   export const STREAM_DATA = Buffer.from("stream_data");
-  export const STREAM_NFT_MINT = Buffer.from("stream_nft_mint");
+  export const STREAM_NFT = Buffer.from("stream_nft");
+  export const STREAM_NFT_COLLECTION = Buffer.from("stream_nft_collection");
   export const TREASURY = Buffer.from("treasury");
 }
 
