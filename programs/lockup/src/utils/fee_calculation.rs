@@ -1,6 +1,7 @@
-use crate::utils::{constants::LAMPORTS_PER_SOL, time::get_current_time};
 use anchor_lang::prelude::*;
 use chainlink_solana as chainlink;
+
+use crate::utils::{constants::LAMPORTS_PER_SOL, time::get_current_time};
 
 // TODO: export this into a crate that'd be imported by both the lockup and merkle_instant programs.
 /// Converts the fee amount from USD to lamports.

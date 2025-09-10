@@ -6,12 +6,9 @@ pub const LAMPORTS_PER_SOL: u64 = 1e9 as u64; // 1 billion lamports in 1 SOL
 
 // Account Seeds
 pub mod seeds {
-    pub const EDITION: &[u8] = b"edition";
-    pub const METADATA: &[u8] = b"metadata";
-    pub const NFT_COLLECTION_DATA: &[u8] = b"nft_collection_data";
-    pub const NFT_COLLECTION_MINT: &[u8] = b"nft_collection_mint";
+    pub const STREAM_NFT_COLLECTION: &[u8] = b"stream_nft_collection";
+    pub const STREAM_NFT: &[u8] = b"stream_nft";
     pub const STREAM_DATA: &[u8] = b"stream_data";
-    pub const STREAM_NFT_MINT: &[u8] = b"stream_nft_mint";
     pub const TREASURY: &[u8] = b"treasury";
 }
 

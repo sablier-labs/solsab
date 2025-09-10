@@ -52,8 +52,13 @@ type IdlType = {
  * - string: Primitive type like "u64", "bool", "pubkey"
  * - { defined: { name: string } }: Reference to another type in the same IDL
  * - { array: [string, number] }: Array type with element type and size
+ * - { option: IdlTypeDefinition }: Optional type with an inner type
  */
-type IdlTypeDefinition = string | { defined: { name: string } } | { array: [string, number] };
+type IdlTypeDefinition =
+  | string
+  | { defined: { name: string } }
+  | { array: [string, number] }
+  | { option: IdlTypeDefinition };
 
 /**
  * Mapping from Rust/Solana primitive types to TypeScript equivalents
@@ -194,6 +199,10 @@ function mapSolanaTypeToTypeScript(type: IdlTypeDefinition): string {
       const [elementType] = type.array;
       const mappedElementType = mapSolanaTypeToTypeScript(elementType);
       return `${mappedElementType}[]`;
+    } else if ("option" in type) {
+      // Handle optional types - convert the inner type and make it nullable
+      const innerType = mapSolanaTypeToTypeScript(type.option);
+      return `${innerType} | null`;
     }
   }
 

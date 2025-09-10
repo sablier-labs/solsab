@@ -105,7 +105,6 @@ async function createStream(params: CreateParams) {
     .accounts({
       depositTokenMint,
       depositTokenProgram: TOKEN_PROGRAM_ID,
-      nftTokenProgram: TOKEN_PROGRAM_ID,
       recipient: signerKeys.publicKey,
       sender: signerKeys.publicKey,
     })

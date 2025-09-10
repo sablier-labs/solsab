@@ -1,16 +1,12 @@
 use anchor_lang::prelude::*;
-
-use anchor_spl::{
-    associated_token::AssociatedToken,
-    metadata::Metadata,
-    token_interface::{Mint, TokenAccount, TokenInterface},
-};
+use mpl_core::{instructions::CreateCollectionV2CpiBuilder, programs::MPL_CORE_ID};
 
 use crate::{
-    state::{nft_collection_data::NftCollectionData, treasury::Treasury},
-    utils::{
-        constants::{seeds::*, ANCHOR_DISCRIMINATOR_SIZE},
-        nft,
+    state::treasury::Treasury,
+    utils::constants::{
+        nft::{COLLECTION_METADATA_URI, COLLECTION_NAME},
+        seeds::*,
+        ANCHOR_DISCRIMINATOR_SIZE,
     },
 };
 
@@ -39,86 +35,26 @@ pub struct Initialize<'info> {
     // -------------------------------------------------------------------------- //
     //                         STREAM COLLECTION ACCOUNTS                         //
     // -------------------------------------------------------------------------- //
-    /// Create account: the NFT collection data account storing collection metadata.
+    /// Create account: the Stream NFT collection.
     #[account(
-      init,
-      payer = initializer,
-      seeds = [NFT_COLLECTION_DATA],
-      space = ANCHOR_DISCRIMINATOR_SIZE + NftCollectionData::INIT_SPACE,
+      mut,
+      seeds = [STREAM_NFT_COLLECTION],
       bump
     )]
-    pub nft_collection_data: Box<Account<'info, NftCollectionData>>,
-
-    /// Create account: the master edition account for the NFT collection.
-    #[account(
-      mut,
-      seeds = [
-        METADATA,
-        token_metadata_program.key().as_ref(),
-        nft_collection_mint.key().as_ref(),
-        EDITION
-      ],
-      seeds::program = token_metadata_program.key(),
-      bump,
-    )]
-    /// CHECK: This account will be initialized by the Metaplex program
-    pub nft_collection_master_edition: UncheckedAccount<'info>,
-
-    /// Create account: the metadata account for the NFT collection.
-    #[account(
-      mut,
-      seeds = [
-        METADATA,
-        token_metadata_program.key().as_ref(),
-        nft_collection_mint.key().as_ref()
-      ],
-      bump,
-      seeds::program = token_metadata_program.key(), // TODO: why is this necessary if the program key is already added to the seeds?
-    )]
-    /// CHECK: This account will be initialized by the Metaplex program
-    pub nft_collection_metadata: UncheckedAccount<'info>,
-
-    /// Create account: the mint account for the NFT collection.
-    #[account(
-      init,
-      payer = initializer,
-      seeds = [NFT_COLLECTION_MINT],
-      bump,
-      mint::authority = nft_collection_mint,
-      mint::decimals = 0,
-      mint::freeze_authority = nft_collection_mint,
-      mint::token_program = nft_token_program,
-    )]
-    pub nft_collection_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    /// Create account: the ATA for the NFT collection owned by treasury.
-    #[account(
-      init,
-      payer = initializer,
-      associated_token::authority = treasury,
-      associated_token::mint = nft_collection_mint,
-      associated_token::token_program = nft_token_program
-    )]
-    pub nft_collection_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    /// CHECK: This account will be initialized by the MPL Core program
+    pub stream_nft_collection: UncheckedAccount<'info>,
 
     // -------------------------------------------------------------------------- //
     //                              PROGRAM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
-    /// Program account: the Associated Token program.
-    pub associated_token_program: Program<'info, AssociatedToken>,
-
-    /// Program account: the Token program of the collection NFT.
-    pub nft_token_program: Interface<'info, TokenInterface>,
-
-    /// Program account: the Token Metadata program.
-    pub token_metadata_program: Program<'info, Metadata>,
+    /// Program account: the MPL Core program.
+    /// CHECK: Validated by the address constraint
+    #[account(address = MPL_CORE_ID)]
+    pub mpl_core_program: UncheckedAccount<'info>,
 
     // -------------------------------------------------------------------------- //
     //                               SYSTEM ACCOUNTS                              //
     // -------------------------------------------------------------------------- //
-    /// Sysvar account: Rent.
-    pub rent: Sysvar<'info, Rent>,
-
     /// Program account: the System program.
     pub system_program: Program<'info, System>,
 }
@@ -131,20 +67,18 @@ pub fn handler(
     chainlink_sol_usd_feed: Pubkey,
 ) -> Result<()> {
     ctx.accounts.treasury.initialize(ctx.bumps.treasury, fee_collector, chainlink_program, chainlink_sol_usd_feed)?;
-    ctx.accounts.nft_collection_data.initialize(ctx.bumps.nft_collection_data)?;
 
-    nft::initialize_collection(
-        &ctx.accounts.nft_collection_mint,
-        &ctx.accounts.nft_collection_ata,
-        &ctx.accounts.nft_collection_metadata,
-        &ctx.accounts.nft_collection_master_edition,
-        &ctx.accounts.initializer,
-        &ctx.accounts.token_metadata_program,
-        &ctx.accounts.nft_token_program,
-        &ctx.accounts.system_program,
-        &ctx.accounts.rent,
-        ctx.bumps.nft_collection_mint,
-    )?;
+    // Initialize the Stream NFT collection
+    let collection_signer_seeds: &[&[&[u8]]] = &[&[STREAM_NFT_COLLECTION, &[ctx.bumps.stream_nft_collection]]];
+
+    CreateCollectionV2CpiBuilder::new(&ctx.accounts.mpl_core_program)
+        .collection(&ctx.accounts.stream_nft_collection.to_account_info())
+        .update_authority(Some(&ctx.accounts.treasury.to_account_info()))
+        .payer(&ctx.accounts.initializer.to_account_info())
+        .system_program(&ctx.accounts.system_program.to_account_info())
+        .name(COLLECTION_NAME.to_string())
+        .uri(COLLECTION_METADATA_URI.to_string())
+        .invoke_signed(collection_signer_seeds)?;
 
     Ok(())
 }

@@ -25,7 +25,7 @@ pub struct Clawback<'info> {
     /// CHECK: This can be any address.
     pub clawback_recipient: UncheckedAccount<'info>,
 
-    /// Create if needed account: the clawback recipient's ATA for the airdrop token.
+    /// Create-if-needed account: the clawback recipient's ATA for the airdrop token.
     #[account(
       init_if_needed,
       payer = campaign_creator,
