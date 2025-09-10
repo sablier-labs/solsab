@@ -21,7 +21,7 @@
 #
 # WHAT THIS SCRIPT DOES:
 #   1. Parses arguments and validates input
-#   2. Generates new keypairs for the specified programs (or uses ones existing in case --keep-keypairs has been passed)
+#   2. Generates new keypairs for the specified programs (or uses the existing ones in case --keep-keypairs has been passed)
 #   3. Cleans build artifacts and starts Colima
 #   4. Builds the specified programs with anchor
 #   5. Deploys the specified programs to the selected cluster (devnet/mainnet)
@@ -195,7 +195,7 @@ for program in "${PROGRAMS[@]}"; do
     ANCHOR_PROVIDER_URL=$PROVIDER_URL anchor deploy -v -p "$program" --provider.cluster $CLUSTER
 done
 
-# Close buffer accounts for safety (cluster-specific)
+# Closes the associated buffer accounts, if any (in order to recover the rent SOL from them)
 log_info "Closing existing buffer accounts on $CLUSTER..."
 ANCHOR_PROVIDER_URL=$PROVIDER_URL solana program close --buffers -u "$CLUSTER"
 
