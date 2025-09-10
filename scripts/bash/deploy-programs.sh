@@ -21,15 +21,15 @@
 #
 # WHAT THIS SCRIPT DOES:
 #   1. Parses arguments and validates input
-#   2. Generates new keypairs for specified programs (or uses existing if --keep-keypairs)
+#   2. Generates new keypairs for the specified programs (or uses ones existing in case --keep-keypairs has been passed)
 #   3. Cleans build artifacts and starts Colima
-#   4. Builds programs with anchor
-#   5. Deploys programs to the selected cluster (devnet/mainnet)
-#   6. Closes buffer accounts for safety
+#   4. Builds the specified programs with anchor
+#   5. Deploys the specified programs to the selected cluster (devnet/mainnet)
+#   6. Closes the associated buffer accounts, if any (in order to recover the rent SOL from them)
 #   7. Runs the post-deployment initialization script (demo data for devnet, init-only for mainnet)
-#   8. Switches to main branch, pulls latest changes, and syncs anchor keys
-#   9. Creates a deployment branch and commits changes
-#  10. Creates separate ZIP files with IDL and types for each program (last step)
+#   8. Switches to the main branch, pulls the latest changes and syncs anchor keys
+#   9. Creates a deployment branch and commits the changes
+#  10. Creates separate ZIP files with IDL and types for each program
 #
 # OUTPUT FILES:
 #   - {program_name}_IDL_types.zip for each deployed program
@@ -210,7 +210,6 @@ for program in "${PROGRAMS[@]}"; do
         ANCHOR_PROVIDER_URL=$PROVIDER_URL \
         ANCHOR_WALLET=~/.config/solana/id.json \
         na vitest --run --mode scripts $INIT_SCRIPTS
-
     else
         log_warning "No script found for $program"
     fi
