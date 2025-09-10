@@ -211,7 +211,7 @@ for program in "${PROGRAMS[@]}"; do
         ANCHOR_WALLET=~/.config/solana/id.json \
         na vitest --run --mode scripts $INIT_SCRIPTS
     else
-        log_warning "No script found for $program"
+        log_warning "No init script found for $program"
     fi
     log_success "All initializations completed"
 done
