@@ -19,3 +19,4 @@ repomix
 *.env
 *.local.json
 .DS_Store
+*.zip

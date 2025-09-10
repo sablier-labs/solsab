@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script deploys SolSab programs to Devnet or Mainnet, initializes them - and, optionally, sets them up with demo data.
+# This script deploys SolSab programs to Devnet or Mainnet, and initializes them.
 # It must be run from the root of the SolSab repo.
 #
 # USAGE:
@@ -14,21 +14,22 @@
 #                                   Note: devnet deployments include demo data setup, mainnet deployments are init-only
 #
 # EXAMPLES:
-#   ./scripts/bash/deploy-programs.sh --program sablier_lockup            # Deploy & initialize just the lockup program
-#   ./scripts/bash/deploy-programs.sh --program sablier_merkle_instant    # Deploy & initialize just the merkle_instant program
-#   ./scripts/bash/deploy-programs.sh --program lk mi                     # Deploy & initialize both programs
 #   ./scripts/bash/deploy-programs.sh --program sablier_lockup            # Deploy the lockup program to devnet & set it up with demo streams
+#   ./scripts/bash/deploy-programs.sh --program sablier_merkle_instant    # Deploy & initialize just the merkle_instant program
 #   ./scripts/bash/deploy-programs.sh --mainnet --program sablier_lockup  # Deploy the lockup program to mainnet (init-only, no demo data)
-#   ./scripts/bash/deploy-programs.sh --program lk mi                     # Deploy both programs to devnet & setup with demo data
+#   ./scripts/bash/deploy-programs.sh --program lk mi --keep-keypairs     # Deploy both programs to devnet with current keypairs & setup with demo data
 #
 # WHAT THIS SCRIPT DOES:
-#   1. Switches to main branch and pulls latest changes
-#   2. Generates new keypairs for specified programs
-#   3. Builds programs verifiably using anchor build -v -p <program>
-#   4. Creates deployment branch and commits changes
-#   5. Deploys programs to devnet using anchor deploy -v -p <program>
-#   6. Creates separate ZIP files with IDL and types for each program
-#   7. Runs the post-deployment initialization script (setup scripts with demo data for devnet, init-only for mainnet)
+#   1. Parses arguments and validates input
+#   2. Generates new keypairs for the specified programs (or uses the existing ones in case --keep-keypairs has been passed)
+#   3. Cleans build artifacts and starts Colima
+#   4. Builds the specified programs with anchor
+#   5. Deploys the specified programs to the selected cluster (devnet/mainnet)
+#   6. Closes the associated buffer accounts, if any (in order to recover the rent SOL from them)
+#   7. Runs the post-deployment initialization script (demo data for devnet, init-only for mainnet)
+#   8. Switches to the main branch, pulls the latest changes and syncs anchor keys
+#   9. Creates a deployment branch and commits the changes
+#  10. Creates separate ZIP files with IDL and types for each program
 #
 # OUTPUT FILES:
 #   - {program_name}_IDL_types.zip for each deployed program
@@ -40,15 +41,55 @@ set -euo pipefail
 # Pre-requisites:
 # - see README.md
 
+# ---------------------------------------------------------------------------- #
+#                                USAGE AND LOGS                                #
+# ---------------------------------------------------------------------------- #
+
+# Error handling with usage display
+show_usage_and_exit() {
+    local error_msg="$1"
+    echo "❌ Error: $error_msg"
+    echo ""
+    echo "Usage: $0 --program PROGRAM [PROGRAM...] [--mainnet] [--keep-keypairs]"
+    echo "Valid programs: ${VALID_PROGRAMS[*]}"
+    echo "Short forms: lk=sablier_lockup, mi=sablier_merkle_instant"
+    echo ""
+    echo "Flags:"
+    echo "  --keep-keypairs                 # Keep existing keypairs if present (default: overwrite)"
+    echo ""
+    echo "Examples:"
+    echo "  $0 --program sablier_lockup     # Deploys the Lockup program to devnet with demo data setup, overwriting keypair"
+    echo "  $0 --program lk --keep-keypairs # Same as above, but keeps existing keypair if present"
+    echo "  $0 --program mi --mainnet       # Deploys the Merkle Instant program to mainnet (init-only, no demo data)"
+    echo "  $0 --program lk mi              # Deploys both programs to devnet with demo data setup"
+    exit 1
+}
+
+# Logging functions
+log_action() { echo "🎯 $1"; }
+log_error() { echo "❌ $1"; }
+log_info() { echo "ℹ️  $1"; }
+log_success() { echo "✅ $1"; }
+log_warning() { echo "⚠️  $1"; }
+
+# ---------------------------------------------------------------------------- #
+#                                    SET-UP                                    #
+# ---------------------------------------------------------------------------- #
+
 # Initialize variables
-PROGRAMS=()
-MAINNET_FLAG=false
 KEEP_KEYPAIRS=false
+MAINNET_FLAG=false
+PROGRAMS=()
+VALID_PROGRAMS=("sablier_lockup" "sablier_merkle_instant")
 
 # Configuration
 CLUSTER="devnet"
-export ANCHOR_PROVIDER_URL="https://api.devnet.solana.com"
-VALID_PROGRAMS=("sablier_lockup" "sablier_merkle_instant")
+PROVIDER_URL="https://api.devnet.solana.com"
+
+# The init scripts mapping
+declare -A INIT_SCRIPTS
+INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup-and-create-streams.ts"
+INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant-and-create-campaign.ts"
 
 # Program configuration mapping
 declare -A PROGRAM_CONFIG
@@ -64,33 +105,6 @@ map_program_name() {
         *) echo "$1" ;;  # Return as-is for validation to catch invalid names
     esac
 }
-
-# Error handling with usage display
-show_usage_and_exit() {
-    local error_msg="$1"
-    echo "❌ Error: $error_msg"
-    echo ""
-    echo "Usage: $0 --program PROGRAM [PROGRAM...] [--mainnet] [--keep-keypairs]"
-    echo "Valid programs: ${VALID_PROGRAMS[*]}"
-    echo "Short forms: lk=sablier_lockup, mi=sablier_merkle_instant"
-    echo ""
-    echo "Flags:"
-    echo "  --keep-keypairs   Keep existing keypairs if present (default: overwrite)"
-    echo ""
-    echo "Examples:"
-    echo "  $0 --program sablier_lockup   # Deploys the Lockup program to devnet with demo data setup, overwriting keypair"
-    echo "  $0 --program lk --keep-keypairs # Same as above, but keeps existing keypair if present"
-    echo "  $0 --program mi --mainnet     # Deploys the Merkle Instant program to mainnet (init-only, no demo data)"
-    echo "  $0 --program lk mi             # Deploys both programs to devnet with demo data setup"
-    exit 1
-}
-
-# Logging functions
-log_info() { echo "ℹ️  $1"; }
-log_success() { echo "✅ $1"; }
-log_warning() { echo "⚠️  $1"; }
-log_error() { echo "❌ $1"; }
-log_action() { echo "🎯 $1"; }
 
 # Parse the command line arguments
 while [[ $# -gt 0 ]]; do
@@ -118,15 +132,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# If mainnet flag is passed, set the cluster and provider url to mainnet-beta
+# If mainnet flag is passed, set the variables accordingly
 if [[ "$MAINNET_FLAG" == true ]]; then
-    CLUSTER="mainnet-beta"
-    export ANCHOR_PROVIDER_URL="https://api.mainnet-beta.solana.com"
-    export ANCHOR_WALLET="~/.config/solana/deployer.json"
-else
-    CLUSTER="devnet"
-    export ANCHOR_PROVIDER_URL="https://api.devnet.solana.com"
-    export ANCHOR_WALLET="~/.config/solana/id.json"
+    CLUSTER="mainnet"
+    PROVIDER_URL="https://api.mainnet-beta.solana.com"
+    # We don't want to create demo streams/campaigns on mainnet
+    INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup.ts"
+    INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
 fi
 
 # Validate input
@@ -135,7 +147,12 @@ if [[ ${#PROGRAMS[@]} -eq 0 ]]; then
 fi
 
 log_action "Programs to deploy: ${PROGRAMS[*]}"
-log_info "Selected cluster: $CLUSTER ($ANCHOR_PROVIDER_URL)"
+log_info "Selected cluster: $CLUSTER"
+log_info "Selected provider: $PROVIDER_URL"
+
+# ---------------------------------------------------------------------------- #
+#                              BUILD AND DEPLOY                                #
+# ---------------------------------------------------------------------------- #
 
 # Validate programs are supported
 for program in "${PROGRAMS[@]}"; do
@@ -145,17 +162,12 @@ for program in "${PROGRAMS[@]}"; do
     log_success "Program '$program' is valid"
 done
 
-# Git operations
-log_info "Switching to main branch and pulling latest changes..."
-git switch main
-git pull
-
-# Generate keypairs for all programs (unless --keep-keypairs is set)
+# Generate new program keypairs (unless --keep-keypairs is set)
 for program in "${PROGRAMS[@]}"; do
     keypair_path="target/deploy/${program}-keypair.json"
     if [[ "$KEEP_KEYPAIRS" == true ]]; then
         if [[ -f "$keypair_path" ]]; then
-            log_info "Using existing keypair for $program at $keypair_path (keeping as requested)"
+            log_info "Using existing keypair for $program at $keypair_path"
         else
             log_error "--keep-keypairs was specified, but $keypair_path does not exist for $program. Aborting."
             exit 1
@@ -166,10 +178,8 @@ for program in "${PROGRAMS[@]}"; do
     fi
 done
 
-# Build preparation
-log_info "Cleaning build artifacts and syncing keys..."
-anchor clean
-anchor keys sync
+log_info "Cleaning build artifacts..."
+just clean
 
 # Start Colima (if it's already running, the command is being ignored automatically)
 colima start
@@ -182,8 +192,38 @@ done
 
 for program in "${PROGRAMS[@]}"; do
     echo "🚀 Deploying $program to $CLUSTER..."
-    anchor deploy -v -p "$program"
+    ANCHOR_PROVIDER_URL=$PROVIDER_URL anchor deploy -v -p "$program" --provider.cluster $CLUSTER
 done
+
+# Closes the associated buffer accounts, if any (in order to recover the rent SOL from them)
+log_info "Closing existing buffer accounts on $CLUSTER..."
+ANCHOR_PROVIDER_URL=$PROVIDER_URL solana program close --buffers -u "$CLUSTER"
+
+echo "🎉 Deployment completed for programs: ${PROGRAMS[*]}"
+
+# ---------------------------------------------------------------------------- #
+#                                 INIT SCRIPTS                                 #
+# ---------------------------------------------------------------------------- #
+
+for program in "${PROGRAMS[@]}"; do
+    if [[ -n "${INIT_SCRIPTS[$program]:-}" ]]; then
+        ANCHOR_PROVIDER_URL=$PROVIDER_URL \
+        ANCHOR_WALLET=~/.config/solana/id.json \
+        na vitest --run --mode scripts $INIT_SCRIPTS
+    else
+        log_warning "No init script found for $program"
+    fi
+    log_success "All initializations completed"
+done
+
+# ---------------------------------------------------------------------------- #
+#                                GIT OPERATIONS                                #
+# ---------------------------------------------------------------------------- #
+
+log_info "Switching to main branch and pulling latest changes..."
+git switch main
+git pull
+anchor keys sync
 
 DEPLOYMENT_BRANCH="chore/deployment"
 
@@ -204,11 +244,7 @@ done
 
 # Commit changes
 git add "${git_files_to_add[@]}"
-git commit -m "chore: deployment for ${PROGRAMS[*]}"
-
-# Close buffer accounts for safety (cluster-specific)
-log_info "Closing existing buffer accounts on $CLUSTER..."
-solana program close --buffers -u "$CLUSTER"
+git commit -m "chore($CLUSTER): deployment for ${PROGRAMS[*]}"
 
 # Create zip files for each program
 for program in "${PROGRAMS[@]}"; do
@@ -231,54 +267,3 @@ for program in "${PROGRAMS[@]}"; do
     zip -o "$zip_file" "$idl_source" "$types_source"
     log_success "Created $zip_file"
 done
-
-
-# Program deployment scripts mapping
-declare -A MAINNET_SCRIPTS
-declare -A DEVNET_SCRIPTS
-MAINNET_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup.ts"
-MAINNET_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
-DEVNET_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup-and-create-streams.ts"
-DEVNET_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant-and-create-campaign.ts"
-
-# Function to execute a script for a program
-run_script() {
-    local program="$1"
-    local script="$2"
-    local action="$3"
-
-    log_info "${action} $program using $script..."
-
-    na vitest --run --mode scripts "$script"
-
-    log_success "${action} completed for $program"
-}
-
-# Run initialization or initialization + demo data setup, based on the cluster we're deploying to
-if [[ "$MAINNET_FLAG" == true ]]; then
-    log_info "Running post-deployment initialization (init-only) for mainnet programs: ${PROGRAMS[*]}"
-
-    for program in "${PROGRAMS[@]}"; do
-        if [[ -n "${MAINNET_SCRIPTS[$program]:-}" ]]; then
-            run_script "$program" "${MAINNET_SCRIPTS[$program]}" "Initializing $program"
-        else
-            log_warning "No mainnet script found for $program"
-        fi
-    done
-
-    log_success "All mainnet initializations completed"
-else
-    log_info "Running post-deployment initialization + demo data setup for devnet programs: ${PROGRAMS[*]}"
-
-    for program in "${PROGRAMS[@]}"; do
-        if [[ -n "${DEVNET_SCRIPTS[$program]:-}" ]]; then
-            run_script "$program" "${DEVNET_SCRIPTS[$program]}" "Setting up $program with demo data"
-        else
-            log_warning "No devnet script found for $program"
-        fi
-    done
-
-    log_success "All devnet initializations + demo data setups completed"
-fi
-
-echo "🎉 Deployment completed for programs: ${PROGRAMS[*]}"
