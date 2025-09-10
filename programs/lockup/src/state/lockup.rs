@@ -21,6 +21,7 @@ pub struct StreamData {
     pub timestamps: Timestamps,
     pub sender: Pubkey,
     pub was_canceled: bool,
+    pub nft_address: Pubkey,
 }
 
 /// Groups the timestamps for a Lockup stream.

@@ -7,7 +7,7 @@ pub struct CancelLockupStream {
     pub recipient_amount: u64,
     pub sender_amount: u64,
     pub stream_data: Pubkey,
-    pub stream_nft_mint: Pubkey,
+    pub stream_nft: Pubkey,
 }
 
 /// Emitted when an LL stream is created.
@@ -18,7 +18,7 @@ pub struct CreateLockupLinearStream {
     pub recipient: Pubkey,
     pub salt: u128,
     pub stream_data: Pubkey,
-    pub stream_nft_mint: Pubkey,
+    pub stream_nft: Pubkey,
 }
 
 /// Emitted when fees are collected from the treasury.
@@ -34,7 +34,7 @@ pub struct FeesCollected {
 pub struct RenounceLockupStream {
     pub deposited_token_mint: Pubkey,
     pub stream_data: Pubkey,
-    pub stream_nft_mint: Pubkey,
+    pub stream_nft: Pubkey,
 }
 
 /// Emitted when tokens are withdrawn from a stream.
@@ -43,6 +43,6 @@ pub struct WithdrawFromLockupStream {
     pub deposited_token_mint: Pubkey,
     pub fee_in_lamports: u64,
     pub stream_data: Pubkey,
-    pub stream_nft_mint: Pubkey,
+    pub stream_nft: Pubkey,
     pub withdrawn_amount: u64,
 }

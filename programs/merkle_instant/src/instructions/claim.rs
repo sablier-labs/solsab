@@ -32,7 +32,7 @@ pub struct Claim<'info> {
     /// CHECK: This account is validated during the Merkle proof verification.
     pub recipient: UncheckedAccount<'info>,
 
-    /// Create if needed account: the ATA for airdrop token owned by the recipient.
+    /// Create-if-needed account: the ATA for airdrop token owned by the recipient.
     #[account(
       init_if_needed,
       payer = claimer,

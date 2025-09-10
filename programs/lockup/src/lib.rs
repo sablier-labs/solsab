@@ -25,7 +25,7 @@ pub mod sablier_lockup {
     ///
     /// - `sender` The transaction signer and the stream's sender.
     /// - `deposited_token_mint` The mint of the deposited token.
-    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
+    /// - `stream_nft` The NFT uniquely identifying the stream.
     /// - `deposited_token_program` The Token Program of the deposited token.
     ///
     /// # Notes
@@ -38,7 +38,7 @@ pub mod sablier_lockup {
     /// # Requirements
     ///
     /// - The signer must be the stream's sender.
-    /// - The `stream_nft_mint` must exist.
+    /// - The `stream_nft` must exist.
     /// - The stream must be cancelable.
     /// - The stream must be Pending or Streaming.
     pub fn cancel(ctx: Context<Cancel>) -> Result<()> {
@@ -195,7 +195,7 @@ pub mod sablier_lockup {
     /// # Accounts Expected
     ///
     /// - `sender` The transaction signer and the stream's sender.
-    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
+    /// - `stream_nft` The NFT uniquely identifying the stream.
     ///
     /// # Notes
     ///
@@ -228,7 +228,7 @@ pub mod sablier_lockup {
     ///
     /// # Requirements
     ///
-    /// - `stream_nft_mint` must exist.
+    /// - `stream_nft` must exist.
     /// - `withdrawal_recipient` must be the recipient if the signer is not the stream's recipient.
     /// - `amount` must be greater than zero and must not exceed the withdrawable amount.
     /// - The stream must not be Depleted.
@@ -263,7 +263,7 @@ pub mod sablier_lockup {
     ///
     /// # Accounts Expected
     ///
-    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
+    /// - `stream_nft` The NFT uniquely identifying the stream.
     ///
     /// # Requirements
     ///
@@ -276,7 +276,7 @@ pub mod sablier_lockup {
     ///
     /// # Accounts Expected
     ///
-    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
+    /// - `stream_nft` The NFT uniquely identifying the stream.
     ///
     /// # Requirements
     ///
@@ -290,16 +290,16 @@ pub mod sablier_lockup {
     /// # Parameters
     ///
     /// - `_sender` The sender of the stream.
-    /// - `_salt` The unique salt used to derive the stream NFT mint address.
+    /// - `_salt` The unique salt used to derive the stream NFT address.
     pub fn stream_exists(ctx: Context<StreamExists>, _sender: Pubkey, _salt: u128) -> Result<bool> {
-        Ok(!ctx.accounts.stream_nft_mint.data_is_empty())
+        Ok(ctx.accounts.stream_nft.to_account_info().data_len() > 0)
     }
 
     /// Calculates the amount streamed to the recipient, denoted in units of the token's decimals.
     ///
     /// # Accounts Expected
     ///
-    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
+    /// - `stream_nft` The NFT uniquely identifying the stream.
     ///
     /// # Notes
     ///
@@ -324,7 +324,7 @@ pub mod sablier_lockup {
     ///
     /// # Accounts Expected
     ///
-    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
+    /// - `stream_nft` The NFT uniquely identifying the stream.
     ///
     /// # Requirements
     ///
