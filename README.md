@@ -1,6 +1,15 @@
-# SolSab
+# SolSab [![Github Actions][gha-badge]][gha] [![Anchor][anchor-badge]][anchor] [![Discord][discord-badge]][discord] [![Twitter][twitter-badge]][twitter]
 
-Sablier programs on Solana
+[gha]: https://github.com/sablier-labs/lockup/actions
+[gha-badge]: https://github.com/sablier-labs/lockup/actions/workflows/ci.yml/badge.svg
+[discord]: https://discord.gg/bSwRCwWRsT
+[discord-badge]: https://img.shields.io/discord/659709894315868191
+[anchor]: https://www.anchor-lang.com/docs
+[anchor-badge]: https://img.shields.io/badge/Built%20with-Anchor-2298BD.svg
+[twitter-badge]: https://img.shields.io/twitter/follow/Sablier
+[twitter]: https://x.com/Sablier
+
+Sablier programs on Solana, in-depth documentation is available at [docs.sablier.com](https://docs.sablier.com).
 
 ## Architecture
 
