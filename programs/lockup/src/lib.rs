@@ -268,7 +268,7 @@ pub mod sablier_lockup {
     ///
     /// # Requirements
     ///
-    /// - The stream does not exist.
+    /// - The stream must exist.
     pub fn refundable_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::refundable_amount_of::handler(ctx)
     }
@@ -281,7 +281,7 @@ pub mod sablier_lockup {
     ///
     /// # Requirements
     ///
-    /// - The stream does not exist.
+    /// - The stream must exist.
     pub fn status_of(ctx: Context<StreamView>) -> Result<StreamStatus> {
         instructions::status_of::handler(ctx)
     }
@@ -310,7 +310,7 @@ pub mod sablier_lockup {
     ///
     /// # Requirements
     ///
-    /// - The stream does not exist.
+    /// - The stream must exist.
     pub fn streamed_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::streamed_amount_of::handler(ctx)
     }
@@ -329,7 +329,7 @@ pub mod sablier_lockup {
     ///
     /// # Requirements
     ///
-    /// - The stream does not exist.
+    /// - The stream must exist.
     pub fn withdrawable_amount_of(ctx: Context<StreamView>) -> Result<u64> {
         instructions::withdrawable_amount_of::handler(ctx)
     }
