@@ -141,6 +141,12 @@ if [[ "$MAINNET_FLAG" == true ]]; then
     INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
 fi
 
+CONFIG_PATH="~/.config/solana/cli/config.yml"
+
+# Update only the json_rpc_url line
+sed -i.bak "s|^json_rpc_url:.*|json_rpc_url: $PROVIDER_URL|" "$CONFIG_PATH"
+log_info "Updated json_rpc_url in $CONFIG_PATH (backup at ${CONFIG_PATH}.bak)"
+
 # Validate input
 if [[ ${#PROGRAMS[@]} -eq 0 ]]; then
     show_usage_and_exit "No programs specified"
@@ -173,13 +179,11 @@ for program in "${PROGRAMS[@]}"; do
             exit 1
         fi
     else
-        echo "🔑 Generating keypair for $program..."
-        solana-keygen new --outfile "$keypair_path" --no-bip39-passphrase --force
+        # The `anchor build` command will automatically generate new keypairs if those files don’t already exist.
+        log_info "Cleaning build artifacts..."
+        just clean
     fi
 done
-
-log_info "Cleaning build artifacts..."
-just clean
 
 # Start Colima (if it's already running, the command is being ignored automatically)
 colima start
@@ -206,10 +210,10 @@ echo "🎉 Deployment completed for programs: ${PROGRAMS[*]}"
 # ---------------------------------------------------------------------------- #
 
 for program in "${PROGRAMS[@]}"; do
-    if [[ -n "${INIT_SCRIPTS[$program]:-}" ]]; then
+    if [[ -v INIT_SCRIPTS[$program] && -n "${INIT_SCRIPTS[$program]}" ]]; then
         ANCHOR_PROVIDER_URL=$PROVIDER_URL \
         ANCHOR_WALLET=~/.config/solana/id.json \
-        na vitest --run --mode scripts $INIT_SCRIPTS
+        na vitest --run --mode scripts "${INIT_SCRIPTS[$program]}"
     else
         log_warning "No init script found for $program"
     fi

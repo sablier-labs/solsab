@@ -11,7 +11,7 @@ import {
   initSablierLockup,
   lockupProgram,
   signerKeys,
-} from "./init-lockup";
+} from "./common/init-lockup-base";
 
 describe("Sablier Lockup post-deployment initialization with streams", () => {
   it("Creates three different SPL Token LL Streams", async () => {
@@ -83,9 +83,8 @@ async function createStream(params: CreateParams) {
     isCancelable,
   } = params;
 
-  const increaseCULimitIx = ComputeBudgetProgram.setComputeUnitLimit({
-    units: 400000,
-  });
+  // Set a higher compute unit limit so that the transaction doesn't fail
+  const increaseCULimitIx = ComputeBudgetProgram.setComputeUnitLimit({ units: 1_000_000 });
 
   await lockupProgram.methods
     .createWithDurationsLl(
