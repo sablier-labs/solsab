@@ -141,7 +141,7 @@ if [[ "$MAINNET_FLAG" == true ]]; then
     INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
 fi
 
-CONFIG_PATH="~/.config/solana/cli/config.yml"
+CONFIG_PATH="$HOME/.config/solana/cli/config.yml"
 
 # Update only the json_rpc_url line
 sed -i.bak "s|^json_rpc_url:.*|json_rpc_url: $PROVIDER_URL|" "$CONFIG_PATH"
