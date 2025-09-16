@@ -143,9 +143,14 @@ fi
 
 CONFIG_PATH="$HOME/.config/solana/cli/config.yml"
 
-# Update only the json_rpc_url line
-sed -i.bak "s|^json_rpc_url:.*|json_rpc_url: $PROVIDER_URL|" "$CONFIG_PATH"
-log_info "Updated json_rpc_url in $CONFIG_PATH (backup at ${CONFIG_PATH}.bak)"
+# Check if the config file exists before editing
+if [[ -f "$CONFIG_PATH" ]]; then
+    # Change the config file with the correct provider
+    sed -i "" "s|^json_rpc_url:.*|json_rpc_url: $PROVIDER_URL|" "$CONFIG_PATH"
+    log_info "Updated json_rpc_url in $CONFIG_PATH"
+else
+    log_warning "Config file $CONFIG_PATH not found, skipping json_rpc_url update."
+fi
 
 # Validate input
 if [[ ${#PROGRAMS[@]} -eq 0 ]]; then
@@ -210,7 +215,7 @@ echo "🎉 Deployment completed for programs: ${PROGRAMS[*]}"
 # ---------------------------------------------------------------------------- #
 
 for program in "${PROGRAMS[@]}"; do
-    if [[ -v INIT_SCRIPTS[$program] && -n "${INIT_SCRIPTS[$program]}" ]]; then
+    if [[ -n "${INIT_SCRIPTS[$program]}" ]]; then
         ANCHOR_PROVIDER_URL=$PROVIDER_URL \
         ANCHOR_WALLET=~/.config/solana/id.json \
         na vitest --run --mode scripts "${INIT_SCRIPTS[$program]}"
