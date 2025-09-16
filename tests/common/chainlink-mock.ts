@@ -1,5 +1,5 @@
 import type BN from "bn.js";
-import { type AddedAccount } from "solana-bankrun";
+import type { AddedAccount } from "solana-bankrun";
 import { ProgramId } from "../../lib/constants";
 import { toBn } from "../../lib/helpers";
 

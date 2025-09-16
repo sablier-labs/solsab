@@ -1,4 +1,4 @@
-import { type PublicKey } from "@solana/web3.js";
+import type { PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
 import keccak256 from "keccak256";
 import { MerkleTree } from "merkletreejs";

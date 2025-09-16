@@ -2,21 +2,15 @@ import * as token from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { BankrunProvider } from "anchor-bankrun";
 import type BN from "bn.js";
-import {
-  type AccountInfoBytes,
-  type AddedProgram,
-  type BanksClient,
-  Clock,
-  type ProgramTestContext,
-  startAnchor,
-} from "solana-bankrun";
+import type { AccountInfoBytes, AddedProgram, BanksClient, ProgramTestContext } from "solana-bankrun";
+import { Clock, startAnchor } from "solana-bankrun";
 import { Decimals, ProgramId } from "../../lib/constants";
 import { dai, sol, usdc } from "../../lib/convertors";
 import { toBigInt, toBn } from "../../lib/helpers";
-import { type ProgramName } from "../../lib/types";
+import type { ProgramName } from "../../lib/types";
 import { createATAAndFund, createMint } from "./anchor-bankrun";
 import { ChainlinkMock } from "./chainlink-mock";
-import { type User } from "./types";
+import type { User } from "./types";
 
 export class TestContext {
   // Core Bankrun components

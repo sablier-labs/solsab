@@ -1,7 +1,7 @@
-import { type PublicKey } from "@solana/web3.js";
+import type { PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
 import { assert, expect } from "vitest";
-import { type TestContext } from "./context";
+import type { TestContext } from "./context";
 import type { Treasury } from "./types";
 
 export async function assertAccountExists(ctx: TestContext, account: PublicKey, accountName: string) {

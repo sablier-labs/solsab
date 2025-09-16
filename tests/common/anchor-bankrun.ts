@@ -1,22 +1,9 @@
 import * as token from "@solana/spl-token";
-import {
-  type Blockhash,
-  ComputeBudgetProgram,
-  Keypair,
-  type PublicKey,
-  type Signer,
-  SystemProgram,
-  Transaction,
-  type TransactionInstruction as TxIx,
-} from "@solana/web3.js";
+import type { Blockhash, PublicKey, Signer, TransactionInstruction as TxIx } from "@solana/web3.js";
+import { ComputeBudgetProgram, Keypair, SystemProgram, Transaction } from "@solana/web3.js";
 import type BN from "bn.js";
 import type { BanksClient, BanksTransactionMeta } from "solana-bankrun";
 import { toBigInt, toBn } from "../../lib/helpers";
-
-// NOTE: This type alias is necessary because solana-bankrun depends on an older @solana/web3.js (v1.68.0),
-// so the Transaction types are incompatible with the newer @solana/web3.js used elsewhere.
-// Type compatibility must be ensured manually in order to pass the code verification checks.
-type BankrunTransaction = Parameters<BanksClient["processTransaction"]>[0];
 
 export async function buildSignAndProcessTx(
   banksClient: BanksClient,
@@ -39,7 +26,9 @@ export async function buildSignAndProcessTx(
 
   // Add instructions to the transaction
   const internal_ixs: TxIx[] = Array.isArray(ixs) ? ixs : [ixs];
-  internal_ixs.forEach((ix) => tx.add(ix));
+  internal_ixs.forEach((ix) => {
+    tx.add(ix);
+  });
 
   // Ensure `signerKeys` is always an array
   const signers = Array.isArray(signerKeys) ? signerKeys : [signerKeys];
@@ -48,7 +37,7 @@ export async function buildSignAndProcessTx(
   tx.sign(...signers);
 
   // Process the transaction
-  const txMeta = await banksClient.processTransaction(tx as unknown as BankrunTransaction);
+  const txMeta = await banksClient.processTransaction(tx);
   return txMeta;
 }
 
@@ -78,7 +67,7 @@ export async function createMint(
   tx.recentBlockhash = await getLatestBlockhash(banksClient);
   tx.sign(payer, mintKeypair);
 
-  await banksClient.processTransaction(tx as unknown as BankrunTransaction);
+  await banksClient.processTransaction(tx);
   return mint;
 }
 
@@ -98,7 +87,7 @@ export async function createATA(
   tx.recentBlockhash = await getLatestBlockhash(banksClient);
   tx.sign(payer);
 
-  await banksClient.processTransaction(tx as unknown as BankrunTransaction);
+  await banksClient.processTransaction(tx);
 
   return ata;
 }
@@ -181,7 +170,7 @@ export async function transfer(
   tx.recentBlockhash = await getLatestBlockhash(banksClient);
   tx.sign(payer, ...multiSigners);
 
-  return await banksClient.processTransaction(tx as unknown as BankrunTransaction);
+  return await banksClient.processTransaction(tx);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -213,5 +202,5 @@ async function mintTo(
   tx.recentBlockhash = await getLatestBlockhash(banksClient);
   tx.sign(payer, ...multiSigners);
 
-  return await banksClient.processTransaction(tx as unknown as BankrunTransaction);
+  return await banksClient.processTransaction(tx);
 }

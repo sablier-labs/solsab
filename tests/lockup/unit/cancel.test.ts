@@ -11,7 +11,7 @@ import { assertAccountNotExists, assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Amount, Time } from "../utils/defaults";
-import { type Stream } from "../utils/types";
+import type { Stream } from "../utils/types";
 
 let ctx: LockupTestContext;
 

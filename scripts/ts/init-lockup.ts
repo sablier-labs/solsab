@@ -1,12 +1,13 @@
 import * as anchor from "@coral-xyz/anchor";
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { ComputeBudgetProgram, Keypair, type PublicKey } from "@solana/web3.js";
+import type { PublicKey } from "@solana/web3.js";
+import { ComputeBudgetProgram, Keypair } from "@solana/web3.js";
 import type BN from "bn.js";
 import { beforeEach, describe, it } from "vitest";
 import { BN_1, Decimals, ProgramId, ZERO } from "../../lib/constants";
 import { sol } from "../../lib/convertors";
 import { toBn } from "../../lib/helpers";
-import { type SablierLockup } from "../../target/types/sablier_lockup";
+import type { SablierLockup } from "../../target/types/sablier_lockup";
 
 let anchorProvider: anchor.AnchorProvider;
 let lockupProgram: anchor.Program<SablierLockup>;
