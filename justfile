@@ -42,6 +42,7 @@ build program_name="all":
     else
         cmd="anchor build --program-name {{ program_name }}"
     fi
+    echo "🔨 Building {{ program_name }}..."
     # Suppressing the annoying "Compiling" and "Downloaded" messages
     # Remove this once this gets implemented: https://github.com/solana-foundation/anchor/issues/3788
     $cmd 2>&1 | grep -v "Compiling\|Downloaded"
@@ -78,7 +79,13 @@ alias v := verify
 # ---------------------------------------------------------------------------- #
 
 # Run all code checks
-full-check: prettier-check biome-check tsc-check rust-check
+full-check: _build-if-needed rust-check prettier-check biome-check tsc-check
+
+_build-if-needed:
+    #!/usr/bin/env sh
+    if [ -z "$(ls -A target/idl 2>/dev/null)" ]; then
+        just build
+    fi
 
 # Run all code fixes
 full-write: prettier-write biome-write rust-write
