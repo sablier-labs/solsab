@@ -4,26 +4,12 @@ import { assert, expect } from "vitest";
 import type { TestContext } from "./context";
 import type { Treasury } from "./types";
 
-export async function assertAccountExists(
-  ctx: TestContext,
-  account: PublicKey,
-  accountName: string,
-) {
-  assert.isTrue(
-    await ctx.accountExists(account),
-    `${accountName} account does not exist when it should`,
-  );
+export async function assertAccountExists(ctx: TestContext, account: PublicKey, accountName: string) {
+  assert.isTrue(await ctx.accountExists(account), `${accountName} account does not exist when it should`);
 }
 
-export async function assertAccountNotExists(
-  ctx: TestContext,
-  account: PublicKey,
-  accountName: string,
-) {
-  assert.isFalse(
-    await ctx.accountExists(account),
-    `${accountName} account exists when it should not`,
-  );
+export async function assertAccountNotExists(ctx: TestContext, account: PublicKey, accountName: string) {
+  assert.isFalse(await ctx.accountExists(account), `${accountName} account exists when it should not`);
 }
 
 export function assertEqBn(left: BN, right: BN, message?: string) {
@@ -39,11 +25,7 @@ export function assertEqPublicKey(left: PublicKey, right: PublicKey, message?: s
 export function assertEqTreasury(left: Treasury, right: Treasury) {
   assert.isTrue(left.bump === right.bump, "Bump mismatch");
   assertEqPublicKey(left.chainlinkProgram, right.chainlinkProgram, "Chainlink program mismatch");
-  assertEqPublicKey(
-    left.chainlinkSolUsdFeed,
-    right.chainlinkSolUsdFeed,
-    "Chainlink sol usd feed mismatch",
-  );
+  assertEqPublicKey(left.chainlinkSolUsdFeed, right.chainlinkSolUsdFeed, "Chainlink sol usd feed mismatch");
   assertEqPublicKey(left.feeCollector, right.feeCollector, "Fee collector mismatch");
 }
 
