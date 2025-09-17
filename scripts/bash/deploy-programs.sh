@@ -82,8 +82,8 @@ MAINNET_FLAG=false
 PROGRAMS=()
 VALID_PROGRAMS=("sablier_lockup" "sablier_merkle_instant")
 
-CLUSTER=""
-export ANCHOR_PROVIDER_URL=""
+CLUSTER="devnet"
+ANCHOR_PROVIDER_URL="https://api.devnet.solana.com"
 
 # The init scripts mappings
 declare -A INIT_SCRIPTS
@@ -139,9 +139,6 @@ if [[ "$MAINNET_FLAG" == true ]]; then
     # We don't want to create demo streams/campaigns on mainnet
     INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup.ts"
     INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
-else
-    CLUSTER="devnet"
-    ANCHOR_PROVIDER_URL="https://api.devnet.solana.com"
 fi
 
 # Configure Solana CLI to use the correct provider
