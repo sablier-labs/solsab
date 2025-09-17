@@ -2,12 +2,7 @@ import type { BN } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { BankrunProvider } from "anchor-bankrun";
-import type {
-  AccountInfoBytes,
-  AddedProgram,
-  BanksClient,
-  ProgramTestContext,
-} from "solana-bankrun";
+import type { AccountInfoBytes, AddedProgram, BanksClient, ProgramTestContext } from "solana-bankrun";
 import { Clock, startAnchor } from "solana-bankrun";
 import { Decimals, ProgramId } from "../../lib/constants";
 import { dai, sol, usdc } from "../../lib/convertors";
@@ -148,9 +143,7 @@ export class TestContext {
                                 PRIVATE METHODS
   //////////////////////////////////////////////////////////////////////////*/
 
-  private async createATAsAndFund(
-    user: PublicKey,
-  ): Promise<{ usdcATA: PublicKey; daiATA: PublicKey }> {
+  private async createATAsAndFund(user: PublicKey): Promise<{ usdcATA: PublicKey; daiATA: PublicKey }> {
     // Create ATAs for the user
     const usdcATA = await createATAAndFund(
       this.banksClient,
