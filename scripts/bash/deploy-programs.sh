@@ -82,15 +82,13 @@ MAINNET_FLAG=false
 PROGRAMS=()
 VALID_PROGRAMS=("sablier_lockup" "sablier_merkle_instant")
 
-CLUSTER="devnet"
-ANCHOR_PROVIDER_URL="https://api.devnet.solana.com"
+CLUSTER=""
+export ANCHOR_PROVIDER_URL=""
 
-# The init scripts mappings
+# Declare the init scripts mapping
 declare -A INIT_SCRIPTS
-INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup-and-create-streams.ts"
-INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant-and-create-campaign.ts"
 
-# Program configuration mappings
+# Define the program configuration mapping
 declare -A PROGRAM_CONFIG
 PROGRAM_CONFIG["sablier_lockup"]="programs/lockup/src/lib.rs"
 PROGRAM_CONFIG["sablier_merkle_instant"]="programs/merkle_instant/src/lib.rs"
@@ -136,9 +134,15 @@ if [[ "$MAINNET_FLAG" == true ]]; then
     CLUSTER="mainnet"
     ANCHOR_PROVIDER_URL="https://api.mainnet-beta.solana.com"
 
-    # We don't want to create demo streams/campaigns on mainnet
+    # Note: we don't want to create demo streams/campaigns on mainnet
     INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup.ts"
     INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
+else
+    CLUSTER="devnet"
+    ANCHOR_PROVIDER_URL="https://api.devnet.solana.com"
+
+    INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup-and-create-streams.ts"
+    INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant-and-create-campaign.ts"
 fi
 
 # Configure Solana CLI to use the correct provider
