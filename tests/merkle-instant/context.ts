@@ -5,13 +5,14 @@ import { ProgramId, ZERO } from "../../lib/constants";
 import { ProgramName } from "../../lib/enums";
 import { getPDAAddress } from "../../lib/helpers";
 import IDL from "../../target/idl/sablier_merkle_instant.json";
-import { type SablierMerkleInstant as SablierMerkleInstantProgram } from "../../target/types/sablier_merkle_instant";
+import type { SablierMerkleInstant as SablierMerkleInstantProgram } from "../../target/types/sablier_merkle_instant";
 import type { Campaign as CampaignData } from "../../target/types/sablier_merkle_instant_structs";
 import { buildSignAndProcessTx, deriveATAAddress, transfer } from "../common/anchor-bankrun";
 import { TestContext } from "../common/context";
 import type { Treasury, User } from "../common/types";
 import { Amount, Campaign, Seed, Time } from "./utils/defaults";
-import { getProof, getRoot, type LeafData } from "./utils/merkle";
+import type { LeafData } from "./utils/merkle";
+import { getProof, getRoot } from "./utils/merkle";
 
 export class MerkleInstantTestContext extends TestContext {
   // Programs and addresses

@@ -1,5 +1,6 @@
 import { assert } from "vitest";
-import { ProgramErrorCode, type ProgramErrorName } from "../../../target/types/sablier_merkle_instant_errors";
+import type { ProgramErrorName } from "../../../target/types/sablier_merkle_instant_errors";
+import { ProgramErrorCode } from "../../../target/types/sablier_merkle_instant_errors";
 import type { Campaign as CampaignData } from "../../../target/types/sablier_merkle_instant_structs";
 import { assertEqBn, assertEqPublicKey, expectToThrow as baseExpectToThrow } from "../../common/assertions";
 

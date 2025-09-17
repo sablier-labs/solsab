@@ -1,5 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
-import { type Keypair, PublicKey } from "@solana/web3.js";
+import type { Keypair } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { beforeEach, describe, it } from "vitest";
 import { ProgramId } from "../../lib/constants";
 import { toBn } from "../../lib/helpers";

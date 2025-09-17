@@ -1,5 +1,6 @@
 import { assert } from "vitest";
-import { ProgramErrorCode, type ProgramErrorName } from "../../../target/types/sablier_lockup_errors";
+import type { ProgramErrorName } from "../../../target/types/sablier_lockup_errors";
+import { ProgramErrorCode } from "../../../target/types/sablier_lockup_errors";
 import type { Amounts, StreamData, Timestamps } from "../../../target/types/sablier_lockup_structs";
 import { assertEqBn, assertEqPublicKey, expectToThrow as baseExpectToThrow } from "../../common/assertions";
 import type { UnlockAmounts } from "./types";

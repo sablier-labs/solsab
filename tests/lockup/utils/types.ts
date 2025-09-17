@@ -3,7 +3,7 @@
  * IDL types can be found at @see {@link file://./../../../target/types/sablier_lockup_structs.ts}.
  */
 
-import { type PublicKey } from "@solana/web3.js";
+import type { PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
 import type { StreamData } from "../../../target/types/sablier_lockup_structs";
 
