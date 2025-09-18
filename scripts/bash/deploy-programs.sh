@@ -131,7 +131,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Set the variables depending on whether the mainnet flag has been passed
+# Reset the affected variables if the mainnet flag has been passed
 if [[ "$MAINNET_FLAG" == true ]]; then
     CLUSTER="mainnet"
     ANCHOR_PROVIDER_URL="https://api.mainnet-beta.solana.com"
