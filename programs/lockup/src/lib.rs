@@ -64,8 +64,8 @@ pub mod sablier_lockup {
         instructions::collect_fees::handler(ctx)
     }
 
-    /// Creates a stream by setting the start time to the current timestamp, and the end time to the sum of the
-    /// current timestamp and the total duration The stream is funded by the signer and wrapped in a Metaplex NFT.
+    /// Creates a stream by setting the start time to the current timestamp, and the end time to the sum of the current
+    /// timestamp and the total duration. The stream is funded by the signer and wrapped in a Metaplex NFT.
     ///
     /// # Accounts Expected
     ///
