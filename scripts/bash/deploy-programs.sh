@@ -82,16 +82,15 @@ MAINNET_FLAG=false
 PROGRAMS=()
 VALID_PROGRAMS=("sablier_lockup" "sablier_merkle_instant")
 
-# Configuration
 CLUSTER="devnet"
-PROVIDER_URL="https://api.devnet.solana.com"
+export ANCHOR_PROVIDER_URL="https://api.devnet.solana.com"
 
-# The init scripts mapping
+# Define the init scripts mapping
 declare -A INIT_SCRIPTS
 INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup-and-create-streams.ts"
 INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant-and-create-campaign.ts"
 
-# Program configuration mapping
+# Define the program configuration mapping
 declare -A PROGRAM_CONFIG
 PROGRAM_CONFIG["sablier_lockup"]="programs/lockup/src/lib.rs"
 PROGRAM_CONFIG["sablier_merkle_instant"]="programs/merkle_instant/src/lib.rs"
@@ -132,46 +131,41 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# If mainnet flag is passed, set the variables accordingly
+# Set the variables depending on whether the mainnet flag has been passed
 if [[ "$MAINNET_FLAG" == true ]]; then
     CLUSTER="mainnet"
-    PROVIDER_URL="https://api.mainnet-beta.solana.com"
-    # We don't want to create demo streams/campaigns on mainnet
+    ANCHOR_PROVIDER_URL="https://api.mainnet-beta.solana.com"
+
+    # Note: we don't want to create demo streams/campaigns on mainnet
     INIT_SCRIPTS["sablier_lockup"]="scripts/ts/init-lockup.ts"
     INIT_SCRIPTS["sablier_merkle_instant"]="scripts/ts/init-merkle-instant.ts"
 fi
 
-CONFIG_PATH="$HOME/.config/solana/cli/config.yml"
+# Configure Solana CLI to use the correct provider
+solana config set --url $ANCHOR_PROVIDER_URL
 
-# Check if the config file exists before editing
-if [[ -f "$CONFIG_PATH" ]]; then
-    # Change the config file with the correct provider
-    sed -i "" "s|^json_rpc_url:.*|json_rpc_url: $PROVIDER_URL|" "$CONFIG_PATH"
-    log_info "Updated json_rpc_url in $CONFIG_PATH"
-else
-    log_warning "Config file $CONFIG_PATH not found, skipping json_rpc_url update."
-fi
+# ---------------------------------------------------------------------------- #
+#                               INPUT VALIDATION                               #
+# ---------------------------------------------------------------------------- #
 
-# Validate input
+# Assert that at least one program has been specified
 if [[ ${#PROGRAMS[@]} -eq 0 ]]; then
     show_usage_and_exit "No programs specified"
 fi
 
 log_action "Programs to deploy: ${PROGRAMS[*]}"
-log_info "Selected cluster: $CLUSTER"
-log_info "Selected provider: $PROVIDER_URL"
 
-# ---------------------------------------------------------------------------- #
-#                              BUILD AND DEPLOY                                #
-# ---------------------------------------------------------------------------- #
-
-# Validate programs are supported
+# Assert that the specified programs are valid
 for program in "${PROGRAMS[@]}"; do
     if [[ ! " ${VALID_PROGRAMS[*]} " =~ " ${program} " ]]; then
         show_usage_and_exit "Program '$program' is not supported. Supported programs: ${VALID_PROGRAMS[*]}"
     fi
     log_success "Program '$program' is valid"
 done
+
+# ---------------------------------------------------------------------------- #
+#                              BUILD AND DEPLOY                                #
+# ---------------------------------------------------------------------------- #
 
 # Generate new program keypairs (unless --keep-keypairs is set)
 for program in "${PROGRAMS[@]}"; do
@@ -193,20 +187,24 @@ done
 # Start Colima (if it's already running, the command is being ignored automatically)
 colima start
 
-# Build and deploy programs
+# Sync the program ids
+anchor keys sync
+
+# Build the programs
 for program in "${PROGRAMS[@]}"; do
     echo "🔨 Building $program..."
     anchor build -v -p "$program"
 done
 
+# Deploy the programs
 for program in "${PROGRAMS[@]}"; do
-    echo "🚀 Deploying $program to $CLUSTER..."
-    ANCHOR_PROVIDER_URL=$PROVIDER_URL anchor deploy -v -p "$program" --provider.cluster $CLUSTER
+    echo "🚀 Deploying $program"
+    anchor deploy -v -p "$program" --provider.cluster $CLUSTER
 done
 
 # Closes the associated buffer accounts, if any (in order to recover the rent SOL from them)
-log_info "Closing existing buffer accounts on $CLUSTER..."
-ANCHOR_PROVIDER_URL=$PROVIDER_URL solana program close --buffers -u "$CLUSTER"
+log_info "Closing any hanging buffer accounts"
+solana program close --buffers
 
 echo "🎉 Deployment completed for programs: ${PROGRAMS[*]}"
 
@@ -216,7 +214,6 @@ echo "🎉 Deployment completed for programs: ${PROGRAMS[*]}"
 
 for program in "${PROGRAMS[@]}"; do
     if [[ -n "${INIT_SCRIPTS[$program]}" ]]; then
-        ANCHOR_PROVIDER_URL=$PROVIDER_URL \
         ANCHOR_WALLET=~/.config/solana/id.json \
         na vitest --run --mode scripts "${INIT_SCRIPTS[$program]}"
     else
@@ -232,7 +229,6 @@ done
 log_info "Switching to main branch and pulling latest changes..."
 git switch main
 git pull
-anchor keys sync
 
 DEPLOYMENT_BRANCH="chore/deployment"
 
