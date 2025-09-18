@@ -180,7 +180,7 @@ pub mod sablier_merkle_instant {
         Ok(ctx.accounts.campaign.clone().into_inner())
     }
 
-    /// Calculates the claim fee in lamports, which is equivalent to $2 USD.
+    /// Calculates the claim fee in lamports.
     ///
     /// # Accounts Expected:
     ///
