@@ -73,7 +73,6 @@ pub struct Withdraw<'info> {
     pub deposited_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     /// Read account: the ATA for the stream NFT owned by recipient.
-    ///
     #[account(
       associated_token::authority = stream_recipient,
       associated_token::mint = stream_nft_mint,
