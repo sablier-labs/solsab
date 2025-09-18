@@ -334,7 +334,7 @@ pub mod sablier_lockup {
         instructions::withdrawable_amount_of::handler(ctx)
     }
 
-    /// Calculates the withdrawal fee in lamports, which is equivalent to $1 USD.
+    /// Calculates the withdrawal fee in lamports.
     ///
     /// # Accounts Expected:
     ///
