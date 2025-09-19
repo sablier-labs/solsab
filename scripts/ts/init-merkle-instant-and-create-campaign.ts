@@ -1,4 +1,4 @@
-import { PublicKey } from "@solana/web3.js";
+import { ComputeBudgetProgram, PublicKey } from "@solana/web3.js";
 import { describe, it } from "vitest";
 import { ProgramId } from "../../lib/constants";
 import { toBn } from "../../lib/helpers";
@@ -7,7 +7,7 @@ import {
   initSablierMerkleInstant,
   merkleInstantProgram,
   signerKeys,
-} from "./init-merkle-instant";
+} from "./common/init-merkle-instant-base";
 
 describe("Sablier Merkle Instant post-deployment initialization with campaign", () => {
   it("should create a campaign", async () => {
@@ -39,6 +39,9 @@ async function createCampaign({
   airdropTokenMint = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"), // USDC on Devnet
   airdropTokenProgram = ProgramId.TOKEN,
 } = {}) {
+  // Set a higher compute unit limit so that the transaction doesn't fail
+  const increaseCULimitIx = ComputeBudgetProgram.setComputeUnitLimit({ units: 1_000_000 });
+
   await merkleInstantProgram.methods
     .createCampaign(Campaign.MERKLE_ROOT, startTime, expirationTime, name, Campaign.IPFS_CID, toBn(10_000), 100)
     .signers([signerKeys])
@@ -47,5 +50,6 @@ async function createCampaign({
       airdropTokenProgram,
       creator: creator.publicKey,
     })
+    .preInstructions([increaseCULimitIx])
     .rpc();
 }
