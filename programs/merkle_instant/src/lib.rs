@@ -39,7 +39,6 @@ pub mod sablier_merkle_instant {
     ///
     /// # Notes
     ///
-    /// - The instruction charges a fee in the native token (SOL), equivalent to $2 USD.
     /// - Emits a [`crate::utils::events::Claim`] event.
     ///
     /// # Requirements
