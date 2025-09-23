@@ -1,5 +1,27 @@
 use anchor_lang::prelude::*;
 
+/// Emitted when an airdrop is claimed on behalf of an eligible recipient.
+#[event]
+pub struct Claim {
+    pub amount: u64,
+    pub campaign: Pubkey,
+    pub claimer: Pubkey,
+    pub claim_receipt: Pubkey,
+    pub fee_in_lamports: u64,
+    pub index: u32,
+    pub recipient: Pubkey,
+}
+
+/// Emitted when the campaign creator claws back the unclaimed tokens.
+#[event]
+pub struct Clawback {
+    pub amount: u64,
+    pub campaign: Pubkey,
+    pub campaign_creator: Pubkey,
+    pub clawback_recipient: Pubkey,
+}
+
+/// Emitted when a Merkle Instant campaign is created.
 #[event]
 pub struct CreateCampaign {
     pub aggregate_amount: u64,
@@ -15,25 +37,7 @@ pub struct CreateCampaign {
     pub token_mint: Pubkey,
 }
 
-#[event]
-pub struct Claim {
-    pub amount: u64,
-    pub campaign: Pubkey,
-    pub claimer: Pubkey,
-    pub claim_receipt: Pubkey,
-    pub fee_in_lamports: u64,
-    pub index: u32,
-    pub recipient: Pubkey,
-}
-
-#[event]
-pub struct Clawback {
-    pub amount: u64,
-    pub campaign: Pubkey,
-    pub campaign_creator: Pubkey,
-    pub clawback_recipient: Pubkey,
-}
-
+/// Emitted when fees are collected from the treasury.
 #[event]
 pub struct FeesCollected {
     pub fee_amount: u64,

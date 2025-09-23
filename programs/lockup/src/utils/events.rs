@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+/// Emitted when a stream is canceled.
 #[event]
 pub struct CancelLockupStream {
     pub deposited_token_mint: Pubkey,
@@ -9,6 +10,7 @@ pub struct CancelLockupStream {
     pub stream_nft_mint: Pubkey,
 }
 
+/// Emitted when an LL stream is created.
 #[event]
 pub struct CreateLockupLinearStream {
     pub deposit_token_decimals: u8,
@@ -19,6 +21,7 @@ pub struct CreateLockupLinearStream {
     pub stream_nft_mint: Pubkey,
 }
 
+/// Emitted when fees are collected from the treasury.
 #[event]
 pub struct FeesCollected {
     pub fee_amount: u64,
@@ -26,6 +29,7 @@ pub struct FeesCollected {
     pub fee_recipient: Pubkey,
 }
 
+/// Emitted when a sender gives up the right to cancel a stream.
 #[event]
 pub struct RenounceLockupStream {
     pub deposited_token_mint: Pubkey,
@@ -33,6 +37,7 @@ pub struct RenounceLockupStream {
     pub stream_nft_mint: Pubkey,
 }
 
+/// Emitted when tokens are withdrawn from a stream.
 #[event]
 pub struct WithdrawFromLockupStream {
     pub deposited_token_mint: Pubkey,
