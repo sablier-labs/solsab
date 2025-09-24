@@ -15,6 +15,7 @@ pnpm-lock.yaml
 yarn.lock
 
 # Misc
+artifacts
 repomix
 *.env
 *.local.json
