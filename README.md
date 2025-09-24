@@ -17,15 +17,25 @@ SolSab uses a monorepo structure with two main Solana programs.
 
 ### Lockup
 
+The official deployment can be found at the address: `4EauRKrNErKfsR4XetEZJNmvACGHbHnHV4R5dvJuqupC`
+
+- [Mainnet](https://solscan.io/account/4EauRKrNErKfsR4XetEZJNmvACGHbHnHV4R5dvJuqupC)
+- [Devnet](https://solscan.io/account/4EauRKrNErKfsR4XetEZJNmvACGHbHnHV4R5dvJuqupC?cluster=devnet)
+
 Sablier Lockup is a token distribution protocol that enables onchain vesting and payments. Our flagship model is the
 linear stream, which distributes tokens on a continuous, by-the-second basis.
 
-The way it works is that the sender of a payment stream first deposits a specific amount of SPL, or Token2022, tokens in
-a program. Then, the program progressively allocates the funds to the recipient, who can access them as they become
-available over time. The payment rate is influenced by various factors, including the start and end times, as well as
-the total amount of tokens deposited.
+The way it works is that the creator of a payment stream first deposits a specific amount of SPL or Token2022 tokens.
+The program then progressively allocates the funds to the recipient, who can access them as they become available over
+time. The payment rate is influenced by various factors, including the start and end times, as well as the total amount
+of tokens deposited.
 
 ### Merkle Instant
+
+The official deployment can be found at the address: `7XrxoQejBoGouW4V3aozTSwub7xSDjYqB4Go7YLjF9rV`
+
+- [Mainnet](https://solscan.io/account/7XrxoQejBoGouW4V3aozTSwub7xSDjYqB4Go7YLjF9rV)
+- [Devnet](https://solscan.io/account/7XrxoQejBoGouW4V3aozTSwub7xSDjYqB4Go7YLjF9rV?cluster=devnet)
 
 Merkle Instant is a program that enables the creation of token airdrop campaigns using Merkle trees, allowing users to
 instantly claim and receive their allocation through a single transaction.
