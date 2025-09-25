@@ -11,7 +11,7 @@ pub enum ErrorCode {
     // -------------------------------------------------------------------------- //
     //                                CANCEL STREAM                               //
     // -------------------------------------------------------------------------- //
-    #[msg("Can't renounce an already-renounced Stream!")]
+    #[msg("Can't cancel an already-canceled Stream!")]
     StreamCanceled,
     #[msg("Can't cancel a non-cancelable Stream!")]
     StreamIsNotCancelable,
