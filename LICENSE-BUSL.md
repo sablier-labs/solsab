@@ -14,7 +14,7 @@ Licensed Work: Sablier Solana Programs The Licensed Work is (C) 2025 Sablier Lab
 Additional Use Grant: Any uses listed and defined at
 [`license-grants.sablier.eth`](https://app.ens.domains/license-grants.sablier.eth)
 
-Change Date: The earlier of 2029-07-01 or a date specified at
+Change Date: The earlier of 2029-10-01 or a date specified at
 [`license-dates.sablier.eth`](https://app.ens.domains/license-dates.sablier.eth)
 
 Change License: GNU General Public License v3.0 or later
