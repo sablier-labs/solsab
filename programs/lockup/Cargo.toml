@@ -21,3 +21,4 @@
   anchor-spl = { version = "0.31.1", features = ["metadata"] }
   mpl-token-metadata = "5.1.0"
   chainlink_solana = { git = "https://github.com/smartcontractkit/chainlink-solana", branch = "solana-2.1" }
+  solana-program = "=2.1.21"
