@@ -1,0 +1,19 @@
+[workspace]
+
+[package]
+  name = "fuzz_tests"
+  version = "0.1.0"
+  description = "Created with Trident"
+  edition = "2021"
+
+[dependencies]
+  borsh = "1.5.3"
+  solana-sdk = "~2.0"
+
+[dependencies.trident-fuzz]
+  version = "0.11.0"
+  features = ["token"]
+
+[[bin]]
+  name = "fuzz_lockup"
+  path = "fuzz_lockup/test_fuzz.rs"
