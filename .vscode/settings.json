@@ -14,6 +14,7 @@
   "rust-analyzer.inlayHints.chainingHints.enable": true,
   "rust-analyzer.inlayHints.parameterHints.enable": true,
   "rust-analyzer.inlayHints.typeHints.enable": true,
+  "rust-analyzer.linkedProjects": ["./Cargo.toml", "./trident-tests/Cargo.toml"],
   "rust-analyzer.rustfmt.extraArgs": ["+nightly"],
   "[json][ts]": {
     "editor.defaultFormatter": "biomejs.biome"
