@@ -235,7 +235,7 @@ impl InstructionHooks for CreateWithTimestampsLlInstruction {
                 let past_offset = trident.gen_range(3600..=ONE_MONTH_SECONDS);
                 now.saturating_sub(past_offset)
             }
-            30..=59 => now,
+            30..=59 => now, // 30% chance: start time in the present
             _ => {
                 // 40% chance: start time in the future (1h to 6mo from now)
                 let future_offset = trident.gen_range(3600..=(6 * ONE_MONTH_SECONDS));

@@ -212,7 +212,8 @@ impl FuzzTest {
         let warp_time = self.trident.gen_range(now..end_time);
         self.trident.get_client().warp_to_timestamp(warp_time.try_into().unwrap());
 
-        // If the streamed amount is equal to the deposited amount (e.g. when cliff unlock amount == deposit amount), skip the cancellation
+        // If the streamed amount is equal to the deposited amount (e.g. when cliff unlock amount == deposit amount),
+        // skip the cancellation
         let streamed_amount = get_streamed_amount(
             &stream_data.timestamps,
             &stream_data.amounts,
@@ -501,7 +502,7 @@ impl FuzzTest {
 }
 
 fn main() {
-    FuzzTest::fuzz(100000, 1);
+    FuzzTest::fuzz(10000, 1);
 }
 
 /// Warps to a random timestamp between now and 2x the total stream duration

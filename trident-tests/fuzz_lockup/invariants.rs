@@ -1,9 +1,6 @@
 use trident_fuzz::fuzzing::*;
 
-use crate::{
-    helpers::*,
-    types::StreamData,
-};
+use crate::{helpers::*, types::StreamData};
 
 /// Comprehensive invariant system for stream transactions
 /// This module provides a centralized way to validate stream invariants
@@ -99,13 +96,12 @@ fn check_canceled_stream(stream_data: &StreamData, current_time: u64) {
 /// Validate create-specific invariants for stream creation transactions
 pub fn check_create_invariants(creator_ata: &TridentAccount, stream_data_ata: &TridentAccount) {
     let creator_ata_balance_before = get_spl_ata_balance_from_data(creator_ata.get_snapshot_before().data());
-    let stream_data_ata_balance_before = get_spl_ata_balance_from_data(stream_data_ata.get_snapshot_before().data());
 
     let creator_ata_balance_after = get_spl_ata_balance_from_data(creator_ata.get_snapshot_after().data());
     let stream_data_ata_balance_after = get_spl_ata_balance_from_data(stream_data_ata.get_snapshot_after().data());
 
     assert_eq!(
-        creator_ata_balance_before + stream_data_ata_balance_before,
+        creator_ata_balance_before,
         creator_ata_balance_after + stream_data_ata_balance_after,
         "Token balance invariant violated"
     );
@@ -174,6 +170,6 @@ fn check_pending_stream(stream_data: &StreamData, current_time: u64) {
     }
 }
 
-// TODO: implement the below functions (and update the ones above) when Trident supports accessing the result of the ix execution (i.e. the statusOf the stream)
-// fn check_streaming_stream(stream_data: &StreamData, current_time: u64) {}
+// TODO: implement the below functions (and update the ones above) when Trident supports accessing the result of the ix
+// execution (i.e. the statusOf the stream) fn check_streaming_stream(stream_data: &StreamData, current_time: u64) {}
 // fn check_settled_stream(stream_data: &StreamData, current_time: u64) {}
