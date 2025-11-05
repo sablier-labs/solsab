@@ -1,4 +1,4 @@
-import BN from "bn.js";
+import { BN } from "@coral-xyz/anchor";
 import { ZERO } from "../../../lib/constants";
 import { usdc } from "../../../lib/convertors";
 import type { Amounts, Timestamps } from "../../../target/types/sablier_lockup_structs";

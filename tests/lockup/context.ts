@@ -1,8 +1,8 @@
 import * as anchor from "@coral-xyz/anchor";
+import { BN } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import type { Keypair } from "@solana/web3.js";
 import { PublicKey } from "@solana/web3.js";
-import BN from "bn.js";
 import { ProgramId, ZERO } from "../../lib/constants";
 import { ProgramName } from "../../lib/enums";
 import { getPDAAddress } from "../../lib/helpers";

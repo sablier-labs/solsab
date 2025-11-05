@@ -1,5 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
-import BN from "bn.js";
+import { BN } from "@coral-xyz/anchor";
 
 export function getPDAAddress(seeds: Array<Buffer | Uint8Array>, programId: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(seeds, programId)[0];
