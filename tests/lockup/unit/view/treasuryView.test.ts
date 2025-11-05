@@ -12,7 +12,9 @@ describe("treasuryView", () => {
     it("should fail", async () => {
       ctx = new LockupTestContext();
       await ctx.setUpLockup({ initProgram: false });
-      await expect(ctx.treasuryView()).rejects.toThrow("Cannot read properties of null (reading 'data')");
+      await expect(ctx.treasuryView()).rejects.toThrow(
+        "Cannot read properties of null (reading 'data')",
+      );
     });
   });
 
@@ -24,7 +26,10 @@ describe("treasuryView", () => {
 
     it("should return the treasury details", async () => {
       const actualTreasury = await ctx.treasuryView();
-      const expectedBump = PublicKey.findProgramAddressSync([Seed.TREASURY], ctx.lockup.programId)[1];
+      const expectedBump = PublicKey.findProgramAddressSync(
+        [Seed.TREASURY],
+        ctx.lockup.programId,
+      )[1];
       const expectedTreasury = {
         bump: expectedBump,
         chainlinkProgram: ProgramId.CHAINLINK_PROGRAM,

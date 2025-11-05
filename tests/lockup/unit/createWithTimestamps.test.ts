@@ -31,7 +31,10 @@ describe("createWithTimestampsLl", () => {
 
     describe("when deposit amount zero", () => {
       it("should fail", async () => {
-        await expectToThrow(ctx.createWithTimestampsLl({ depositAmount: ZERO }), "DepositAmountZero");
+        await expectToThrow(
+          ctx.createWithTimestampsLl({ depositAmount: ZERO }),
+          "DepositAmountZero",
+        );
       });
     });
 
@@ -97,7 +100,10 @@ describe("createWithTimestampsLl", () => {
 
               describe("when start time less than end time", () => {
                 it("should create the stream", async () => {
-                  const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
+                  const beforeSenderTokenBalance = await getATABalance(
+                    ctx.banksClient,
+                    ctx.sender.usdcATA,
+                  );
 
                   const salt = await ctx.createWithTimestampsLl({
                     timestamps: TIMESTAMPS({ cliff: ZERO }),
@@ -159,7 +165,10 @@ describe("createWithTimestampsLl", () => {
                   describe("when unlock amounts sum not exceed deposit amount", () => {
                     describe("when token SPL standard", () => {
                       it("should create the stream", async () => {
-                        const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
+                        const beforeSenderTokenBalance = await getATABalance(
+                          ctx.banksClient,
+                          ctx.sender.usdcATA,
+                        );
                         const salt = await ctx.createWithTimestampsLl();
 
                         await assertStreamCreation(salt, beforeSenderTokenBalance);
@@ -206,17 +215,25 @@ async function assertStreamCreation(
   assertEqStreamData(actualStreamData, expectedStream.data);
 
   // Assert that the Stream NFT Mint has the correct total supply
-  const streamNftMintTotalSupply = await getMintTotalSupplyOf(ctx.banksClient, expectedStream.nftMintAddress);
+  const streamNftMintTotalSupply = await getMintTotalSupplyOf(
+    ctx.banksClient,
+    expectedStream.nftMintAddress,
+  );
   assertEqBn(streamNftMintTotalSupply, BN_1, "Stream NFT Mint total supply not 1");
 
   // Assert that the Recipient's Stream NFT ATA has the correct balance
-  const recipientStreamNftBalance = await getATABalance(ctx.banksClient, expectedStream.recipientStreamNftAta);
+  const recipientStreamNftBalance = await getATABalance(
+    ctx.banksClient,
+    expectedStream.recipientStreamNftAta,
+  );
   assertEqBn(recipientStreamNftBalance, BN_1, "Stream NFT not minted");
 
   // TODO: test that the Stream NFT has been properly added to the LL NFT collection
 
   // Assert that the Sender's balance has changed correctly
   const expectedTokenBalance = beforeSenderTokenBalance.sub(Amount.DEPOSIT);
-  const afterSenderTokenBalance = await ctx.getSenderTokenBalance(expectedStream.data.depositedTokenMint);
+  const afterSenderTokenBalance = await ctx.getSenderTokenBalance(
+    expectedStream.data.depositedTokenMint,
+  );
   assertEqBn(expectedTokenBalance, afterSenderTokenBalance, "sender balance not updated correctly");
 }

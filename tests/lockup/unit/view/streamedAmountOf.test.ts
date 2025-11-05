@@ -135,7 +135,11 @@ describe("streamedAmountOf", () => {
                 const amounts = AMOUNTS({ startUnlock: startUnlockAmount });
 
                 const actualStreamedAmount = await ctx.streamedAmountOf(salt);
-                const expectedStreamedAmount = getStreamedAmount(amounts, Time.MID_26_PERCENT, TIMESTAMPS());
+                const expectedStreamedAmount = getStreamedAmount(
+                  amounts,
+                  Time.MID_26_PERCENT,
+                  TIMESTAMPS(),
+                );
                 assertEqBn(actualStreamedAmount, expectedStreamedAmount);
               });
             });
@@ -152,7 +156,11 @@ describe("streamedAmountOf", () => {
                   const amounts = AMOUNTS({ cliffUnlock: ZERO });
 
                   const actualStreamedAmount = await ctx.streamedAmountOf(salt);
-                  const expectedStreamedAmount = getStreamedAmount(amounts, Time.MID_26_PERCENT, TIMESTAMPS());
+                  const expectedStreamedAmount = getStreamedAmount(
+                    amounts,
+                    Time.MID_26_PERCENT,
+                    TIMESTAMPS(),
+                  );
                   assertEqBn(actualStreamedAmount, expectedStreamedAmount);
                 });
               });

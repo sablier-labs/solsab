@@ -17,9 +17,10 @@ describe("initialize", () => {
     it("should fail", async () => {
       await ctx.initializeMerkleInstant();
       await sleepFor(7);
-      await expect(ctx.initializeMerkleInstant(), "Tx succeeded when it should have failed").rejects.toThrow(
-        "Instruction 1: custom program error: 0x0",
-      );
+      await expect(
+        ctx.initializeMerkleInstant(),
+        "Tx succeeded when it should have failed",
+      ).rejects.toThrow("Instruction 1: custom program error: 0x0");
     });
   });
 

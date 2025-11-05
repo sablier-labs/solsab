@@ -69,7 +69,10 @@ describe("renounce", () => {
         describe("when signer sender", () => {
           describe("given non cancelable stream", () => {
             it("should fail", async () => {
-              await expectToThrow(ctx.renounce({ salt: ctx.salts.nonCancelable }), "StreamAlreadyNonCancelable");
+              await expectToThrow(
+                ctx.renounce({ salt: ctx.salts.nonCancelable }),
+                "StreamAlreadyNonCancelable",
+              );
             });
           });
 

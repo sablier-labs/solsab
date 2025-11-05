@@ -4,6 +4,9 @@
   "files": {
     "includes": ["**/*.{js,json,jsonc,ts}", "!node_modules", "!target"]
   },
+  "formatter": {
+    "lineWidth": 100
+  },
   "linter": {
     "rules": {
       "complexity": {

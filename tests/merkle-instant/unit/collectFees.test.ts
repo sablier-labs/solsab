@@ -68,7 +68,10 @@ describe("collectFees", () => {
           assertEqBn(beforeLamports.treasury.sub(afterLamports.treasury), expectedFeesCollected);
 
           // Assert that the recipient balance has been updated correctly.
-          assertEqBn(afterLamports.feeRecipient.sub(beforeLamports.feeRecipient), expectedFeesCollected);
+          assertEqBn(
+            afterLamports.feeRecipient.sub(beforeLamports.feeRecipient),
+            expectedFeesCollected,
+          );
         });
       });
     });

@@ -2,9 +2,16 @@ import { assert } from "vitest";
 import type { ProgramErrorName } from "../../../target/types/sablier_merkle_instant_errors";
 import { ProgramErrorCode } from "../../../target/types/sablier_merkle_instant_errors";
 import type { Campaign as CampaignData } from "../../../target/types/sablier_merkle_instant_structs";
-import { assertEqBn, assertEqPublicKey, expectToThrow as baseExpectToThrow } from "../../common/assertions";
+import {
+  assertEqBn,
+  assertEqPublicKey,
+  expectToThrow as baseExpectToThrow,
+} from "../../common/assertions";
 
-export function expectToThrow(promise: Promise<unknown>, errorNameOrCode: ProgramErrorName | number) {
+export function expectToThrow(
+  promise: Promise<unknown>,
+  errorNameOrCode: ProgramErrorName | number,
+) {
   return baseExpectToThrow(promise, ProgramErrorCode, errorNameOrCode);
 }
 

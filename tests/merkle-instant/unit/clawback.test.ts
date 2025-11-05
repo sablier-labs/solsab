@@ -25,7 +25,10 @@ describe("clawback", () => {
 
     it("should fail", async () => {
       // Passing a non-Campaign account since no Campaigns exist yet
-      await expectToThrow(ctx.clawback({ campaign: new PublicKey(12345) }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(
+        ctx.clawback({ campaign: new PublicKey(12345) }),
+        ACCOUNT_NOT_INITIALIZED,
+      );
     });
   });
 
@@ -37,7 +40,10 @@ describe("clawback", () => {
 
     describe("when the passed campaign account is invalid", () => {
       it("should fail", async () => {
-        await expectToThrow(ctx.clawback({ campaign: new PublicKey(12345) }), ACCOUNT_NOT_INITIALIZED);
+        await expectToThrow(
+          ctx.clawback({ campaign: new PublicKey(12345) }),
+          ACCOUNT_NOT_INITIALIZED,
+        );
       });
     });
 
@@ -121,7 +127,11 @@ describe("clawback", () => {
                       ctx.clawbackRecipient.keys.publicKey,
                       ProgramId.TOKEN,
                     );
-                    await assertAccountNotExists(ctx, clawbackRecipientAta, "Clawback Recipient's ATA");
+                    await assertAccountNotExists(
+                      ctx,
+                      clawbackRecipientAta,
+                      "Clawback Recipient's ATA",
+                    );
 
                     // Claim from the Campaign
                     await testClawback({
@@ -130,7 +140,11 @@ describe("clawback", () => {
                       clawbackRecipientAtaExists: false,
                     });
 
-                    await assertAccountExists(ctx, clawbackRecipientAta, "Clawback Recipient's ATA");
+                    await assertAccountExists(
+                      ctx,
+                      clawbackRecipientAta,
+                      "Clawback Recipient's ATA",
+                    );
                   });
                 });
 
@@ -169,7 +183,11 @@ async function testClawback({
   clawbackRecipient = ctx.clawbackRecipient.keys.publicKey,
   clawbackRecipientAtaExists = true,
 } = {}) {
-  const campaignAtaBalanceBefore = await getATABalanceMint(ctx.banksClient, campaign, airdropTokenMint);
+  const campaignAtaBalanceBefore = await getATABalanceMint(
+    ctx.banksClient,
+    campaign,
+    airdropTokenMint,
+  );
   const clawbackRecipientAtaBalanceBefore: BN = clawbackRecipientAtaExists
     ? await getATABalanceMint(ctx.banksClient, clawbackRecipient, airdropTokenMint)
     : ZERO;
@@ -182,7 +200,11 @@ async function testClawback({
     clawbackRecipient,
   });
 
-  const campaignAtaBalanceAfter = await getATABalanceMint(ctx.banksClient, campaign, airdropTokenMint);
+  const campaignAtaBalanceAfter = await getATABalanceMint(
+    ctx.banksClient,
+    campaign,
+    airdropTokenMint,
+  );
 
   // Assert that the campaign token balance has decreased as expected
   assertEqBn(campaignAtaBalanceBefore, campaignAtaBalanceAfter.add(Amount.CLAWBACK));
@@ -194,5 +216,8 @@ async function testClawback({
   );
 
   // Assert that the clawback recipient's token balance has increased as expected
-  assertEqBn(clawbackRecipientAtaBalanceBefore, clawbackRecipientAtaBalanceAfter.sub(Amount.CLAWBACK));
+  assertEqBn(
+    clawbackRecipientAtaBalanceBefore,
+    clawbackRecipientAtaBalanceAfter.sub(Amount.CLAWBACK),
+  );
 }

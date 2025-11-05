@@ -128,7 +128,10 @@ export function writeGeneratedFile(content: string, programName: string, suffix:
  * @param generatorFn - Function that generates code for a single program
  * @param successMessage - Message to display on success
  */
-export function createMainFunction(generatorFn: (programName: string) => void, successMessage: string) {
+export function createMainFunction(
+  generatorFn: (programName: string) => void,
+  successMessage: string,
+) {
   return function main() {
     // Parse command line arguments
     const programName = process.argv[2] as ProgramName | "all" | undefined;
@@ -171,7 +174,9 @@ function executeCodegen(
  * @param programName - The program name from command line arguments
  * @throws Process exit if validation fails
  */
-export function validateProgramName(programName: string | undefined): asserts programName is ProgramName | "all" {
+export function validateProgramName(
+  programName: string | undefined,
+): asserts programName is ProgramName | "all" {
   if (!programName || !VALID_PROGRAMS.includes(programName)) {
     console.error(`❌ Missing or Invalid program name: ${programName}`);
     console.error(`📋 Valid options: ${VALID_PROGRAMS.join(", ")}`);
