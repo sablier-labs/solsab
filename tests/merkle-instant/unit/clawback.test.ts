@@ -1,9 +1,9 @@
+import type { BN } from "@coral-xyz/anchor";
 import {
   ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
   ANCHOR_ERROR__CONSTRAINT_ADDRESS as CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
 import { PublicKey } from "@solana/web3.js";
-import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { ProgramId, ZERO } from "../../../lib/constants";
 import { createATAAndFund, deriveATAAddress, getATABalanceMint } from "../../common/anchor-bankrun";

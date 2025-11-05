@@ -112,7 +112,7 @@ function generateImports(types: IdlType[]): string[] {
 
   // Generate import statements only for types we actually use
   if (needsBN) {
-    imports.push('import BN from "bn.js";');
+    imports.push('import type { BN } from "@coral-xyz/anchor";');
   }
   if (needsPublicKey) {
     imports.push('import { type PublicKey } from "@solana/web3.js";');

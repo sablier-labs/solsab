@@ -1,7 +1,7 @@
+import type { BN } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { BankrunProvider } from "anchor-bankrun";
-import type BN from "bn.js";
 import type { AccountInfoBytes, AddedProgram, BanksClient, ProgramTestContext } from "solana-bankrun";
 import { Clock, startAnchor } from "solana-bankrun";
 import { Decimals, ProgramId } from "../../lib/constants";

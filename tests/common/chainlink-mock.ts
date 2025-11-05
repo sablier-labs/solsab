@@ -1,4 +1,4 @@
-import type BN from "bn.js";
+import type { BN } from "@coral-xyz/anchor";
 import type { AddedAccount } from "solana-bankrun";
 import { ProgramId } from "../../lib/constants";
 import { toBn } from "../../lib/helpers";

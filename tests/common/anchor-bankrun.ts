@@ -1,7 +1,7 @@
+import type { BN } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import type { Blockhash, PublicKey, Signer, TransactionInstruction as TxIx } from "@solana/web3.js";
 import { ComputeBudgetProgram, Keypair, SystemProgram, Transaction } from "@solana/web3.js";
-import type BN from "bn.js";
 import type { BanksClient, BanksTransactionMeta } from "solana-bankrun";
 import { toBigInt, toBn } from "../../lib/helpers";
 

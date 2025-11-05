@@ -1,4 +1,4 @@
-import type BN from "bn.js";
+import type { BN } from "@coral-xyz/anchor";
 import { SCALING_FACTOR, ZERO } from "../../../lib/constants";
 import type { Amounts, Timestamps } from "../../../target/types/sablier_lockup_structs";
 
