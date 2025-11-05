@@ -1,4 +1,4 @@
-import BN from "bn.js";
+import { BN } from "@coral-xyz/anchor";
 import dayjs from "dayjs";
 import { usdc } from "../../../lib/convertors";
 

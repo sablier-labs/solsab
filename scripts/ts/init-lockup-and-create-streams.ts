@@ -1,7 +1,7 @@
+import type { BN } from "@coral-xyz/anchor";
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import type { PublicKey } from "@solana/web3.js";
 import { ComputeBudgetProgram, Keypair } from "@solana/web3.js";
-import type BN from "bn.js";
 import { describe, it } from "vitest";
 import { BN_1, Decimals, ZERO } from "../../lib/constants";
 import { sol } from "../../lib/convertors";
