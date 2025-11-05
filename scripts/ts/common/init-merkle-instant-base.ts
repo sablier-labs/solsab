@@ -1,5 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
-import { ComputeBudgetProgram, type Keypair } from "@solana/web3.js";
+import type { Keypair } from "@solana/web3.js";
+import { ComputeBudgetProgram } from "@solana/web3.js";
 import { ProgramId, SABLIER_ADMIN } from "../../../lib/constants";
 import type { SablierMerkleInstant } from "../../../target/types/sablier_merkle_instant";
 

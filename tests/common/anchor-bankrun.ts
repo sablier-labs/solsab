@@ -1,14 +1,6 @@
 import * as token from "@solana/spl-token";
-import {
-  type Blockhash,
-  ComputeBudgetProgram,
-  Keypair,
-  type PublicKey,
-  type Signer,
-  SystemProgram,
-  Transaction,
-  type TransactionInstruction as TxIx,
-} from "@solana/web3.js";
+import type { Blockhash, PublicKey, Signer, TransactionInstruction as TxIx } from "@solana/web3.js";
+import { ComputeBudgetProgram, Keypair, SystemProgram, Transaction } from "@solana/web3.js";
 import type BN from "bn.js";
 import type { BanksClient, BanksTransactionMeta } from "solana-bankrun";
 import { toBigInt, toBn } from "../../lib/helpers";
@@ -34,7 +26,9 @@ export async function buildSignAndProcessTx(
 
   // Add instructions to the transaction
   const internal_ixs: TxIx[] = Array.isArray(ixs) ? ixs : [ixs];
-  internal_ixs.forEach((ix) => tx.add(ix));
+  internal_ixs.forEach((ix) => {
+    tx.add(ix);
+  });
 
   // Ensure `signerKeys` is always an array
   const signers = Array.isArray(signerKeys) ? signerKeys : [signerKeys];

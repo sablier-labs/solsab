@@ -1,9 +1,10 @@
 import * as anchor from "@coral-xyz/anchor";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { ComputeBudgetProgram, type Keypair } from "@solana/web3.js";
+import type { Keypair } from "@solana/web3.js";
+import { ComputeBudgetProgram } from "@solana/web3.js";
 
 import { ProgramId, SABLIER_ADMIN } from "../../../lib/constants";
-import { type SablierLockup } from "../../../target/types/sablier_lockup";
+import type { SablierLockup } from "../../../target/types/sablier_lockup";
 
 export let anchorProvider: anchor.AnchorProvider;
 export let lockupProgram: anchor.Program<SablierLockup>;

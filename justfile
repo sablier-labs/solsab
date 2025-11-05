@@ -35,8 +35,8 @@ default:
 
 # Build programs using Anchor
 [group("build")]
+[script]
 build program_name="all":
-    #!/usr/bin/env sh
     if [ "{{ program_name }}" = "all" ]; then
         cmd="anchor build"
     else
@@ -82,10 +82,18 @@ alias v := verify
 # ---------------------------------------------------------------------------- #
 
 # Run all code checks
-full-check: prettier-check biome-check tsc-check rust-check
+full-check:
+    just _run-with-status prettier-check
+    just _run-with-status biome-check
+    just _run-with-status tsc-check
+    just _run-with-status rust-check
+    just _run-with-status codegen
 
 # Run all code fixes
-full-write: prettier-write biome-write rust-write
+full-write:
+    just _run-with-status prettier-write
+    just _run-with-status biome-write
+    just _run-with-status rust-write
 
 # Run Rust checks
 rust-check:
@@ -107,19 +115,19 @@ alias rw := rust-write
 # To debug the Solana logs, run this as `RUST_LOG=debug just test`
 [group("test")]
 test *args: build
-    na vitest run --hideSkippedTests {{args}}
+    na vitest run --hideSkippedTests {{ args }}
 alias t := test
 
 # Run all tests without building
 [group("test")]
 test-lite *args:
-    na vitest run --hideSkippedTests {{args}}
+    na vitest run --hideSkippedTests {{ args }}
 alias tl := test-lite
 
 # Run tests with UI
 [group("test")]
 test-ui *args: build
-    na vitest --hideSkippedTests --ui {{args}}
+    na vitest --hideSkippedTests --ui {{ args }}
 alias tui := test-ui
 
 # Run Lockup tests only

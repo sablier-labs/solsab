@@ -1,12 +1,13 @@
 import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
-import { type Keypair, PublicKey } from "@solana/web3.js";
+import type { Keypair } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { ProgramId, ZERO } from "../../lib/constants";
 import { ProgramName } from "../../lib/enums";
 import { getPDAAddress } from "../../lib/helpers";
 import IDL from "../../target/idl/sablier_lockup.json";
-import { type SablierLockup as SablierLockupProgram } from "../../target/types/sablier_lockup";
+import type { SablierLockup as SablierLockupProgram } from "../../target/types/sablier_lockup";
 import type { NftCollectionData, StreamData } from "../../target/types/sablier_lockup_structs";
 import { buildSignAndProcessTx, deriveATAAddress, getATABalance } from "../common/anchor-bankrun";
 import { TestContext } from "../common/context";

@@ -54,9 +54,9 @@ just build
 
 ### Run full code checks
 
-<!-- prettier-ignore -->
 > [!TIP]
->  Make sure to build the programs first.
+>
+> Make sure to build the programs first.
 
 ```bash
 just full-check
