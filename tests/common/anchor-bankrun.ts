@@ -5,6 +5,15 @@ import { ComputeBudgetProgram, Keypair, SystemProgram, Transaction } from "@sola
 import type { BanksClient, BanksTransactionMeta } from "solana-bankrun";
 import { toBigInt, toBn } from "../../lib/helpers";
 
+/**
+ * Type alias for Transaction compatible with solana-bankrun's processTransaction.
+ * Required due to solana-bankrun bundling its own @solana/web3.js (v1.68.0) while
+ * the project uses a newer @solana/web3.js version, causing TypeScript type incompatibility.
+ * The types are structurally compatible at runtime.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: Type mismatch between project's @solana/web3.js and solana-bankrun's nested version
+type BankrunCompatibleTransaction = any;
+
 export async function buildSignAndProcessTx(
   banksClient: BanksClient,
   ixs: TxIx | TxIx[],
@@ -37,7 +46,7 @@ export async function buildSignAndProcessTx(
   tx.sign(...signers);
 
   // Process the transaction
-  const txMeta = await banksClient.processTransaction(tx);
+  const txMeta = await banksClient.processTransaction(tx as BankrunCompatibleTransaction);
   return txMeta;
 }
 
@@ -73,7 +82,7 @@ export async function createMint(
   tx.recentBlockhash = await getLatestBlockhash(banksClient);
   tx.sign(payer, mintKeypair);
 
-  await banksClient.processTransaction(tx);
+  await banksClient.processTransaction(tx as BankrunCompatibleTransaction);
   return mint;
 }
 
@@ -93,7 +102,7 @@ export async function createATA(
   tx.recentBlockhash = await getLatestBlockhash(banksClient);
   tx.sign(payer);
 
-  await banksClient.processTransaction(tx);
+  await banksClient.processTransaction(tx as BankrunCompatibleTransaction);
 
   return ata;
 }
@@ -199,7 +208,7 @@ export async function transfer(
   tx.recentBlockhash = await getLatestBlockhash(banksClient);
   tx.sign(payer, ...multiSigners);
 
-  return await banksClient.processTransaction(tx);
+  return await banksClient.processTransaction(tx as BankrunCompatibleTransaction);
 }
 
 export async function transferLamports(
@@ -220,7 +229,7 @@ export async function transferLamports(
   tx.recentBlockhash = await getLatestBlockhash(banksClient);
   tx.sign(payer);
 
-  return await banksClient.processTransaction(tx);
+  return await banksClient.processTransaction(tx as BankrunCompatibleTransaction);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -259,5 +268,5 @@ async function mintTo(
   tx.recentBlockhash = await getLatestBlockhash(banksClient);
   tx.sign(payer, ...multiSigners);
 
-  return await banksClient.processTransaction(tx);
+  return await banksClient.processTransaction(tx as BankrunCompatibleTransaction);
 }
