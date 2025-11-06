@@ -72,11 +72,6 @@ clean globs=GLOBS_CLEAN:
 setup:
     bun setup
 
-# Run verification script
-verify:
-    bash ./scripts/bash/verify.sh
-alias v := verify
-
 # ---------------------------------------------------------------------------- #
 #                                  CODE CHECKS                                 #
 # ---------------------------------------------------------------------------- #
