@@ -87,7 +87,7 @@ type RustType = keyof typeof RUST_TYPES;
  * Analyzes all types and generates the necessary import statements
  *
  * Scans through all type definitions to determine which external types are needed:
- * - BN: Required for any u64, u128, i64 fields (imported from "bn.js")
+ * - BN: Required for any u64, u128, i64 fields (imported from "@coral-xyz/anchor")
  * - PublicKey: Required for any pubkey fields (imported from "@solana/web3.js")
  *
  * This ensures we only import what we actually use, keeping the generated files clean.
