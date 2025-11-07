@@ -117,7 +117,13 @@ describe("claim", () => {
                     });
 
                     // Test the campaign
-                    await testClaim(campaign, ctx.recipient.keys, ctx.randomToken, ProgramId.TOKEN, false);
+                    await testClaim(
+                      campaign,
+                      ctx.recipient.keys,
+                      ctx.randomToken,
+                      ProgramId.TOKEN,
+                      false,
+                    );
                   });
                 });
 
@@ -205,7 +211,11 @@ async function testClaim(
   // Assert that the Campaign's ATA balance decreased by the claim amount
   assertEqBn(campaignAtaBalanceAfter, campaignAtaBalanceBefore.sub(Amount.CLAIM));
 
-  const recipientAtaBalanceAfter = await getATABalanceMint(ctx.banksClient, ctx.recipient.keys.publicKey, tokenMint);
+  const recipientAtaBalanceAfter = await getATABalanceMint(
+    ctx.banksClient,
+    ctx.recipient.keys.publicKey,
+    tokenMint,
+  );
 
   // Assert that the recipient's ATA balance increased by the claim amount
   assertEqBn(recipientAtaBalanceAfter, recipientAtaBalanceBefore.add(Amount.CLAIM));

@@ -27,7 +27,10 @@ describe("withdrawMax", () => {
 
     describe("given a null stream", () => {
       it("should fail", async () => {
-        await expectToThrow(ctx.withdrawMax({ salt: ctx.salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
+        await expectToThrow(
+          ctx.withdrawMax({ salt: ctx.salts.nonExisting }),
+          ACCOUNT_NOT_INITIALIZED,
+        );
       });
     });
 

@@ -78,11 +78,11 @@ setup:
 
 # Run all code checks
 full-check:
+    just _run-with-status codegen
     just _run-with-status prettier-check
     just _run-with-status biome-check
     just _run-with-status tsc-check
     just _run-with-status rust-check
-    just _run-with-status codegen
 
 # Run all code fixes
 full-write:

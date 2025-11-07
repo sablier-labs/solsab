@@ -6,7 +6,12 @@ import {
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
-import { createATAAndFund, deriveATAAddress, getATABalance, getATABalanceMint } from "../../common/anchor-bankrun";
+import {
+  createATAAndFund,
+  deriveATAAddress,
+  getATABalance,
+  getATABalanceMint,
+} from "../../common/anchor-bankrun";
 import { assertAccountNotExists, assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
@@ -46,7 +51,10 @@ describe("cancel", () => {
     describe("given a valid stream", () => {
       describe("given an invalid deposited token mint", () => {
         it("should fail", async () => {
-          await expectToThrow(ctx.cancel({ depositedTokenMint: ctx.randomToken }), ACCOUNT_NOT_INITIALIZED);
+          await expectToThrow(
+            ctx.cancel({ depositedTokenMint: ctx.randomToken }),
+            ACCOUNT_NOT_INITIALIZED,
+          );
         });
       });
 
@@ -86,7 +94,10 @@ describe("cancel", () => {
           describe("when signer sender", () => {
             describe("given non cancelable stream", () => {
               it("should fail", async () => {
-                await expectToThrow(ctx.cancel({ salt: ctx.salts.nonCancelable }), "StreamIsNotCancelable");
+                await expectToThrow(
+                  ctx.cancel({ salt: ctx.salts.nonCancelable }),
+                  "StreamIsNotCancelable",
+                );
               });
             });
 
@@ -94,7 +105,11 @@ describe("cancel", () => {
               describe("when the sender does not have ATA", () => {
                 it("should cancel the stream", async () => {
                   // Derive the sender's ATA for the random token
-                  const senderATA = deriveATAAddress(ctx.randomToken, ctx.sender.keys.publicKey, ProgramId.TOKEN);
+                  const senderATA = deriveATAAddress(
+                    ctx.randomToken,
+                    ctx.sender.keys.publicKey,
+                    ProgramId.TOKEN,
+                  );
 
                   // Assert the sender's ATA doesn't exist
                   await assertAccountNotExists(ctx, senderATA, "Sender's ATA");
@@ -143,7 +158,10 @@ describe("cancel", () => {
                   // Go back in time so that the stream is PENDING
                   await ctx.timeTravelTo(Time.GENESIS);
 
-                  const beforeSenderBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
+                  const beforeSenderBalance = await getATABalance(
+                    ctx.banksClient,
+                    ctx.sender.usdcATA,
+                  );
 
                   // Cancel the stream
                   await ctx.cancel();
@@ -157,14 +175,21 @@ describe("cancel", () => {
                   expectedStream.data.amounts.refunded = Amount.DEPOSIT;
 
                   // Assert the cancelation
-                  await postCancelAssertions(ctx.salts.default, expectedStream, beforeSenderBalance);
+                  await postCancelAssertions(
+                    ctx.salts.default,
+                    expectedStream,
+                    beforeSenderBalance,
+                  );
                 });
               });
 
               describe("given STREAMING status", () => {
                 describe("given token SPL standard", () => {
                   it("should cancel the stream", async () => {
-                    const beforeSenderBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
+                    const beforeSenderBalance = await getATABalance(
+                      ctx.banksClient,
+                      ctx.sender.usdcATA,
+                    );
 
                     // Cancel the stream
                     await ctx.cancel();
@@ -176,7 +201,11 @@ describe("cancel", () => {
                     expectedStream.data.amounts.refunded = Amount.REFUND;
 
                     // Assert the cancelation
-                    await postCancelAssertions(ctx.salts.default, expectedStream, beforeSenderBalance);
+                    await postCancelAssertions(
+                      ctx.salts.default,
+                      expectedStream,
+                      beforeSenderBalance,
+                    );
                   });
                 });
 
@@ -185,7 +214,10 @@ describe("cancel", () => {
                     // Create a stream with a Token2022 mint
                     const salt = await ctx.createWithTimestampsLlToken2022();
 
-                    const beforeSenderBalance = await getATABalance(ctx.banksClient, ctx.sender.daiATA);
+                    const beforeSenderBalance = await getATABalance(
+                      ctx.banksClient,
+                      ctx.sender.daiATA,
+                    );
 
                     // Cancel the stream
                     await ctx.cancelToken2022(salt);
@@ -231,6 +263,8 @@ async function postCancelAssertions(salt: BN, expectedStream: Stream, beforeSend
     expectedStream.dataAddress,
     expectedStream.data.depositedTokenMint,
   );
-  const expectedStreamDataBalance = expectedStream.data.amounts.deposited.sub(expectedStream.data.amounts.refunded);
+  const expectedStreamDataBalance = expectedStream.data.amounts.deposited.sub(
+    expectedStream.data.amounts.refunded,
+  );
   assertEqBn(actualStreamDataBalance, expectedStreamDataBalance);
 }

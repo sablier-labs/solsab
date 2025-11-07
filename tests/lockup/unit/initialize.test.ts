@@ -18,9 +18,10 @@ describe("initialize", () => {
     it("should fail", async () => {
       await ctx.initializeLockup();
       await sleepFor(7);
-      await expect(ctx.initializeLockup(), "Tx succeeded when it should have failed").rejects.toThrow(
-        "Instruction 1: custom program error: 0x0",
-      );
+      await expect(
+        ctx.initializeLockup(),
+        "Tx succeeded when it should have failed",
+      ).rejects.toThrow("Instruction 1: custom program error: 0x0");
     });
   });
 
@@ -38,7 +39,11 @@ describe("initialize", () => {
       const totalSupply = await getMintTotalSupplyOf(ctx.banksClient, nftCollectionMint);
       assertEqBn(totalSupply, BN_1);
 
-      const nftCollectionATA = deriveATAAddress(nftCollectionMint, ctx.treasuryAddress, ProgramId.TOKEN);
+      const nftCollectionATA = deriveATAAddress(
+        nftCollectionMint,
+        ctx.treasuryAddress,
+        ProgramId.TOKEN,
+      );
       await assertAccountExists(ctx, nftCollectionATA, "NFT Collection ATA");
 
       // Assert that the NFT Collection ATA has a balance of 1
@@ -54,7 +59,12 @@ describe("initialize", () => {
       await assertAccountExists(ctx, nftCollectionMetadata, "NFT Collection Metadata");
 
       const nftCollectionMasterEdition = getPDAAddress(
-        [Seed.METADATA, ProgramId.TOKEN_METADATA.toBuffer(), nftCollectionMintAsBuffer, Seed.EDITION],
+        [
+          Seed.METADATA,
+          ProgramId.TOKEN_METADATA.toBuffer(),
+          nftCollectionMintAsBuffer,
+          Seed.EDITION,
+        ],
         ProgramId.TOKEN_METADATA,
       );
       await assertAccountExists(ctx, nftCollectionMasterEdition, "NFT Collection Master Edition");

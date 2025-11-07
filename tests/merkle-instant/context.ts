@@ -211,7 +211,11 @@ export class MerkleInstantTestContext extends TestContext {
 
     const campaignAta = deriveATAAddress(airdropTokenMint, campaign, airdropTokenProgram);
 
-    const campaignFunderAta = deriveATAAddress(airdropTokenMint, campaignFunder.publicKey, airdropTokenProgram);
+    const campaignFunderAta = deriveATAAddress(
+      airdropTokenMint,
+      campaignFunder.publicKey,
+      airdropTokenProgram,
+    );
 
     // Transfer the aggregate amount from the campaign funder to the campaign
     await transfer(
@@ -230,7 +234,11 @@ export class MerkleInstantTestContext extends TestContext {
 
   async initializeMerkleInstant(): Promise<void> {
     const initializeIx = await this.merkleInstant.methods
-      .initialize(this.feeCollector.keys.publicKey, ProgramId.CHAINLINK_PROGRAM, ProgramId.CHAINLINK_SOL_USD_FEED)
+      .initialize(
+        this.feeCollector.keys.publicKey,
+        ProgramId.CHAINLINK_PROGRAM,
+        ProgramId.CHAINLINK_SOL_USD_FEED,
+      )
       .accounts({
         initializer: this.campaignCreator.keys.publicKey,
       })
@@ -244,7 +252,11 @@ export class MerkleInstantTestContext extends TestContext {
   //////////////////////////////////////////////////////////////////////////*/
 
   async treasuryView(): Promise<Treasury> {
-    return await this.merkleInstant.methods.treasuryView().accounts({}).signers([this.defaultBankrunPayer]).view();
+    return await this.merkleInstant.methods
+      .treasuryView()
+      .accounts({})
+      .signers([this.defaultBankrunPayer])
+      .view();
   }
 
   /*//////////////////////////////////////////////////////////////////////////

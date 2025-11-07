@@ -20,7 +20,9 @@ export async function configureTestingEnvironment() {
 
 export async function initSablierLockup() {
   // Use signer as admin if devnet, otherwise SABLIER_ADMIN
-  const admin = anchorProvider.connection.rpcEndpoint.includes("devnet") ? signerKeys.publicKey : SABLIER_ADMIN;
+  const admin = anchorProvider.connection.rpcEndpoint.includes("devnet")
+    ? signerKeys.publicKey
+    : SABLIER_ADMIN;
 
   // Set a higher compute unit limit so that the transaction doesn't fail
   const increaseCULimitIx = ComputeBudgetProgram.setComputeUnitLimit({ units: 1_000_000 });

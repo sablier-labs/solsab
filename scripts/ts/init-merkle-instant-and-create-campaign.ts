@@ -22,7 +22,9 @@ describe("Sablier Merkle Instant post-deployment initialization with campaign", 
 const Campaign = {
   EXPIRATION_TIME: toBn(Math.floor(Date.now() / 1000) + 10 * 24 * 60 * 60), // 10 days from now
   IPFS_CID: "bafkreiecpwdhvkmw4y6iihfndk7jhwjas3m5htm7nczovt6m37mucwgsrq",
-  MERKLE_ROOT: Array.from(Buffer.from("d52549cb072a1fcd052412fc80f678effe92aeeedccd1cae632c5c6e1de89379", "hex")),
+  MERKLE_ROOT: Array.from(
+    Buffer.from("d52549cb072a1fcd052412fc80f678effe92aeeedccd1cae632c5c6e1de89379", "hex"),
+  ),
   NAME: "HODL or Nothing",
   START_TIME: toBn(1754142441), // August 2, 2025 1:47:21 PM
 };
@@ -43,7 +45,15 @@ async function createCampaign({
   const increaseCULimitIx = ComputeBudgetProgram.setComputeUnitLimit({ units: 1_000_000 });
 
   await merkleInstantProgram.methods
-    .createCampaign(Campaign.MERKLE_ROOT, startTime, expirationTime, name, Campaign.IPFS_CID, toBn(10_000), 100)
+    .createCampaign(
+      Campaign.MERKLE_ROOT,
+      startTime,
+      expirationTime,
+      name,
+      Campaign.IPFS_CID,
+      toBn(10_000),
+      100,
+    )
     .signers([signerKeys])
     .accounts({
       airdropTokenMint,
