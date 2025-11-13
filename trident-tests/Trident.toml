@@ -1,0 +1,12 @@
+[fuzz.metrics]
+enabled = true
+
+
+[[fuzz.programs]]
+address = "4EauRKrNErKfsR4XetEZJNmvACGHbHnHV4R5dvJuqupC"
+program = "../target/deploy/sablier_lockup.so"
+
+[[fuzz.programs]]
+address = "7XrxoQejBoGouW4V3aozTSwub7xSDjYqB4Go7YLjF9rV"
+program = "../target/deploy/sablier_merkle_instant.so"
+ 
