@@ -113,6 +113,12 @@ test *args: build _setup-fixtures
     na vitest run --hideSkippedTests {{ args }}
 alias t := test
 
+# Run all tests without building
+[group("test")]
+test-lite *args: _setup-fixtures
+    na vitest run --hideSkippedTests {{ args }}
+alias tl := test-lite
+
 # Run tests with UI
 [group("test")]
 test-ui *args: build _setup-fixtures
