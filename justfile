@@ -68,6 +68,7 @@ alias bmi := build-merkle-instant
 # Clean build artifacts
 clean globs=GLOBS_CLEAN:
     nlx del-cli "{{ globs }}"
+    rm -f target/deploy/token_metadata_program.so target/deploy/chainlink_program.so
 
 # Run verification script
 verify:
@@ -106,31 +107,50 @@ alias rw := rust-write
 #                                 TESTING                                      #
 # ============================================================================ #
 
+# Download external program fixtures for testing
+_setup-fixtures:
+    #!/usr/bin/env sh
+    FIXTURES_DIR="tests/anchor/fixtures"
+    DEPLOY_DIR="target/deploy"
+    mkdir -p "$FIXTURES_DIR"
+
+    # Token Metadata Program
+    if [ ! -f "$FIXTURES_DIR/token_metadata_program.so" ]; then
+        echo "📥 Downloading Token Metadata program..."
+        solana program dump -u m metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s "$FIXTURES_DIR/token_metadata_program.so"
+    fi
+
+    # Chainlink Program
+    if [ ! -f "$FIXTURES_DIR/chainlink_program.so" ]; then
+        echo "📥 Downloading Chainlink program..."
+        solana program dump -u m HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny "$FIXTURES_DIR/chainlink_program.so"
+    fi
+
+    # Create symlinks in target/deploy for solana-bankrun
+    ln -sf "../../$FIXTURES_DIR/token_metadata_program.so" "$DEPLOY_DIR/token_metadata_program.so"
+    ln -sf "../../$FIXTURES_DIR/chainlink_program.so" "$DEPLOY_DIR/chainlink_program.so"
+
 # Run all tests
 # To debug the Solana logs, run this as `RUST_LOG=debug just test`
 [group("test")]
-test *args: build
+test *args: build _setup-fixtures
     na vitest run --hideSkippedTests {{args}}
 alias t := test
 
-# Run all tests without building
-test-lite *args:
-    na vitest run --hideSkippedTests {{args}}
-alias tl := test-lite
-
 # Run tests with UI
-test-ui *args: build
+[group("test")]
+test-ui *args: build _setup-fixtures
     na vitest --hideSkippedTests --ui {{args}}
 alias tui := test-ui
 
 # Run Lockup tests only
 [group("test")]
-test-lockup *args="tests/lockup/**/*.test.ts":
+test-lockup *args="tests/anchor/lockup/**/*.test.ts":
     just test {{ args }}
 alias tlk := test-lockup
 
 # Run Merkle Instant tests only
 [group("test")]
-test-merkle-instant *args="tests/merkle-instant/**/*.test.ts":
+test-merkle-instant *args="tests/anchor/merkle-instant/**/*.test.ts":
     just test {{ args }}
 alias tmi := test-merkle-instant
