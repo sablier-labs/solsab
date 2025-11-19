@@ -106,24 +106,24 @@ alias rw := rust-write
 #                                 TESTING                                      #
 # ============================================================================ #
 
-# Run all tests
+# Run all unit tests
 # To debug the Solana logs, run this as `RUST_LOG=debug just test`
 [group("test")]
 test *args: build
     na vitest run --hideSkippedTests {{args}}
 alias t := test
 
-# Run all tests without building
+# Run all unit tests without building
 test-lite *args:
     na vitest run --hideSkippedTests {{args}}
 alias tl := test-lite
 
-# Run tests with UI
+# Run unit tests with UI
 test-ui *args: build
     na vitest --hideSkippedTests --ui {{args}}
 alias tui := test-ui
 
-# Run Lockup tests only
+# Run Lockup unit tests only
 [group("test")]
 test-lockup *args="tests/lockup/**/*.test.ts":
     just test {{ args }}
@@ -134,3 +134,10 @@ alias tlk := test-lockup
 test-merkle-instant *args="tests/merkle-instant/**/*.test.ts":
     just test {{ args }}
 alias tmi := test-merkle-instant
+
+
+# Run Lockup fuzz tests
+[group("fuzz")]
+fuzz-lockup:
+    cd trident-tests && trident fuzz run fuzz_lockup
+alias flk := fuzz-lockup

@@ -55,6 +55,10 @@ jobs:
         if: steps.cache-build.outputs.cache-status != 'primary'
         run: "just test-lite"
 
+      - name: "Run the fuzz tests"
+        if: steps.cache-build.outputs.cache-status != 'primary'
+        run: "just fuzz-lockup"
+
       - name: "Add summary"
         run: | # shell
           echo "## CI result" >> $GITHUB_STEP_SUMMARY
