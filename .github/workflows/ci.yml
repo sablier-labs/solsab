@@ -31,6 +31,9 @@ jobs:
           rust-version: "nightly"
           solana-version: "2.1.21"
 
+      - name: "Install Trident"
+        run: "cargo install trident-cli"
+
       - name: "Cache Anchor build artifacts"
         id: "cache-build"
         uses: "sablier-labs/gha-utils/.github/actions/solana-cache@main"
@@ -54,6 +57,10 @@ jobs:
       - name: "Run the tests"
         if: steps.cache-build.outputs.cache-status != 'primary'
         run: "just test-lite"
+
+      - name: "Run the fuzz tests"
+        if: steps.cache-build.outputs.cache-status != 'primary'
+        run: "just fuzz-lockup"
 
       - name: "Add summary"
         run: | # shell
