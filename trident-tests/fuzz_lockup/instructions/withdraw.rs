@@ -3,7 +3,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use trident_fuzz::fuzzing::*;
 
 #[derive(TridentInstruction, Default)]
-#[program_id("4EauRKrNErKfsR4XetEZJNmvACGHbHnHV4R5dvJuqupC")]
+#[program_id("8B3TuvxTSjVxZLpfvzvp9HKpomUqDsa1KEHXVo2iAfK7")]
 #[discriminator([183u8, 18u8, 70u8, 156u8, 148u8, 109u8, 161u8, 34u8])]
 pub struct WithdrawInstruction {
     pub accounts: WithdrawInstructionAccounts,

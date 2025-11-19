@@ -6,7 +6,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use trident_fuzz::fuzzing::*;
 
 #[derive(TridentInstruction, Default)]
-#[program_id("4EauRKrNErKfsR4XetEZJNmvACGHbHnHV4R5dvJuqupC")]
+#[program_id("8B3TuvxTSjVxZLpfvzvp9HKpomUqDsa1KEHXVo2iAfK7")]
 #[discriminator([150u8, 165u8, 147u8, 28u8, 68u8, 41u8, 48u8, 41u8])]
 pub struct CreateWithTimestampsLlInstruction {
     pub accounts: CreateWithTimestampsLlInstructionAccounts,

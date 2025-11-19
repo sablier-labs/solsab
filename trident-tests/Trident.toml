@@ -3,7 +3,7 @@
   dashboard = true
 
 [[fuzz.programs]]
-  address = "4EauRKrNErKfsR4XetEZJNmvACGHbHnHV4R5dvJuqupC"
+  address = "8B3TuvxTSjVxZLpfvzvp9HKpomUqDsa1KEHXVo2iAfK7"
   program = "../target/deploy/sablier_lockup.so"
 
 [[fuzz.programs]]

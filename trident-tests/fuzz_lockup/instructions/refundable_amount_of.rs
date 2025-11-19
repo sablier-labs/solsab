@@ -1,9 +1,9 @@
-use crate::{fuzz_accounts::FuzzAccounts};
+use crate::fuzz_accounts::FuzzAccounts;
 use borsh::{BorshDeserialize, BorshSerialize};
 use trident_fuzz::fuzzing::*;
 
 #[derive(TridentInstruction, Default)]
-#[program_id("4EauRKrNErKfsR4XetEZJNmvACGHbHnHV4R5dvJuqupC")]
+#[program_id("8B3TuvxTSjVxZLpfvzvp9HKpomUqDsa1KEHXVo2iAfK7")]
 #[discriminator([160u8, 136u8, 114u8, 120u8, 234u8, 178u8, 146u8, 58u8])]
 pub struct RefundableAmountOfInstruction {
     pub accounts: RefundableAmountOfInstructionAccounts,
