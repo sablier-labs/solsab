@@ -22,3 +22,4 @@ repomix
 *.env
 *.local.json
 .DS_Store
+*.fuzz-artifacts
