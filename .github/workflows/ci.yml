@@ -31,6 +31,9 @@ jobs:
           rust-version: "nightly"
           solana-version: "2.1.21"
 
+      - name: "Install Trident"
+        run: "cargo install trident-cli"
+
       - name: "Cache Anchor build artifacts"
         id: "cache-build"
         uses: "sablier-labs/gha-utils/.github/actions/solana-cache@main"
