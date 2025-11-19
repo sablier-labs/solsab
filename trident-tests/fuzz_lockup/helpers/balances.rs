@@ -1,20 +1,6 @@
 use solana_sdk::pubkey::Pubkey;
 use trident_fuzz::fuzzing::*;
 
-/// Get SPL ATA balance via trident by TridentAccount
-pub fn get_spl_ata_balance(trident: &mut Trident, ata: &TridentAccount) -> u64 {
-    let client = trident.get_client();
-    let account = client.get_account(&ata.pubkey());
-    get_spl_ata_balance_from_data(account.data())
-}
-
-/// Get SPL ATA balance via trident by pubkey
-pub fn get_spl_ata_balance_via_trident(trident: &mut Trident, pubkey: &Pubkey) -> u64 {
-    let client = trident.get_client();
-    let account = client.get_account(pubkey);
-    get_spl_ata_balance_from_data(account.data())
-}
-
 /// Get SPL ATA balance via FuzzClient by Pubkey
 pub fn get_spl_ata_balance_via_client(client: &mut impl FuzzClient, pubkey: &Pubkey) -> u64 {
     let account = client.get_account(pubkey);
