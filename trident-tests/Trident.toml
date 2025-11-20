@@ -21,10 +21,3 @@
 [[fuzz.accounts]]
   address = "99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY6jZ96ynrR"
   filename = "accounts/chainlink_sol_usd_feed_mock.json"
-
-  # [fuzz.coverage]
-  #   enable = true
-  #   server_port = 58432
-  #   loopcount = 0
-  #   format = "json"
-  #   attach_extension = false
