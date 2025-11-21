@@ -1600,7 +1600,6 @@ dependencies = [
  "anchor-spl",
  "chainlink_solana",
  "mpl-token-metadata",
- "solana-program",
 ]
 
 [[package]]
@@ -1610,7 +1609,6 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "chainlink_solana",
- "solana-program",
 ]
 
 [[package]]
