@@ -109,19 +109,19 @@ alias rw := rust-write
 # Run all tests
 # To debug the Solana logs, run this as `RUST_LOG=debug just test`
 [group("test")]
-test *args: build
+test *args: build _setup-fixtures
     na vitest run --hideSkippedTests {{ args }}
 alias t := test
 
 # Run all tests without building
 [group("test")]
-test-lite *args:
+test-lite *args: _setup-fixtures
     na vitest run --hideSkippedTests {{ args }}
 alias tl := test-lite
 
 # Run tests with UI
 [group("test")]
-test-ui *args: build
+test-ui *args: build _setup-fixtures
     na vitest --hideSkippedTests --ui {{ args }}
 alias tui := test-ui
 
@@ -136,3 +136,21 @@ alias tlk := test-lockup
 test-merkle-instant *args="tests/merkle-instant":
     just test {{ args }}
 alias tmi := test-merkle-instant
+
+# Download external program fixtures for testing
+_setup-fixtures:
+    #!/usr/bin/env sh
+    FIXTURES_DIR="tests/fixtures"
+
+    if [ ! -d "$FIXTURES_DIR" ]; then
+        echo "📦 Setting up fixtures..."
+        mkdir -p "$FIXTURES_DIR"
+
+        # Token Metadata Program
+        echo "📥 Downloading Token Metadata program..."
+        solana program dump -u m metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s "$FIXTURES_DIR/token_metadata_program.so"
+
+        # Chainlink Program
+        echo "📥 Downloading Chainlink program..."
+        solana program dump -u m HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny "$FIXTURES_DIR/chainlink_program.so"
+    fi

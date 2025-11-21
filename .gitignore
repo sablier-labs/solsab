@@ -3,6 +3,7 @@
 docker-target
 target
 test-ledger
+tests/fixtures/
 **/*.rs.bk
 
 # Node.js
