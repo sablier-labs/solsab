@@ -1,4 +1,4 @@
-use crate::{fuzz_accounts::FuzzAccounts};
+use crate::fuzz_accounts::FuzzAccounts;
 use borsh::{BorshDeserialize, BorshSerialize};
 use trident_fuzz::fuzzing::*;
 
