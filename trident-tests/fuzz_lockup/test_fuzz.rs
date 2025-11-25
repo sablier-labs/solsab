@@ -392,20 +392,11 @@ impl FuzzTest {
         );
         withdraw_ix_accs.withdrawal_recipient_ata.set_address(withdrawal_recipient_ata);
 
-        // Deserialize the actual on-chain stream data
-        let stream_data = get_stream_data_from_trident(&mut self.trident, &cwt_ix_accs.stream_data.pubkey());
+        let stream_data_pubkey = &cwt_ix_accs.stream_data.pubkey();
 
-        // Warp to a timestamp between now and stream end time + 1 month
-        let now = get_current_time_from_trident(&mut self.trident);
-        let end_time = stream_data.timestamps.end;
-        let max_warp_time = end_time + ONE_MONTH_SECONDS;
-        // If we're past the max warp time, skip the withdrawal
-        if now >= max_warp_time {
-            return;
-        }
-
-        let warp_time = self.trident.gen_range(now..=max_warp_time);
-        self.trident.get_client().warp_to_timestamp(warp_time.try_into().unwrap());
+        // Warp to a random time
+        let warp_time = self.warp_to_a_random_future_time(stream_data_pubkey);
+        let stream_data = get_stream_data_from_trident(&mut self.trident, stream_data_pubkey);
 
         let withdrawable_amount = get_withdrawable_amount(
             &stream_data.timestamps,
@@ -415,14 +406,10 @@ impl FuzzTest {
             warp_time,
         );
 
-        // If the withdrawable amount is zero, skip the withdrawal
-        if withdrawable_amount == 0 {
-            return;
-        }
-
         // Fuzz the withdrawal amount
         withdraw_tx.instruction.data.amount = self.trident.gen_range(1..=withdrawable_amount);
 
+        // Execute the withdraw transaction
         self.trident.execute_transaction(&mut withdraw_tx, Some(label));
     }
 
@@ -475,31 +462,10 @@ impl FuzzTest {
         );
         withdraw_max_ix_accs.withdrawal_recipient_ata.set_address(withdrawal_recipient_ata);
 
-        // Deserialize the actual on-chain stream data
-        let stream_data = get_stream_data_from_trident(&mut self.trident, &cwt_ix_accs.stream_data.pubkey());
+        // Warp to a random time
+        _ = self.warp_to_a_random_future_time(&cwt_ix_accs.stream_data.pubkey());
 
-        // Warp to a timestamp between now and stream end time + 6 months to ensure
-        // we also test the withdraw-timestamp-past-stream-end-time case
-        let now = get_current_time_from_trident(&mut self.trident);
-        let end_time = stream_data.timestamps.end;
-        let max_warp_time = end_time + (6 * ONE_MONTH_SECONDS);
-
-        let warp_time = self.trident.gen_range(now..=max_warp_time);
-        self.trident.get_client().warp_to_timestamp(warp_time.try_into().unwrap());
-
-        let withdrawable_amount = get_withdrawable_amount(
-            &stream_data.timestamps,
-            &stream_data.amounts,
-            stream_data.is_depleted,
-            stream_data.was_canceled,
-            warp_time,
-        );
-
-        // If the withdrawable amount is zero, skip the withdrawal
-        if withdrawable_amount == 0 {
-            return;
-        }
-
+        // Execute the withdraw max transaction
         self.trident.execute_transaction(&mut withdraw_max_tx, Some("WithdrawMax"));
     }
 
@@ -514,8 +480,22 @@ impl FuzzTest {
         let end_time = stream_data.timestamps.end;
         let total_duration = end_time - start_time;
 
-        // Warp to a random timestamp between now and now + 2x total stream duration
-        let warp_time = self.trident.gen_range(now..=now + total_duration * 2);
+        // Warp to a random timestamp between now and end + one month in seconds
+        let mut warp_time = self.trident.gen_range(now..=now + total_duration + ONE_MONTH_SECONDS);
+
+        let withdrawable_amount = get_withdrawable_amount(
+            &stream_data.timestamps,
+            &stream_data.amounts,
+            stream_data.is_depleted,
+            stream_data.was_canceled,
+            warp_time,
+        );
+
+        // If the withdrawable amount is zero, set warp_time to end_time - 1
+        if withdrawable_amount == 0 {
+            warp_time = end_time - 1;
+        }
+
         self.trident.get_client().warp_to_timestamp(warp_time as i64);
 
         warp_time
