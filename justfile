@@ -9,6 +9,8 @@ import "./node_modules/@sablier/devkit/just/base.just"
 anchor := require("anchor")
 # Solana: https://solana.com/docs/intro/installation#install-the-solana-cli
 solana := require("solana")
+# Trident: https://ackee.xyz/trident/docs/latest/basics/installation/
+trident := require("trident")
 
 # ---------------------------------------------------------------------------- #
 #                                  ENVIRONMENT                                 #
@@ -106,38 +108,62 @@ alias rw := rust-write
 #                                 TESTING                                      #
 # ============================================================================ #
 
-# Run all unit tests
+# Run all tests (anchor lockup + merkle instant + trident lockup)
 # To debug the Solana logs, run this as `RUST_LOG=debug just test`
 [group("test")]
 test *args: build
-    na vitest run --hideSkippedTests {{args}}
+    @echo "🧪 Running all tests..."
+    @echo "\n📦 Anchor tests (lockup + merkle instant)..."
+    just test-anchor {{ args }}
+    @echo "\n🔥 Trident fuzz tests (lockup)..."
+    just test-trident-lockup
 alias t := test
 
-# Run all unit tests without building
-test-lite *args:
-    na vitest run --hideSkippedTests {{args}}
-alias tl := test-lite
+# Run both anchor & trident tests for the Lockup program
+[group("test")]
+test-lockup *args: build
+    @echo "🧪 Running all lockup tests..."
+    @echo "\n 📦 Anchor lockup tests..."
+    just test-anchor-lockup
+    @echo "\n 🔥 Trident lockup fuzz tests..."
+    just test-trident-lockup
+alias tlk := test-lockup
 
-# Run unit tests with UI
+
+# Run anchor tests with UI
+[group("test")]
 test-ui *args: build
     na vitest --hideSkippedTests --ui {{args}}
 alias tui := test-ui
 
-# Run Lockup unit tests only
+# ---------------------------------------------------------------------------- #
+#                               ANCHOR TESTS                                   #
+# ---------------------------------------------------------------------------- #
+
+# Run Anchor Lockup tests only
 [group("test")]
-test-lockup *args="tests/lockup/**/*.test.ts":
-    just test {{ args }}
-alias tlk := test-lockup
+test-anchor-lockup *args="tests/lockup":
+    na vitest run --hideSkippedTests tests/lockup {{ args }}
+alias talk := test-anchor-lockup
 
-# Run Merkle Instant tests only
+# Run Anchor Merkle Instant tests only
 [group("test")]
-test-merkle-instant *args="tests/merkle-instant/**/*.test.ts":
-    just test {{ args }}
-alias tmi := test-merkle-instant
+test-anchor-merkle-instant *args="tests/merkle-instant":
+    just test-anchor {{ args }}
+alias tami := test-anchor-merkle-instant
 
+# Run all Anchor tests (lockup + merkle instant)
+[group("test")]
+test-anchor *args: build
+    na vitest run --hideSkippedTests {{ args }}
+alias ta := test-anchor
 
-# Run Lockup fuzz tests
-[group("fuzz")]
-fuzz-lockup:
-    cd trident-tests && trident fuzz run fuzz_lockup
-alias flk := fuzz-lockup
+# ---------------------------------------------------------------------------- #
+#                               TRIDENT TESTS                                  #
+# ---------------------------------------------------------------------------- #
+
+# Run Trident Lockup fuzz tests
+[group("test")]
+test-trident-lockup: build
+    just --justfile trident-tests/justfile test-lockup
+alias ttlk := test-trident-lockup

@@ -56,11 +56,7 @@ jobs:
 
       - name: "Run the tests"
         if: steps.cache-build.outputs.cache-status != 'primary'
-        run: "just test-lite"
-
-      - name: "Run the fuzz tests"
-        if: steps.cache-build.outputs.cache-status != 'primary'
-        run: "just fuzz-lockup"
+        run: "just test"
 
       - name: "Add summary"
         run: | # shell

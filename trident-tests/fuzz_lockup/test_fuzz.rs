@@ -258,12 +258,13 @@ impl FuzzTest {
         (create_tx.instruction.accounts, create_tx.instruction.data)
     }
 
+    #[allow(dead_code)]
     fn refundable_amount_of(&mut self) {
         // First, create the stream we're going to check the refundable amount of
         let (cwt_ix_accs, _) = self.create_with_timestamps();
 
         // Warp to a random time
-        let _warp_time = warp_to_a_random_future_time(&mut self.trident, &cwt_ix_accs.stream_data.pubkey());
+        _ = self.warp_to_a_random_future_time(&cwt_ix_accs.stream_data.pubkey());
 
         // Build the RefundableAmountOf transaction
         let mut refundable_tx = RefundableAmountOfTransaction::build(&mut self.trident, &mut self.fuzz_accounts);
@@ -279,12 +280,13 @@ impl FuzzTest {
         // TODO: Add assertions to verify the refundable amount when Trident supports accessing the Ix Result
     }
 
+    #[allow(dead_code)]
     fn streamed_amount_of(&mut self) {
         // First, create the stream we're going to check the streamed amount of
         let (cwt_ix_accs, _) = self.create_with_timestamps();
 
         // Warp to a random time
-        let _warp_time = warp_to_a_random_future_time(&mut self.trident, &cwt_ix_accs.stream_data.pubkey());
+        _ = self.warp_to_a_random_future_time(&cwt_ix_accs.stream_data.pubkey());
 
         // Build the StreamedAmountOf transaction
         let mut streamed_tx = StreamedAmountOfTransaction::build(&mut self.trident, &mut self.fuzz_accounts);
@@ -300,12 +302,13 @@ impl FuzzTest {
         // TODO: Add assertions to verify the streamed amount when Trident supports accessing the Ix Result
     }
 
+    #[allow(dead_code)]
     fn withdrawable_amount_of(&mut self) {
         // First, create the stream we're going to check the withdrawable amount of
         let (cwt_ix_accs, _) = self.create_with_timestamps();
 
         // Warp to a random time
-        let _warp_time = warp_to_a_random_future_time(&mut self.trident, &cwt_ix_accs.stream_data.pubkey());
+        _ = self.warp_to_a_random_future_time(&cwt_ix_accs.stream_data.pubkey());
 
         // Build the WithdrawableAmountOf transaction
         let mut withdrawable_tx = WithdrawableAmountOfTransaction::build(&mut self.trident, &mut self.fuzz_accounts);
@@ -389,20 +392,11 @@ impl FuzzTest {
         );
         withdraw_ix_accs.withdrawal_recipient_ata.set_address(withdrawal_recipient_ata);
 
-        // Deserialize the actual on-chain stream data
-        let stream_data = get_stream_data_from_trident(&mut self.trident, &cwt_ix_accs.stream_data.pubkey());
+        let stream_data_pubkey = &cwt_ix_accs.stream_data.pubkey();
 
-        // Warp to a timestamp between now and stream end time + 1 month
-        let now = get_current_time_from_trident(&mut self.trident);
-        let end_time = stream_data.timestamps.end;
-        let max_warp_time = end_time + ONE_MONTH_SECONDS;
-        // If we're past the max warp time, skip the withdrawal
-        if now >= max_warp_time {
-            return;
-        }
-
-        let warp_time = self.trident.gen_range(now..=max_warp_time);
-        self.trident.get_client().warp_to_timestamp(warp_time.try_into().unwrap());
+        // Warp to a random time
+        let warp_time = self.warp_to_a_random_future_time(stream_data_pubkey);
+        let stream_data = get_stream_data_from_trident(&mut self.trident, stream_data_pubkey);
 
         let withdrawable_amount = get_withdrawable_amount(
             &stream_data.timestamps,
@@ -412,14 +406,10 @@ impl FuzzTest {
             warp_time,
         );
 
-        // If the withdrawable amount is zero, skip the withdrawal
-        if withdrawable_amount == 0 {
-            return;
-        }
-
         // Fuzz the withdrawal amount
         withdraw_tx.instruction.data.amount = self.trident.gen_range(1..=withdrawable_amount);
 
+        // Execute the withdraw transaction
         self.trident.execute_transaction(&mut withdraw_tx, Some(label));
     }
 
@@ -472,17 +462,26 @@ impl FuzzTest {
         );
         withdraw_max_ix_accs.withdrawal_recipient_ata.set_address(withdrawal_recipient_ata);
 
-        // Deserialize the actual on-chain stream data
-        let stream_data = get_stream_data_from_trident(&mut self.trident, &cwt_ix_accs.stream_data.pubkey());
+        // Warp to a random time
+        _ = self.warp_to_a_random_future_time(&cwt_ix_accs.stream_data.pubkey());
 
-        // Warp to a timestamp between now and stream end time + 6 months to ensure
-        // we also test the withdraw-timestamp-past-stream-end-time case
+        // Execute the withdraw max transaction
+        self.trident.execute_transaction(&mut withdraw_max_tx, Some("WithdrawMax"));
+    }
+
+    /// Warps to a random timestamp between now and 2x the total stream duration
+    fn warp_to_a_random_future_time(&mut self, stream_data_pubkey: &Pubkey) -> u64 {
+        // Get the stream data
+        let stream_data = get_stream_data_from_trident(&mut self.trident, stream_data_pubkey);
+
+        // Generate a random time jump between now and 2x the total stream duration
         let now = get_current_time_from_trident(&mut self.trident);
+        let start_time = stream_data.timestamps.start;
         let end_time = stream_data.timestamps.end;
-        let max_warp_time = end_time + (6 * ONE_MONTH_SECONDS);
+        let total_duration = end_time - start_time;
 
-        let warp_time = self.trident.gen_range(now..=max_warp_time);
-        self.trident.get_client().warp_to_timestamp(warp_time.try_into().unwrap());
+        // Warp to a random timestamp between now and end + one month in seconds
+        let mut warp_time = self.trident.gen_range(now..=now + total_duration + ONE_MONTH_SECONDS);
 
         let withdrawable_amount = get_withdrawable_amount(
             &stream_data.timestamps,
@@ -492,33 +491,17 @@ impl FuzzTest {
             warp_time,
         );
 
-        // If the withdrawable amount is zero, skip the withdrawal
+        // If the withdrawable amount is zero, set warp_time to end_time - 1
         if withdrawable_amount == 0 {
-            return;
+            warp_time = end_time - 1;
         }
 
-        self.trident.execute_transaction(&mut withdraw_max_tx, Some("WithdrawMax"));
+        self.trident.get_client().warp_to_timestamp(warp_time as i64);
+
+        warp_time
     }
 }
 
 fn main() {
     FuzzTest::fuzz(10000, 1);
-}
-
-/// Warps to a random timestamp between now and 2x the total stream duration
-fn warp_to_a_random_future_time(trident: &mut Trident, stream_data_pubkey: &Pubkey) -> u64 {
-    // Get the stream data
-    let stream_data = get_stream_data_from_trident(trident, stream_data_pubkey);
-
-    // Generate a random time jump between now and 2x the total stream duration
-    let now = get_current_time_from_trident(trident);
-    let start_time = stream_data.timestamps.start;
-    let end_time = stream_data.timestamps.end;
-    let total_duration = end_time - start_time;
-
-    // Warp to a random timestamp between now and now + 2x total stream duration
-    let warp_time = trident.gen_range(now..=now + total_duration * 2);
-    trident.get_client().warp_to_timestamp(warp_time as i64);
-
-    warp_time
 }

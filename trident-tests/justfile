@@ -1,0 +1,8 @@
+# Default recipe - show available commands
+default:
+    just --list
+
+# Run Lockup fuzz tests
+test-lockup:
+    trident fuzz run fuzz_lockup
+alias tlk := test-lockup
