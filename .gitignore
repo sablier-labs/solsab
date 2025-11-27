@@ -22,3 +22,6 @@ repomix
 *.local.json
 .DS_Store
 *.zip
+
+# Trident
+trident-tests/.fuzz-artifacts
