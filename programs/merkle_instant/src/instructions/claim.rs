@@ -11,9 +11,7 @@ use crate::{
     state::{Campaign, ClaimReceipt, Treasury},
     utils::{
         constants::{seeds::*, ANCHOR_DISCRIMINATOR_SIZE, CLAIM_FEE_USD},
-        events,
-        fee_calculation::convert_usd_fee_to_lamports,
-        transfer_helper::transfer_tokens,
+        convert_usd_fee_to_lamports, events, transfer_tokens,
         validations::check_claim,
     },
 };

@@ -1,6 +1,6 @@
 use anchor_lang::{prelude::*, solana_program::keccak::hashv as keccak};
 
-use crate::utils::{errors::ErrorCode, time::get_current_time};
+use crate::utils::{errors::ErrorCode, get_current_time};
 
 /// Validate the claim of a campaign.
 pub fn check_claim(

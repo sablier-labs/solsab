@@ -4,7 +4,7 @@ Sablier programs on Solana
 
 ## Architecture
 
-SolSab uses a monorepo structure with two main Solana programs.
+SolSab uses a monorepo structure with two main Solana programs and a shared utilities crate.
 
 ### Lockup
 
@@ -20,6 +20,13 @@ the total amount of tokens deposited.
 
 Merkle Instant is a program that enables the creation of token airdrop campaigns using Merkle trees, allowing users to
 instantly claim and receive their allocation through a single transaction.
+
+### Shared Utilities
+
+The `sablier-common` crate contains shared utility functions used across both the Lockup and Merkle Instant programs.
+
+It eliminates code duplication and ensures consistent behavior across both programs while maintaining their independence
+during deployment.
 
 ## Contributing 🤝
 

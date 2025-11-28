@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 use super::StreamView;
-use crate::utils::{lockup_math::get_streamed_amount, time::get_current_time};
+use crate::utils::{get_current_time, lockup_math::get_streamed_amount};
 
 /// See the documentation for [`fn@crate::sablier_lockup::status_of`].
 pub fn handler(ctx: Context<StreamView>) -> Result<StreamStatus> {
