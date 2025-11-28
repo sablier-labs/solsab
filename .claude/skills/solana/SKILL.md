@@ -1,263 +1,247 @@
 ---
 name: solana
-description:
-  "This skill should be used when the user asks to build Solana programs, write Anchor code, create PDAs, work with SPL
-  tokens, test Solana programs, or mentions Solana, Anchor, @solana/web3.js, @solana/kit, anchor-bankrun, Trident, or
-  Solana blockchain development."
+description: >-
+  This skill should be used when the user asks to "build a Solana program", "write Anchor code", "create a PDA", "work
+  with SPL tokens", "test with anchor-bankrun", "fuzz test with Trident", "secure my Solana program", "create an NFT
+  with MPL Core", "optimize compute units", or mentions Anchor constraints, account validation, CPI patterns,
+  @solana/web3.js, @solana/kit, Vitest testing, or Solana security auditing.
+version: 0.1.0
 ---
 
 # Solana Program Development
 
-Apply these principles when building production-grade Solana programs with Anchor.
+Production-grade Solana development with Anchor, covering program architecture, testing, and security.
 
-## Core Architecture Principles
+## Core Architecture
 
-- **Account Model Mindset**: Data lives in accounts, not contracts. Programs are stateless executables that operate on
-  accounts passed to them.
-- **Rent Awareness**: All accounts must maintain rent-exempt balance (fixed SOL amount per byte). Use
-  `#[derive(InitSpace)]` to calculate sizes accurately.
-- **PDA Everything**: Use Program Derived Addresses for all program-owned accounts. Never use keypairs for state
-  storage.
-- **CPI Security**: Cross-program invocations inherit the caller's privileges. Validate all accounts before CPI calls.
-- **Transaction Limits**: Stay within 1232 bytes per tx and 200k compute units default. See
-  `references/TRANSACTIONS.md`.
+**Account Model Mindset**: Data lives in accounts, not contracts. Programs are stateless executables operating on
+accounts passed to them. Consult `references/ACCOUNT_MODEL.md` for PDA patterns and rent calculations.
 
-## Tech Stack & Rationale
+**Critical Constraints**:
 
-### Anchor (NOT Native Rust)
+- Maintain rent-exempt balance for all accounts (use `#[derive(InitSpace)]`)
+- Derive all program-owned accounts as PDAs—never keypairs for state
+- Validate all accounts before CPI calls (inherits caller's privileges)
+- Stay within 1232 bytes/tx and 200k CU default (consult `references/TRANSACTIONS.md`)
 
-Use Anchor as the primary framework. Prefer it over native solana-program for:
+## Tech Stack
 
-- Account validation via declarative constraints (eliminates boilerplate)
-- Automatic (de)serialization with Borsh
+### Anchor Framework
+
+Anchor is the primary framework. Prefer over native solana-program for:
+
+- Declarative account validation via constraints
+- Automatic Borsh (de)serialization
 - IDL generation for TypeScript clients
 - Built-in security checks (discriminators, ownership validation)
 
 ### Project Structure
-
-Follow this organization pattern:
 
 ```
 programs/{name}/src/
 ├── lib.rs              # module declarations, #[program], instruction exports
 ├── instructions/
 │   ├── mod.rs          # re-exports all handlers
-│   ├── *.rs            # state-changing Ixs; each has a #[derive(Accounts)] struct + handler()
+│   ├── *.rs            # state-changing Ixs with #[derive(Accounts)] + handler()
 │   └── view/           # read-only instructions (no state mutation)
-│       └── *.rs
-├── state/
-│   ├── mod.rs
-│   └── *.rs            # account structs representing the on-chain data stored by the program
+├── state/              # account structs for on-chain data
 └── utils/
-    ├── mod.rs
     ├── errors.rs       # #[error_code] enum
     ├── events.rs       # #[event] structs
-    ├── constants.rs    # various constants
-    ├── validations.rs  # validation functions called during ix execution
-    └── *.rs            # any other utilities
+    ├── constants.rs    # seeds, program IDs
+    └── validations.rs  # validation functions
 ```
-
-Documentation: https://www.anchor-lang.com/docs
 
 ## Program Development Patterns
 
 ### Account Struct Organization
 
-Structure account validation in sections. Categories used in this codebase (Lockup & Merkle Instant programs):
+Structure account validation in logical sections (see `create_with_timestamps.rs`, `claim.rs`):
 
-| Category                   | Description                         | Examples                                                             |
-| -------------------------- | ----------------------------------- | -------------------------------------------------------------------- |
-| USER ACCOUNTS              | Transaction signers and their ATAs  | `sender: Signer`, `recipient: UncheckedAccount`, `sender_ata`        |
-| SABLIER ACCOUNTS           | Global protocol state               | `treasury: Account<Treasury>`, `treasury_ata`                        |
-| STREAM COLLECTION ACCOUNTS | NFT collection for ownership tokens | `stream_nft_collection: UncheckedAccount`                            |
-| STREAM ACCOUNTS            | Per-stream state                    | `stream_data`, `stream_data_ata`, `stream_nft`, `deposit_token_mint` |
-| CAMPAIGN ACCOUNTS          | Per-campaign state (Merkle Instant) | `campaign`, `campaign_ata`, `token_mint`                             |
-| PROGRAM ACCOUNTS           | External programs                   | `mpl_core_program`, `token_program`, `associated_token_program`      |
-| SYSTEM ACCOUNTS            | System-level accounts               | `system_program`                                                     |
+| Category            | Description                            | Examples                                      |
+| ------------------- | -------------------------------------- | --------------------------------------------- |
+| USER ACCOUNTS       | Signers and their ATAs                 | `creator: Signer`, `creator_ata`, `recipient` |
+| PROTOCOL ACCOUNTS   | Global protocol state (treasury, etc.) | `treasury: Account<Treasury>`                 |
+| COLLECTION ACCOUNTS | NFT collection state (if applicable)   | `nft_collection_data`, `nft_collection_mint`  |
+| ENTITY ACCOUNTS     | Per-entity state (streams, campaigns)  | `stream_data`, `stream_data_ata`, `campaign`  |
+| PROGRAM ACCOUNTS    | External programs                      | `token_program`, `associated_token_program`   |
+| SYSTEM ACCOUNTS     | System-level                           | `system_program`, `rent`                      |
 
-Example from Lockup `create_with_timestamps.rs`:
+Key account type patterns:
 
 ```rust
 #[derive(Accounts)]
-pub struct CreateWithTimestampsLl<'info> {
-    // ══════════════════════════════════════════════════════════════════════════════════════════════
+#[instruction(salt: u128)]
+pub struct CreateWithTimestamps<'info> {
     // USER ACCOUNTS
-    // ══════════════════════════════════════════════════════════════════════════════════════════════
     #[account(mut)]
-    pub sender: Signer<'info>,
-
-    /// CHECK: The recipient may be any account.
-    pub recipient: UncheckedAccount<'info>,
+    pub creator: Signer<'info>,
 
     #[account(
         mut,
         associated_token::mint = deposit_token_mint,
-        associated_token::authority = sender,
+        associated_token::authority = creator,
         associated_token::token_program = deposit_token_program
     )]
-    pub sender_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub creator_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    // ══════════════════════════════════════════════════════════════════════════════════════════════
-    // STREAM COLLECTION ACCOUNTS
-    // ══════════════════════════════════════════════════════════════════════════════════════════════
-    /// CHECK: Verified via constraint against the treasury's stored collection key.
-    #[account(
-        mut,
-        address = treasury.stream_nft_collection @ LockupError::InvalidNftCollection,
-    )]
-    pub stream_nft_collection: UncheckedAccount<'info>,
+    /// CHECK: The recipient may be any account
+    pub recipient: UncheckedAccount<'info>,
 
-    // ══════════════════════════════════════════════════════════════════════════════════════════════
-    // STREAM ACCOUNTS
-    // ══════════════════════════════════════════════════════════════════════════════════════════════
-    /// CHECK: Stream NFT (MPL Core asset)
-    #[account(mut)]
-    pub stream_nft: UncheckedAccount<'info>,
-
+    // ENTITY ACCOUNTS
     #[account(
         init,
-        payer = sender,
-        space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,
-        seeds = [Seed::STREAM_DATA, stream_nft.key().as_ref()],
+        payer = creator,
+        space = 8 + StreamData::INIT_SPACE,
+        seeds = [STREAM_DATA, stream_nft_mint.key().as_ref()],
         bump
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 
-    #[account(
-        init,
-        payer = sender,
-        associated_token::mint = deposit_token_mint,
-        associated_token::authority = stream_data,
-        associated_token::token_program = deposit_token_program
-    )]
-    pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    #[account(mint::token_program = deposit_token_program)]
-    pub deposit_token_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    // ══════════════════════════════════════════════════════════════════════════════════════════════
-    // PROGRAM ACCOUNTS
-    // ══════════════════════════════════════════════════════════════════════════════════════════════
+    // Token2022-compatible
     pub deposit_token_program: Interface<'info, TokenInterface>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
-    pub mpl_core_program: Program<'info, MplCore>,
-
-    // ══════════════════════════════════════════════════════════════════════════════════════════════
-    // SYSTEM ACCOUNTS
-    // ══════════════════════════════════════════════════════════════════════════════════════════════
-    pub system_program: Program<'info, System>,
 }
 ```
 
 ### Handler Pattern
 
-Keep handlers focused on business logic:
+Structure handlers with validation first, then state updates and interactions, then event emission:
 
 ```rust
-pub fn handler(ctx: Context<CreateStream>, salt: u128, amount: u64) -> Result<()> {
-    // Validate inputs
-    check_create(amount)?;
+pub fn handler(ctx: Context<CreateWithTimestamps>, deposit_amount: u64, ...) -> Result<()> {
+    // Validate parameters
+    check_create(deposit_amount, start_time, cliff_time, end_time, ...)?;
 
     // Update state
-    ctx.accounts.stream_data.create(amount, salt)?;
+    ctx.accounts.stream_data.create(...)?;
 
-    // Emit event
-    emit!(StreamCreated { ... });
+    // Transfer tokens
+    transfer_tokens(creator_ata, stream_data_ata, creator, ...)?;
+
+    // Emit event for indexers
+    emit!(CreateLockupLinearStream { salt, deposit_token_mint, ... });
 
     Ok(())
 }
 ```
 
-### Error Handling
+### Key Patterns
 
-Use contextual error messages:
+| Pattern                           | When to Use                              |
+| --------------------------------- | ---------------------------------------- |
+| `Box<Account<>>`                  | Large accounts to reduce stack usage     |
+| `InterfaceAccount<TokenAccount>`  | Token/Token2022 compatibility            |
+| `UncheckedAccount` + `/// CHECK`  | Flexible validation (document the check) |
+| Extract to `utils/validations.rs` | Reusable validation logic                |
+
+### Events & Errors
+
+Emit events for all state changes (critical for indexers). Define contextual error messages:
 
 ```rust
 #[error_code]
 pub enum ErrorCode {
     #[msg("Deposit amount must be greater than zero")]
     DepositAmountZero,
-    #[msg("Start time must be less than end time")]
-    InvalidTimeRange,
 }
-```
 
-### Event Emission
-
-Emit events for all state changes (critical for indexing):
-
-```rust
 #[event]
-pub struct StreamCreated {
-    pub stream_id: Pubkey,
-    pub sender: Pubkey,
-    pub recipient: Pubkey,
-    pub amount: u64,
-}
+pub struct StreamCreated { pub stream_id: Pubkey, pub amount: u64 }
 ```
-
-### Key Patterns
-
-- `Box<Account<>>` for any account that can be boxed
-- `InterfaceAccount<TokenAccount>` for Token/Token2022 compatibility
-- `UncheckedAccount` with `/// CHECK:` comments for flexible accounts
-- Extract validation to the functions in `utils/validations.rs`
 
 ## Client Integration
 
-### SDK Choice
+| SDK                 | Use Case               | Notes                           |
+| ------------------- | ---------------------- | ------------------------------- |
+| `@solana/kit`       | New projects           | Modular, tree-shakeable         |
+| `@solana/web3.js`   | Existing projects      | Mature ecosystem, more examples |
+| `@coral-xyz/anchor` | Anchor program clients | IDL-based type-safe calls       |
 
-- **@solana/kit** (new): Modular, tree-shakeable, better TypeScript support. Use for new projects.
-- **@solana/web3.js** (legacy): More examples available, mature ecosystem. Use for existing projects.
-
-See `references/CLIENT_SDKS.md` for detailed comparison and migration guidance.
+Consult `references/CLIENT_SDKS.md` for detailed comparison and migration patterns.
 
 ## Testing Strategy
 
-### Unit/Integration Tests
+### Unit/Integration Tests (Vitest + anchor-bankrun)
 
-Use **Vitest + anchor-bankrun** (fast, deterministic):
+Fast, deterministic testing without validator startup. Key pattern:
 
 ```typescript
-export class MyTestContext extends TestContext {
+class LockupTestContext extends TestContext {
   async setUp() {
-    await super.setUp(ProgramName.MyProgram, programId);
-    // Program-specific setup
+    await super.setUp("sablier_lockup", programId);
+    this.program = new Program<SablierLockup>(IDL, this.provider);
   }
 }
 ```
 
-See `references/TESTING.md` for patterns.
+Consult `references/TESTING.md` for complete test context patterns, time travel, and assertions.
 
-### Fuzz Testing
+### Fuzz Testing (Trident)
 
-Use **Trident** for property-based fuzzing:
+Property-based fuzzing for edge case discovery:
 
 ```
 trident-tests/fuzz_{program}/
-├── test_fuzz.rs
-├── instructions/*.rs
-└── helpers/{program}_math.rs
+├── test_fuzz.rs          # Entry point with flows
+├── instructions/*.rs     # TridentInstruction definitions
+└── helpers/*_math.rs     # Replicated math for invariants
 ```
 
-See `references/FUZZ_TESTING.md` for setup and patterns.
+Consult `references/FUZZ_TESTING.md` for instruction hooks, invariants, and time warping.
 
-## Non-Negotiable Requirements
+## Security Requirements
 
-1. **Validate Account Ownership**: Always check `account.owner == expected_program`
-2. **Use PDAs**: Never store state in keypair-controlled accounts
+Non-negotiable security practices:
+
+1. **Account Ownership**: Validate `account.owner == expected_program` (automatic for `Account<>`)
+2. **PDAs Only**: Never store state in keypair-controlled accounts
 3. **Signer Checks**: Verify signers for all privileged operations
-4. **Emit Events**: Every state change must emit an event for indexers
-5. **Checked Math**: Use `checked_add`, `checked_sub`, `checked_mul` for all arithmetic, unless this is demonstrably not
-   needed.
+4. **Event Emission**: Every state change must emit an event for indexers
+5. **Checked Math**: Use `checked_add`, `checked_sub`, `checked_mul` for all arithmetic
 
-See `references/SECURITY.md` for comprehensive security checklist.
+Consult `references/SECURITY.md` for comprehensive vulnerability patterns and audit checklist.
 
-## Context7 Usage
+## MPL Core (NFTs)
 
-Fetch latest documentation BEFORE implementation:
+For NFT ownership tokens, Metaplex Core provides efficient single-account NFTs (~0.0029 SOL vs ~0.022 SOL for Token
+Metadata).
 
-```
-Use Context7 to get current Anchor, Solana, Metaplex and Trident documentation.
-The ecosystem moves fast - don't assume yesterday's patterns still apply.
-```
+Consult `references/MPL_CORE.md` for CPI builders and collection patterns.
+
+---
+
+## Additional Resources
+
+### Reference Files
+
+Detailed documentation for specific domains:
+
+| File                          | Content                                       |
+| ----------------------------- | --------------------------------------------- |
+| `references/ACCOUNT_MODEL.md` | PDA derivation, rent, account creation        |
+| `references/TRANSACTIONS.md`  | Tx limits, CU optimization, versioned txs     |
+| `references/SECURITY.md`      | Vulnerabilities, audit checklist, protections |
+| `references/CLIENT_SDKS.md`   | @solana/kit vs web3.js, migration guide       |
+| `references/TESTING.md`       | Vitest + anchor-bankrun patterns              |
+| `references/FUZZ_TESTING.md`  | Trident setup, invariants, flows              |
+| `references/MPL_CORE.md`      | Metaplex Core NFT integration                 |
+
+### Example Files
+
+Working code examples demonstrating key patterns:
+
+| File                               | Content                                   |
+| ---------------------------------- | ----------------------------------------- |
+| `examples/withdraw_instruction.rs` | Complete Anchor instruction (CEI pattern) |
+| `examples/test_pattern.ts`         | Vitest + anchor-bankrun test structure    |
+
+### External Documentation
+
+Fetch latest docs before implementation—the ecosystem moves fast:
+
+- **Anchor**: https://www.anchor-lang.com/docs
+- **Solana**: https://docs.solana.com
+- **Metaplex Core**: https://developers.metaplex.com/core
+- **Trident**: https://ackee.xyz/trident/docs/dev/
+
+Use Context7 MCP to retrieve current documentation for Anchor, Solana, Metaplex, and Trident.
