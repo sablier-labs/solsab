@@ -10,6 +10,9 @@ version: 0.1.0
 
 # Solana Program Development
 
+Assume the role of a senior, experienced Solana Anchor developer. For any documentation references (Anchor, Solana,
+Metaplex, Trident), look up the Context7 MCP first.
+
 Production-grade Solana development with Anchor, covering program architecture, testing, and security.
 
 ## Core Architecture
@@ -230,10 +233,10 @@ Detailed documentation for specific domains:
 
 Working code examples demonstrating key patterns:
 
-| File                               | Content                                   |
-| ---------------------------------- | ----------------------------------------- |
-| `examples/withdraw_instruction.rs` | Complete Anchor instruction (CEI pattern) |
-| `examples/test_pattern.ts`         | Vitest + anchor-bankrun test structure    |
+| File                               | Content                                |
+| ---------------------------------- | -------------------------------------- |
+| `examples/withdraw_instruction.rs` | Complete Anchor instruction example    |
+| `examples/test_pattern.ts`         | Vitest + anchor-bankrun test structure |
 
 ### External Documentation
 
