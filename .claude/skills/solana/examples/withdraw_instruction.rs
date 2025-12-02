@@ -10,11 +10,8 @@ use anchor_spl::{
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
     utils::{
-        constants::seeds::*,
-        events::WithdrawFromLockupStream,
-        lockup_math::get_withdrawable_amount,
-        transfer_helper::transfer_tokens,
-        validations::check_withdraw,
+        constants::seeds::*, events::WithdrawFromLockupStream, lockup_math::get_withdrawable_amount,
+        transfer_helper::transfer_tokens, validations::check_withdraw,
     },
 };
 
@@ -24,10 +21,9 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
-    // --------------------------------------------------------------------------
-    // USER ACCOUNTS: Signers and their token accounts
-    // --------------------------------------------------------------------------
-
+    // ------------------------------------------------------------------------ //
+    //                              USER ACCOUNTS                               //
+    // ------------------------------------------------------------------------ //
     /// Write account: transaction signer who pays fees
     #[account(mut)]
     pub signer: Signer<'info>,
@@ -53,10 +49,9 @@ pub struct Withdraw<'info> {
     )]
     pub withdrawal_recipient_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    // --------------------------------------------------------------------------
-    // PROTOCOL ACCOUNTS: Global program configuration
-    // --------------------------------------------------------------------------
-
+    // ------------------------------------------------------------------------ //
+    //                            PROTOCOL ACCOUNTS                             //
+    // ------------------------------------------------------------------------ //
     /// Treasury PDA: fee collection + configuration storage
     #[account(
         mut,
@@ -65,10 +60,9 @@ pub struct Withdraw<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 
-    // --------------------------------------------------------------------------
-    // ENTITY ACCOUNTS: Per-stream state
-    // --------------------------------------------------------------------------
-
+    // ------------------------------------------------------------------------ //
+    //                             ENTITY ACCOUNTS                              //
+    // ------------------------------------------------------------------------ //
     /// Address constraint: must match stored mint in stream_data
     #[account(address = stream_data.deposited_token_mint)]
     pub deposited_token_mint: Box<InterfaceAccount<'info, Mint>>,
@@ -101,10 +95,9 @@ pub struct Withdraw<'info> {
 
     pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    // --------------------------------------------------------------------------
-    // PROGRAM ACCOUNTS: External program references
-    // --------------------------------------------------------------------------
-
+    // ------------------------------------------------------------------------ //
+    //                            PROGRAM ACCOUNTS                              //
+    // ------------------------------------------------------------------------ //
     pub associated_token_program: Program<'info, AssociatedToken>,
 
     /// CHECK: Validated via address constraint against treasury
@@ -119,10 +112,9 @@ pub struct Withdraw<'info> {
     pub deposited_token_program: Interface<'info, TokenInterface>,
     pub nft_token_program: Interface<'info, TokenInterface>,
 
-    // --------------------------------------------------------------------------
-    // SYSTEM ACCOUNTS
-    // --------------------------------------------------------------------------
-
+    // ------------------------------------------------------------------------ //
+    //                             SYSTEM ACCOUNTS                              //
+    // ------------------------------------------------------------------------ //
     pub system_program: Program<'info, System>,
 }
 

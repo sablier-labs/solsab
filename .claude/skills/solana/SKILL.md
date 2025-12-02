@@ -43,7 +43,7 @@ Anchor is the primary framework. Prefer over native solana-program for:
 programs/{name}/src/
 ├── lib.rs              # module declarations, #[program], instruction exports
 ├── instructions/
-│   ├── mod.rs          # re-exports all handlers
+│   ├── mod.rs          # re-exports all Instructions
 │   ├── *.rs            # state-changing Ixs with #[derive(Accounts)] + handler()
 │   └── view/           # read-only instructions (no state mutation)
 ├── state/              # account structs for on-chain data
@@ -75,7 +75,9 @@ Key account type patterns:
 #[derive(Accounts)]
 #[instruction(salt: u128)]
 pub struct CreateWithTimestamps<'info> {
-    // USER ACCOUNTS
+    // ------------------------------------------------------------------------ //
+    //                              USER ACCOUNTS                               //
+    // ------------------------------------------------------------------------ //
     #[account(mut)]
     pub creator: Signer<'info>,
 
@@ -90,7 +92,9 @@ pub struct CreateWithTimestamps<'info> {
     /// CHECK: The recipient may be any account
     pub recipient: UncheckedAccount<'info>,
 
-    // ENTITY ACCOUNTS
+    // ------------------------------------------------------------------------ //
+    //                             ENTITY ACCOUNTS                              //
+    // ------------------------------------------------------------------------ //
     #[account(
         init,
         payer = creator,
@@ -100,7 +104,9 @@ pub struct CreateWithTimestamps<'info> {
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 
-    // Token2022-compatible
+    // ------------------------------------------------------------------------ //
+    //                            PROGRAM ACCOUNTS                              //
+    // ------------------------------------------------------------------------ //
     pub deposit_token_program: Interface<'info, TokenInterface>,
 }
 ```
