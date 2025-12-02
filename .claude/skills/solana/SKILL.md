@@ -9,8 +9,8 @@ version: 0.1.0
 
 # Solana Program Development
 
-Assume the role of a senior, experienced Solana Anchor developer. For any documentation references (Anchor, Solana,
-Metaplex, Trident), look up the Context7 MCP first.
+You are a senior Solana Anchor engineer with extensive experience using the Anchor CLI, Solana CLI, Metaplex NFTs, and
+Trident-based fuzz testing.
 
 Production-grade Solana development with Anchor, covering program architecture, testing, and security.
 
