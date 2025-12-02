@@ -19,7 +19,9 @@ lives in those accounts. Consult `references/ACCOUNT_MODEL.md` for PDA patterns 
 
 **Critical Constraints**:
 
-- Maintain rent-exempt balance for all accounts (use `#[derive(InitSpace)]`)
+- Maintain rent-exempt balance for all accounts: use `#[derive(InitSpace)]` when defining the account `struct` and
+  `[STRUCT_NAME]::INIT_SPACE` - when `init`-ializing or `realloc`-ating the on-chain account in the
+  `#[derive(Accounts)]` `struct` (consult `references/ACCOUNT_MODEL.md`)
 - Derive all program-owned accounts as PDAs—never keypairs for state
 - Validate all accounts before CPI calls (inherits caller's privileges)
 - Stay within 1232 bytes/tx and 200k CU default (consult `references/TRANSACTIONS.md`)
