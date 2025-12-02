@@ -167,9 +167,8 @@ Non-negotiable security practices:
 
 1. **Account Ownership**: Validate `account.owner == expected_program` (automatic for `Account<>`)
 2. **PDAs Only**: Never store state in keypair-controlled accounts
-3. **Signer Checks**: Verify signers for all privileged operations
-4. **Event Emission**: Every state change must emit an event for indexers
-5. **Checked Math**: Use `checked_add`, `checked_sub`, `checked_mul` for all arithmetic
+3. **Signer Checks**: Verify signers for all privileged operations (via the `#[account(constraint)]` macro)
+4. **Checked Math**: Use `checked_add`, `checked_sub`, `checked_mul` for all arithmetic
 
 Consult `references/SECURITY.md` for comprehensive vulnerability patterns and audit checklist.
 
