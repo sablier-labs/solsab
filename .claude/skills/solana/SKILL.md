@@ -140,11 +140,18 @@ pub fn handler(ctx: Context<CreateWithTimestamps>, deposit_amount: u64, ...) -> 
 | `Box<Account<>>`                  | Large accounts to reduce stack usage     |
 | `InterfaceAccount<TokenAccount>`  | Token/Token2022 compatibility            |
 | `UncheckedAccount` + `/// CHECK`  | Flexible validation (document the check) |
-| Extract to `utils/validations.rs` | Reusable validation logic                |
+| Extract to `utils/validations.rs` | Instruction validation logic             |
 
 ### Events & Errors
 
-Emit events for all state changes (critical for indexers). Define contextual error messages:
+Emit events for all state changes (critical for indexers):
+
+```rust
+#[event]
+pub struct StreamCreated { pub stream_id: Pubkey, pub amount: u64 }
+```
+
+Define contextual error messages:
 
 ```rust
 #[error_code]
@@ -152,50 +159,7 @@ pub enum ErrorCode {
     #[msg("Deposit amount must be greater than zero")]
     DepositAmountZero,
 }
-
-#[event]
-pub struct StreamCreated { pub stream_id: Pubkey, pub amount: u64 }
 ```
-
-## Client Integration
-
-| SDK                 | Use Case               | Notes                           |
-| ------------------- | ---------------------- | ------------------------------- |
-| `@solana/kit`       | New projects           | Modular, tree-shakeable         |
-| `@solana/web3.js`   | Existing projects      | Mature ecosystem, more examples |
-| `@coral-xyz/anchor` | Anchor program clients | IDL-based type-safe calls       |
-
-Consult `references/CLIENT_SDKS.md` for detailed comparison and migration patterns.
-
-## Testing Strategy
-
-### Unit/Integration Tests (Vitest + anchor-bankrun)
-
-Fast, deterministic testing without validator startup. Key pattern:
-
-```typescript
-class LockupTestContext extends TestContext {
-  async setUp() {
-    await super.setUp("sablier_lockup", programId);
-    this.program = new Program<SablierLockup>(IDL, this.provider);
-  }
-}
-```
-
-Consult `references/TESTING.md` for complete test context patterns, time travel, and assertions.
-
-### Fuzz Testing (Trident)
-
-Property-based fuzzing for edge case discovery:
-
-```
-trident-tests/fuzz_{program}/
-├── test_fuzz.rs          # Entry point with flows
-├── instructions/*.rs     # TridentInstruction definitions
-└── helpers/*_math.rs     # Replicated math for invariants
-```
-
-Consult `references/FUZZ_TESTING.md` for instruction hooks, invariants, and time warping.
 
 ## Security Requirements
 
@@ -241,6 +205,46 @@ await expectToThrow(ctx.withdraw(), ProgramErrorCode.StreamDepleted);
 ```
 
 Consult `references/CODEGEN.md` for type mappings, script architecture and troubleshooting.
+
+## Client Integration
+
+| SDK                 | Use Case               | Notes                           |
+| ------------------- | ---------------------- | ------------------------------- |
+| `@solana/kit`       | New projects           | Modular, tree-shakeable         |
+| `@solana/web3.js`   | Existing projects      | Mature ecosystem, more examples |
+| `@coral-xyz/anchor` | Anchor program clients | IDL-based type-safe calls       |
+
+Consult `references/CLIENT_SDKS.md` for detailed comparison and migration patterns.
+
+## Testing Strategy
+
+### Unit/Integration Tests (Vitest + anchor-bankrun)
+
+Fast, deterministic testing without validator startup. Key pattern:
+
+```typescript
+class LockupTestContext extends TestContext {
+  async setUp() {
+    await super.setUp("sablier_lockup", programId);
+    this.program = new Program<SablierLockup>(IDL, this.provider);
+  }
+}
+```
+
+Consult `references/TESTING.md` for complete test context patterns, time travel, and assertions.
+
+### Fuzz Testing (Trident)
+
+Property-based fuzzing for edge case discovery:
+
+```
+trident-tests/fuzz_{program}/
+├── test_fuzz.rs          # Entry point with flows
+├── instructions/*.rs     # TridentInstruction definitions
+└── helpers/*_math.rs     # Replicated math for invariants
+```
+
+Consult `references/FUZZ_TESTING.md` for instruction hooks, invariants, and time warping.
 
 ---
 
