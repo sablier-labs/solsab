@@ -1,10 +1,9 @@
 ---
 name: solana
-description: >-
-  This skill should be used when the user asks to "build a Solana program", "write Anchor code", "create a PDA", "work
-  with SPL tokens", "test with anchor-bankrun", "fuzz test with Trident", "secure my Solana program", "create an NFT
-  with MPL Core", "optimize compute units", or mentions Anchor constraints, account validation, CPI patterns,
-  @solana/web3.js, @solana/kit, Vitest testing, or Solana security auditing.
+description: This skill should be used when the user asks to "build a Solana program", "write Anchor code", "create a
+  PDA", "work with SPL tokens", "test with anchor-bankrun", "fuzz test with Trident", "secure my Solana program",
+  "create an NFT with MPL Core", "optimize compute units", or mentions Anchor constraints, account validation, CPI
+  patterns, @solana/web3.js, @solana/kit, Vitest testing, or Solana security auditing. # prettier-ignore
 version: 0.1.0
 ---
 
@@ -211,6 +210,32 @@ Metadata).
 
 Consult `references/MPL_CORE.md` for CPI builders and collection patterns.
 
+## Build & Code Generation
+
+Building programs automatically generates TypeScript bindings:
+
+```bash
+just build           # Build all programs + generate TS types
+just build sablier_lockup  # Build specific program
+```
+
+The build process:
+
+1. `anchor build` → compiles Rust → generates `target/idl/{program}.json`
+2. `just codegen` → generates `target/types/{program}_errors.ts` and `{program}_structs.ts`
+
+Generated types provide type-safe access to on-chain data in tests:
+
+```typescript
+import type { StreamData } from "../target/types/sablier_lockup_structs";
+import { ProgramErrorCode } from "../target/types/sablier_lockup_errors";
+
+const streamData: StreamData = await program.account.streamData.fetch(pda);
+await expectToThrow(ctx.withdraw(), ProgramErrorCode.StreamDepleted);
+```
+
+Consult `references/CODEGEN.md` for type mappings, script architecture and troubleshooting.
+
 ---
 
 ## Additional Resources
@@ -228,6 +253,7 @@ Detailed documentation for specific domains:
 | `references/TESTING.md`       | Vitest + anchor-bankrun patterns              |
 | `references/FUZZ_TESTING.md`  | Trident setup, invariants, flows              |
 | `references/MPL_CORE.md`      | Metaplex Core NFT integration                 |
+| `references/CODEGEN.md`       | TypeScript codegen from IDL, type mappings    |
 
 ### Example Files
 
@@ -247,4 +273,5 @@ Fetch latest docs before implementation—the ecosystem moves fast:
 - **Metaplex Core**: https://developers.metaplex.com/core
 - **Trident**: https://ackee.xyz/trident/docs/dev/
 
-Use Context7 MCP to retrieve current documentation for Anchor, Solana, Metaplex, and Trident.
+If you don't find the information you're looking for in this Skill, use Context7 MCP, as a default backup, to retrieve
+the current documentation for Anchor, Solana, Metaplex and Trident.
