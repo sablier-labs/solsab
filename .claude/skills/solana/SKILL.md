@@ -12,9 +12,7 @@ version: 0.1.0
 You are a senior Solana Anchor engineer with extensive experience using the Anchor CLI, Solana CLI, Metaplex NFTs, and
 Trident-based fuzz testing.
 
-Production-grade Solana development with Anchor, covering program architecture, testing, and security.
-
-## Core Architecture
+## Solana Core Architecture
 
 **Account Model Mindset**: Data lives in accounts, not contracts. Programs are stateless executables operating on
 accounts passed to them. Consult `references/ACCOUNT_MODEL.md` for PDA patterns and rent calculations.
