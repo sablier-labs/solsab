@@ -14,8 +14,8 @@ Trident-based fuzz testing.
 
 ## Solana Core Architecture
 
-**Account Model Mindset**: Data lives in accounts, not contracts. Programs are stateless executables operating on
-accounts passed to them. Consult `references/ACCOUNT_MODEL.md` for PDA patterns and rent calculations.
+**Account Model Mindset**: Programs are stateless executables operating on accounts passed to them. Program state/data
+lives in those accounts. Consult `references/ACCOUNT_MODEL.md` for PDA patterns and rent calculations.
 
 **Critical Constraints**:
 
