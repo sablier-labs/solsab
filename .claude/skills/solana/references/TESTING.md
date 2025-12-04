@@ -22,6 +22,19 @@ Use **Vitest** as the test runner and **anchor-bankrun** for Solana runtime emul
 }
 ```
 
+### SDK Libraries for Tests
+
+| Library             | Purpose                              |
+| ------------------- | ------------------------------------ |
+| `@coral-xyz/anchor` | Program interaction, IDL types, BN   |
+| `@solana/web3.js`   | PublicKey, Keypair, Transaction      |
+| `@solana/kit`       | Modern alternative to web3.js        |
+| `@solana/spl-token` | Token/ATA creation, transfers        |
+| `anchor-bankrun`    | BankrunProvider, fast test execution |
+
+**Note**: `@solana/kit` is the modern, tree-shakeable SDK. For new test utilities, prefer `@solana/kit` over
+`@solana/web3.js`. However, `@coral-xyz/anchor` internally uses `@solana/web3.js`, so both may be present.
+
 ### Vitest Configuration
 
 ```typescript

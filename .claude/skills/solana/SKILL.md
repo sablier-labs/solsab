@@ -3,7 +3,7 @@ name: solana
 description: This skill should be used when the user asks to "build a Solana program", "write Anchor code", "create a
   PDA", "work with SPL tokens", "test with anchor-bankrun", "fuzz test with Trident", "secure my Solana program",
   "create an NFT with MPL Core", "optimize compute units", or mentions Anchor constraints, account validation, CPI
-  patterns, @solana/web3.js, @solana/kit, Vitest testing, or Solana security auditing. # prettier-ignore
+  patterns, Vitest testing, or Solana security auditing. # prettier-ignore
 version: 0.1.0
 ---
 
@@ -205,16 +205,6 @@ await expectToThrow(ctx.withdraw(), ProgramErrorCode.StreamDepleted);
 
 Consult `references/CODEGEN.md` for type mappings, script architecture and troubleshooting.
 
-## Client Integration
-
-| SDK                 | Use Case               | Notes                           |
-| ------------------- | ---------------------- | ------------------------------- |
-| `@solana/kit`       | New projects           | Modular, tree-shakeable         |
-| `@solana/web3.js`   | Existing projects      | Mature ecosystem, more examples |
-| `@coral-xyz/anchor` | Anchor program clients | IDL-based type-safe calls       |
-
-Consult `references/CLIENT_SDKS.md` for detailed comparison and migration patterns.
-
 ## Testing Strategy
 
 ### Unit/Integration Tests (Vitest + anchor-bankrun)
@@ -256,9 +246,8 @@ Detailed documentation for specific domains:
 | File                          | Content                                       |
 | ----------------------------- | --------------------------------------------- |
 | `references/ACCOUNT_MODEL.md` | PDA derivation, rent, account creation        |
-| `references/TRANSACTIONS.md`  | Tx limits, CU optimization, versioned txs     |
+| `references/TRANSACTIONS.md`  | Tx limits, CU optimization                    |
 | `references/SECURITY.md`      | Vulnerabilities, audit checklist, protections |
-| `references/CLIENT_SDKS.md`   | @solana/kit vs web3.js, migration guide       |
 | `references/TESTING.md`       | Vitest + anchor-bankrun patterns              |
 | `references/FUZZ_TESTING.md`  | Trident setup, invariants, flows              |
 | `references/MPL_CORE.md`      | Metaplex Core NFT integration                 |

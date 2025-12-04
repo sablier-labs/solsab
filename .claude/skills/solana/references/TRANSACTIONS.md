@@ -26,31 +26,18 @@ Transaction
 ### Components
 
 1. **Base Fee**: 5,000 lamports per signature (0.000005 SOL)
-2. **Priority Fee**: Optional, based on compute unit price
-3. **Rent**: For account creation (one-time, rent-exempt)
+2. **Priority Fee**: Optional, based on compute unit price (micro-lamports per CU)
+3. **Rent**: One-time deposit for account creation (rent-exempt threshold)
 
-### Priority Fees
+### Rent-Exempt Balance
 
-```typescript
-// Setting priority fee (in micro-lamports per CU)
-const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
-  units: 200_000,
-});
-
-const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
-  microLamports: 1_000, // 0.001 lamports per CU
-});
-
-// Total priority fee = CU limit × price in micro-lamports ÷ 1,000,000
-// Example: 200,000 × 1,000 ÷ 1,000,000 = 200 lamports
-```
-
-### Rent Costs
+Accounts must maintain a minimum lamport balance to exist on-chain. Calculate it dynamically:
 
 ```typescript
-// Rent-exempt minimum for account
-const rentExempt = await connection.getMinimumBalanceForRentExemption(dataSize);
+const rentExempt = await connection.getMinimumBalanceForRentExemption(accountDataSize);
 ```
+
+Use `#[derive(InitSpace)]` in Anchor to calculate space requirements automatically.
 
 ## Compute Units (CUs)
 
@@ -63,17 +50,20 @@ const rentExempt = await connection.getMinimumBalanceForRentExemption(dataSize);
 ### Setting Compute Budget
 
 ```typescript
-// TypeScript
-const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
-  units: 400_000, // Increase for complex operations
+import { ComputeBudgetProgram } from "@solana/web3.js";
+
+// Request specific compute units
+const computeUnitIx = ComputeBudgetProgram.setComputeUnitLimit({
+  units: 400_000,
 });
 
 // Add as FIRST instruction
-transaction.add(modifyComputeUnits);
+transaction.add(computeUnitIx);
 ```
 
+### Logging CU Consumption
+
 ```rust
-// Rust (logging consumption)
 msg!("Compute units consumed: {}", sol_log_compute_units());
 ```
 
@@ -85,119 +75,21 @@ msg!("Compute units consumed: {}", sol_log_compute_units());
 4. **Use view functions** - Zero-cost reads for computation-heavy queries
 5. **Profile with `sol_log_compute_units()`** - Identify hotspots
 
-## Versioned Transactions
+## Transaction Batching
 
-### Legacy vs Versioned
+### Multiple Instructions in One Transaction
 
-```typescript
-// Legacy (default)
-const transaction = new Transaction();
-
-// Versioned (for Address Lookup Tables)
-const messageV0 = new TransactionMessage({
-  payerKey: payer.publicKey,
-  recentBlockhash,
-  instructions,
-}).compileToV0Message(addressLookupTableAccounts);
-
-const transactionV0 = new VersionedTransaction(messageV0);
-```
-
-### Address Lookup Tables (ALTs)
-
-Compress account addresses to save transaction space:
+Combine related operations to reduce signature overhead:
 
 ```typescript
-// Create ALT
-const [createIx, lookupTableAddress] = AddressLookupTableProgram.createLookupTable({
-    authority: payer.publicKey,
-    payer: payer.publicKey,
-    recentSlot,
-});
+const transaction = new Transaction().add(instruction1).add(instruction2).add(instruction3);
 
-// Extend ALT with addresses
-const extendIx = AddressLookupTableProgram.extendLookupTable({
-    payer: payer.publicKey,
-    authority: payer.publicKey,
-    lookupTable: lookupTableAddress,
-    addresses: [address1, address2, ...],
-});
-
-// Use in versioned transaction
-const lookupTableAccount = await connection.getAddressLookupTable(lookupTableAddress);
-const messageV0 = new TransactionMessage({...}).compileToV0Message([lookupTableAccount.value]);
+// All succeed or all fail (atomic)
+await sendAndConfirmTransaction(connection, transaction, [payer]);
 ```
 
-## Blockhash & Expiry
+### When to Batch
 
-### Blockhash Validity
-
-- **Valid for**: ~60-90 seconds (~150 slots)
-- **Recommended refresh**: Before each transaction
-
-```typescript
-const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-
-// Wait for confirmation with expiry check
-await connection.confirmTransaction({
-  blockhash,
-  lastValidBlockHeight,
-  signature,
-});
-```
-
-### Durable Nonces
-
-For transactions that need longer validity:
-
-```typescript
-// Create nonce account
-const nonceAccount = Keypair.generate();
-const createNonceIx = SystemProgram.createNonceAccount({
-  fromPubkey: payer.publicKey,
-  noncePubkey: nonceAccount.publicKey,
-  authorizedPubkey: payer.publicKey,
-  lamports: rentExempt,
-});
-
-// Use nonce in transaction
-const advanceNonceIx = SystemProgram.nonceAdvance({
-  noncePubkey: nonceAccount.publicKey,
-  authorizedPubkey: payer.publicKey,
-});
-
-transaction.add(advanceNonceIx); // Must be first instruction
-transaction.recentBlockhash = nonceAccountInfo.nonce;
-```
-
-## Transaction Simulation
-
-Always simulate before sending:
-
-```typescript
-const simulation = await connection.simulateTransaction(transaction);
-
-if (simulation.value.err) {
-  console.error("Simulation failed:", simulation.value.err);
-  console.log("Logs:", simulation.value.logs);
-}
-```
-
-## Batching Strategies
-
-### Multiple Instructions
-
-```typescript
-// Single transaction, multiple instructions
-const tx = new Transaction().add(instruction1).add(instruction2).add(instruction3);
-```
-
-### Parallel Transactions
-
-```typescript
-// Send multiple transactions in parallel
-const signatures = await Promise.all([
-  sendAndConfirmTransaction(connection, tx1, [signer]),
-  sendAndConfirmTransaction(connection, tx2, [signer]),
-]);
-```
+- Related state changes that should be atomic
+- Operations on the same accounts (reduces account loading)
+- Sequential operations where failure should roll back all
