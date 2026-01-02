@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    state::lockup::{Tranche, MAX_TRANCHES},
-    utils::errors::ErrorCode,
+    state::lockup::Tranche,
+    utils::{constants::MAX_TRANCHES, errors::ErrorCode},
 };
 
 /// Validate the cancellation of a stream.

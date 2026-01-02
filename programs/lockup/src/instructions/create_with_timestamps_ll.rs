@@ -162,17 +162,17 @@ pub fn handler(
 
     // Effect: create the linear stream data.
     ctx.accounts.stream_data.create_linear(
-        deposit_token_mint.key(),
         ctx.bumps.stream_data,
+        cliff_time,
+        cliff_unlock_amount,
         deposit_amount,
-        salt,
+        deposit_token_mint.key(),
+        end_time,
         is_cancelable,
+        salt,
         *sender_key,
         start_time,
-        cliff_time,
-        end_time,
         start_unlock_amount,
-        cliff_unlock_amount,
     )?;
 
     // Effect: create the MPL Core asset representing the stream NFT.

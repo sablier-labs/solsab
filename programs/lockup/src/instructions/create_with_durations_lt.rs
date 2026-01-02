@@ -5,7 +5,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    instructions::{create_with_timestamps::CreateWithTimestamps, create_with_timestamps_lt},
+    instructions::{create_with_timestamps_ll::CreateWithTimestamps, create_with_timestamps_lt},
     state::lockup::Tranche,
     utils::{errors::ErrorCode, time::get_current_time},
 };
@@ -15,14 +15,12 @@ use crate::{
 /// # Parameters
 /// * `salt` - Unique salt for PDA derivation
 /// * `tranche_amounts` - Amount for each tranche
-/// * `tranche_durations` - Duration offset from stream start for each tranche
+/// * `tranche_durations` - Duration offset from the previous tranche (first is offset from start)
 /// * `is_cancelable` - Whether sender can cancel the stream
 ///
 /// # Notes
 /// - `tranche_amounts` and `tranche_durations` must have the same length.
-/// - Durations are offsets from stream start, not from each other.
 /// - The stream start time is set to the current timestamp.
-/// - Each tranche timestamp = start_time + corresponding duration.
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,
     salt: u128,
@@ -39,20 +37,18 @@ pub fn handler(
     let start_time = get_current_time()?;
 
     // Convert durations to absolute timestamps.
-    // Each duration is an offset from start_time.
-    let tranches: Vec<Tranche> = tranche_amounts
-        .iter()
-        .zip(tranche_durations.iter())
-        .map(|(amount, duration)| {
-            let timestamp = start_time
-                .checked_add(*duration)
-                .ok_or(ErrorCode::TrancheTimestampOverflow)?;
-            Ok(Tranche {
-                amount: *amount,
-                timestamp,
-            })
-        })
-        .collect::<Result<Vec<_>>>()?;
+    // First duration is offset from start_time, subsequent durations are offsets from previous.
+    let mut tranches = Vec::with_capacity(tranche_amounts.len());
+    let mut prev_timestamp = start_time;
+
+    for (amount, duration) in tranche_amounts.iter().zip(tranche_durations.iter()) {
+        let timestamp = prev_timestamp.checked_add(*duration).ok_or(ErrorCode::TrancheTimestampOverflow)?;
+        tranches.push(Tranche {
+            amount: *amount,
+            timestamp,
+        });
+        prev_timestamp = timestamp;
+    }
 
     // Delegate to timestamps handler.
     create_with_timestamps_lt::handler(ctx, salt, start_time, tranches, is_cancelable)

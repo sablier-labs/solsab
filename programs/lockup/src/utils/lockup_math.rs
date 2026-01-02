@@ -5,33 +5,16 @@ use crate::{
     utils::time::get_current_time,
 };
 
-/// Calculates the total amount streamed to the recipient at the current time.
-///
-/// Dispatches to model-specific calculation based on the model of the stream.
-pub fn get_streamed_amount(model: &StreamModel, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {
-    // Handle the terminal states first
-    if is_depleted {
-        return amounts.withdrawn;
-    }
-    if was_canceled {
-        return amounts.deposited - amounts.refunded;
-    }
-
-    // Dispatch to model-specific calculation
+/// Returns the stream end time.
+pub fn get_end_time(model: &StreamModel) -> u64 {
     match model {
         StreamModel::Linear {
-            timestamps,
-            unlocks,
-        } => get_streamed_amount_linear(timestamps, unlocks, amounts),
+            timestamps, ..
+        } => timestamps.end,
         StreamModel::Tranched {
-            tranches, ..
-        } => get_streamed_amount_tranched(tranches),
+            timestamps, ..
+        } => timestamps.end,
     }
-}
-
-/// Calculates the amount the recipient can withdraw at the current time.
-pub fn get_withdrawable_amount(model: &StreamModel, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {
-    get_streamed_amount(model, amounts, is_depleted, was_canceled).saturating_sub(amounts.withdrawn)
 }
 
 /// Calculates the amount the sender would receive if they were to cancel the stream.
@@ -64,17 +47,38 @@ pub fn get_start_time(model: &StreamModel) -> u64 {
     }
 }
 
-/// Returns the stream end time.
-pub fn get_end_time(model: &StreamModel) -> u64 {
+/// Calculates the total amount streamed to the recipient at the current time.
+///
+/// Dispatches to model-specific calculation based on the model of the stream.
+pub fn get_streamed_amount(model: &StreamModel, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {
+    // Handle the terminal states first
+    if is_depleted {
+        return amounts.withdrawn;
+    }
+    if was_canceled {
+        return amounts.deposited - amounts.refunded;
+    }
+
+    // Dispatch to model-specific calculation
     match model {
         StreamModel::Linear {
-            timestamps, ..
-        } => timestamps.end,
+            timestamps,
+            unlocks,
+        } => get_streamed_amount_linear(timestamps, unlocks, amounts),
         StreamModel::Tranched {
-            timestamps, ..
-        } => timestamps.end,
+            tranches, ..
+        } => get_streamed_amount_tranched(tranches),
     }
 }
+
+/// Calculates the amount the recipient can withdraw at the current time.
+pub fn get_withdrawable_amount(model: &StreamModel, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {
+    get_streamed_amount(model, amounts, is_depleted, was_canceled).saturating_sub(amounts.withdrawn)
+}
+
+// ============================================================================
+//                        PRIVATE HELPER FUNCTIONS
+// ============================================================================
 
 /// Calculates the streamed amount for a linear stream.
 fn get_streamed_amount_linear(timestamps: &LinearTimestamps, unlocks: &LinearUnlocks, amounts: &Amounts) -> u64 {

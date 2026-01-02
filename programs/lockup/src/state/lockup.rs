@@ -1,13 +1,6 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
-use crate::utils::errors::ErrorCode;
-
-// ============================================================================
-//                               CONSTANTS
-// ============================================================================
-
-/// Maximum number of tranches per stream (constrained by the tx size/CU limits).
-pub const MAX_TRANCHES: usize = 50;
+use crate::utils::{constants::MAX_TRANCHES, errors::ErrorCode};
 
 // ============================================================================
 //                            SHARED TYPES
@@ -123,34 +116,31 @@ impl StreamData {
     //                         LINEAR STREAM METHODS
     // ========================================================================
 
-    /// State update for the [`fn@crate::sablier_lockup::cancel`] instruction.
+    /// State update for the [`fn@crate::sablier_lockup::create_with_timestamps_ll`] instruction.
     #[allow(clippy::too_many_arguments)]
     pub fn create_linear(
         &mut self,
-        deposited_token_mint: Pubkey,
         bump: u8,
+        cliff_time: u64,
+        cliff_unlock_amount: u64,
         deposit_amount: u64,
-        salt: u128,
+        deposited_token_mint: Pubkey,
+        end_time: u64,
         is_cancelable: bool,
+        salt: u128,
         sender: Pubkey,
         start_time: u64,
-        cliff_time: u64,
-        end_time: u64,
         start_unlock_amount: u64,
-        cliff_unlock_amount: u64,
     ) -> Result<()> {
         self.amounts = Amounts {
             deposited: deposit_amount,
             refunded: 0,
             withdrawn: 0,
         };
-        self.deposited_token_mint = deposited_token_mint;
         self.bump = bump;
-        self.salt = salt;
+        self.deposited_token_mint = deposited_token_mint;
         self.is_cancelable = is_cancelable;
         self.is_depleted = false;
-        self.sender = sender;
-        self.was_canceled = false;
         self.model = StreamModel::Linear {
             timestamps: LinearTimestamps {
                 start: start_time,
@@ -162,6 +152,9 @@ impl StreamData {
                 cliff: cliff_unlock_amount,
             },
         };
+        self.salt = salt;
+        self.sender = sender;
+        self.was_canceled = false;
 
         Ok(())
     }

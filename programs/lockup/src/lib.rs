@@ -93,7 +93,7 @@ pub mod sablier_lockup {
         cliff_unlock_amount: u64,
         is_cancelable: bool,
     ) -> Result<()> {
-        instructions::create_with_durations::handler(
+        instructions::create_with_durations_ll::handler(
             ctx,
             salt,
             deposit_amount,
@@ -156,7 +156,7 @@ pub mod sablier_lockup {
         cliff_unlock_amount: u64,
         is_cancelable: bool,
     ) -> Result<()> {
-        instructions::create_with_timestamps::handler(
+        instructions::create_with_timestamps_ll::handler(
             ctx,
             salt,
             deposit_amount,

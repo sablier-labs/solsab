@@ -1,11 +1,11 @@
 use anchor_lang::prelude::*;
 
-use crate::{instructions::create_with_timestamps, utils::time::get_current_time};
+use crate::{instructions::create_with_timestamps_ll, utils::time::get_current_time};
 
 /// See the documentation for [`fn@crate::sablier_lockup::create_with_durations_ll`].
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
-    ctx: Context<create_with_timestamps::CreateWithTimestamps>,
+    ctx: Context<create_with_timestamps_ll::CreateWithTimestamps>,
     salt: u128,
     deposit_amount: u64,
     cliff_duration: u64,
@@ -28,7 +28,7 @@ pub fn handler(
     let end_time = start_time.checked_add(total_duration).unwrap();
 
     // Checks, Effects, Interactions: create the stream.
-    create_with_timestamps::handler(
+    create_with_timestamps_ll::handler(
         ctx,
         salt,
         deposit_amount,
