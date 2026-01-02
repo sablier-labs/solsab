@@ -5,6 +5,10 @@ use crate::{
     utils::time::get_current_time,
 };
 
+/* -------------------------------------------------------------------------- */
+/*                              PUBLIC FUNCTIONS                              */
+/* -------------------------------------------------------------------------- */
+
 /// Returns the stream end time.
 pub fn get_end_time(model: &StreamModel) -> u64 {
     match model {
@@ -76,9 +80,9 @@ pub fn get_withdrawable_amount(model: &StreamModel, amounts: &Amounts, is_deplet
     get_streamed_amount(model, amounts, is_depleted, was_canceled).saturating_sub(amounts.withdrawn)
 }
 
-// ============================================================================
-//                        PRIVATE HELPER FUNCTIONS
-// ============================================================================
+/* -------------------------------------------------------------------------- */
+/*                          PRIVATE HELPER FUNCTIONS                          */
+/* -------------------------------------------------------------------------- */
 
 /// Calculates the streamed amount for a linear stream.
 fn get_streamed_amount_linear(timestamps: &LinearTimestamps, unlocks: &LinearUnlocks, amounts: &Amounts) -> u64 {

@@ -37,7 +37,7 @@ pub fn handler(
     let start_time = get_current_time()?;
 
     // Convert durations to absolute timestamps.
-    // First duration is offset from start_time, subsequent durations are offsets from previous.
+    // First duration is the offset from the start time, subsequent durations are offsets from the duration of the previous tranche.
     let mut tranches = Vec::with_capacity(tranche_amounts.len());
     let mut prev_timestamp = start_time;
 

@@ -59,7 +59,8 @@ programs/{name}/src/
 
 ### Account Struct Organization
 
-Structure account validation in logical sections (see `create_with_timestamps.rs`, `claim.rs`):
+Structure account validation in logical sections (see `create_with_timestamps_ll.rs`, `create_with_durations_lt.rs`,
+`claim.rs`):
 
 | Category            | Description                                      | Examples                                      |
 | ------------------- | ------------------------------------------------ | --------------------------------------------- |
