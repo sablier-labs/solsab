@@ -2,7 +2,9 @@
 pub mod cancel;
 pub mod collect_fees;
 pub mod create_with_durations;
+pub mod create_with_durations_lt;
 pub mod create_with_timestamps;
+pub mod create_with_timestamps_lt;
 pub mod initialize;
 pub mod renounce;
 pub mod view;

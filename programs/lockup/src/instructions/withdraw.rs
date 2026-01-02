@@ -115,15 +115,17 @@ pub struct Withdraw<'info> {
 
 /// See the documentation for [`fn@crate::sablier_lockup::withdraw`].
 pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
-    // Check: validate the withdraw.
+    let stream_data = &ctx.accounts.stream_data;
+
+    // Check: validate the withdraw using unified math.
     check_withdraw(
-        ctx.accounts.stream_data.is_depleted,
+        stream_data.is_depleted,
         amount,
         get_withdrawable_amount(
-            &ctx.accounts.stream_data.timestamps,
-            &ctx.accounts.stream_data.amounts,
-            ctx.accounts.stream_data.is_depleted,
-            ctx.accounts.stream_data.was_canceled,
+            &stream_data.model,
+            &stream_data.amounts,
+            stream_data.is_depleted,
+            stream_data.was_canceled,
         ),
     )?;
 

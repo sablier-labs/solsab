@@ -15,7 +15,7 @@ use crate::{
         },
         events::CreateLockupLinearStream,
         transfer_helper::transfer_tokens,
-        validations::check_create,
+        validations::check_create_linear,
     },
 };
 
@@ -128,6 +128,8 @@ pub struct CreateWithTimestamps<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// Handler for creating a linear stream with absolute timestamps.
+///
 /// See the documentation for [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
@@ -148,22 +150,29 @@ pub fn handler(
     let sender_key = &ctx.accounts.sender.key();
     let stream_nft = &ctx.accounts.stream_nft;
 
-    // Validate parameters
-    check_create(deposit_amount, start_time, cliff_time, end_time, start_unlock_amount, cliff_unlock_amount)?;
+    // Validate parameters for linear stream.
+    check_create_linear(
+        deposit_amount,
+        start_time,
+        cliff_time,
+        end_time,
+        start_unlock_amount,
+        cliff_unlock_amount,
+    )?;
 
-    // Effect: create the stream data.
-    ctx.accounts.stream_data.create(
+    // Effect: create the linear stream data.
+    ctx.accounts.stream_data.create_linear(
         deposit_token_mint.key(),
         ctx.bumps.stream_data,
-        cliff_time,
-        cliff_unlock_amount,
         deposit_amount,
-        end_time,
         salt,
         is_cancelable,
         *sender_key,
         start_time,
+        cliff_time,
+        end_time,
         start_unlock_amount,
+        cliff_unlock_amount,
     )?;
 
     // Effect: create the MPL Core asset representing the stream NFT.

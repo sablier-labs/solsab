@@ -169,6 +169,81 @@ pub mod sablier_lockup {
         )
     }
 
+    /// Creates a tranched stream by setting the start time to the current timestamp. The stream is funded by the
+    /// signer and wrapped in a Metaplex NFT.
+    ///
+    /// # Accounts Expected
+    ///
+    /// Refer to the accounts in [`fn@crate::sablier_lockup::create_with_timestamps_lt`].
+    ///
+    /// # Parameters
+    ///
+    /// - `salt` A unique salt used to derive the address of the stream NFT mint.
+    /// - `tranche_amounts` The amount for each tranche, denoted in units of the token's decimals.
+    /// - `tranche_durations` The duration offset from stream start for each tranche.
+    /// - `is_cancelable` Indicates if the stream is cancelable.
+    ///
+    /// # Notes
+    ///
+    /// - `tranche_amounts` and `tranche_durations` must have the same length.
+    /// - Durations are offsets from stream start, not from each other.
+    /// - Emits a [`crate::utils::events::CreateLockupTranchedStream`] event.
+    ///
+    /// # Requirements
+    ///
+    /// - Refer to the requirements in [`fn@crate::sablier_lockup::create_with_timestamps_lt`].
+    pub fn create_with_durations_lt(
+        ctx: Context<CreateWithTimestamps>,
+        salt: u128,
+        tranche_amounts: Vec<u64>,
+        tranche_durations: Vec<u64>,
+        is_cancelable: bool,
+    ) -> Result<()> {
+        instructions::create_with_durations_lt::handler(
+            ctx,
+            salt,
+            tranche_amounts,
+            tranche_durations,
+            is_cancelable,
+        )
+    }
+
+    /// Creates a tranched stream with the provided start time and tranches. The stream is funded by the signer and
+    /// wrapped in a Metaplex NFT.
+    ///
+    /// # Accounts Expected
+    ///
+    /// Refer to the accounts in [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
+    ///
+    /// # Parameters
+    ///
+    /// - `salt` A unique salt used to derive the address of the stream NFT mint.
+    /// - `start_time` The Unix timestamp indicating the stream's start (must be < first tranche timestamp).
+    /// - `tranches` Vec of tranches with amounts and timestamps in ascending order.
+    /// - `is_cancelable` Indicates if the stream is cancelable.
+    ///
+    /// # Notes
+    ///
+    /// - The deposit amount is calculated as the sum of all tranche amounts.
+    /// - Tranches must have timestamps in strictly ascending order.
+    /// - Emits a [`crate::utils::events::CreateLockupTranchedStream`] event.
+    ///
+    /// # Requirements
+    ///
+    /// - Deposit amount (sum of tranche amounts) must be greater than zero.
+    /// - `start_time` must be strictly less than the first tranche timestamp.
+    /// - All tranche amounts must be greater than zero.
+    /// - Tranche timestamps must be strictly ascending.
+    pub fn create_with_timestamps_lt(
+        ctx: Context<CreateWithTimestamps>,
+        salt: u128,
+        start_time: u64,
+        tranches: Vec<state::lockup::Tranche>,
+        is_cancelable: bool,
+    ) -> Result<()> {
+        instructions::create_with_timestamps_lt::handler(ctx, salt, start_time, tranches, is_cancelable)
+    }
+
     /// Initializes the program with the provided fee collector address by creating a Metaplex NFT collection.
     ///
     /// # Accounts Expected

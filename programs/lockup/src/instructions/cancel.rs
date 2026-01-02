@@ -83,22 +83,24 @@ pub struct Cancel<'info> {
 
 /// See the documentation for [`fn@crate::sablier_lockup::cancel`].
 pub fn handler(ctx: Context<Cancel>) -> Result<()> {
-    // Retrieve the stream amounts from storage.
-    let stream_amounts = ctx.accounts.stream_data.amounts.clone();
+    let stream_data = &ctx.accounts.stream_data;
 
-    // Calculate the streamed amount.
+    // Retrieve the stream amounts from storage.
+    let stream_amounts = stream_data.amounts.clone();
+
+    // Calculate the streamed amount using unified math.
     let streamed_amount = get_streamed_amount(
-        &ctx.accounts.stream_data.timestamps,
+        &stream_data.model,
         &stream_amounts,
-        ctx.accounts.stream_data.is_depleted,
-        ctx.accounts.stream_data.was_canceled,
+        stream_data.is_depleted,
+        stream_data.was_canceled,
     );
 
     // Check: validate the cancellation.
     check_cancel(
-        ctx.accounts.stream_data.is_cancelable,
-        ctx.accounts.stream_data.is_depleted,
-        ctx.accounts.stream_data.was_canceled,
+        stream_data.is_cancelable,
+        stream_data.is_depleted,
+        stream_data.was_canceled,
         streamed_amount,
         stream_amounts.deposited,
     )?;

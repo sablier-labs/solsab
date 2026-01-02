@@ -35,15 +35,17 @@ pub struct Renounce<'info> {
 
 /// See the documentation for [`fn@crate::sablier_lockup::renounce`].
 pub fn handler(ctx: Context<Renounce>) -> Result<()> {
+    let stream_data = &ctx.accounts.stream_data;
+
     // Check: validate the renounce.
     check_renounce(
-        ctx.accounts.stream_data.is_cancelable,
-        ctx.accounts.stream_data.amounts.deposited,
+        stream_data.is_cancelable,
+        stream_data.amounts.deposited,
         get_streamed_amount(
-            &ctx.accounts.stream_data.timestamps,
-            &ctx.accounts.stream_data.amounts,
-            ctx.accounts.stream_data.is_depleted,
-            ctx.accounts.stream_data.was_canceled,
+            &stream_data.model,
+            &stream_data.amounts,
+            stream_data.is_depleted,
+            stream_data.was_canceled,
         ),
     )?;
 

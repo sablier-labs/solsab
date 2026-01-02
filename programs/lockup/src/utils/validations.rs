@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::utils::errors::ErrorCode;
+use crate::{
+    state::lockup::{Tranche, MAX_TRANCHES},
+    utils::errors::ErrorCode,
+};
 
 /// Validate the cancellation of a stream.
 pub fn check_cancel(
@@ -40,8 +43,8 @@ pub fn check_collect_fees(collectible_amount: u64) -> Result<()> {
     Ok(())
 }
 
-/// Validate the parameters for creating a Stream.
-pub fn check_create(
+/// Validate the parameters for creating a linear stream.
+pub fn check_create_linear(
     deposit_amount: u64,
     start_time: u64,
     cliff_time: u64,
@@ -86,6 +89,61 @@ pub fn check_create(
         start_unlock_amount.checked_add(cliff_unlock_amount).ok_or(ErrorCode::UnlockAmountsSumTooHigh)?;
     if total_unlock_amount > deposit_amount {
         return Err(ErrorCode::UnlockAmountsSumTooHigh.into());
+    }
+
+    Ok(())
+}
+
+/// Validate the parameters for creating a tranched stream.
+pub fn check_create_tranched(deposit_amount: u64, start_time: u64, tranches: &[Tranche]) -> Result<()> {
+    // Check: the deposit amount is not zero.
+    if deposit_amount == 0 {
+        return Err(ErrorCode::DepositAmountZero.into());
+    }
+
+    // Check: the start time is not zero.
+    if start_time == 0 {
+        return Err(ErrorCode::StartTimeZero.into());
+    }
+
+    // Check: the tranches array is not empty.
+    if tranches.is_empty() {
+        return Err(ErrorCode::TranchesEmpty.into());
+    }
+
+    // Check: tranches count doesn't exceed maximum.
+    if tranches.len() > MAX_TRANCHES {
+        return Err(ErrorCode::TooManyTranches.into());
+    }
+
+    // Check: start time is strictly less than first tranche timestamp.
+    if start_time >= tranches[0].timestamp {
+        return Err(ErrorCode::StartTimeNotLessThanFirstTranche.into());
+    }
+
+    // Check: timestamps strictly ascending and amounts > 0.
+    let mut prev_timestamp = 0u64;
+    let mut sum = 0u64;
+    for tranche in tranches {
+        // Check: timestamp is strictly greater than previous.
+        if prev_timestamp >= tranche.timestamp {
+            return Err(ErrorCode::TranchesNotSorted.into());
+        }
+
+        // Check: tranche amount is not zero.
+        if tranche.amount == 0 {
+            return Err(ErrorCode::TrancheAmountZero.into());
+        }
+
+        // Calculate the sum of the tranche amounts, checking for overflow.
+        sum = sum.checked_add(tranche.amount).ok_or(ErrorCode::TrancheAmountsSumOverflow)?;
+
+        prev_timestamp = tranche.timestamp;
+    }
+
+    // Check: sum equals deposit amount.
+    if sum != deposit_amount {
+        return Err(ErrorCode::TrancheAndDepositAmountsMismatch.into());
     }
 
     Ok(())

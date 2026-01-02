@@ -1,61 +1,126 @@
+//! Math functions for computing streamed, withdrawable and refundable amounts for Lockup streams.
+
 use crate::{
-    state::lockup::{Amounts, Timestamps},
+    state::lockup::{Amounts, LinearTimestamps, LinearUnlocks, StreamModel, Tranche},
     utils::time::get_current_time,
 };
 
-pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {
+/// Calculates the total amount streamed to the recipient at the current time.
+///
+/// Dispatches to model-specific calculation based on the model of the stream.
+pub fn get_streamed_amount(model: &StreamModel, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {
+    // Handle the terminal states first
     if is_depleted {
         return amounts.withdrawn;
-    } else if was_canceled {
+    }
+    if was_canceled {
         return amounts.deposited - amounts.refunded;
     }
 
-    let now = get_current_time().unwrap();
+    // Dispatch to model-specific calculation
+    match model {
+        StreamModel::Linear {
+            timestamps,
+            unlocks,
+        } => get_streamed_amount_linear(timestamps, unlocks, amounts),
+        StreamModel::Tranched {
+            tranches, ..
+        } => get_streamed_amount_tranched(tranches),
+    }
+}
 
-    // If the start time is in the future, return zero.
+/// Calculates the amount the recipient can withdraw at the current time.
+pub fn get_withdrawable_amount(model: &StreamModel, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {
+    get_streamed_amount(model, amounts, is_depleted, was_canceled).saturating_sub(amounts.withdrawn)
+}
+
+/// Calculates the amount the sender would receive if they were to cancel the stream.
+pub fn get_refundable_amount(
+    model: &StreamModel,
+    amounts: &Amounts,
+    is_cancelable: bool,
+    is_depleted: bool,
+    was_canceled: bool,
+) -> u64 {
+    // Note: checking `is_cancelable` also implicitly checks `was_canceled`
+    // thanks to the protocol invariant that canceled streams are non-cancelable.
+    if is_cancelable && !is_depleted {
+        return amounts.deposited.saturating_sub(get_streamed_amount(model, amounts, is_depleted, was_canceled));
+    }
+
+    // Otherwise, return zero.
+    0
+}
+
+/// Returns the stream start time.
+pub fn get_start_time(model: &StreamModel) -> u64 {
+    match model {
+        StreamModel::Linear {
+            timestamps, ..
+        } => timestamps.start,
+        StreamModel::Tranched {
+            timestamps, ..
+        } => timestamps.start,
+    }
+}
+
+/// Returns the stream end time.
+pub fn get_end_time(model: &StreamModel) -> u64 {
+    match model {
+        StreamModel::Linear {
+            timestamps, ..
+        } => timestamps.end,
+        StreamModel::Tranched {
+            timestamps, ..
+        } => timestamps.end,
+    }
+}
+
+/// Calculates the streamed amount for a linear stream.
+fn get_streamed_amount_linear(timestamps: &LinearTimestamps, unlocks: &LinearUnlocks, amounts: &Amounts) -> u64 {
+    // Get the current time, defaulting to 0 on failure.
+    let now = get_current_time().unwrap_or(0);
+
+    // Before start: nothing unlocked
     if timestamps.start > now {
         return 0;
     }
 
-    // If the cliff time is in the future, return the start unlock amount.
+    // Before cliff (if there is one): only start unlock available
     if timestamps.cliff > now {
-        return amounts.start_unlock;
+        return unlocks.start;
     }
 
-    // If the end time is in the past or right now, return the deposited amount.
-    if timestamps.end <= now {
+    // After end: everything unlocked
+    if now > timestamps.end {
         return amounts.deposited;
     }
 
-    // Calculate the sum of the unlock amounts.
-    let unlock_amounts_sum: u64 = amounts.start_unlock + amounts.cliff_unlock;
+    // Calculate the sum of instant unlock amounts
+    let unlock_amounts_sum = unlocks.start + unlocks.cliff;
 
-    // If the sum of the unlock amounts is greater than or equal to the deposited amount, return the deposited
-    // amount. The ">=" operator is used as a safety measure in case of a bug, as the sum of the unlock amounts
-    // should never exceed the deposited amount.
+    // Safety check: if the unlock amounts exceed the deposit amount (which should never happen) or are equal to it, return the deposit amount.
     if unlock_amounts_sum >= amounts.deposited {
         return amounts.deposited;
     }
 
-    // Determine the streaming start time.
-    let streaming_start_time = if timestamps.cliff == 0 {
-        timestamps.start
-    } else {
+    // Determine when linear streaming begins
+    let streaming_start_time = if timestamps.cliff > 0 {
         timestamps.cliff
+    } else {
+        timestamps.start
     };
 
+    // Use u128 scaling for precision in percentage calculation
     const SCALING_FACTOR: u128 = 1e18 as u128;
 
     // Calculate time variables. Scale to 18 decimals for increased precision and cast to u128 to prevent overflow.
     let elapsed_time = (now - streaming_start_time) as u128 * SCALING_FACTOR;
-    let streamable_range = (timestamps.end - streaming_start_time) as u128;
-    let elapsed_time_percentage = elapsed_time / streamable_range;
+    let streamable_time_range = (timestamps.end - streaming_start_time) as u128;
+    let elapsed_time_pct = elapsed_time / streamable_time_range;
 
-    // Calculate the streamable amount.
     let streamable_amount = (amounts.deposited - unlock_amounts_sum) as u128;
-
-    // Calculate the streamed amount. After dividing by the scaling factor, casting down to u64 is safe.
-    let streamed_amount = unlock_amounts_sum + ((elapsed_time_percentage * streamable_amount) / SCALING_FACTOR) as u64;
+    let streamed_amount = unlock_amounts_sum + ((elapsed_time_pct * streamable_amount) / SCALING_FACTOR) as u64;
 
     // Although the streamed amount should never exceed the deposited amount, this condition is checked
     // without asserting to avoid locking tokens in case of a bug. If this situation occurs, the withdrawn
@@ -67,28 +132,10 @@ pub fn get_streamed_amount(timestamps: &Timestamps, amounts: &Amounts, is_deplet
     streamed_amount
 }
 
-pub fn get_refundable_amount(
-    timestamps: &Timestamps,
-    amounts: &Amounts,
-    is_cancelable: bool,
-    is_depleted: bool,
-    was_canceled: bool,
-) -> u64 {
-    // Note that checking for `is_cancelable` also checks if the stream `was_canceled` thanks to the protocol
-    // invariant that canceled streams are not cancelable anymore.
-    if is_cancelable && !is_depleted {
-        return amounts.deposited - get_streamed_amount(timestamps, amounts, is_depleted, was_canceled);
-    }
+/// Calculates the streamed amount for a tranched stream by summing the amounts of all the past tranches.
+fn get_streamed_amount_tranched(tranches: &[Tranche]) -> u64 {
+    // Get the current time, defaulting to 0 on failure.
+    let now = get_current_time().unwrap_or(0);
 
-    // Otherwise, return zero.
-    0
-}
-
-pub fn get_withdrawable_amount(
-    timestamps: &Timestamps,
-    amounts: &Amounts,
-    is_depleted: bool,
-    was_canceled: bool,
-) -> u64 {
-    get_streamed_amount(timestamps, amounts, is_depleted, was_canceled) - amounts.withdrawn
+    tranches.iter().take_while(|t| t.timestamp <= now).map(|t| t.amount).sum()
 }

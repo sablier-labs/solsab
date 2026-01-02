@@ -10,7 +10,7 @@ pub struct CancelLockupStream {
     pub stream_nft: Pubkey,
 }
 
-/// Emitted when an LL stream is created.
+/// Emitted when a Lockup Linear stream is created.
 #[event]
 pub struct CreateLockupLinearStream {
     pub deposit_token_decimals: u8,
@@ -19,6 +19,18 @@ pub struct CreateLockupLinearStream {
     pub salt: u128,
     pub stream_data: Pubkey,
     pub stream_nft: Pubkey,
+}
+
+/// Emitted when a Lockup Tranched stream is created.
+#[event]
+pub struct CreateLockupTranchedStream {
+    pub deposit_token_decimals: u8,
+    pub deposit_token_mint: Pubkey,
+    pub recipient: Pubkey,
+    pub salt: u128,
+    pub stream_data: Pubkey,
+    pub stream_nft_mint: Pubkey,
+    pub tranche_count: u32,
 }
 
 /// Emitted when fees are collected from the treasury.
