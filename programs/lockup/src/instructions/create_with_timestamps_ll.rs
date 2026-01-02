@@ -13,7 +13,7 @@ use crate::{
             seeds::*,
             ANCHOR_DISCRIMINATOR_SIZE,
         },
-        events::CreateLockupLinearStream,
+        events::{CreateLockupStream, CreateStreamModel},
         transfer_helper::transfer_tokens,
         validations::check_create_linear,
     },
@@ -205,13 +205,14 @@ pub fn handler(
     )?;
 
     // Log the newly created stream.
-    emit!(CreateLockupLinearStream {
-        salt,
+    emit!(CreateLockupStream {
         deposit_token_decimals: deposit_token_mint.decimals,
         deposit_token_mint: deposit_token_mint.key(),
+        model: CreateStreamModel::Linear,
         recipient: recipient.key(),
+        salt,
         stream_data: ctx.accounts.stream_data.key(),
-        stream_nft: stream_nft.key()
+        stream_nft: stream_nft.key(),
     });
 
     Ok(())

@@ -17,7 +17,15 @@ import type { StreamData } from "../../target/types/sablier_lockup_structs";
 import { buildSignAndProcessTx, deriveATAAddress, getATABalance } from "../common/anchor-bankrun";
 import { TestContext } from "../common/context";
 import type { Treasury, User } from "../common/types";
-import { AMOUNTS, Amount, Seed, TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "./utils/defaults";
+import {
+  Amount,
+  LINEAR_AMOUNTS,
+  LINEAR_MODEL,
+  LINEAR_TIMESTAMPS,
+  Seed,
+  Time,
+  UNLOCK_AMOUNTS,
+} from "./utils/defaults";
 import type { Salts, Stream } from "./utils/types";
 
 export class LockupTestContext extends TestContext {
@@ -152,7 +160,7 @@ export class LockupTestContext extends TestContext {
     recipientPubKey = this.recipient.keys.publicKey,
     depositTokenMint = this.usdc,
     depositTokenProgram = token.TOKEN_PROGRAM_ID,
-    timestamps = TIMESTAMPS(),
+    timestamps = LINEAR_TIMESTAMPS(),
     depositAmount = Amount.DEPOSIT,
     unlockAmounts = UNLOCK_AMOUNTS(),
     isCancelable = true,
@@ -380,15 +388,14 @@ export class LockupTestContext extends TestContext {
     wasCanceled = false,
   } = {}): Stream {
     const data: StreamData = {
-      amounts: AMOUNTS(),
+      amounts: LINEAR_AMOUNTS(),
       bump: 0,
       depositedTokenMint,
       isCancelable,
       isDepleted,
-      nftAddress: this.getStreamNftAddress(salt),
+      model: LINEAR_MODEL(),
       salt,
       sender: this.sender.keys.publicKey,
-      timestamps: TIMESTAMPS(),
       wasCanceled,
     };
     const streamDataAddress = this.getStreamDataAddress(salt);

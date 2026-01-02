@@ -9,7 +9,10 @@ use crate::{
     instructions::create_with_timestamps_ll::CreateWithTimestamps,
     state::lockup::Tranche,
     utils::{
-        errors::ErrorCode, events::CreateLockupTranchedStream, nft, transfer_helper::transfer_tokens,
+        errors::ErrorCode,
+        events::{CreateLockupStream, CreateStreamModel},
+        nft,
+        transfer_helper::transfer_tokens,
         validations::check_create_tranched,
     },
 };
@@ -92,14 +95,16 @@ pub fn handler(
     )?;
 
     // Log the newly created tranched stream.
-    emit!(CreateLockupTranchedStream {
-        salt,
+    emit!(CreateLockupStream {
         deposit_token_decimals: deposit_token_mint.decimals,
         deposit_token_mint: ctx.accounts.deposit_token_mint.key(),
+        model: CreateStreamModel::Tranched {
+            tranches
+        },
         recipient: ctx.accounts.recipient.key(),
+        salt,
         stream_data: ctx.accounts.stream_data.key(),
         stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
-        tranche_count: tranches.len() as u32,
     });
 
     Ok(())

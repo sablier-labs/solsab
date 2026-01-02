@@ -8,7 +8,8 @@ import { getATABalance } from "../../common/anchor-bankrun";
 import { assertAccountExists, assertEqBn, assertEqPublicKey } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
-import { AMOUNTS, Amount, TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defaults";
+import { Amount, LINEAR_TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defaults";
+import { isLinearModel } from "../utils/types";
 
 let ctx: LockupTestContext;
 
@@ -44,7 +45,7 @@ describe("createWithTimestampsLl", () => {
         it("should fail", async () => {
           await expectToThrow(
             ctx.createWithTimestampsLl({
-              timestamps: TIMESTAMPS({ start: ZERO }),
+              timestamps: LINEAR_TIMESTAMPS({ start: ZERO }),
             }),
             "StartTimeZero",
           );
@@ -81,7 +82,7 @@ describe("createWithTimestampsLl", () => {
                 it("should fail", async () => {
                   await expectToThrow(
                     ctx.createWithTimestampsLl({
-                      timestamps: TIMESTAMPS({ cliff: ZERO }),
+                      timestamps: LINEAR_TIMESTAMPS({ cliff: ZERO }),
                     }),
                     "CliffTimeZeroUnlockAmountNotZero",
                   );
@@ -92,7 +93,7 @@ describe("createWithTimestampsLl", () => {
                 it("should fail", async () => {
                   await expectToThrow(
                     ctx.createWithTimestampsLl({
-                      timestamps: TIMESTAMPS({ cliff: ZERO, start: Time.END }),
+                      timestamps: LINEAR_TIMESTAMPS({ cliff: ZERO, start: Time.END }),
                     }),
                     "StartTimeNotLessThanEndTime",
                   );
@@ -109,15 +110,19 @@ describe("createWithTimestampsLl", () => {
                   const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
 
                   const salt = await ctx.createWithTimestampsLl({
-                    timestamps: TIMESTAMPS({ cliff: ZERO }),
+                    timestamps: LINEAR_TIMESTAMPS({ cliff: ZERO }),
                     unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO, start: ZERO }),
                   });
 
-                  const expectedStream = ctx.defaultStream({
-                    salt: salt,
-                  });
-                  expectedStream.data.timestamps.cliff = ZERO;
-                  expectedStream.data.amounts = AMOUNTS({ cliffUnlock: ZERO, startUnlock: ZERO });
+                  const expectedStream = ctx.defaultStream({ salt: salt });
+                  const expectedStreamData = expectedStream.data;
+                  // Update model-specific fields
+                  const model = expectedStreamData.model;
+                  if (isLinearModel(model)) {
+                    model.linear.timestamps.cliff = ZERO;
+                    model.linear.unlocks.cliff = ZERO;
+                    model.linear.unlocks.start = ZERO;
+                  }
 
                   await assertStreamCreation(
                     salt,
@@ -134,7 +139,7 @@ describe("createWithTimestampsLl", () => {
                 it("should fail", async () => {
                   await expectToThrow(
                     ctx.createWithTimestampsLl({
-                      timestamps: TIMESTAMPS({ start: Time.CLIFF }),
+                      timestamps: LINEAR_TIMESTAMPS({ start: Time.CLIFF }),
                     }),
                     "StartTimeNotLessThanCliffTime",
                   );
@@ -146,7 +151,7 @@ describe("createWithTimestampsLl", () => {
                   it("should fail", async () => {
                     await expectToThrow(
                       ctx.createWithTimestampsLl({
-                        timestamps: TIMESTAMPS({ cliff: Time.END }),
+                        timestamps: LINEAR_TIMESTAMPS({ cliff: Time.END }),
                       }),
                       "CliffTimeNotLessThanEndTime",
                     );
