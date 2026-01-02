@@ -151,14 +151,7 @@ pub fn handler(
     let stream_nft = &ctx.accounts.stream_nft;
 
     // Validate parameters for linear stream.
-    check_create_linear(
-        deposit_amount,
-        start_time,
-        cliff_time,
-        end_time,
-        start_unlock_amount,
-        cliff_unlock_amount,
-    )?;
+    check_create_linear(deposit_amount, start_time, cliff_time, end_time, start_unlock_amount, cliff_unlock_amount)?;
 
     // Effect: create the linear stream data.
     ctx.accounts.stream_data.create_linear(

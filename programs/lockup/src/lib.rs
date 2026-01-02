@@ -199,13 +199,7 @@ pub mod sablier_lockup {
         tranche_durations: Vec<u64>,
         is_cancelable: bool,
     ) -> Result<()> {
-        instructions::create_with_durations_lt::handler(
-            ctx,
-            salt,
-            tranche_amounts,
-            tranche_durations,
-            is_cancelable,
-        )
+        instructions::create_with_durations_lt::handler(ctx, salt, tranche_amounts, tranche_durations, is_cancelable)
     }
 
     /// Creates a tranched stream with the provided start time and tranches. The stream is funded by the signer and

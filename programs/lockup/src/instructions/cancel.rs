@@ -89,12 +89,8 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     let stream_amounts = stream_data.amounts.clone();
 
     // Calculate the streamed amount using unified math.
-    let streamed_amount = get_streamed_amount(
-        &stream_data.model,
-        &stream_amounts,
-        stream_data.is_depleted,
-        stream_data.was_canceled,
-    );
+    let streamed_amount =
+        get_streamed_amount(&stream_data.model, &stream_amounts, stream_data.is_depleted, stream_data.was_canceled);
 
     // Check: validate the cancellation.
     check_cancel(
