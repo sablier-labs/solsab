@@ -18,13 +18,13 @@ pub fn withdraw(ctx: Context<Withdraw>) -> Result<()> {
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
     #[account(mut)]
-    pub authority: Signer<'info>,  // Must sign transaction
+    pub signer: Signer<'info>,  // Must sign transaction
 
     #[account(
         mut,
-        constraint = vault.authority == authority.key() @ ErrorCode::Unauthorized
+        constraint = stream.recipient == signer.key() @ ErrorCode::Unauthorized
     )]
-    pub vault: Account<'info, Vault>,
+    pub stream: Account<'info, Stream>,
 }
 ```
 

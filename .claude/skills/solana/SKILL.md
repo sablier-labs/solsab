@@ -15,7 +15,8 @@ Trident-based fuzz testing.
 ## Solana Core Architecture
 
 **Account Model Mindset**: Programs are stateless executables operating on accounts passed to them. Program state/data
-lives in those accounts. Consult `references/ACCOUNT_MODEL.md` for PDA patterns and rent calculations.
+lives in those accounts. Consult `references/ACCOUNT_MODEL.md` for Program Derived Addresses (PDA) patterns and rent
+calculations.
 
 **Critical Constraints**:
 
@@ -24,7 +25,7 @@ lives in those accounts. Consult `references/ACCOUNT_MODEL.md` for PDA patterns 
   `#[derive(Accounts)]` `struct` (consult `references/ACCOUNT_MODEL.md`)
 - Derive all program-owned accounts as PDAs—never keypairs for state
 - Validate all accounts before CPI calls (inherits caller's privileges)
-- Stay within 1232 bytes/tx and 200k CU default (consult `references/TRANSACTIONS.md`)
+- Stay within 1232 bytes/tx (consult `references/TRANSACTIONS.md`)
 
 ## Tech Stack
 
@@ -41,15 +42,15 @@ Anchor is the primary framework. Prefer over native solana-program for:
 
 ```
 programs/{name}/src/
-├── lib.rs              # module declarations, #[program], instruction exports
+├── lib.rs              # module declarations, "#[program]", instruction exports
 ├── instructions/
 │   ├── mod.rs          # re-exports all Instructions
-│   ├── *.rs            # state-changing Ixs with #[derive(Accounts)] + handler()
+│   ├── *.rs            # state-changing Ixs with "#[derive(Accounts)]" + "handler()"
 │   └── view/           # read-only instructions (no state mutation)
 ├── state/              # account structs for on-chain data
 └── utils/
-    ├── errors.rs       # #[error_code] enum
-    ├── events.rs       # #[event] structs
+    ├── errors.rs       # "#[error_code]" enum
+    ├── events.rs       # "#[event]" structs
     ├── constants.rs    # seeds, program IDs
     └── validations.rs  # validation functions
 ```
@@ -60,16 +61,16 @@ programs/{name}/src/
 
 Structure account validation in logical sections (see `create_with_timestamps.rs`, `claim.rs`):
 
-| Category            | Description                            | Examples                                      |
-| ------------------- | -------------------------------------- | --------------------------------------------- |
-| USER ACCOUNTS       | Signers and their ATAs                 | `creator: Signer`, `creator_ata`, `recipient` |
-| PROTOCOL ACCOUNTS   | Global protocol state (treasury, etc.) | `treasury: Account<Treasury>`                 |
-| COLLECTION ACCOUNTS | NFT collection state (if applicable)   | `nft_collection_data`, `nft_collection_mint`  |
-| ENTITY ACCOUNTS     | Per-entity state (streams, campaigns)  | `stream_data`, `stream_data_ata`, `campaign`  |
-| PROGRAM ACCOUNTS    | External programs                      | `token_program`, `associated_token_program`   |
-| SYSTEM ACCOUNTS     | System-level                           | `system_program`, `rent`                      |
+| Category            | Description                                      | Examples                                      |
+| ------------------- | ------------------------------------------------ | --------------------------------------------- |
+| USER ACCOUNTS       | Signers, protocol roles and their ATAs           | `creator: Signer`, `creator_ata`, `recipient` |
+| PROTOCOL ACCOUNTS   | Global protocol state (treasury, etc.)           | `treasury: Account<Treasury>`                 |
+| COLLECTION ACCOUNTS | NFT collection state (if applicable)             | `nft_collection_data`, `nft_collection_mint`  |
+| ENTITY ACCOUNTS     | Per-entity state (either for stream or campaign) | `stream_data`, `stream_data_ata`, `campaign`  |
+| PROGRAM ACCOUNTS    | External programs                                | `token_program`, `associated_token_program`   |
+| SYSTEM ACCOUNTS     | System-level                                     | `system_program`, `rent`                      |
 
-Key account type patterns:
+Key account type patterns (use `#[instruction()` if input parameters are needed for seeds or PDA derivation):
 
 ```rust
 #[derive(Accounts)]
@@ -93,7 +94,7 @@ pub struct CreateWithTimestamps<'info> {
     pub recipient: UncheckedAccount<'info>,
 
     // ------------------------------------------------------------------------ //
-    //                             ENTITY ACCOUNTS                              //
+    //                             STREAM ACCOUNTS                              //
     // ------------------------------------------------------------------------ //
     #[account(
         init,

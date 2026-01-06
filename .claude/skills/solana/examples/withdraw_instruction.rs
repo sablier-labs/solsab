@@ -61,7 +61,7 @@ pub struct Withdraw<'info> {
     pub treasury: Box<Account<'info, Treasury>>,
 
     // ------------------------------------------------------------------------ //
-    //                             ENTITY ACCOUNTS                              //
+    //                             STREAM ACCOUNTS                              //
     // ------------------------------------------------------------------------ //
     /// Address constraint: must match stored mint in stream_data
     #[account(address = stream_data.deposited_token_mint)]

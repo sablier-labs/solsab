@@ -59,7 +59,7 @@ pub struct StreamData {
 #[account(
     init,
     payer = sender,
-    space = 8 + StreamData::INIT_SPACE,  // 8 = discriminator
+    space = ANCHOR_DISCRIMINATOR_SIZE + StreamData::INIT_SPACE,  // discriminator = 8 bytes
     seeds = [...],
     bump
 )]
@@ -75,13 +75,13 @@ sign for them.
 ```rust
 // Finding a PDA
 let (pda, bump) = Pubkey::find_program_address(
-    &[b"stream", user.key().as_ref(), &salt.to_le_bytes()],
+    &[seeds::STREAM_DATA, user.key().as_ref(), &salt.to_le_bytes()],
     program_id
 );
 
 // In Anchor constraints
 #[account(
-    seeds = [b"stream", user.key().as_ref(), &salt.to_le_bytes()],
+    seeds = [seeds::STREAM_DATA, user.key().as_ref(), &salt.to_le_bytes()],
     bump = stream_data.bump  // Store bump for efficient re-derivation
 )]
 pub stream_data: Account<'info, StreamData>,
@@ -115,23 +115,7 @@ pub mod seeds {
 
 ## Account Creation
 
-### Via System Program
-
-```rust
-// Creating account via CPI
-invoke(
-    &system_instruction::create_account(
-        payer.key,
-        new_account.key,
-        rent_lamports,
-        space as u64,
-        owner_program_id,
-    ),
-    &[payer.clone(), new_account.clone()],
-)?;
-```
-
-### Via Anchor (Recommended)
+### Via Anchor
 
 ```rust
 #[account(

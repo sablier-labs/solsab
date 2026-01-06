@@ -52,13 +52,9 @@ Use `#[derive(InitSpace)]` in Anchor to calculate space requirements automatical
 ```typescript
 import { ComputeBudgetProgram } from "@solana/web3.js";
 
-// Request specific compute units
-const computeUnitIx = ComputeBudgetProgram.setComputeUnitLimit({
-  units: 400_000,
+const increaseCULimitIx = ComputeBudgetProgram.setComputeUnitLimit({
+  units: 1_000_000,
 });
-
-// Add as FIRST instruction
-transaction.add(computeUnitIx);
 ```
 
 ### Logging CU Consumption
