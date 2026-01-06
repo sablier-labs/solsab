@@ -8,7 +8,7 @@ pub mod utils;
 use crate::instructions::*;
 
 // Program ID for the Sablier Merkle Instant program.
-declare_id!("7XrxoQejBoGouW4V3aozTSwub7xSDjYqB4Go7YLjF9rV");
+declare_id!("AnUDJ4SX9YRc6mMjm7yf8ZLd1x2i6VFNJaXvQaGeXoZm");
 
 /// Sablier Merkle Instant program for creating and managing Merkle tree-based airdrop campaigns.
 #[program]
