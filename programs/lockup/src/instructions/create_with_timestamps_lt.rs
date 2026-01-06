@@ -1,8 +1,3 @@
-//! Handler for creating tranched streams with absolute timestamps.
-//!
-//! Reuses the `CreateWithTimestamps` account context from the linear stream handler,
-//! but accepts tranches instead of start/cliff/end timestamps.
-
 use anchor_lang::prelude::*;
 
 use crate::{
@@ -21,18 +16,7 @@ use crate::{
 //                                 IX HANDLER                                 //
 // -------------------------------------------------------------------------- //
 
-/// Handler for creating a tranched stream with absolute timestamps.
-///
-/// # Parameters
-/// * `salt` - Unique salt for PDA derivation
-/// * `start_time` - Stream start time
-/// * `tranches` - Vec of tranches with amounts and timestamps in ascending order
-/// * `is_cancelable` - Whether sender can cancel the stream
-///
-/// # Notes
-/// - The deposit amount is calculated as the sum of all tranche amounts.
-/// - Tranches must have timestamps in strictly ascending order.
-/// - Start time must be strictly less than the first tranche timestamp.
+/// See the documentation for [`fn@crate::sablier_lockup::create_with_timestamps_lt`].
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,

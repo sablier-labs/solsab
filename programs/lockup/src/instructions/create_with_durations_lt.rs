@@ -1,7 +1,3 @@
-//! Handler for creating tranched streams with relative durations.
-//!
-//! Converts durations to absolute timestamps and delegates to `create_with_timestamps_lt`.
-
 use anchor_lang::prelude::*;
 
 use crate::{
@@ -14,17 +10,7 @@ use crate::{
 //                                 IX HANDLER                                 //
 // -------------------------------------------------------------------------- //
 
-/// Handler for creating a tranched stream with relative durations.
-///
-/// # Parameters
-/// * `salt` - Unique salt for PDA derivation
-/// * `tranche_amounts` - Amount for each tranche
-/// * `tranche_durations` - Duration offset from the previous tranche (first is offset from start)
-/// * `is_cancelable` - Whether sender can cancel the stream
-///
-/// # Notes
-/// - `tranche_amounts` and `tranche_durations` must have the same length.
-/// - The stream start time is set to the current timestamp.
+/// See the documentation for [`fn@crate::sablier_lockup::create_with_durations_lt`].
 pub fn handler(
     ctx: Context<CreateWithTimestamps>,
     salt: u128,

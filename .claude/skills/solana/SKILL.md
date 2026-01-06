@@ -119,7 +119,7 @@ Structure handlers with validation first, then state updates and interactions, t
 
 ```rust
 pub fn handler(ctx: Context<CreateWithTimestamps>, deposit_amount: u64, ...) -> Result<()> {
-    // Validate parameters
+    // Validate the ix parameters
     check_create(deposit_amount, start_time, cliff_time, end_time, ...)?;
 
     // Update state

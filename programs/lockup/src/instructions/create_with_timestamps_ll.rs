@@ -136,8 +136,6 @@ pub struct CreateWithTimestamps<'info> {
 //                                 IX HANDLER                                 //
 // -------------------------------------------------------------------------- //
 
-/// Handler for creating a linear stream with absolute timestamps.
-///
 /// See the documentation for [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
@@ -158,7 +156,7 @@ pub fn handler(
     let sender_key = &ctx.accounts.sender.key();
     let stream_nft = &ctx.accounts.stream_nft;
 
-    // Validate parameters for linear stream.
+    // Validate the ix parameters.
     check_create_linear(deposit_amount, start_time, cliff_time, end_time, start_unlock_amount, cliff_unlock_amount)?;
 
     // Effect: create the linear stream data.
