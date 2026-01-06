@@ -1,32 +1,30 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    state::lockup::Tranche,
-    utils::{constants::MAX_TRANCHES, errors::ErrorCode},
+    state::lockup::{StreamData, Tranche},
+    utils::{
+        constants::MAX_TRANCHES,
+        errors::ErrorCode,
+        lockup_math::{get_streamed_amount, get_withdrawable_amount},
+    },
 };
 
 /// Validate the cancellation of a stream.
-pub fn check_cancel(
-    is_cancelable: bool,
-    is_depleted: bool,
-    was_canceled: bool,
-    streamed_amount: u64,
-    deposited_amount: u64,
-) -> Result<()> {
+pub fn check_cancel(stream_data: &StreamData, streamed_amount: u64) -> Result<()> {
     // Check: the stream is neither depleted nor canceled.
-    if is_depleted {
+    if stream_data.is_depleted {
         return Err(ErrorCode::StreamDepleted.into());
-    } else if was_canceled {
+    } else if stream_data.was_canceled {
         return Err(ErrorCode::StreamCanceled.into());
     }
 
     // Check: the stream is cancelable.
-    if !is_cancelable {
+    if !stream_data.is_cancelable {
         return Err(ErrorCode::StreamIsNotCancelable.into());
     }
 
     // Check: the stream is not settled.
-    if streamed_amount >= deposited_amount {
+    if streamed_amount >= stream_data.amounts.deposited {
         return Err(ErrorCode::StreamSettled.into());
     }
 
@@ -150,9 +148,9 @@ pub fn check_create_tranched(deposit_amount: u64, start_time: u64, tranches: &[T
 }
 
 /// Validate the renouncement of a stream.
-pub fn check_renounce(is_cancelable: bool, deposited_amount: u64, streamed_amount: u64) -> Result<()> {
+pub fn check_renounce(stream_data: &StreamData) -> Result<()> {
     // Check: the stream is cancelable.
-    if !is_cancelable || streamed_amount >= deposited_amount {
+    if !stream_data.is_cancelable || get_streamed_amount(stream_data) >= stream_data.amounts.deposited {
         return Err(ErrorCode::StreamAlreadyNonCancelable.into());
     }
 
@@ -160,9 +158,9 @@ pub fn check_renounce(is_cancelable: bool, deposited_amount: u64, streamed_amoun
 }
 
 /// Validate a withdrawal from a stream.
-pub fn check_withdraw(is_depleted: bool, amount: u64, withdrawable_amount: u64) -> Result<()> {
+pub fn check_withdraw(stream_data: &StreamData, amount: u64) -> Result<()> {
     // Check: the stream is not depleted.
-    if is_depleted {
+    if stream_data.is_depleted {
         return Err(ErrorCode::StreamDepleted.into());
     }
 
@@ -172,7 +170,7 @@ pub fn check_withdraw(is_depleted: bool, amount: u64, withdrawable_amount: u64) 
     }
 
     // Check: the withdraw amount is not greater than the withdrawable amount.
-    if amount > withdrawable_amount {
+    if amount > get_withdrawable_amount(stream_data) {
         return Err(ErrorCode::Overdraw.into());
     }
 

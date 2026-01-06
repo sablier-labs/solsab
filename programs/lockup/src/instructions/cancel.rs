@@ -13,6 +13,10 @@ use crate::{
     },
 };
 
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
 #[derive(Accounts)]
 pub struct Cancel<'info> {
     // -------------------------------------------------------------------------- //
@@ -81,31 +85,25 @@ pub struct Cancel<'info> {
     pub system_program: Program<'info, System>,
 }
 
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
+
 /// See the documentation for [`fn@crate::sablier_lockup::cancel`].
 pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     let stream_data = &ctx.accounts.stream_data;
 
-    // Retrieve the stream amounts from storage.
-    let stream_amounts = stream_data.amounts.clone();
-
-    // Calculate the streamed amount using unified math.
-    let streamed_amount =
-        get_streamed_amount(&stream_data.model, &stream_amounts, stream_data.is_depleted, stream_data.was_canceled);
+    // Calculate the streamed amount.
+    let streamed_amount = get_streamed_amount(stream_data);
 
     // Check: validate the cancellation.
-    check_cancel(
-        stream_data.is_cancelable,
-        stream_data.is_depleted,
-        stream_data.was_canceled,
-        streamed_amount,
-        stream_amounts.deposited,
-    )?;
+    check_cancel(stream_data, streamed_amount)?;
 
     // Calculate the sender's amount.
-    let sender_amount = stream_amounts.deposited - streamed_amount;
+    let sender_amount = stream_data.amounts.deposited - streamed_amount;
 
     // Calculate the recipient's amount.
-    let recipient_amount = streamed_amount - stream_amounts.withdrawn;
+    let recipient_amount = streamed_amount - stream_data.amounts.withdrawn;
 
     // Effect: update the stream data state.
     ctx.accounts.stream_data.cancel(sender_amount, recipient_amount)?;

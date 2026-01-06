@@ -10,6 +10,10 @@ use crate::{
     utils::{errors::ErrorCode, time::get_current_time},
 };
 
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
+
 /// Handler for creating a tranched stream with relative durations.
 ///
 /// # Parameters

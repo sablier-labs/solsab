@@ -19,6 +19,10 @@ use crate::{
     },
 };
 
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
 #[derive(Accounts)]
 #[instruction(salt: u128)]
 pub struct CreateWithTimestamps<'info> {
@@ -127,6 +131,10 @@ pub struct CreateWithTimestamps<'info> {
     /// Program account: the System program.
     pub system_program: Program<'info, System>,
 }
+
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
 
 /// Handler for creating a linear stream with absolute timestamps.
 ///

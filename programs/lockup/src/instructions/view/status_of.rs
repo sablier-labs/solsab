@@ -6,6 +6,10 @@ use crate::utils::{
     time::get_current_time,
 };
 
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
+
 /// See the documentation for [`fn@crate::sablier_lockup::status_of`].
 pub fn handler(ctx: Context<StreamView>) -> Result<StreamStatus> {
     let stream_data = &ctx.accounts.stream_data;
@@ -29,12 +33,7 @@ pub fn handler(ctx: Context<StreamView>) -> Result<StreamStatus> {
     }
 
     // Calculate the streamed amount.
-    let streamed_amount = get_streamed_amount(
-        &stream_data.model,
-        &stream_data.amounts,
-        stream_data.is_depleted,
-        stream_data.was_canceled,
-    );
+    let streamed_amount = get_streamed_amount(stream_data);
 
     if streamed_amount < stream_data.amounts.deposited {
         Ok(StreamStatus::Streaming)

@@ -14,11 +14,14 @@ use crate::{
         constants::{seeds::*, WITHDRAWAL_FEE_USD},
         events::WithdrawFromLockupStream,
         fee_calculation::convert_usd_fee_to_lamports,
-        lockup_math::get_withdrawable_amount,
         transfer_helper::transfer_tokens,
         validations::check_withdraw,
     },
 };
+
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
@@ -113,21 +116,16 @@ pub struct Withdraw<'info> {
     pub system_program: Program<'info, System>,
 }
 
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
+
 /// See the documentation for [`fn@crate::sablier_lockup::withdraw`].
 pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     let stream_data = &ctx.accounts.stream_data;
 
-    // Check: validate the withdraw using unified math.
-    check_withdraw(
-        stream_data.is_depleted,
-        amount,
-        get_withdrawable_amount(
-            &stream_data.model,
-            &stream_data.amounts,
-            stream_data.is_depleted,
-            stream_data.was_canceled,
-        ),
-    )?;
+    // Check: validate the withdrawal.
+    check_withdraw(stream_data, amount)?;
 
     // Effect: update the stream data state.
     ctx.accounts.stream_data.withdraw(amount)?;

@@ -5,6 +5,10 @@ use crate::{
     utils::constants::{seeds::TREASURY, ANCHOR_DISCRIMINATOR_SIZE},
 };
 
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     // -------------------------------------------------------------------------- //
@@ -33,6 +37,10 @@ pub struct Initialize<'info> {
     /// Program account: the System program.
     pub system_program: Program<'info, System>,
 }
+
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
 
 /// See the documentation for [`fn@crate::sablier_merkle_instant::initialize`].
 pub fn handler(

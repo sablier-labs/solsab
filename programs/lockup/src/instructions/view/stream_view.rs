@@ -3,7 +3,11 @@ use mpl_core::accounts::BaseAssetV1;
 
 use crate::{state::lockup::StreamData, utils::constants::seeds::STREAM_DATA};
 
-// Common context that is used by multiple view instructions
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
+/// Common context that is used by multiple view instructions.
 #[derive(Accounts)]
 pub struct StreamView<'info> {
     // -------------------------------------------------------------------------- //

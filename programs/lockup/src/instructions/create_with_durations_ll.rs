@@ -2,6 +2,10 @@ use anchor_lang::prelude::*;
 
 use crate::{instructions::create_with_timestamps_ll, utils::time::get_current_time};
 
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
+
 /// See the documentation for [`fn@crate::sablier_lockup::create_with_durations_ll`].
 #[allow(clippy::too_many_arguments)]
 pub fn handler(

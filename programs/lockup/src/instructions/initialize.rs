@@ -10,6 +10,10 @@ use crate::{
     },
 };
 
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     // -------------------------------------------------------------------------- //
@@ -58,6 +62,10 @@ pub struct Initialize<'info> {
     /// Program account: the System program.
     pub system_program: Program<'info, System>,
 }
+
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
 
 /// See the documentation for [`fn@crate::sablier_lockup::initialize`].
 pub fn handler(

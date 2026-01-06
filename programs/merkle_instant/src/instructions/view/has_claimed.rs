@@ -2,6 +2,10 @@ use anchor_lang::prelude::*;
 
 use crate::{state::Campaign, utils::constants::seeds::CLAIM_RECEIPT};
 
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
 #[derive(Accounts)]
 #[instruction(_index: u32)]
 pub struct HasClaimed<'info> {

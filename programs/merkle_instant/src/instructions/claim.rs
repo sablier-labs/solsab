@@ -18,6 +18,10 @@ use crate::{
     },
 };
 
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
 #[derive(Accounts)]
 #[instruction(index: u32)]
 pub struct Claim<'info> {
@@ -113,6 +117,10 @@ pub struct Claim<'info> {
     pub system_program: Program<'info, System>,
 }
 
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
+
 /// See the documentation for [`fn@crate::sablier_merkle_instant::claim`].
 pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[u8; 32]>) -> Result<()> {
     let campaign = ctx.accounts.campaign.clone();
@@ -121,15 +129,7 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
     let recipient = ctx.accounts.recipient.clone();
 
     // Check: validate the claim.
-    check_claim(
-        amount,
-        campaign.campaign_start_time,
-        campaign.expiration_time,
-        index,
-        merkle_proof,
-        campaign.merkle_root,
-        recipient.key(),
-    )?;
+    check_claim(&campaign, amount, index, merkle_proof, recipient.key())?;
 
     ctx.accounts.campaign.claim()?;
 

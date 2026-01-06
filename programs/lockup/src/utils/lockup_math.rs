@@ -1,13 +1,13 @@
 //! Math functions for computing streamed, withdrawable and refundable amounts for Lockup streams.
 
 use crate::{
-    state::lockup::{Amounts, LinearTimestamps, LinearUnlocks, StreamModel, Tranche},
+    state::lockup::{Amounts, LinearTimestamps, LinearUnlocks, StreamData, StreamModel, Tranche},
     utils::time::get_current_time,
 };
 
-/* -------------------------------------------------------------------------- */
-/*                              PUBLIC FUNCTIONS                              */
-/* -------------------------------------------------------------------------- */
+// -------------------------------------------------------------------------- //
+//                              PUBLIC FUNCTIONS                              //
+// -------------------------------------------------------------------------- //
 
 /// Returns the stream end time.
 pub fn get_end_time(model: &StreamModel) -> u64 {
@@ -22,17 +22,11 @@ pub fn get_end_time(model: &StreamModel) -> u64 {
 }
 
 /// Calculates the amount the sender would receive if they were to cancel the stream.
-pub fn get_refundable_amount(
-    model: &StreamModel,
-    amounts: &Amounts,
-    is_cancelable: bool,
-    is_depleted: bool,
-    was_canceled: bool,
-) -> u64 {
+pub fn get_refundable_amount(stream_data: &StreamData) -> u64 {
     // Note: checking `is_cancelable` also implicitly checks `was_canceled`
     // thanks to the protocol invariant that canceled streams are non-cancelable.
-    if is_cancelable && !is_depleted {
-        return amounts.deposited.saturating_sub(get_streamed_amount(model, amounts, is_depleted, was_canceled));
+    if stream_data.is_cancelable && !stream_data.is_depleted {
+        return stream_data.amounts.deposited.saturating_sub(get_streamed_amount(stream_data));
     }
 
     // Otherwise, return zero.
@@ -54,21 +48,21 @@ pub fn get_start_time(model: &StreamModel) -> u64 {
 /// Calculates the total amount streamed to the recipient at the current time.
 ///
 /// Dispatches to model-specific calculation based on the model of the stream.
-pub fn get_streamed_amount(model: &StreamModel, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {
+pub fn get_streamed_amount(stream_data: &StreamData) -> u64 {
     // Handle the terminal states first
-    if is_depleted {
-        return amounts.withdrawn;
+    if stream_data.is_depleted {
+        return stream_data.amounts.withdrawn;
     }
-    if was_canceled {
-        return amounts.deposited - amounts.refunded;
+    if stream_data.was_canceled {
+        return stream_data.amounts.deposited - stream_data.amounts.refunded;
     }
 
     // Dispatch to model-specific calculation
-    match model {
+    match &stream_data.model {
         StreamModel::Linear {
             timestamps,
             unlocks,
-        } => get_streamed_amount_linear(timestamps, unlocks, amounts),
+        } => get_streamed_amount_linear(timestamps, unlocks, &stream_data.amounts),
         StreamModel::Tranched {
             tranches, ..
         } => get_streamed_amount_tranched(tranches),
@@ -76,13 +70,13 @@ pub fn get_streamed_amount(model: &StreamModel, amounts: &Amounts, is_depleted: 
 }
 
 /// Calculates the amount the recipient can withdraw at the current time.
-pub fn get_withdrawable_amount(model: &StreamModel, amounts: &Amounts, is_depleted: bool, was_canceled: bool) -> u64 {
-    get_streamed_amount(model, amounts, is_depleted, was_canceled).saturating_sub(amounts.withdrawn)
+pub fn get_withdrawable_amount(stream_data: &StreamData) -> u64 {
+    get_streamed_amount(stream_data).saturating_sub(stream_data.amounts.withdrawn)
 }
 
-/* -------------------------------------------------------------------------- */
-/*                          PRIVATE HELPER FUNCTIONS                          */
-/* -------------------------------------------------------------------------- */
+// -------------------------------------------------------------------------- //
+//                          PRIVATE HELPER FUNCTIONS                          //
+// -------------------------------------------------------------------------- //
 
 /// Calculates the streamed amount for a linear stream.
 fn get_streamed_amount_linear(timestamps: &LinearTimestamps, unlocks: &LinearUnlocks, amounts: &Amounts) -> u64 {
