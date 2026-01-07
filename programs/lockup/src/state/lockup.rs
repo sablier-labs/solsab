@@ -11,7 +11,7 @@ use crate::utils::{constants::MAX_TRANCHES, errors::ErrorCode};
 /// These fields are model-agnostic and track the fundamental token amounts:
 /// - `deposited`: The total amount of tokens locked into the stream at creation time.
 /// - `refunded`: The amount of tokens returned to the sender on cancellation.
-/// - `withdrawn`: The amount of tokens already claimed by the recipient.
+/// - `withdrawn`: The amount of streamed tokens already claimed by the recipient.
 #[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub struct Amounts {
     pub deposited: u64,
@@ -25,7 +25,7 @@ pub struct Amounts {
 
 /// Linear stream unlock amounts.
 #[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
-pub struct LinearUnlocks {
+pub struct LinearUnlockAmounts {
     /// Amount unlocked at `start` time.
     pub start: u64,
     /// Amount unlocked at `cliff` time.
@@ -50,12 +50,12 @@ pub struct LinearTimestamps {
 /// Single tranche with amount and unlock timestamp.
 ///
 /// Each tranche represents a discrete unlock event. The `amount` becomes
-/// withdrawable once the `timestamp` is reached.
+/// withdrawable once the `timestamp` has been reached.
 #[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub struct Tranche {
-    /// Tokens unlocked at this tranche.
+    /// The amount of tokens unlocked at this tranche.
     pub amount: u64,
-    /// Unix timestamp for when this tranche unlocks.
+    /// The Unix timestamp for when this tranche unlocks.
     pub timestamp: u64,
 }
 
@@ -80,7 +80,7 @@ pub struct TranchedTimestamps {
 pub enum StreamModel {
     Linear {
         timestamps: LinearTimestamps,
-        unlocks: LinearUnlocks,
+        unlock_amounts: LinearUnlockAmounts,
     },
     Tranched {
         timestamps: TranchedTimestamps,
@@ -147,7 +147,7 @@ impl StreamData {
                 cliff: cliff_time,
                 end: end_time,
             },
-            unlocks: LinearUnlocks {
+            unlock_amounts: LinearUnlockAmounts {
                 start: start_unlock_amount,
                 cliff: cliff_unlock_amount,
             },
@@ -176,7 +176,7 @@ impl StreamData {
         start_time: u64,
         tranches: Vec<Tranche>,
     ) -> Result<()> {
-        let end_time = tranches.last().ok_or(ErrorCode::TranchesEmpty)?.timestamp;
+        let end_time = tranches.last().ok_or(ErrorCode::TranchesArrayEmpty)?.timestamp;
 
         self.amounts = Amounts {
             deposited: deposit_amount,

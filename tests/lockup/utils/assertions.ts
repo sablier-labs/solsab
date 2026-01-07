@@ -4,7 +4,7 @@ import { ProgramErrorCode } from "../../../target/types/sablier_lockup_errors";
 import type {
   Amounts,
   LinearTimestamps,
-  LinearUnlocks,
+  LinearUnlockAmounts,
   StreamData,
   StreamModel,
 } from "../../../target/types/sablier_lockup_structs";
@@ -44,9 +44,9 @@ export function assertEqLinearTimestamps(a: LinearTimestamps, b: LinearTimestamp
   assertEqBn(a.start, b.start, "start timestamps mismatch");
 }
 
-export function assertEqLinearUnlocks(a: LinearUnlocks, b: LinearUnlocks) {
-  assertEqBn(a.cliff, b.cliff, "cliff unlocks mismatch");
-  assertEqBn(a.start, b.start, "start unlocks mismatch");
+export function assertEqLinearUnlockAmounts(a: LinearUnlockAmounts, b: LinearUnlockAmounts) {
+  assertEqBn(a.cliff, b.cliff, "cliff unlock amounts mismatch");
+  assertEqBn(a.start, b.start, "start unlock amounts mismatch");
 }
 
 export function assertEqUnlockAmounts(a: UnlockAmounts, b: UnlockAmounts) {
@@ -74,7 +74,7 @@ function assertEqAmounts(a: Amounts, b: Amounts) {
 function assertEqStreamModel(a: StreamModel, b: StreamModel) {
   if (isLinearModel(a) && isLinearModel(b)) {
     assertEqLinearTimestamps(a.linear.timestamps, b.linear.timestamps);
-    assertEqLinearUnlocks(a.linear.unlocks, b.linear.unlocks);
+    assertEqLinearUnlockAmounts(a.linear.unlockAmounts, b.linear.unlockAmounts);
   } else if (isTranchedModel(a) && isTranchedModel(b)) {
     assertEqBn(
       a.tranched.timestamps.start,

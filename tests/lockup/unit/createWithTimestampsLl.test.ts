@@ -116,7 +116,7 @@ describe("createWithTimestampsLl", () => {
                   const expectedStream = ctx.defaultStream({
                     model: LINEAR_MODEL({
                       timestamps: { cliff: ZERO },
-                      unlocks: { cliff: ZERO, start: ZERO },
+                      unlockAmounts: { cliff: ZERO, start: ZERO },
                     }),
                     salt,
                   });

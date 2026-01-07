@@ -3,7 +3,7 @@ import { SCALING_FACTOR, ZERO } from "../../../lib/constants";
 import type {
   Amounts,
   LinearTimestamps,
-  LinearUnlocks,
+  LinearUnlockAmounts,
 } from "../../../target/types/sablier_lockup_structs";
 
 /**
@@ -15,19 +15,19 @@ export function getLinearStreamedAmount(
   amounts: Amounts,
   now: BN,
   timestamps: LinearTimestamps,
-  unlocks: LinearUnlocks,
+  unlockAmounts: LinearUnlockAmounts,
 ): BN {
   if (timestamps.start.gt(now)) {
     return ZERO;
   }
   if (timestamps.cliff.gt(now)) {
-    return unlocks.start;
+    return unlockAmounts.start;
   }
   if (timestamps.end.lte(now)) {
     return amounts.deposited;
   }
 
-  const unlockAmountsSum = unlocks.start.add(unlocks.cliff);
+  const unlockAmountsSum = unlockAmounts.start.add(unlockAmounts.cliff);
   if (unlockAmountsSum.gte(amounts.deposited)) {
     return amounts.deposited;
   }

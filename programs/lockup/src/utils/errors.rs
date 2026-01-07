@@ -46,14 +46,14 @@ pub enum ErrorCode {
     //                          CREATE TRANCHED STREAM                            //
     // -------------------------------------------------------------------------- //
     #[msg("Tranches array is empty!")]
-    TranchesEmpty,
+    TranchesArrayEmpty,
     #[msg("Tranche timestamps must be in strictly ascending order!")]
     TranchesNotSorted,
-    #[msg("Sum of tranche amounts must equal deposit amount!")]
-    TrancheAndDepositAmountsMismatch,
+    #[msg("The sum of tranche amounts doesn't match the deposit amount!")]
+    TrancheAmountsDontMatchDeposit,
     #[msg("Tranche amount must be greater than zero!")]
     TrancheAmountZero,
-    #[msg("Start time must be strictly less than first tranche timestamp!")]
+    #[msg("Stream start time must be strictly less than the first tranche's timestamp!")]
     StartTimeNotLessThanFirstTranche,
     #[msg("Tranche amounts and durations arrays must have same length!")]
     TrancheAmountsDurationsMismatch,

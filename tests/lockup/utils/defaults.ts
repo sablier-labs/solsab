@@ -4,7 +4,7 @@ import { usdc } from "../../../lib/convertors";
 import type {
   Amounts,
   LinearTimestamps,
-  LinearUnlocks,
+  LinearUnlockAmounts,
   StreamModel,
 } from "../../../target/types/sablier_lockup_structs";
 import type { UnlockAmounts } from "./types";
@@ -68,10 +68,10 @@ export function LINEAR_TIMESTAMPS({
   };
 }
 
-export function LINEAR_UNLOCKS({
+export function LINEAR_UNLOCK_AMOUNTS({
   cliff = Amount.CLIFF,
   start = Amount.START,
-}: Partial<LinearUnlocks> = {}): LinearUnlocks {
+}: Partial<LinearUnlockAmounts> = {}): LinearUnlockAmounts {
   return {
     cliff,
     start,
@@ -80,15 +80,15 @@ export function LINEAR_UNLOCKS({
 
 export function LINEAR_MODEL({
   timestamps: timestampOverrides,
-  unlocks: unlockOverrides,
+  unlockAmounts: unlockAmountsOverrides,
 }: {
   timestamps?: Partial<LinearTimestamps>;
-  unlocks?: Partial<LinearUnlocks>;
+  unlockAmounts?: Partial<LinearUnlockAmounts>;
 } = {}): StreamModel {
   return {
     linear: {
       timestamps: LINEAR_TIMESTAMPS(timestampOverrides),
-      unlocks: LINEAR_UNLOCKS(unlockOverrides),
+      unlockAmounts: LINEAR_UNLOCK_AMOUNTS(unlockAmountsOverrides),
     },
   };
 }

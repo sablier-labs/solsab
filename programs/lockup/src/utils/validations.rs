@@ -106,7 +106,7 @@ pub fn check_create_tranched(deposit_amount: u64, start_time: u64, tranches: &[T
 
     // Check: the tranches array is not empty.
     if tranches.is_empty() {
-        return Err(ErrorCode::TranchesEmpty.into());
+        return Err(ErrorCode::TranchesArrayEmpty.into());
     }
 
     // Check: tranches count doesn't exceed maximum.
@@ -141,7 +141,7 @@ pub fn check_create_tranched(deposit_amount: u64, start_time: u64, tranches: &[T
 
     // Check: sum equals deposit amount.
     if sum != deposit_amount {
-        return Err(ErrorCode::TrancheAndDepositAmountsMismatch.into());
+        return Err(ErrorCode::TrancheAmountsDontMatchDeposit.into());
     }
 
     Ok(())

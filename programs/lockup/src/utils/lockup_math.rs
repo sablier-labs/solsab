@@ -1,7 +1,7 @@
 //! Math functions for computing streamed, withdrawable and refundable amounts for Lockup streams.
 
 use crate::{
-    state::lockup::{Amounts, LinearTimestamps, LinearUnlocks, StreamData, StreamModel, Tranche},
+    state::lockup::{Amounts, LinearTimestamps, LinearUnlockAmounts, StreamData, StreamModel, Tranche},
     utils::time::get_current_time,
 };
 
@@ -61,8 +61,8 @@ pub fn get_streamed_amount(stream_data: &StreamData) -> u64 {
     match &stream_data.model {
         StreamModel::Linear {
             timestamps,
-            unlocks,
-        } => get_streamed_amount_linear(timestamps, unlocks, &stream_data.amounts),
+            unlock_amounts,
+        } => get_streamed_amount_linear(timestamps, unlock_amounts, &stream_data.amounts),
         StreamModel::Tranched {
             tranches, ..
         } => get_streamed_amount_tranched(tranches),
@@ -79,7 +79,11 @@ pub fn get_withdrawable_amount(stream_data: &StreamData) -> u64 {
 // -------------------------------------------------------------------------- //
 
 /// Calculates the streamed amount for a linear stream.
-fn get_streamed_amount_linear(timestamps: &LinearTimestamps, unlocks: &LinearUnlocks, amounts: &Amounts) -> u64 {
+fn get_streamed_amount_linear(
+    timestamps: &LinearTimestamps,
+    unlock_amounts: &LinearUnlockAmounts,
+    amounts: &Amounts,
+) -> u64 {
     // Get the current time, defaulting to 0 on failure.
     let now = get_current_time().unwrap_or(0);
 
@@ -90,7 +94,7 @@ fn get_streamed_amount_linear(timestamps: &LinearTimestamps, unlocks: &LinearUnl
 
     // Before cliff (if there is one): only start unlock available
     if timestamps.cliff > now {
-        return unlocks.start;
+        return unlock_amounts.start;
     }
 
     // After end: everything unlocked
@@ -99,7 +103,7 @@ fn get_streamed_amount_linear(timestamps: &LinearTimestamps, unlocks: &LinearUnl
     }
 
     // Calculate the sum of instant unlock amounts
-    let unlock_amounts_sum = unlocks.start + unlocks.cliff;
+    let unlock_amounts_sum = unlock_amounts.start + unlock_amounts.cliff;
 
     // Safety check: if the unlock amounts exceed the deposit amount (which should never happen) or are equal to it, return the deposit amount.
     if unlock_amounts_sum >= amounts.deposited {

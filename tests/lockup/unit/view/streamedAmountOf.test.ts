@@ -8,7 +8,7 @@ import {
   Amount,
   LINEAR_AMOUNTS,
   LINEAR_TIMESTAMPS,
-  LINEAR_UNLOCKS,
+  LINEAR_UNLOCK_AMOUNTS,
   Time,
   UNLOCK_AMOUNTS,
 } from "../../utils/defaults";
@@ -140,14 +140,14 @@ describe("streamedAmountOf", () => {
                 await ctx.timeTravelTo(Time.MID_26_PERCENT);
 
                 const amounts = LINEAR_AMOUNTS();
-                const unlocks = LINEAR_UNLOCKS({ start: startUnlockAmount });
+                const unlockAmounts = LINEAR_UNLOCK_AMOUNTS({ start: startUnlockAmount });
 
                 const actualStreamedAmount = await ctx.streamedAmountOf(salt);
                 const expectedStreamedAmount = getLinearStreamedAmount(
                   amounts,
                   Time.MID_26_PERCENT,
                   LINEAR_TIMESTAMPS(),
-                  unlocks,
+                  unlockAmounts,
                 );
                 assertEqBn(actualStreamedAmount, expectedStreamedAmount);
               });
@@ -163,14 +163,14 @@ describe("streamedAmountOf", () => {
                   await ctx.timeTravelTo(Time.MID_26_PERCENT);
 
                   const amounts = LINEAR_AMOUNTS();
-                  const unlocks = LINEAR_UNLOCKS({ cliff: ZERO });
+                  const unlockAmounts = LINEAR_UNLOCK_AMOUNTS({ cliff: ZERO });
 
                   const actualStreamedAmount = await ctx.streamedAmountOf(salt);
                   const expectedStreamedAmount = getLinearStreamedAmount(
                     amounts,
                     Time.MID_26_PERCENT,
                     LINEAR_TIMESTAMPS(),
-                    unlocks,
+                    unlockAmounts,
                   );
                   assertEqBn(actualStreamedAmount, expectedStreamedAmount);
                 });
