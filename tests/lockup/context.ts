@@ -381,6 +381,7 @@ export class LockupTestContext extends TestContext {
 
   defaultStream({
     salt = this.salts.default,
+    model = LINEAR_MODEL(),
     depositedTokenMint = this.usdc,
     tokenProgram = ProgramId.TOKEN,
     isCancelable = true,
@@ -393,7 +394,7 @@ export class LockupTestContext extends TestContext {
       depositedTokenMint,
       isCancelable,
       isDepleted,
-      model: LINEAR_MODEL(),
+      model,
       salt,
       sender: this.sender.keys.publicKey,
       wasCanceled,

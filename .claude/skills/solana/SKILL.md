@@ -129,7 +129,7 @@ pub fn handler(ctx: Context<CreateWithTimestamps>, deposit_amount: u64, ...) -> 
     transfer_tokens(creator_ata, stream_data_ata, creator, ...)?;
 
     // Emit event for indexers
-    emit!(CreateLockupLinearStream { salt, deposit_token_mint, ... });
+    emit!(CreateLockupStream { salt, deposit_token_mint, ... });
 
     Ok(())
 }

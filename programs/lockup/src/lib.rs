@@ -64,8 +64,8 @@ pub mod sablier_lockup {
         instructions::collect_fees::handler(ctx)
     }
 
-    /// Creates a stream by setting the start time to the current timestamp, and the end time to the sum of the current
-    /// timestamp and the total duration. The stream is funded by the signer and wrapped in a Metaplex NFT.
+    /// Creates a stream by setting the start time to the current timestamp, and the end time to the sum of the
+    /// current timestamp and the total duration. The stream is funded by the signer and wrapped in a Metaplex NFT.
     ///
     /// # Accounts Expected
     ///
@@ -73,11 +73,21 @@ pub mod sablier_lockup {
     ///
     /// # Parameters
     ///
-    /// Refer to the parameters in [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
+    /// - `salt` A unique salt used to derive the address of the stream NFT mint.
+    /// - `deposit_amount` The deposit amount, denoted in units of the token's decimals.
+    /// - `cliff_duration` The duration in seconds from the start time to the cliff.
+    /// - `total_duration` The total duration of the stream in seconds.
+    /// - `start_unlock_amount` The amount to be unlocked at the start time.
+    /// - `cliff_unlock_amount` The amount to be unlocked at the cliff time.
+    /// - `is_cancelable` Indicates whether the stream will be cancelable.
     ///
     /// # Notes
     ///
-    /// Refer to the notes in [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
+    /// - The start time is set to the current block timestamp.
+    /// - The cliff time is calculated as `start_time + cliff_duration`.
+    /// - The end time is calculated as `start_time + total_duration`.
+    /// - A `cliff_duration` of zero means there is no cliff.
+    /// - Refer to the notes in [`fn@crate::sablier_lockup::create_with_timestamps_ll`] for additional details.
     ///
     /// # Requirements
     ///
@@ -126,16 +136,16 @@ pub mod sablier_lockup {
     /// - `end_time` The Unix timestamp indicating the stream's end.
     /// - `start_unlock_amount` The amount to be unlocked at the start time.
     /// - `cliff_unlock_amount` The amount to be unlocked at the cliff time.
-    /// - `is_cancelable` Indicates if the stream is cancelable.
+    /// - `is_cancelable` Indicates whether the stream will be cancelable.
     ///
     /// # Notes
     ///
-    /// - The passed sender of the stream doesn't have to be the same as its funder.
+    /// - The stream's sender does not have to be the same as its creator.
+    /// - The stream recipient's role is implied solely by ownership of the stream NFT that is minted to the
+    /// passed `recipient`.
     /// - A cliff time of zero means there is no cliff.
-    /// - As long as the times are ordered, it is not an error for the start or the cliff time to be in the past.
-    /// - The stream recipient is given solely by the ownership of the stream NFT, which is minted to the passed
-    /// `recipient`.
-    /// - Emits a [`crate::utils::events::CreateLockupLinearStream`] event.
+    /// - As long as the times are ordered, it is not an error for the start or cliff time to be in the past.
+    /// - Emits a [`crate::utils::events::CreateLockupStream`] event.
     ///
     /// # Requirements
     ///
@@ -174,24 +184,28 @@ pub mod sablier_lockup {
     ///
     /// # Accounts Expected
     ///
-    /// Refer to the accounts in [`fn@crate::sablier_lockup::create_with_timestamps_lt`].
+    /// Refer to the accounts in [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
     ///
     /// # Parameters
     ///
     /// - `salt` A unique salt used to derive the address of the stream NFT mint.
     /// - `tranche_amounts` The amount for each tranche, denoted in units of the token's decimals.
-    /// - `tranche_durations` The duration offset from stream start for each tranche.
-    /// - `is_cancelable` Indicates if the stream is cancelable.
+    /// - `tranche_durations` The duration offset from the previous tranche for each tranche. The first duration is
+    /// the offset from the stream's start time.
+    /// - `is_cancelable` Indicates whether the stream will be cancelable.
     ///
     /// # Notes
     ///
+    /// - The start time is set to the current block timestamp.
     /// - `tranche_amounts` and `tranche_durations` must have the same length.
-    /// - Durations are offsets from stream start, not from each other.
-    /// - Emits a [`crate::utils::events::CreateLockupTranchedStream`] event.
+    /// - Tranche timestamps are calculated by accumulating durations: `tranche[i].timestamp = tranche[i-1].timestamp +
+    /// duration[i]`.
+    /// - Emits a [`crate::utils::events::CreateLockupStream`] event.
+    /// - Refer to the notes in [`fn@crate::sablier_lockup::create_with_timestamps_lt`] for additional details.
     ///
     /// # Requirements
     ///
-    /// - Refer to the requirements in [`fn@crate::sablier_lockup::create_with_timestamps_lt`].
+    /// Refer to the requirements in [`fn@crate::sablier_lockup::create_with_timestamps_lt`].
     pub fn create_with_durations_lt(
         ctx: Context<CreateWithTimestamps>,
         salt: u128,
@@ -213,21 +227,24 @@ pub mod sablier_lockup {
     ///
     /// - `salt` A unique salt used to derive the address of the stream NFT mint.
     /// - `start_time` The Unix timestamp indicating the stream's start (must be < first tranche timestamp).
-    /// - `tranches` Vec of tranches with amounts and timestamps in ascending order.
-    /// - `is_cancelable` Indicates if the stream is cancelable.
+    /// - `tranches` Vec of tranches, each containing an amount and a timestamp.
+    /// - `is_cancelable` Indicates whether the stream will be cancelable.
     ///
     /// # Notes
     ///
+    /// - The stream's sender does not have to be the same as its creator.
+    /// - The stream recipient's role is implied solely by ownership of the stream NFT that is minted to the
+    /// passed `recipient`.
     /// - The deposit amount is calculated as the sum of all tranche amounts.
-    /// - Tranches must have timestamps in strictly ascending order.
-    /// - Emits a [`crate::utils::events::CreateLockupTranchedStream`] event.
+    /// - As long as the timestamps are ordered, it is not an error for the start time to be in the past.
+    /// - Emits a [`crate::utils::events::CreateLockupStream`] event.
     ///
     /// # Requirements
     ///
     /// - Deposit amount (sum of tranche amounts) must be greater than zero.
     /// - `start_time` must be strictly less than the first tranche timestamp.
     /// - All tranche amounts must be greater than zero.
-    /// - Tranche timestamps must be strictly ascending.
+    /// - Tranches must have timestamps in strictly ascending order.
     pub fn create_with_timestamps_lt(
         ctx: Context<CreateWithTimestamps>,
         salt: u128,

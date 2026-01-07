@@ -3,8 +3,7 @@ import { beforeAll, beforeEach, describe, it } from "vitest";
 import { ZERO } from "../../../lib/constants";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
-import { Time } from "../utils/defaults";
-import { isLinearModel } from "../utils/types";
+import { LINEAR_MODEL, Time } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
@@ -43,13 +42,13 @@ describe("createWithDurationsLl", () => {
         const salt = await ctx.createWithDurationsLl({ cliffDuration: ZERO });
 
         const actualStreamData = await ctx.fetchStreamData(salt);
-        const expectedStreamData = ctx.defaultStream({ salt: salt }).data;
-        // Access the model-specific fields
-        const model = expectedStreamData.model;
-        if (isLinearModel(model)) {
-          model.linear.unlocks.cliff = ZERO;
-          model.linear.timestamps.cliff = ZERO;
-        }
+        const expectedStreamData = ctx.defaultStream({
+          model: LINEAR_MODEL({
+            timestamps: { cliff: ZERO },
+            unlocks: { cliff: ZERO },
+          }),
+          salt,
+        }).data;
         assertEqStreamData(actualStreamData, expectedStreamData);
       });
     });

@@ -79,13 +79,16 @@ export function LINEAR_UNLOCKS({
 }
 
 export function LINEAR_MODEL({
-  timestamps = LINEAR_TIMESTAMPS(),
-  unlocks = LINEAR_UNLOCKS(),
-}: Partial<{ timestamps: LinearTimestamps; unlocks: LinearUnlocks }> = {}): StreamModel {
+  timestamps: timestampOverrides,
+  unlocks: unlockOverrides,
+}: {
+  timestamps?: Partial<LinearTimestamps>;
+  unlocks?: Partial<LinearUnlocks>;
+} = {}): StreamModel {
   return {
     linear: {
-      timestamps,
-      unlocks,
+      timestamps: LINEAR_TIMESTAMPS(timestampOverrides),
+      unlocks: LINEAR_UNLOCKS(unlockOverrides),
     },
   };
 }

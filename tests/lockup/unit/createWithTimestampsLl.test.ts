@@ -8,8 +8,7 @@ import { getATABalance } from "../../common/anchor-bankrun";
 import { assertAccountExists, assertEqBn, assertEqPublicKey } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
-import { Amount, LINEAR_TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defaults";
-import { isLinearModel } from "../utils/types";
+import { Amount, LINEAR_MODEL, LINEAR_TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
@@ -114,15 +113,13 @@ describe("createWithTimestampsLl", () => {
                     unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO, start: ZERO }),
                   });
 
-                  const expectedStream = ctx.defaultStream({ salt: salt });
-                  const expectedStreamData = expectedStream.data;
-                  // Update model-specific fields
-                  const model = expectedStreamData.model;
-                  if (isLinearModel(model)) {
-                    model.linear.timestamps.cliff = ZERO;
-                    model.linear.unlocks.cliff = ZERO;
-                    model.linear.unlocks.start = ZERO;
-                  }
+                  const expectedStream = ctx.defaultStream({
+                    model: LINEAR_MODEL({
+                      timestamps: { cliff: ZERO },
+                      unlocks: { cliff: ZERO, start: ZERO },
+                    }),
+                    salt,
+                  });
 
                   await assertStreamCreation(
                     salt,
