@@ -152,7 +152,7 @@ pub mod sablier_lockup {
     /// - `deposit_amount` must be greater than zero.
     /// - `start_time` must be greater than zero and less than `end_time`.
     /// - If set, `cliff_time` must be greater than `start_time` and less than `end_time`.
-    /// - The sum of `start_unlock_amount` and `cliff_unlock_amount` must be less than or equal to deposit amount.
+    /// - The sum of `start_unlock_amount` and `cliff_unlock_amount` must be less than or equal to the deposit amount.
     /// - If `cliff_time` is not set, the `cliff_unlock_amount` amount must be zero.
     #[allow(clippy::too_many_arguments)]
     pub fn create_with_timestamps_ll(
@@ -241,7 +241,6 @@ pub mod sablier_lockup {
     ///
     /// # Requirements
     ///
-    /// - Deposit amount (sum of tranche amounts) must be greater than zero.
     /// - `start_time` must be strictly less than the first tranche timestamp.
     /// - All tranche amounts must be greater than zero.
     /// - Tranches must have timestamps in strictly ascending order.

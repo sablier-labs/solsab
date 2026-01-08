@@ -7,8 +7,8 @@ use crate::{
 
 /// Validate the claim of a campaign.
 pub fn check_claim(
-    campaign: &Campaign,
     amount: u64,
+    campaign: &Campaign,
     index: u32,
     merkle_proof: Vec<[u8; 32]>,
     recipient: Pubkey,

@@ -1,4 +1,4 @@
-//! Math functions for computing streamed, withdrawable and refundable amounts for Lockup streams.
+//! Math functions for computing the streamed, withdrawable and refundable amounts of Lockup streams.
 
 use crate::{
     state::lockup::{Amounts, LinearTimestamps, LinearUnlockAmounts, StreamData, StreamModel, Tranche},

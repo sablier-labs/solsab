@@ -93,11 +93,11 @@ pub struct Cancel<'info> {
 pub fn handler(ctx: Context<Cancel>) -> Result<()> {
     let stream_data = &ctx.accounts.stream_data;
 
+    // Check: validate the cancellation.
+    check_cancel(stream_data)?;
+
     // Calculate the streamed amount.
     let streamed_amount = get_streamed_amount(stream_data);
-
-    // Check: validate the cancellation.
-    check_cancel(stream_data, streamed_amount)?;
 
     // Calculate the sender's amount.
     let sender_amount = stream_data.amounts.deposited - streamed_amount;

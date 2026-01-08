@@ -10,7 +10,7 @@ use crate::{
 };
 
 /// Validate the cancellation of a stream.
-pub fn check_cancel(stream_data: &StreamData, streamed_amount: u64) -> Result<()> {
+pub fn check_cancel(stream_data: &StreamData) -> Result<()> {
     // Check: the stream is neither depleted nor canceled.
     if stream_data.is_depleted {
         return Err(ErrorCode::StreamDepleted.into());
@@ -22,6 +22,9 @@ pub fn check_cancel(stream_data: &StreamData, streamed_amount: u64) -> Result<()
     if !stream_data.is_cancelable {
         return Err(ErrorCode::StreamIsNotCancelable.into());
     }
+
+    // Calculate the streamed amount.
+    let streamed_amount = get_streamed_amount(stream_data);
 
     // Check: the stream is not settled.
     if streamed_amount >= stream_data.amounts.deposited {

@@ -27,7 +27,6 @@ pub fn handler(
 ) -> Result<()> {
     let deposit_token_mint = &ctx.accounts.deposit_token_mint;
     let creator = &ctx.accounts.creator;
-    let creator_ata = &ctx.accounts.creator_ata;
 
     // Calculate the deposit amount from the tranches, checking for overflow.
     let deposit_amount: u64 = tranches
@@ -72,7 +71,7 @@ pub fn handler(
 
     // Interaction: transfer tokens from the creator's ATA to the StreamData ATA.
     transfer_tokens(
-        creator_ata.to_account_info(),
+        ctx.accounts.creator_ata.to_account_info(),
         ctx.accounts.stream_data_ata.to_account_info(),
         creator.to_account_info(),
         deposit_token_mint.to_account_info(),

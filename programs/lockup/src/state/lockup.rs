@@ -72,9 +72,7 @@ pub struct TranchedTimestamps {
 //                                STREAM MODEL                                //
 // -------------------------------------------------------------------------- //
 
-/// Stream unlock model with model-specific data.
-///
-/// This enum encapsulates all of the model-specific state, allowing the common
+/// The enum encapsulating all of the model-specific state, allowing the common
 /// `StreamData` struct to handle both linear and tranched streams uniformly.
 #[derive(Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub enum StreamModel {
@@ -93,7 +91,7 @@ pub enum StreamModel {
 //                                 STREAM DATA                                //
 // -------------------------------------------------------------------------- //
 
-/// The account storing the data for both linear and tranched streams.
+/// The struct storing the data for both linear and tranched streams.
 ///
 /// This unified struct handles all stream types through the `model` field
 /// which discriminates between linear and tranched unlock schedules.
@@ -163,7 +161,7 @@ impl StreamData {
     //                         TRANCHED STREAM METHODS                          //
     // ------------------------------------------------------------------------ //
 
-    /// State update for the [`fn@crate::sablier_lockup::create_with_timestamps_ll`] instruction.
+    /// State update for the [`fn@crate::sablier_lockup::create_with_timestamps_lt`] instruction.
     #[allow(clippy::too_many_arguments)]
     pub fn create_tranched(
         &mut self,
