@@ -44,8 +44,7 @@ pub fn initialize(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses) {
         fuzz_accounts.nft_collection_data.insert(trident, Some(PdaSeeds::new(&[NFT_COLLECTION_DATA], program_id)));
 
     // Create fee collector
-    let fee_collector = create_user(trident);
-    fuzz_accounts.fee_collector.insert_with_address(fee_collector);
+    let fee_collector = fuzz_accounts.fee_collector.get(trident).unwrap();
 
     // Set chainlink accounts
     let chainlink_program: Pubkey = CHAINLINK_PROGRAM_ID.parse().unwrap();
