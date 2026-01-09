@@ -62,7 +62,13 @@ export async function createMint(
       space: token.MINT_SIZE,
     }),
 
-    token.createInitializeMint2Instruction(mint, decimals, mintAuthority, freezeAuthority, programId),
+    token.createInitializeMint2Instruction(
+      mint,
+      decimals,
+      mintAuthority,
+      freezeAuthority,
+      programId,
+    ),
   );
   tx.recentBlockhash = await getLatestBlockhash(banksClient);
   tx.sign(payer, mintKeypair);
@@ -109,12 +115,20 @@ export async function createATAAndFund(
   return userATA;
 }
 
-export function deriveATAAddress(mint: PublicKey, owner: PublicKey, programId: PublicKey): PublicKey {
+export function deriveATAAddress(
+  mint: PublicKey,
+  owner: PublicKey,
+  programId: PublicKey,
+): PublicKey {
   const allowOwnerOffCurve = true;
   return token.getAssociatedTokenAddressSync(mint, owner, allowOwnerOffCurve, programId);
 }
 
-export async function getATABalanceMint(banksClient: BanksClient, owner: PublicKey, mint: PublicKey): Promise<BN> {
+export async function getATABalanceMint(
+  banksClient: BanksClient,
+  owner: PublicKey,
+  mint: PublicKey,
+): Promise<BN> {
   const mintAccount = await banksClient.getAccount(mint);
   if (!mintAccount) {
     throw new Error("Mint account does not exist!");
@@ -122,7 +136,12 @@ export async function getATABalanceMint(banksClient: BanksClient, owner: PublicK
 
   // Derive the ATA address from owner and mint
   const allowOwnerOffCurve = true;
-  const ataAddress = await token.getAssociatedTokenAddressSync(mint, owner, allowOwnerOffCurve, mintAccount.owner);
+  const ataAddress = await token.getAssociatedTokenAddressSync(
+    mint,
+    owner,
+    allowOwnerOffCurve,
+    mintAccount.owner,
+  );
 
   // Get the ATA account data
   const ataAccount = await banksClient.getAccount(ataAddress);
@@ -144,7 +163,10 @@ export async function getATABalance(banksClient: BanksClient, ataAddress: Public
   return toBn(accountData.amount);
 }
 
-export async function getMintTotalSupplyOf(banksClient: BanksClient, mintAddress: PublicKey): Promise<BN> {
+export async function getMintTotalSupplyOf(
+  banksClient: BanksClient,
+  mintAddress: PublicKey,
+): Promise<BN> {
   const mintAccount = await banksClient.getAccount(mintAddress);
   if (!mintAccount) {
     throw new Error("The queried mint account does not exist!");
@@ -165,7 +187,14 @@ export async function transfer(
   programId = token.TOKEN_PROGRAM_ID,
 ): Promise<BanksTransactionMeta> {
   const tx = new Transaction().add(
-    token.createTransferInstruction(source, destination, owner, toBigInt(amount), multiSigners, programId),
+    token.createTransferInstruction(
+      source,
+      destination,
+      owner,
+      toBigInt(amount),
+      multiSigners,
+      programId,
+    ),
   );
   tx.recentBlockhash = await getLatestBlockhash(banksClient);
   tx.sign(payer, ...multiSigners);
@@ -217,7 +246,14 @@ async function mintTo(
   programId = token.TOKEN_PROGRAM_ID,
 ): Promise<BanksTransactionMeta> {
   const tx = new Transaction().add(
-    token.createMintToInstruction(mint, destination, authority, toBigInt(amount), multiSigners, programId),
+    token.createMintToInstruction(
+      mint,
+      destination,
+      authority,
+      toBigInt(amount),
+      multiSigners,
+      programId,
+    ),
   );
 
   tx.recentBlockhash = await getLatestBlockhash(banksClient);

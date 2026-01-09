@@ -15,7 +15,7 @@
   "rust-analyzer.inlayHints.parameterHints.enable": true,
   "rust-analyzer.inlayHints.typeHints.enable": true,
   "rust-analyzer.rustfmt.extraArgs": ["+nightly"],
-  "[json][ts]": {
+  "[javascript][json][jsonc][typescript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
   "[md][yml]": {

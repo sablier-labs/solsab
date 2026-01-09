@@ -36,7 +36,8 @@ export class ChainlinkMock {
   public getMockPrice(): number {
     const bytes = new Uint8Array(Buffer.from(this.MOCK_CHAINLINK_DATA, "base64"));
     // Price at offset 216 (4 bytes, little-endian, unsigned)
-    const priceRaw = (bytes[216] | (bytes[217] << 8) | (bytes[218] << 16) | (bytes[219] << 24)) >>> 0;
+    const priceRaw =
+      (bytes[216] | (bytes[217] << 8) | (bytes[218] << 16) | (bytes[219] << 24)) >>> 0;
     return priceRaw;
   }
 
