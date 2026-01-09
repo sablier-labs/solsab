@@ -16,12 +16,11 @@ pub fn cancel(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses, is_pe
     let stream_data = fuzz_accounts.stream_data.get(trident).unwrap();
 
     // Derive sender ATA (init_if_needed in the instruction)
-    let ata_program: Pubkey = ASSOCIATED_TOKEN_PROGRAM_ID.parse().unwrap();
     let sender_ata = fuzz_accounts.sender_ata.insert(
         trident,
         Some(PdaSeeds::new(
             &[sender.as_ref(), deposited_token_program.as_ref(), deposited_token_mint.as_ref()],
-            ata_program,
+            ASSOCIATED_TOKEN_PROGRAM_ID,
         )),
     );
 
@@ -70,7 +69,6 @@ fn assertions(
     stream_data_ata_balance_before: u64,
     is_pending_stream: bool,
 ) {
-    // Data assertions - retrieve and verify stream data
     let stream_data = get_stream_data(trident, &accounts.stream_data);
 
     // Verify is_cancelable is now false (stream was canceled)
@@ -88,7 +86,7 @@ fn assertions(
 
     // Verify refunded amount is correct
     let actual_refund_amount = stream_data.amounts.refunded;
-    assert!(actual_refund_amount == expected_refund_amount, "refunded amount does not match expected");
+    assert_eq!(actual_refund_amount, expected_refund_amount, "refunded amount mismatch");
 
     // Verify stream_data_ata balance decreased by refund_amount
     let stream_data_ata_balance_after = get_ata_token_balance(trident, &accounts.stream_data_ata);

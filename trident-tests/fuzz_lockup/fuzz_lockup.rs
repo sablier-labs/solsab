@@ -270,10 +270,7 @@ impl FuzzTest {
         self.trident.process_transaction(&mint_ix, None);
 
         self.fuzz_accounts.deposit_token_mint.insert_with_address(deposit_token_mint);
-
-        // Set deposit token program to SPL Token
-        let deposit_token_program: Pubkey = SPL_TOKEN_PROGRAM_ID.parse().unwrap();
-        self.fuzz_accounts.deposit_token_program.insert_with_address(deposit_token_program);
+        self.fuzz_accounts.deposit_token_program.insert_with_address(SPL_TOKEN_PROGRAM_ID);
 
         // Create creator's ATA
         let create_ata_ix = self.trident.initialize_associated_token_account(&creator, &deposit_token_mint, &creator);
@@ -353,7 +350,6 @@ impl FuzzTest {
     /// Warps to a random time within the stream's active window: [start + 1, end + 2 weeks].
     /// This covers both streaming and settled statuses.
     fn warp_to_active_stream_time(&mut self, stream_data: &crate::types::StreamData) {
-        const TWO_WEEKS: u64 = 14 * 24 * 60 * 60;
         let warp_time =
             self.trident.random_from_range(stream_data.timestamps.start + 1..stream_data.timestamps.end + TWO_WEEKS);
         self.trident.warp_to_timestamp(warp_time.try_into().unwrap());
