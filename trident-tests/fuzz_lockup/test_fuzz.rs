@@ -203,6 +203,17 @@ impl FuzzTest {
         // Warp to active stream time
         self.warp_to_active_stream_time(&stream_data);
 
+        // Randomly (50/50) decide to perform a withdraw before checking withdrawable amount
+        let withdraw_before = self.trident.random_bool();
+        if withdraw_before {
+            let withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
+            // If nothing is withdrawable, warp to near end time to ensure something is withdrawable
+            if withdrawable == 0 {
+                self.trident.warp_to_timestamp((stream_data.timestamps.end - 1).try_into().unwrap());
+            }
+            withdraw(&mut self.trident, &mut self.fuzz_accounts, true, withdrawable);
+        }
+
         // Build and execute view instruction
         let accounts = WithdrawableAmountOfInstructionAccounts::new(stream_data_pubkey, stream_nft_mint);
         let data = WithdrawableAmountOfInstructionData::new();
