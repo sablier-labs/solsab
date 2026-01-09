@@ -6,4 +6,5 @@ module.exports = {
   "*.{js,ts}":
     "na biome lint --no-errors-on-unmatched --unsafe --write --only correctness/noUnusedImports",
   "*.{md,yml}": "na prettier --cache --write",
+  "*.sh": "shfmt -i 2 -w -s",
 };
