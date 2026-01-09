@@ -1,5 +1,6 @@
 #![warn(clippy::uninlined_format_args)]
 
+use base64::{engine::general_purpose::STANDARD, Engine};
 use fuzz_accounts::*;
 use trident_fuzz::fuzzing::*;
 mod fuzz_accounts;
@@ -33,7 +34,7 @@ impl FuzzTest {
     #[init]
     fn start(&mut self) {
         // Create default users
-        create_users(&mut self.trident, &mut self.fuzz_accounts);
+        self.create_users();
 
         // Create tokens and mint
         self.create_tokens();
@@ -104,7 +105,7 @@ impl FuzzTest {
         assert!(result.is_success(), "RefundableAmountOf transaction failed");
 
         // Get return data and compare with expected
-        let actual: u64 = parse_return_data_from_logs(&result.logs()).expect("Failed to get return data");
+        let actual: u64 = self.parse_return_data_from_logs(&result.logs()).expect("Failed to get return data");
         let expected = get_refundable_amount(&mut self.trident, &stream_data_pubkey);
         assert_eq!(actual, expected, "RefundableAmountOf return value mismatch: actual={actual}, expected={expected}");
     }
@@ -129,7 +130,7 @@ impl FuzzTest {
         assert!(result.is_success(), "StreamedAmountOf transaction failed");
 
         // Get return data and compare with expected
-        let actual: u64 = parse_return_data_from_logs(&result.logs()).expect("Failed to get return data");
+        let actual: u64 = self.parse_return_data_from_logs(&result.logs()).expect("Failed to get return data");
         let expected = get_streamed_amount(&mut self.trident, &stream_data_pubkey);
         assert_eq!(actual, expected, "StreamedAmountOf return value mismatch: actual={actual}, expected={expected}");
     }
@@ -164,7 +165,8 @@ impl FuzzTest {
             assert!(result.is_success(), "StreamedAmountOf transaction failed");
 
             // Get return data from on-chain execution
-            let current_amount: u64 = parse_return_data_from_logs(&result.logs()).expect("Failed to get return data");
+            let current_amount: u64 =
+                self.parse_return_data_from_logs(&result.logs()).expect("Failed to get return data");
 
             // Verify monotonicity: current amount should be >= previous amount
             assert!(
@@ -209,7 +211,7 @@ impl FuzzTest {
         assert!(result.is_success(), "WithdrawableAmountOf transaction failed");
 
         // Get return data and compare with expected
-        let actual: u64 = parse_return_data_from_logs(&result.logs()).expect("Failed to get return data");
+        let actual: u64 = self.parse_return_data_from_logs(&result.logs()).expect("Failed to get return data");
         let expected = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
         assert_eq!(
             actual, expected,
@@ -220,6 +222,32 @@ impl FuzzTest {
     // -------------------------------------------------------------------------- //
     //                                   HELPERS                                  //
     // -------------------------------------------------------------------------- //
+
+    /// Creates a new user and funds it with the default lamports balance.
+    fn create_user(&mut self) -> Pubkey {
+        let keypair = Keypair::new();
+        let pubkey = keypair.pubkey();
+        self.trident.airdrop(&pubkey, DEFAULT_LAMPORTS_BALANCE);
+        pubkey
+    }
+
+    /// Creates default users (creator, recipient, sender, signer) and stores them in fuzz_accounts.
+    fn create_users(&mut self) {
+        let creator = self.create_user();
+        self.fuzz_accounts.creator.insert_with_address(creator);
+
+        let fee_collector = self.create_user();
+        self.fuzz_accounts.fee_collector.insert_with_address(fee_collector);
+
+        let recipient = self.create_user();
+        self.fuzz_accounts.recipient.insert_with_address(recipient);
+
+        let sender = self.create_user();
+        self.fuzz_accounts.sender.insert_with_address(sender);
+
+        let signer = self.create_user();
+        self.fuzz_accounts.signer.insert_with_address(signer);
+    }
 
     fn create_tokens(&mut self) {
         let creator = self.fuzz_accounts.creator.get(&mut self.trident).unwrap();
@@ -286,6 +314,29 @@ impl FuzzTest {
             }
             (withdrawable, withdraw_to_recipient)
         }
+    }
+
+    /// Parses u64 return data from transaction logs.
+    /// Looks for "Program return: <program_id> <base64_data>" and decodes the base64 data.
+    /// Note: logs() returns debug-formatted Vec<String>, so we search for the pattern in the raw string.
+    fn parse_return_data_from_logs(&self, logs: &str) -> Option<u64> {
+        // Find "Program return:" and extract the base64 data after the program ID
+        // Format in logs: "Program return: <program_id> <base64_data>"
+        if let Some(start) = logs.find("Program return:") {
+            let after_prefix = &logs[start + "Program return:".len()..];
+            // Split by whitespace and get: program_id, base64_data
+            let parts: Vec<&str> = after_prefix.split_whitespace().take(2).collect();
+            if parts.len() >= 2 {
+                // Remove any trailing quotes or punctuation from base64 data
+                let base64_data = parts[1].trim_end_matches(['"', ',', ']']);
+                if let Ok(bytes) = STANDARD.decode(base64_data) {
+                    if bytes.len() >= 8 {
+                        return Some(u64::from_le_bytes(bytes[..8].try_into().unwrap()));
+                    }
+                }
+            }
+        }
+        None
     }
 
     /// Warps to a random time within the stream's active window: [start + 1, end + 2 weeks].

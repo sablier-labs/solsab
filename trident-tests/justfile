@@ -2,6 +2,9 @@
 default:
     just --list
 
+test: test-lockup
+alias t := test
+
 # Run Lockup fuzz tests
 test-lockup:
     trident fuzz run fuzz_lockup
