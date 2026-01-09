@@ -30,7 +30,8 @@ jobs:
           anchor-version: "0.31.1"
           rust-version: "nightly"
           solana-version: "2.1.21"
-
+      - name: "Install Trident CLI"
+        run: "cargo install trident-cli --version 0.12.0"
       - name: "Cache Anchor build artifacts"
         id: "cache-build"
         uses: "sablier-labs/gha-utils/.github/actions/solana-cache@main"
@@ -53,7 +54,7 @@ jobs:
 
       - name: "Run the tests"
         if: steps.cache-build.outputs.cache-status != 'primary'
-        run: "just test-lite"
+        run: "just test"
 
       - name: "Add summary"
         run: | # shell
