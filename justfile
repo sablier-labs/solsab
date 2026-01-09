@@ -125,12 +125,6 @@ test-anchor *args: build _setup-fixtures
     na vitest run --hideSkippedTests {{ args }}
 alias ta := test-anchor
 
-# Run all Anchor tests without building
-[group("test")]
-test-anchor-lite *args: _setup-fixtures
-    na vitest run --hideSkippedTests {{ args }}
-alias tal := test-anchor-lite
-
 # Run Anchor tests with UI
 [group("test")]
 test-anchor-ui *args: build _setup-fixtures
