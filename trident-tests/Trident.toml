@@ -3,11 +3,11 @@
   dashboard = true
 
 [[fuzz.programs]]
-  address = "Hs1cF7Xr8XZMsKJCgZt2npNBr83iBqrNiAfZoeVYXA2F"
+  address = "5rRqnrYc5v1HTWub3nViVX1LwrrRrQTshvGiAAJvK3Er"
   program = "../target/deploy/sablier_lockup.so"
 
 [[fuzz.programs]]
-  address = "AnUDJ4SX9YRc6mMjm7yf8ZLd1x2i6VFNJaXvQaGeXoZm"
+  address = "7gHPcvMam4Fs6eLV792xJui8bfXZwruq7RZCknrwECP1"
   program = "../target/deploy/sablier_merkle_instant.so"
 
 [[fuzz.programs]]
