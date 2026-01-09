@@ -25,7 +25,7 @@ pub mod sablier_lockup {
 
     /// Returns the program ID for sablier_lockup
     pub fn program_id() -> Pubkey {
-        pubkey!("Hs1cF7Xr8XZMsKJCgZt2npNBr83iBqrNiAfZoeVYXA2F")
+        pubkey!("5rRqnrYc5v1HTWub3nViVX1LwrrRrQTshvGiAAJvK3Er")
     }
 
     // ------------------------------------------------------------------------
