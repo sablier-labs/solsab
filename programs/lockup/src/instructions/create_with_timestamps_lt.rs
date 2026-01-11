@@ -1,12 +1,16 @@
 use anchor_lang::prelude::*;
+use mpl_core::instructions::CreateV2CpiBuilder;
 
 use crate::{
     instructions::create_with_timestamps_ll::CreateWithTimestamps,
     state::lockup::Tranche,
     utils::{
+        constants::{
+            nft::{NFT_METADATA_URI, NFT_NAME_PREFIX},
+            seeds::*,
+        },
         errors::ErrorCode,
         events::{CreateLockupStream, CreateStreamModel},
-        nft,
         transfer_helper::transfer_tokens,
         validations::check_create_tranched,
     },
@@ -26,7 +30,11 @@ pub fn handler(
     is_cancelable: bool,
 ) -> Result<()> {
     let deposit_token_mint = &ctx.accounts.deposit_token_mint;
-    let creator = &ctx.accounts.creator;
+    let funder = &ctx.accounts.funder;
+    let funder_ata = &ctx.accounts.funder_ata;
+    let recipient = &ctx.accounts.recipient;
+    let sender_key = &ctx.accounts.sender.key();
+    let stream_nft = &ctx.accounts.stream_nft;
 
     // Calculate the deposit amount from the tranches, checking for overflow.
     let deposit_amount: u64 = tranches
@@ -44,36 +52,40 @@ pub fn handler(
         deposit_amount,
         salt,
         is_cancelable,
-        ctx.accounts.sender.key(),
+        *sender_key,
         start_time,
         tranches.clone(),
     )?;
 
-    // Effect: mint the NFT to the recipient.
-    nft::create_stream(
-        &ctx.accounts.stream_nft_mint,
-        &ctx.accounts.nft_collection_mint,
-        &ctx.accounts.stream_nft_metadata,
-        &ctx.accounts.stream_nft_master_edition,
-        &ctx.accounts.nft_collection_metadata,
-        &ctx.accounts.nft_collection_master_edition,
-        &ctx.accounts.recipient_stream_nft_ata,
-        creator,
-        &ctx.accounts.token_metadata_program,
-        &ctx.accounts.nft_token_program,
-        &ctx.accounts.system_program,
-        &ctx.accounts.rent,
-        ctx.bumps.nft_collection_mint,
-    )?;
+    // Effect: create the MPL Core asset representing the stream NFT.
+    // Note: the stream NFT is automatically added to the stream NFT collection.
 
-    // Effect: increment the total supply of the NFT collection.
-    ctx.accounts.nft_collection_data.create()?;
+    // Construct the Stream NFT name using the following format:
+    // "Sablier LL Stream #[first 5 chars of asset key]...[last 5 chars of asset key]"
+    let stream_nft_key = stream_nft.key().to_string();
+    let stream_nft_name =
+        format!("{NFT_NAME_PREFIX}{}...{}", &stream_nft_key[..5], &stream_nft_key[stream_nft_key.len() - 5..]);
 
-    // Interaction: transfer tokens from the creator's ATA to the StreamData ATA.
+    let stream_nft_signer_seeds: &[&[u8]] =
+        &[STREAM_NFT, sender_key.as_ref(), &salt.to_le_bytes(), &[ctx.bumps.stream_nft]];
+    let collection_authority_signer_seeds: &[&[u8]] = &[TREASURY, &[ctx.bumps.treasury]];
+
+    CreateV2CpiBuilder::new(&ctx.accounts.mpl_core_program.to_account_info())
+        .asset(&stream_nft.to_account_info())
+        .collection(Some(&ctx.accounts.stream_nft_collection.to_account_info()))
+        .authority(Some(&ctx.accounts.treasury.to_account_info()))
+        .owner(Some(&recipient.to_account_info()))
+        .payer(&funder.to_account_info())
+        .system_program(&ctx.accounts.system_program.to_account_info())
+        .name(stream_nft_name)
+        .uri(NFT_METADATA_URI.to_string())
+        .invoke_signed(&[stream_nft_signer_seeds, collection_authority_signer_seeds])?;
+
+    // Interaction: transfer tokens from the funder's ATA to the StreamData ATA.
     transfer_tokens(
-        ctx.accounts.creator_ata.to_account_info(),
+        funder_ata.to_account_info(),
         ctx.accounts.stream_data_ata.to_account_info(),
-        creator.to_account_info(),
+        funder.to_account_info(),
         deposit_token_mint.to_account_info(),
         ctx.accounts.deposit_token_program.to_account_info(),
         deposit_amount,
@@ -84,14 +96,12 @@ pub fn handler(
     // Log the newly created tranched stream.
     emit!(CreateLockupStream {
         deposit_token_decimals: deposit_token_mint.decimals,
-        deposit_token_mint: ctx.accounts.deposit_token_mint.key(),
-        model: CreateStreamModel::Tranched {
-            tranches
-        },
-        recipient: ctx.accounts.recipient.key(),
+        deposit_token_mint: deposit_token_mint.key(),
+        model: CreateStreamModel::Tranched { tranches },
+        recipient: recipient.key(),
         salt,
         stream_data: ctx.accounts.stream_data.key(),
-        stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
+        stream_nft: stream_nft.key(),
     });
 
     Ok(())
