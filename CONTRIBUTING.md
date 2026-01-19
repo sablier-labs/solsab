@@ -13,6 +13,8 @@ Ensure you have the following software installed and configured on your machine:
 - [Just](https://github.com/casey/just) (command runner)
 - [Bun](https://bun.sh/docs/installation) (package manager)
 - [Ni](https://github.com/antfu-collective/ni) (package manager resolver)
+- [shfmt](https://github.com/mvdan/sh#shfmt) (shell script formatter) - install via `brew install shfmt` (macOS),
+  `apt install shfmt` (Ubuntu), or download from [releases](https://github.com/mvdan/sh/releases)
 
 ## Set Up
 
@@ -61,6 +63,14 @@ just build
 ```bash
 just full-check
 ```
+
+This will check:
+
+- TypeScript/JavaScript formatting and linting (Biome)
+- Markdown and YAML formatting (Prettier)
+- Bash script formatting (shfmt)
+- TypeScript type checking
+- Rust code formatting and linting
 
 ### Testing
 
