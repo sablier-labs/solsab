@@ -3,8 +3,8 @@
   skip-lint = false
 
 [programs.localnet]
-  sablier_lockup = "4EauRKrNErKfsR4XetEZJNmvACGHbHnHV4R5dvJuqupC"
-  sablier_merkle_instant = "7XrxoQejBoGouW4V3aozTSwub7xSDjYqB4Go7YLjF9rV"
+  sablier_lockup = "5rRqnrYc5v1HTWub3nViVX1LwrrRrQTshvGiAAJvK3Er"
+  sablier_merkle_instant = "7gHPcvMam4Fs6eLV792xJui8bfXZwruq7RZCknrwECP1"
 
 [provider]
   cluster = "localnet"
