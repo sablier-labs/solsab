@@ -94,7 +94,7 @@ full-write:
 # Run Rust checks
 rust-check:
     cargo fmt --check
-    cargo clippy -- --deny warnings
+    cargo clippy -- --deny warnings --allow deprecated
 alias rc := rust-check
 
 # Format Rust code

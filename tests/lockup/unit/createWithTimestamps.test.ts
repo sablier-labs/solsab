@@ -119,7 +119,12 @@ describe("createWithTimestampsLl", () => {
                   expectedStream.data.timestamps.cliff = ZERO;
                   expectedStream.data.amounts = AMOUNTS({ cliffUnlock: ZERO, startUnlock: ZERO });
 
-                  await assertStreamCreation(salt, beforeCollectionSize, beforeSenderTokenBalance, expectedStream);
+                  await assertStreamCreation(
+                    salt,
+                    beforeCollectionSize,
+                    beforeSenderTokenBalance,
+                    expectedStream,
+                  );
                 });
               });
             });
@@ -168,11 +173,18 @@ describe("createWithTimestampsLl", () => {
                   describe("when unlock amounts sum not exceed deposit amount", () => {
                     describe("when token SPL standard", () => {
                       it("should create the stream", async () => {
-                        const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
+                        const beforeSenderTokenBalance = await getATABalance(
+                          ctx.banksClient,
+                          ctx.sender.usdcATA,
+                        );
                         const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
                         const salt = await ctx.createWithTimestampsLl();
 
-                        await assertStreamCreation(salt, beforeCollectionSize, beforeSenderTokenBalance);
+                        await assertStreamCreation(
+                          salt,
+                          beforeCollectionSize,
+                          beforeSenderTokenBalance,
+                        );
                       });
                     });
 
@@ -221,7 +233,11 @@ async function assertStreamCreation(
   const streamNft = await ctx.fetchStreamNft(salt);
 
   // Assert that the Stream NFT is owned by the recipient
-  assertEqPublicKey(new PublicKey(streamNft.owner), recipient, "Stream NFT isn't owned by the recipient");
+  assertEqPublicKey(
+    new PublicKey(streamNft.owner),
+    recipient,
+    "Stream NFT isn't owned by the recipient",
+  );
 
   // Assert that the Update Authority of the Stream NFT isn't undefined
   if (!streamNft.updateAuthority.address) {
