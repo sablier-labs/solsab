@@ -105,7 +105,8 @@ fn get_streamed_amount_linear(
     // Calculate the sum of instant unlock amounts
     let unlock_amounts_sum = unlock_amounts.start + unlock_amounts.cliff;
 
-    // Safety check: if the unlock amounts exceed the deposit amount (which should never happen) or are equal to it, return the deposit amount.
+    // Safety check: if the unlock amounts exceed the deposit amount (which should never happen) or are equal to it,
+    // return the deposit amount.
     if unlock_amounts_sum >= amounts.deposited {
         return amounts.deposited;
     }

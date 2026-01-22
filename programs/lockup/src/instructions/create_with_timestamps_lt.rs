@@ -97,7 +97,9 @@ pub fn handler(
     emit!(CreateLockupStream {
         deposit_token_decimals: deposit_token_mint.decimals,
         deposit_token_mint: deposit_token_mint.key(),
-        model: CreateStreamModel::Tranched { tranches },
+        model: CreateStreamModel::Tranched {
+            tranches
+        },
         recipient: recipient.key(),
         salt,
         stream_data: ctx.accounts.stream_data.key(),

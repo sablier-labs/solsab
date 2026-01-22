@@ -41,7 +41,7 @@ type IdlType = {
   type: {
     kind: "struct" | "enum";
     fields?: IdlField[];
-    variants?: { name: string; fields?: IdlField[] }[];
+    variants?: { name: string; fields?: (IdlField | string)[] }[];
   };
 };
 
@@ -122,7 +122,19 @@ function generateImports(types: IdlType[]): string[] {
       // Scan enum variant fields
       _.forEach(type.type.variants, (variant) => {
         if (variant.fields) {
-          _.forEach(variant.fields, checkFieldType);
+          _.forEach(variant.fields, (field) => {
+            if (typeof field === "string") {
+              // Unnamed tuple field - the field itself is the type
+              const mappedType = mapSolanaTypeToTypeScript(field);
+              if (mappedType.includes("BN")) {
+                needsBN = true;
+              } else if (mappedType.includes("PublicKey")) {
+                needsPublicKey = true;
+              }
+            } else {
+              checkFieldType(field);
+            }
+          });
         }
       });
     }
@@ -161,10 +173,17 @@ function generateStructType(idlType: IdlType): string {
   if (idlType.type.kind === "enum") {
     const variants = idlType.type.variants?.map((variant) => {
       if (variant.fields && variant.fields.length > 0) {
-        // Enum variant with named fields → object with variant name (camelCase) as key
+        // Enum variant with fields → object with variant name (camelCase) as key
         // This matches Anchor's runtime serialization format
         const fields = variant.fields
-          .map((field) => {
+          .map((field, index) => {
+            if (typeof field === "string") {
+              // Unnamed tuple field - generate synthetic name
+              const fieldName = `field${index}`;
+              const fieldType = mapSolanaTypeToTypeScript(field);
+              return `${fieldName}: ${fieldType}`;
+            }
+            // Named field (existing behavior)
             const fieldName = _.camelCase(field.name);
             const fieldType = mapSolanaTypeToTypeScript(field.type);
             return `${fieldName}: ${fieldType}`;
