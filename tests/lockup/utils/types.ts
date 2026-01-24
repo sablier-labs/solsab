@@ -8,12 +8,16 @@ import type { PublicKey } from "@solana/web3.js";
 import type { StreamData, StreamModel } from "../../../target/types/sablier_lockup_structs";
 
 export type Salts = {
-  /* Default stream salt. */
+  /* Default linear (LL) stream salt. */
   default: BN;
-  /* The salt of a non-cancelable stream. */
+  /* The salt of a non-cancelable linear (LL) stream. */
   nonCancelable: BN;
   /* The salt of a stream that does not exist. */
   nonExisting: BN;
+  /* Default tranched (LT) stream salt. */
+  defaultLt: BN;
+  /* The salt of a non-cancelable tranched (LT) stream. */
+  nonCancelableLt: BN;
 };
 
 export const Status = {

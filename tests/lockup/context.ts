@@ -13,17 +13,22 @@ import { ProgramName } from "../../lib/enums";
 import { getPDAAddress } from "../../lib/helpers";
 import IDL from "../../target/idl/sablier_lockup.json";
 import type { SablierLockup as SablierLockupProgram } from "../../target/types/sablier_lockup";
-import type { StreamData } from "../../target/types/sablier_lockup_structs";
+import type { StreamData, Tranche } from "../../target/types/sablier_lockup_structs";
 import { buildSignAndProcessTx, deriveATAAddress, getATABalance } from "../common/anchor-bankrun";
 import { TestContext } from "../common/context";
 import type { Treasury, User } from "../common/types";
 import {
   Amount,
+  DEFAULT_TRANCHES,
   LINEAR_AMOUNTS,
   LINEAR_MODEL,
   LINEAR_TIMESTAMPS,
   Seed,
   Time,
+  TRANCHED_AMOUNTS,
+  TRANCHED_MODEL,
+  TranchedAmount,
+  TranchedTime,
   UNLOCK_AMOUNTS,
 } from "./utils/defaults";
 import type { Salts, Stream } from "./utils/types";
@@ -67,8 +72,14 @@ export class LockupTestContext extends TestContext {
 
       // Create the default streams
       this.salts = {
+        // Linear (LL) streams
         default: await this.createWithTimestampsLl(),
+        // Tranched (LT) streams
+        defaultLt: await this.createWithTimestampsLt(),
         nonCancelable: await this.createWithTimestampsLl({
+          isCancelable: false,
+        }),
+        nonCancelableLt: await this.createWithTimestampsLt({
           isCancelable: false,
         }),
         nonExisting: new BN(1729),
@@ -196,6 +207,97 @@ export class LockupTestContext extends TestContext {
 
   async createWithTimestampsLlToken2022(): Promise<BN> {
     return await this.createWithTimestampsLl({
+      depositTokenMint: this.dai,
+      depositTokenProgram: token.TOKEN_2022_PROGRAM_ID,
+    });
+  }
+
+  async createWithDurationsLt({
+    trancheAmounts = [TranchedAmount.TRANCHE_1, TranchedAmount.TRANCHE_2, TranchedAmount.TRANCHE_3],
+    trancheDurations = [
+      TranchedTime.TRANCHE_1.sub(Time.START),
+      TranchedTime.TRANCHE_2.sub(TranchedTime.TRANCHE_1),
+      TranchedTime.TRANCHE_3.sub(TranchedTime.TRANCHE_2),
+    ],
+    isCancelable = true,
+    funder = this.sender.keys,
+    senderPubKey = this.sender.keys.publicKey,
+    recipientPubKey = this.recipient.keys.publicKey,
+    depositTokenMint = this.usdc,
+    depositTokenProgram = token.TOKEN_PROGRAM_ID,
+    salt = new BN(-1),
+  }: {
+    trancheAmounts?: BN[];
+    trancheDurations?: BN[];
+    isCancelable?: boolean;
+    funder?: Keypair;
+    senderPubKey?: PublicKey;
+    recipientPubKey?: PublicKey;
+    depositTokenMint?: PublicKey;
+    depositTokenProgram?: PublicKey;
+    salt?: BN;
+  } = {}): Promise<BN> {
+    // Use the total supply as the salt for the stream
+    salt = salt.isNeg() ? await this.getStreamNftCollectionSize() : salt;
+
+    const txIx = await this.lockup.methods
+      .createWithDurationsLt(salt, trancheAmounts, trancheDurations, isCancelable)
+      .accounts({
+        depositTokenMint,
+        depositTokenProgram,
+        funder: funder.publicKey,
+        recipient: recipientPubKey,
+        sender: senderPubKey,
+      })
+      .instruction();
+
+    await buildSignAndProcessTx(this.banksClient, txIx, funder);
+
+    return salt;
+  }
+
+  async createWithTimestampsLt({
+    tranches = DEFAULT_TRANCHES(),
+    startTime = Time.START,
+    isCancelable = true,
+    funder = this.sender.keys,
+    senderPubKey = this.sender.keys.publicKey,
+    recipientPubKey = this.recipient.keys.publicKey,
+    depositTokenMint = this.usdc,
+    depositTokenProgram = token.TOKEN_PROGRAM_ID,
+    salt = new BN(-1),
+  }: {
+    tranches?: Tranche[];
+    startTime?: BN;
+    isCancelable?: boolean;
+    funder?: Keypair;
+    senderPubKey?: PublicKey;
+    recipientPubKey?: PublicKey;
+    depositTokenMint?: PublicKey;
+    depositTokenProgram?: PublicKey;
+    salt?: BN;
+  } = {}): Promise<BN> {
+    // Use the total supply as the salt for the stream
+    salt = salt.isNeg() ? await this.getStreamNftCollectionSize() : salt;
+
+    const txIx = await this.lockup.methods
+      .createWithTimestampsLt(salt, startTime, tranches, isCancelable)
+      .accounts({
+        depositTokenMint,
+        depositTokenProgram,
+        funder: funder.publicKey,
+        recipient: recipientPubKey,
+        sender: senderPubKey,
+      })
+      .instruction();
+
+    await buildSignAndProcessTx(this.banksClient, txIx, funder);
+
+    return salt;
+  }
+
+  async createWithTimestampsLtToken2022(): Promise<BN> {
+    return await this.createWithTimestampsLt({
       depositTokenMint: this.dai,
       depositTokenProgram: token.TOKEN_2022_PROGRAM_ID,
     });
@@ -422,6 +524,57 @@ export class LockupTestContext extends TestContext {
     wasCanceled = false,
   } = {}): Stream {
     return this.defaultStream({
+      depositedTokenMint: this.dai,
+      isCancelable,
+      isDepleted,
+      salt,
+      tokenProgram: ProgramId.TOKEN_2022,
+      wasCanceled,
+    });
+  }
+
+  defaultTranchedStream({
+    salt = this.salts.defaultLt,
+    model = TRANCHED_MODEL(),
+    depositedTokenMint = this.usdc,
+    tokenProgram = ProgramId.TOKEN,
+    isCancelable = true,
+    isDepleted = false,
+    wasCanceled = false,
+  } = {}): Stream {
+    const nftAddress = this.getStreamNftAddress(salt);
+    const data: StreamData = {
+      amounts: TRANCHED_AMOUNTS(),
+      bump: 0,
+      depositedTokenMint,
+      isCancelable,
+      isDepleted,
+      model,
+      nftAddress,
+      salt,
+      sender: this.sender.keys.publicKey,
+      wasCanceled,
+    };
+    const streamDataAddress = this.getStreamDataAddress(salt);
+    const streamDataAta = deriveATAAddress(depositedTokenMint, streamDataAddress, tokenProgram);
+    const collectionAddress = this.getStreamNftCollectionAddress();
+
+    return {
+      data,
+      dataAddress: streamDataAddress,
+      dataAta: streamDataAta,
+      nftAddress,
+      nftCollectionAddress: collectionAddress,
+    };
+  }
+
+  defaultTranchedStreamToken2022({
+    salt = this.salts.defaultLt,
+    isCancelable = true,
+    isDepleted = false,
+    wasCanceled = false,
+  } = {}): Stream {
+    return this.defaultTranchedStream({
       depositedTokenMint: this.dai,
       isCancelable,
       isDepleted,
