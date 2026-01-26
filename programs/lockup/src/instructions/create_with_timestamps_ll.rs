@@ -9,7 +9,7 @@ use crate::{
     state::{lockup::*, Treasury},
     utils::{
         constants::{
-            nft::{NFT_METADATA_URI, NFT_NAME_PREFIX},
+            nft::{LL_NFT_METADATA_URI, LL_NFT_NAME_PREFIX},
             seeds::*,
             ANCHOR_DISCRIMINATOR_SIZE,
         },
@@ -181,7 +181,7 @@ pub fn handler(
     // "Sablier LL Stream #[first 5 chars of asset key]...[last 5 chars of asset key]"
     let stream_nft_key = stream_nft.key().to_string();
     let stream_nft_name =
-        format!("{NFT_NAME_PREFIX}{}...{}", &stream_nft_key[..5], &stream_nft_key[stream_nft_key.len() - 5..]);
+        format!("{LL_NFT_NAME_PREFIX}{}...{}", &stream_nft_key[..5], &stream_nft_key[stream_nft_key.len() - 5..]);
 
     let stream_nft_signer_seeds: &[&[u8]] =
         &[STREAM_NFT, sender_key.as_ref(), &salt.to_le_bytes(), &[ctx.bumps.stream_nft]];
@@ -195,7 +195,7 @@ pub fn handler(
         .payer(&funder.to_account_info())
         .system_program(&ctx.accounts.system_program.to_account_info())
         .name(stream_nft_name)
-        .uri(NFT_METADATA_URI.to_string())
+        .uri(LL_NFT_METADATA_URI.to_string())
         .invoke_signed(&[stream_nft_signer_seeds, collection_authority_signer_seeds])?;
 
     // Interaction: transfer tokens from the sender's ATA to the StreamData ATA.

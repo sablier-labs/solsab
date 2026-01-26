@@ -96,17 +96,9 @@ pub fn check_create_linear(
 }
 
 /// Validate the parameters for creating a tranched stream.
-pub fn check_create_tranched(deposit_amount: u64, start_time: u64, tranches: &[Tranche]) -> Result<()> {
-    // Check: the deposit amount is not zero.
-    if deposit_amount == 0 {
-        return Err(ErrorCode::DepositAmountZero.into());
-    }
-
-    // Check: the start time is not zero.
-    if start_time == 0 {
-        return Err(ErrorCode::StartTimeZero.into());
-    }
-
+///
+/// Returns the calculated deposit amount (sum of all tranche amounts) on success.
+pub fn check_create_tranched(start_time: u64, tranches: &[Tranche]) -> Result<u64> {
     // Check: the tranches array is not empty.
     if tranches.is_empty() {
         return Err(ErrorCode::TranchesArrayEmpty.into());
@@ -115,6 +107,11 @@ pub fn check_create_tranched(deposit_amount: u64, start_time: u64, tranches: &[T
     // Check: tranches count doesn't exceed maximum.
     if tranches.len() > MAX_TRANCHES {
         return Err(ErrorCode::TooManyTranches.into());
+    }
+
+    // Check: the start time is not zero.
+    if start_time == 0 {
+        return Err(ErrorCode::StartTimeZero.into());
     }
 
     // Check: start time is strictly less than first tranche timestamp.
@@ -142,12 +139,7 @@ pub fn check_create_tranched(deposit_amount: u64, start_time: u64, tranches: &[T
         prev_timestamp = tranche.timestamp;
     }
 
-    // Check: sum equals deposit amount.
-    if sum != deposit_amount {
-        return Err(ErrorCode::TrancheAmountsDontMatchDeposit.into());
-    }
-
-    Ok(())
+    Ok(sum)
 }
 
 /// Validate the renouncement of a stream.

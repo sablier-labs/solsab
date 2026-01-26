@@ -6,10 +6,9 @@ use crate::{
     state::lockup::Tranche,
     utils::{
         constants::{
-            nft::{NFT_METADATA_URI, NFT_NAME_PREFIX},
+            nft::{LT_NFT_METADATA_URI, LT_NFT_NAME_PREFIX},
             seeds::*,
         },
-        errors::ErrorCode,
         events::{CreateLockupStream, CreateStreamModel},
         transfer_helper::transfer_tokens,
         validations::check_create_tranched,
@@ -36,14 +35,8 @@ pub fn handler(
     let sender_key = &ctx.accounts.sender.key();
     let stream_nft = &ctx.accounts.stream_nft;
 
-    // Calculate the deposit amount from the tranches, checking for overflow.
-    let deposit_amount: u64 = tranches
-        .iter()
-        .try_fold(0u64, |acc, t| acc.checked_add(t.amount))
-        .ok_or(ErrorCode::TrancheAmountsSumOverflow)?;
-
-    // Validate the parameters of the tranched stream.
-    check_create_tranched(deposit_amount, start_time, &tranches)?;
+    // Validate the parameters and calculate the deposit amount from the tranches.
+    let deposit_amount = check_create_tranched(start_time, &tranches)?;
 
     // Effect: create the tranched stream data.
     ctx.accounts.stream_data.create_tranched(
@@ -61,10 +54,10 @@ pub fn handler(
     // Note: the stream NFT is automatically added to the stream NFT collection.
 
     // Construct the Stream NFT name using the following format:
-    // "Sablier LL Stream #[first 5 chars of asset key]...[last 5 chars of asset key]"
+    // "Sablier LT Stream #[first 5 chars of asset key]...[last 5 chars of asset key]"
     let stream_nft_key = stream_nft.key().to_string();
     let stream_nft_name =
-        format!("{NFT_NAME_PREFIX}{}...{}", &stream_nft_key[..5], &stream_nft_key[stream_nft_key.len() - 5..]);
+        format!("{LT_NFT_NAME_PREFIX}{}...{}", &stream_nft_key[..5], &stream_nft_key[stream_nft_key.len() - 5..]);
 
     let stream_nft_signer_seeds: &[&[u8]] =
         &[STREAM_NFT, sender_key.as_ref(), &salt.to_le_bytes(), &[ctx.bumps.stream_nft]];
@@ -78,7 +71,7 @@ pub fn handler(
         .payer(&funder.to_account_info())
         .system_program(&ctx.accounts.system_program.to_account_info())
         .name(stream_nft_name)
-        .uri(NFT_METADATA_URI.to_string())
+        .uri(LT_NFT_METADATA_URI.to_string())
         .invoke_signed(&[stream_nft_signer_seeds, collection_authority_signer_seeds])?;
 
     // Interaction: transfer tokens from the funder's ATA to the StreamData ATA.

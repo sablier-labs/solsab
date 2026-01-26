@@ -49,8 +49,6 @@ pub enum ErrorCode {
     TranchesArrayEmpty,
     #[msg("Tranche timestamps must be in strictly ascending order!")]
     TranchesNotSorted,
-    #[msg("The sum of tranche amounts doesn't match the deposit amount!")]
-    TrancheAmountsDontMatchDeposit,
     #[msg("Tranche amount must be greater than zero!")]
     TrancheAmountZero,
     #[msg("Stream start time must be strictly less than the first tranche's timestamp!")]
