@@ -1,6 +1,6 @@
 pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
-pub const LAMPORTS_PER_SOL: u64 = 1e9 as u64;
-/// Maximum number of tranches per stream (constrained by tx size/CU limits).
+pub const LAMPORTS_PER_SOL: u64 = 1e9 as u64; // 1 billion lamports in 1 SOL
+/// Maximum number of tranches in a LT stream (constrained by tx size/CU limits).
 pub const MAX_TRANCHES: usize = 30;
 /// The fee amount in USD, denominated in Chainlink's 8-decimal format for USD prices, where 1e8 is $1.
 /// Currently set to 0.
@@ -28,6 +28,6 @@ pub mod nft {
 
     // Tranched stream NFT metadata.
     pub const LT_NFT_METADATA_URI: &str =
-        "https://ipfs.io/ipfs/bafkreiaidfetl2iedxjzbh2hof7dj3hdrs5l7sr643ggtjh7sb42jcj5nq";
+        "https://ipfs.io/ipfs/bafkreih2l33pz4annd4c2ve4uiqnnxk5ncmzxtj4yoj3ueuz4iw3lepyz4";
     pub const LT_NFT_NAME_PREFIX: &str = "Sablier LT Stream #";
 }
