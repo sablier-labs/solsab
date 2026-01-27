@@ -6,6 +6,7 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
+use mpl_core::accounts::BaseAssetV1;
 
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
@@ -28,23 +29,17 @@ pub struct Withdraw<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
-    /// Read account: the recipient of the stream who owns the stream NFT.
-    /// CHECK: This account must be the Stream's recipient (checked in recipient_stream_nft_ata's constraints)
-    pub stream_recipient: UncheckedAccount<'info>,
-
     /// Read account: the account that will receive the withdrawn tokens.
     #[account(
       constraint = (
-        withdrawal_recipient.key() == stream_recipient.key() ||
-        (withdrawal_recipient.key() != stream_recipient.key() &&
-        signer.key() == stream_recipient.key())
+        withdrawal_recipient.key() == stream_nft.owner ||
+        signer.key() == stream_nft.owner
       )
     )]
-    /// CHECK: This can be any address if the signer is the stream's recipient, otherwise it must be the stream's
-    /// recipient.
+    /// CHECK: Must be the stream recipient - or, if the signer is the stream recipient, it can be any address.
     pub withdrawal_recipient: UncheckedAccount<'info>,
 
-    /// Create if needed account: the ATA for deposited tokens owned by withdrawal recipient.
+    /// Create-if-needed account: the withdrawal recipient's ATA for the deposited tokens.
     #[account(
       init_if_needed,
       payer = signer,
@@ -72,21 +67,10 @@ pub struct Withdraw<'info> {
     #[account(address = stream_data.deposited_token_mint)]
     pub deposited_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    /// Read account: the ATA for the stream NFT owned by recipient.
-    #[account(
-      associated_token::authority = stream_recipient,
-      associated_token::mint = stream_nft_mint,
-      associated_token::token_program = nft_token_program,
-      // Dev: this constraint is vital for making sure that the tokens are only withdrawn to the legitimate recipient
-      constraint = recipient_stream_nft_ata.amount == 1,
-      // TODO: are there any other ways in which one could "fake" the recipient's authority (and that need to be checked in this Ix)?
-    )]
-    pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
     /// Write account: the account storing the stream data.
     #[account(
       mut,
-      seeds = [STREAM_DATA, stream_nft_mint.key().as_ref()],
+      seeds = [STREAM_DATA, stream_nft.key().as_ref()],
       bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
@@ -100,8 +84,9 @@ pub struct Withdraw<'info> {
     )]
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    /// Read account: the mint account for the stream NFT.
-    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
+    /// Read account: the NFT representing the stream.
+    #[account(address = stream_data.nft_address)]
+    pub stream_nft: Box<Account<'info, BaseAssetV1>>,
 
     // -------------------------------------------------------------------------- //
     //                               PROGRAM ACCOUNTS                             //
@@ -121,9 +106,6 @@ pub struct Withdraw<'info> {
 
     /// Program account: the Token program of the deposited token.
     pub deposited_token_program: Interface<'info, TokenInterface>,
-
-    /// Program account: the Token program of the stream NFT.
-    pub nft_token_program: Interface<'info, TokenInterface>,
 
     // -------------------------------------------------------------------------- //
     //                               SYSTEM ACCOUNTS                              //
@@ -166,7 +148,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         ctx.accounts.deposited_token_program.to_account_info(),
         amount,
         ctx.accounts.deposited_token_mint.decimals,
-        &[&[STREAM_DATA, ctx.accounts.stream_nft_mint.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
+        &[&[STREAM_DATA, ctx.accounts.stream_nft.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
     )?;
 
     // Log the withdrawal.
@@ -174,7 +156,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         deposited_token_mint: ctx.accounts.deposited_token_mint.key(),
         fee_in_lamports,
         stream_data: ctx.accounts.stream_data.key(),
-        stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
+        stream_nft: ctx.accounts.stream_nft.key(),
         withdrawn_amount: amount,
     });
 

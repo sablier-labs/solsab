@@ -1,10 +1,11 @@
 import type { BN } from "@coral-xyz/anchor";
 import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
+import { PublicKey } from "@solana/web3.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
-import { BN_1, BN_1000, ZERO } from "../../../lib/constants";
+import { BN_1000, ZERO } from "../../../lib/constants";
 import { usdc } from "../../../lib/convertors";
-import { getATABalance, getMintTotalSupplyOf } from "../../common/anchor-bankrun";
-import { assertAccountExists, assertEqBn } from "../../common/assertions";
+import { getATABalance } from "../../common/anchor-bankrun";
+import { assertAccountExists, assertEqBn, assertEqPublicKey } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { AMOUNTS, Amount, TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defaults";
@@ -105,6 +106,8 @@ describe("createWithTimestampsLl", () => {
                     ctx.sender.usdcATA,
                   );
 
+                  const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
+
                   const salt = await ctx.createWithTimestampsLl({
                     timestamps: TIMESTAMPS({ cliff: ZERO }),
                     unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO, start: ZERO }),
@@ -116,7 +119,12 @@ describe("createWithTimestampsLl", () => {
                   expectedStream.data.timestamps.cliff = ZERO;
                   expectedStream.data.amounts = AMOUNTS({ cliffUnlock: ZERO, startUnlock: ZERO });
 
-                  await assertStreamCreation(salt, beforeSenderTokenBalance, expectedStream);
+                  await assertStreamCreation(
+                    salt,
+                    beforeCollectionSize,
+                    beforeSenderTokenBalance,
+                    expectedStream,
+                  );
                 });
               });
             });
@@ -169,19 +177,26 @@ describe("createWithTimestampsLl", () => {
                           ctx.banksClient,
                           ctx.sender.usdcATA,
                         );
+                        const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
                         const salt = await ctx.createWithTimestampsLl();
 
-                        await assertStreamCreation(salt, beforeSenderTokenBalance);
+                        await assertStreamCreation(
+                          salt,
+                          beforeCollectionSize,
+                          beforeSenderTokenBalance,
+                        );
                       });
                     });
 
                     describe("when token 2022 standard", () => {
                       it("should create the stream", async () => {
                         const beforeSenderTokenBalance = await ctx.getSenderTokenBalance(ctx.dai);
+                        const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
                         const salt = await ctx.createWithTimestampsLlToken2022();
 
                         await assertStreamCreation(
                           salt,
+                          beforeCollectionSize,
                           beforeSenderTokenBalance,
                           ctx.defaultStreamToken2022({ salt: salt }),
                         );
@@ -200,35 +215,48 @@ describe("createWithTimestampsLl", () => {
 
 async function assertStreamCreation(
   salt: BN,
+  beforeCollectionSize: BN,
   beforeSenderTokenBalance: BN,
   expectedStream = ctx.defaultStream({ salt }),
+  recipient = ctx.recipient.keys.publicKey,
 ) {
-  await assertAccountExists(ctx, expectedStream.nftMintAddress, "Stream NFT Mint");
-  await assertAccountExists(ctx, expectedStream.dataAddress, "Stream Data");
-  await assertAccountExists(ctx, expectedStream.dataAta, "Stream Data ATA");
-  await assertAccountExists(ctx, expectedStream.nftMasterEdition, "Stream NFT Master Edition");
-  await assertAccountExists(ctx, expectedStream.nftMetadataAddress, "Stream NFT Metadata");
-  await assertAccountExists(ctx, expectedStream.recipientStreamNftAta, "Recipient Stream NFT ATA");
+  // Assert that core stream accounts exist
+  await assertAccountExists(ctx, expectedStream.nftAddress, "Stream NFT doesn't exist");
+  await assertAccountExists(ctx, expectedStream.dataAddress, "Stream Data doesn't exist");
+  await assertAccountExists(ctx, expectedStream.dataAta, "Stream Data ATA doesn't exist");
 
   // Assert the contents of the Stream Data account
   const actualStreamData = await ctx.fetchStreamData(salt);
   assertEqStreamData(actualStreamData, expectedStream.data);
 
-  // Assert that the Stream NFT Mint has the correct total supply
-  const streamNftMintTotalSupply = await getMintTotalSupplyOf(
-    ctx.banksClient,
-    expectedStream.nftMintAddress,
-  );
-  assertEqBn(streamNftMintTotalSupply, BN_1, "Stream NFT Mint total supply not 1");
+  // Fetch the Stream NFT
+  const streamNft = await ctx.fetchStreamNft(salt);
 
-  // Assert that the Recipient's Stream NFT ATA has the correct balance
-  const recipientStreamNftBalance = await getATABalance(
-    ctx.banksClient,
-    expectedStream.recipientStreamNftAta,
+  // Assert that the Stream NFT is owned by the recipient
+  assertEqPublicKey(
+    new PublicKey(streamNft.owner),
+    recipient,
+    "Stream NFT isn't owned by the recipient",
   );
-  assertEqBn(recipientStreamNftBalance, BN_1, "Stream NFT not minted");
 
-  // TODO: test that the Stream NFT has been properly added to the LL NFT collection
+  // Assert that the Update Authority of the Stream NFT isn't undefined
+  if (!streamNft.updateAuthority.address) {
+    throw new Error("Stream NFT update authority is undefined");
+  }
+
+  // Assert that the Stream NFT has been added to the collection
+  assertEqPublicKey(
+    new PublicKey(streamNft.updateAuthority.address),
+    ctx.nftCollectionAddress,
+    "Stream NFT isn't added to the collection",
+  );
+
+  // Assert that the collection size has increased by exactly 1
+  assertEqBn(
+    await ctx.getStreamNftCollectionSize(),
+    beforeCollectionSize.addn(1),
+    "Collection size should have increased by exactly 1",
+  );
 
   // Assert that the Sender's balance has changed correctly
   const expectedTokenBalance = beforeSenderTokenBalance.sub(Amount.DEPOSIT);

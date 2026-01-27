@@ -1,10 +1,10 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::Mint;
+use mpl_core::accounts::BaseAssetV1;
 
 use crate::{
     state::lockup::StreamData,
     utils::{
-        constants::seeds::STREAM_DATA, events::RenounceLockupStream, lockup_math::get_streamed_amount,
+        constants::seeds::*, events::RenounceLockupStream, lockup_math::get_streamed_amount,
         validations::check_renounce,
     },
 };
@@ -24,16 +24,14 @@ pub struct Renounce<'info> {
     /// Write account: the stream data account storing stream details.
     #[account(
       mut,
-      seeds = [
-        STREAM_DATA,
-        stream_nft_mint.key().as_ref()
-      ],
+      seeds = [STREAM_DATA, stream_nft.key().as_ref()],
       bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
 
-    /// Read account: the mint account for the stream NFT.
-    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
+    /// Read account: the NFT representing the stream.
+    #[account(address = stream_data.nft_address)]
+    pub stream_nft: Box<Account<'info, BaseAssetV1>>,
 }
 
 /// See the documentation for [`fn@crate::sablier_lockup::renounce`].
@@ -57,7 +55,7 @@ pub fn handler(ctx: Context<Renounce>) -> Result<()> {
     emit!(RenounceLockupStream {
         deposited_token_mint: ctx.accounts.stream_data.deposited_token_mint,
         stream_data: ctx.accounts.stream_data.key(),
-        stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
+        stream_nft: ctx.accounts.stream_nft.key(),
     });
 
     Ok(())

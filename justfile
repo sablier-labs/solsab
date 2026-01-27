@@ -92,15 +92,17 @@ full-write:
     just _run-with-status rust-write
 
 # Run Rust checks
+# TODO: Remove `--allow deprecated` once mpl-core crate deprecation warnings are resolved upstream.
+# This was added for the MPL Core migration (PR #307). Track removal in a GitHub issue.
 rust-check:
     cargo fmt --check
-    cargo clippy -- --deny warnings
+    cargo clippy -- --deny warnings --allow deprecated
 alias rc := rust-check
 
 # Format Rust code
 rust-write:
     cargo fmt
-    cargo clippy --fix --allow-dirty
+    cargo clippy --fix --allow-dirty -- --allow deprecated
 alias rw := rust-write
 
 # ---------------------------------------------------------------------------- #
@@ -142,16 +144,16 @@ alias tmi := test-merkle-instant
 _setup-fixtures:
     #!/usr/bin/env sh
     FIXTURES_DIR="tests/fixtures"
+    mkdir -p "$FIXTURES_DIR"
 
-    if [ ! -d "$FIXTURES_DIR" ]; then
-        echo "📦 Setting up fixtures..."
-        mkdir -p "$FIXTURES_DIR"
-
-        # Token Metadata Program
+    # Token Metadata Program
+    if [ ! -f "$FIXTURES_DIR/token_metadata_program.so" ]; then
         echo "📥 Downloading Token Metadata program..."
         solana program dump -u m metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s "$FIXTURES_DIR/token_metadata_program.so"
+    fi
 
-        # Chainlink Program
+    # Chainlink Program
+    if [ ! -f "$FIXTURES_DIR/chainlink_program.so" ]; then
         echo "📥 Downloading Chainlink program..."
         solana program dump -u m HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny "$FIXTURES_DIR/chainlink_program.so"
     fi

@@ -1,5 +1,4 @@
 import * as anchor from "@coral-xyz/anchor";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import type { Keypair } from "@solana/web3.js";
 import { ComputeBudgetProgram } from "@solana/web3.js";
 
@@ -32,7 +31,6 @@ export async function initSablierLockup() {
     .signers([signerKeys])
     .accounts({
       initializer: signerKeys.publicKey,
-      nftTokenProgram: TOKEN_PROGRAM_ID,
     })
     .preInstructions([increaseCULimitIx])
     .rpc();

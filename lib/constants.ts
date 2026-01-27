@@ -21,7 +21,7 @@ export namespace ProgramId {
   export const CHAINLINK_SOL_USD_FEED = new PublicKey(
     "99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY6jZ96ynrR",
   );
+  export const MPL_CORE = new PublicKey("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d");
   export const TOKEN = TOKEN_PROGRAM_ID;
-  export const TOKEN_METADATA = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
   export const TOKEN_2022 = TOKEN_2022_PROGRAM_ID;
 }

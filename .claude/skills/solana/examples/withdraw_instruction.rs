@@ -1,11 +1,15 @@
 // Example: Complete Anchor instruction with all key patterns
 // From: programs/lockup/src/instructions/withdraw.rs
 
-use anchor_lang::prelude::*;
+use anchor_lang::{
+    prelude::*,
+    solana_program::{program::invoke, system_instruction::transfer},
+};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
+use mpl_core::accounts::BaseAssetV1;
 
 use crate::{
     state::{lockup::StreamData, treasury::Treasury},
@@ -28,15 +32,14 @@ pub struct Withdraw<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
-    /// CHECK: Validated via constraint on recipient_stream_nft_ata
-    pub stream_recipient: UncheckedAccount<'info>,
-
-    /// CHECK: Custom constraint allows recipient or authorized withdrawal
-    #[account(constraint = (
-        withdrawal_recipient.key() == stream_recipient.key() ||
-        (withdrawal_recipient.key() != stream_recipient.key() &&
-         signer.key() == stream_recipient.key())
-    ))]
+    /// Read account: the account that will receive the withdrawn tokens.
+    #[account(
+      constraint = (
+        withdrawal_recipient.key() == stream_nft.owner ||
+        signer.key() == stream_nft.owner
+      )
+    )]
+    /// CHECK: Must be the stream recipient - or, if the signer is the stream recipient, it can be any address.
     pub withdrawal_recipient: UncheckedAccount<'info>,
 
     /// Init-if-needed pattern: create ATA on first withdrawal
@@ -67,19 +70,10 @@ pub struct Withdraw<'info> {
     #[account(address = stream_data.deposited_token_mint)]
     pub deposited_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    /// NFT ownership verification: recipient must hold exactly 1 NFT
-    #[account(
-        associated_token::authority = stream_recipient,
-        associated_token::mint = stream_nft_mint,
-        associated_token::token_program = nft_token_program,
-        constraint = recipient_stream_nft_ata.amount == 1,
-    )]
-    pub recipient_stream_nft_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    /// Stream data PDA: derived from NFT mint
+    /// Write account: the account storing the stream data.
     #[account(
         mut,
-        seeds = [STREAM_DATA, stream_nft_mint.key().as_ref()],
+        seeds = [STREAM_DATA, stream_nft.key().as_ref()],
         bump = stream_data.bump,
     )]
     pub stream_data: Box<Account<'info, StreamData>>,
@@ -93,7 +87,8 @@ pub struct Withdraw<'info> {
     )]
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    pub stream_nft_mint: Box<InterfaceAccount<'info, Mint>>,
+    /// Read account: the MPL Core NFT representing the stream.
+    pub stream_nft: Box<Account<'info, BaseAssetV1>>,
 
     // ------------------------------------------------------------------------ //
     //                            PROGRAM ACCOUNTS                              //
@@ -110,7 +105,6 @@ pub struct Withdraw<'info> {
 
     /// Interface: supports both Token and Token2022
     pub deposited_token_program: Interface<'info, TokenInterface>,
-    pub nft_token_program: Interface<'info, TokenInterface>,
 
     // ------------------------------------------------------------------------ //
     //                             SYSTEM ACCOUNTS                              //
@@ -156,7 +150,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         amount,
         ctx.accounts.deposited_token_mint.decimals,
         // PDA signer seeds for CPI
-        &[&[STREAM_DATA, ctx.accounts.stream_nft_mint.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
+        &[&[STREAM_DATA, ctx.accounts.stream_nft.key().as_ref(), &[ctx.accounts.stream_data.bump]]],
     )?;
 
     // Emit event for indexers
@@ -164,7 +158,7 @@ pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         deposited_token_mint: ctx.accounts.deposited_token_mint.key(),
         fee_in_lamports,
         stream_data: ctx.accounts.stream_data.key(),
-        stream_nft_mint: ctx.accounts.stream_nft_mint.key(),
+        stream_nft: ctx.accounts.stream_nft.key(),
         withdrawn_amount: amount,
     });
 
