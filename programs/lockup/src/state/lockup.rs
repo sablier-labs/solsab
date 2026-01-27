@@ -55,6 +55,7 @@ impl StreamData {
         cliff_unlock_amount: u64,
         deposit_amount: u64,
         end_time: u64,
+        nft_address: Pubkey,
         salt: u128,
         is_cancelable: bool,
         sender: Pubkey,
@@ -72,6 +73,7 @@ impl StreamData {
         self.deposited_token_mint = deposited_token_mint;
         self.is_cancelable = is_cancelable;
         self.is_depleted = false;
+        self.nft_address = nft_address;
         self.salt = salt;
         self.sender = sender;
         self.timestamps = Timestamps {

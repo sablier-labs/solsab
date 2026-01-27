@@ -20,5 +20,6 @@ pub struct StreamView<'info> {
     pub stream_data: Box<Account<'info, StreamData>>,
 
     /// Read account: the NFT representing the stream.
+    #[account(address = stream_data.nft_address)]
     pub stream_nft: Box<Account<'info, BaseAssetV1>>,
 }

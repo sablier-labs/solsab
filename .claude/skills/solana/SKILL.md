@@ -100,7 +100,7 @@ pub struct CreateWithTimestamps<'info> {
         init,
         payer = creator,
         space = 8 + StreamData::INIT_SPACE,
-        seeds = [STREAM_DATA, stream_nft_mint.key().as_ref()],
+        seeds = [STREAM_DATA, stream_nft.key().as_ref()],
         bump
     )]
     pub stream_data: Box<Account<'info, StreamData>>,

@@ -92,6 +92,8 @@ full-write:
     just _run-with-status rust-write
 
 # Run Rust checks
+# TODO: Remove `--allow deprecated` once mpl-core crate deprecation warnings are resolved upstream.
+# This was added for the MPL Core migration (PR #307). Track removal in a GitHub issue.
 rust-check:
     cargo fmt --check
     cargo clippy -- --deny warnings --allow deprecated
@@ -100,7 +102,7 @@ alias rc := rust-check
 # Format Rust code
 rust-write:
     cargo fmt
-    cargo clippy --fix --allow-dirty
+    cargo clippy --fix --allow-dirty -- --allow deprecated
 alias rw := rust-write
 
 # ---------------------------------------------------------------------------- #

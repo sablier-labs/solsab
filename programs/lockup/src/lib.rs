@@ -115,7 +115,6 @@ pub mod sablier_lockup {
     /// - `deposit_token_mint` The mint of the tokens to be deposited.
     /// - `recipient` The address receiving the tokens, as well as the NFT owner.
     /// - `deposit_token_program` The Token Program of the deposit token.
-    /// - `nft_token_program` The Token Program of the NFT.
     ///
     /// # Parameters
     ///
@@ -174,7 +173,6 @@ pub mod sablier_lockup {
     /// # Accounts Expected
     ///
     /// - `initializer` The transaction signer.
-    /// - `nft_token_program` The Token Program of the NFT collection.
     ///
     /// # Parameters:
     ///
@@ -210,10 +208,9 @@ pub mod sablier_lockup {
     ///
     /// - `signer` The transaction signer.
     /// - `deposited_token_mint` The mint of the deposited token.
-    /// - `stream_nft_mint` The stream NFT mint uniquely identifying the stream.
+    /// - `stream_nft` The NFT uniquely identifying the stream.
     /// - `withdrawal_recipient` The address of the recipient receiving the withdrawn tokens.
     /// - `deposited_token_program` The Token Program of the deposited token.
-    /// - `nft_token_program` The Token Program of the NFT.
     /// - `chainlink_program`: The Chainlink program used to retrieve on-chain price feeds.
     /// - `chainlink_sol_usd_feed`: The account providing the SOL/USD price feed data.
     ///

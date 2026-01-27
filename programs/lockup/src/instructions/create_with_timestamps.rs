@@ -159,6 +159,7 @@ pub fn handler(
         cliff_unlock_amount,
         deposit_amount,
         end_time,
+        stream_nft.key(),
         salt,
         is_cancelable,
         *sender_key,
