@@ -104,9 +104,10 @@ pub struct StreamData {
     pub salt: u128,
     pub is_cancelable: bool,
     pub is_depleted: bool,
+    pub model: StreamModel,
+    pub nft_address: Pubkey,
     pub sender: Pubkey,
     pub was_canceled: bool,
-    pub model: StreamModel,
 }
 
 impl StreamData {
@@ -125,6 +126,7 @@ impl StreamData {
         deposited_token_mint: Pubkey,
         end_time: u64,
         is_cancelable: bool,
+        nft_address: Pubkey,
         salt: u128,
         sender: Pubkey,
         start_time: u64,
@@ -150,6 +152,7 @@ impl StreamData {
                 cliff: cliff_unlock_amount,
             },
         };
+        self.nft_address = nft_address;
         self.salt = salt;
         self.sender = sender;
         self.was_canceled = false;
@@ -168,6 +171,7 @@ impl StreamData {
         deposited_token_mint: Pubkey,
         bump: u8,
         deposit_amount: u64,
+        nft_address: Pubkey,
         salt: u128,
         is_cancelable: bool,
         sender: Pubkey,
@@ -181,13 +185,8 @@ impl StreamData {
             refunded: 0,
             withdrawn: 0,
         };
-        self.deposited_token_mint = deposited_token_mint;
         self.bump = bump;
-        self.salt = salt;
-        self.is_cancelable = is_cancelable;
-        self.is_depleted = false;
-        self.sender = sender;
-        self.was_canceled = false;
+        self.deposited_token_mint = deposited_token_mint;
         self.model = StreamModel::Tranched {
             timestamps: TranchedTimestamps {
                 start: start_time,
@@ -195,6 +194,12 @@ impl StreamData {
             },
             tranches,
         };
+        self.nft_address = nft_address;
+        self.is_cancelable = is_cancelable;
+        self.is_depleted = false;
+        self.salt = salt;
+        self.sender = sender;
+        self.was_canceled = false;
 
         Ok(())
     }

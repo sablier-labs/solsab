@@ -43,6 +43,7 @@ pub fn handler(
         deposit_token_mint.key(),
         ctx.bumps.stream_data,
         deposit_amount,
+        stream_nft.key(),
         salt,
         is_cancelable,
         *sender_key,

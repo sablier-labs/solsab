@@ -1,8 +1,8 @@
 import * as anchor from "@coral-xyz/anchor";
 import type { AssetV1, CollectionV1 } from "@metaplex-foundation/mpl-core";
 import { deserializeAssetV1, deserializeCollectionV1 } from "@metaplex-foundation/mpl-core";
-import type { RpcAccount, SolAmount } from "@metaplex-foundation/umi";
-import { publicKey } from "@metaplex-foundation/umi";
+import type { RpcAccount } from "@metaplex-foundation/umi";
+import { lamports, publicKey } from "@metaplex-foundation/umi";
 import * as token from "@solana/spl-token";
 import type { Keypair } from "@solana/web3.js";
 import { PublicKey } from "@solana/web3.js";
@@ -512,7 +512,7 @@ export class LockupTestContext extends TestContext {
     return {
       data: accInfo.data,
       executable: accInfo.executable,
-      lamports: accInfo.lamports as unknown as SolAmount,
+      lamports: lamports(accInfo.lamports),
       owner: publicKey(accInfo.owner.toString()),
       publicKey: publicKey(accAddress.toString()),
     };
