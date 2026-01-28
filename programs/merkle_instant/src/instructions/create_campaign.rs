@@ -12,6 +12,10 @@ use crate::{
     },
 };
 
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
 #[derive(Accounts)]
 #[instruction(
     merkle_root: [u8; 32],
@@ -77,6 +81,10 @@ pub struct CreateCampaign<'info> {
     /// Program account: the System program.
     pub system_program: Program<'info, System>,
 }
+
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
 
 /// See the documentation for [`fn@crate::sablier_merkle_instant::create_campaign`].
 #[allow(clippy::too_many_arguments)]

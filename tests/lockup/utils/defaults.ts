@@ -1,7 +1,12 @@
 import { BN } from "@coral-xyz/anchor";
 import { ZERO } from "../../../lib/constants";
 import { usdc } from "../../../lib/convertors";
-import type { Amounts, Timestamps } from "../../../target/types/sablier_lockup_structs";
+import type {
+  Amounts,
+  LinearTimestamps,
+  LinearUnlockAmounts,
+  StreamModel,
+} from "../../../target/types/sablier_lockup_structs";
 import type { UnlockAmounts } from "./types";
 
 export namespace Amount {
@@ -39,31 +44,52 @@ export namespace Time {
  * These are written as functions so that the fields can be updated in each test.
  */
 
-export function AMOUNTS({
-  cliffUnlock = Amount.CLIFF,
+export function LINEAR_AMOUNTS({
   deposited = Amount.DEPOSIT,
   refunded = ZERO,
-  startUnlock = Amount.START,
   withdrawn = ZERO,
 }: Partial<Amounts> = {}): Amounts {
   return {
-    cliffUnlock,
     deposited,
     refunded,
-    startUnlock,
     withdrawn,
   };
 }
 
-export function TIMESTAMPS({
+export function LINEAR_TIMESTAMPS({
   cliff = Time.CLIFF,
   end = Time.END,
   start = Time.START,
-}: Partial<Timestamps> = {}): Timestamps {
+}: Partial<LinearTimestamps> = {}): LinearTimestamps {
   return {
     cliff,
     end,
     start,
+  };
+}
+
+export function LINEAR_UNLOCK_AMOUNTS({
+  cliff = Amount.CLIFF,
+  start = Amount.START,
+}: Partial<LinearUnlockAmounts> = {}): LinearUnlockAmounts {
+  return {
+    cliff,
+    start,
+  };
+}
+
+export function LINEAR_MODEL({
+  timestamps: timestampOverrides,
+  unlockAmounts: unlockAmountsOverrides,
+}: {
+  timestamps?: Partial<LinearTimestamps>;
+  unlockAmounts?: Partial<LinearUnlockAmounts>;
+} = {}): StreamModel {
+  return {
+    linear: {
+      timestamps: LINEAR_TIMESTAMPS(timestampOverrides),
+      unlockAmounts: LINEAR_UNLOCK_AMOUNTS(unlockAmountsOverrides),
+    },
   };
 }
 

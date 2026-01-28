@@ -1,24 +1,25 @@
 use anchor_lang::{prelude::*, solana_program::keccak::hashv as keccak};
 
-use crate::utils::{errors::ErrorCode, time::get_current_time};
+use crate::{
+    state::campaign::Campaign,
+    utils::{errors::ErrorCode, time::get_current_time},
+};
 
 /// Validate the claim of a campaign.
 pub fn check_claim(
     amount: u64,
-    campaign_start_time: u64,
-    expiration_time: u64,
+    campaign: &Campaign,
     index: u32,
     merkle_proof: Vec<[u8; 32]>,
-    merkle_root: [u8; 32],
     recipient: Pubkey,
 ) -> Result<()> {
     // Check: the campaign has started.
-    if !has_campaign_started(campaign_start_time)? {
+    if !has_campaign_started(campaign.campaign_start_time)? {
         return Err(ErrorCode::CampaignNotStarted.into());
     }
 
     // Check: the campaign has not expired.
-    if has_expired(expiration_time)? {
+    if has_expired(campaign.expiration_time)? {
         return Err(ErrorCode::CampaignExpired.into());
     }
 
@@ -47,7 +48,7 @@ pub fn check_claim(
         }
     }
     // Check if the computed hash (root) is equal to the provided root
-    if computed_hash != merkle_root {
+    if computed_hash != campaign.merkle_root {
         return Err(ErrorCode::InvalidMerkleProof.into());
     }
 
@@ -55,9 +56,9 @@ pub fn check_claim(
 }
 
 /// Validate the clawback from a campaign.
-pub fn check_clawback(expiration_time: u64, first_claim_time: u64) -> Result<()> {
+pub fn check_clawback(campaign: &Campaign) -> Result<()> {
     // Check: the grace period has not passed or the campaign has expired.
-    if has_grace_period_passed(first_claim_time)? && !has_expired(expiration_time)? {
+    if has_grace_period_passed(campaign.first_claim_time)? && !has_expired(campaign.expiration_time)? {
         return Err(ErrorCode::ClawbackNotAllowed.into());
     }
 

@@ -5,6 +5,10 @@ use crate::{
     utils::{constants::seeds::TREASURY, events::FeesCollected, validations::check_collect_fees},
 };
 
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
 #[derive(Accounts)]
 pub struct CollectFees<'info> {
     // -------------------------------------------------------------------------- //
@@ -30,6 +34,10 @@ pub struct CollectFees<'info> {
     )]
     pub treasury: Box<Account<'info, Treasury>>,
 }
+
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
 
 /// See the documentation for [`fn@crate::sablier_lockup::collect_fees`].
 pub fn handler(ctx: Context<CollectFees>) -> Result<()> {

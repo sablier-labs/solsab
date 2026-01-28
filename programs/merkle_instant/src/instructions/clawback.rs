@@ -9,6 +9,10 @@ use crate::{
     utils::{constants::seeds::CAMPAIGN, events, transfer_helper::transfer_tokens, validations::check_clawback},
 };
 
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
 #[derive(Accounts)]
 pub struct Clawback<'info> {
     // -------------------------------------------------------------------------- //
@@ -70,13 +74,17 @@ pub struct Clawback<'info> {
     pub system_program: Program<'info, System>,
 }
 
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
+
 /// See the documentation for [`fn@crate::sablier_merkle_instant::clawback`].
 pub fn handler(ctx: Context<Clawback>, amount: u64) -> Result<()> {
     let campaign = ctx.accounts.campaign.clone();
     let airdrop_token_mint = ctx.accounts.airdrop_token_mint.clone();
 
     // Check: validate the clawback.
-    check_clawback(campaign.expiration_time, campaign.first_claim_time)?;
+    check_clawback(&campaign)?;
 
     // Interaction: transfer tokens from the Campaign's ATA to the clawback recipient's ATA.
     transfer_tokens(

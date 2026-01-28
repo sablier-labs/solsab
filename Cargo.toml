@@ -2,6 +2,11 @@
   members = ["programs/*"]
   resolver = "2"
 
+# Force older versions to avoid edition2024 requirements
+[patch.crates-io]
+  blake3 = { git = "https://github.com/BLAKE3-team/BLAKE3", tag = "1.7.0", package = "blake3" }
+  rmp-serde = { git = "https://github.com/3Hren/msgpack-rust", tag = "rmp-serde/v1.3.0" }
+
 [profile.release]
   codegen-units = 1
   lto = "fat"

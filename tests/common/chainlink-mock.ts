@@ -29,27 +29,38 @@ export class ChainlinkMock {
     const price = this.getMockPrice();
     const decimals = this.getMockDecimals();
 
-    return feeUSD.mul(toBn(10).pow(toBn(1 + decimals))).div(toBn(price));
+    return feeUSD.mul(toBn(10).pow(toBn(1 + decimals))).div(price);
   }
 
-  // TODO: Fix this, I think it's incorrect
-  public getMockPrice(): number {
-    const bytes = new Uint8Array(Buffer.from(this.MOCK_CHAINLINK_DATA, "base64"));
-    // Price at offset 216 (4 bytes, little-endian, unsigned)
-    const priceRaw =
-      (bytes[216] | (bytes[217] << 8) | (bytes[218] << 16) | (bytes[219] << 24)) >>> 0;
-    return priceRaw;
+  /**
+   * Reads the i128 price from the mock Chainlink data.
+   * Chainlink's Round.answer is i128 (16 bytes, little-endian) at offset 216.
+   */
+  public getMockPrice(): BN {
+    const buffer = Buffer.from(this.MOCK_CHAINLINK_DATA, "base64");
+    // Read i128 as two u64s (little-endian) and combine
+    const low = buffer.readBigUInt64LE(216);
+    const high = buffer.readBigInt64LE(224);
+    const fullPrice = low + (high << 64n);
+    return toBn(fullPrice);
   }
 
-  public getMockTimestamp(): number {
-    const bytes = new Uint8Array(Buffer.from(this.MOCK_CHAINLINK_DATA, "base64"));
-    // Timestamp at offset 208 (4 bytes, little-endian)
-    return bytes[208] | (bytes[209] << 8) | (bytes[210] << 16) | (bytes[211] << 24);
+  /**
+   * Reads the timestamp from the mock Chainlink data.
+   * Chainlink's Round.timestamp is u64 (8 bytes, little-endian) at offset 208.
+   */
+  public getMockTimestamp(): BN {
+    const buffer = Buffer.from(this.MOCK_CHAINLINK_DATA, "base64");
+    // Read u64 timestamp - safe to convert to number for reasonable timestamps
+    return toBn(buffer.readBigUInt64LE(208));
   }
 
+  /**
+   * Reads the decimals from the mock Chainlink data.
+   * Chainlink decimals is u8 at offset 138.
+   */
   public getMockDecimals(): number {
-    const bytes = new Uint8Array(Buffer.from(this.MOCK_CHAINLINK_DATA, "base64"));
-    // Decimals at offset 138
-    return bytes[138];
+    const buffer = Buffer.from(this.MOCK_CHAINLINK_DATA, "base64");
+    return buffer[138];
   }
 }
