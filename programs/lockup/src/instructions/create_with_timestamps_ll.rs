@@ -168,6 +168,7 @@ pub fn handler(
         deposit_token_mint.key(),
         end_time,
         is_cancelable,
+        stream_nft.key(),
         salt,
         *sender_key,
         start_time,

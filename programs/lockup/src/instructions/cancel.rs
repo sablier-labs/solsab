@@ -67,6 +67,7 @@ pub struct Cancel<'info> {
     pub stream_data_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// Read account: the NFT representing the stream.
+    #[account(address = stream_data.nft_address)]
     pub stream_nft: Box<Account<'info, BaseAssetV1>>,
 
     // -------------------------------------------------------------------------- //
