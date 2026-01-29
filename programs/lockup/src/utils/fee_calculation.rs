@@ -57,11 +57,11 @@ pub fn convert_usd_fee_to_lamports<'info>(
 
     let fee_in_lamports: u64 = match oracle_decimals {
         8 => {
-            // If the oracle decimals are 8, calculate the fee.
+            // Fast path for standard Chainlink decimals (most common case).
             fee_usd * LAMPORTS_PER_SOL / price
         }
         decimals => {
-            // Otherwise, adjust the calculation to account for the oracle decimals. `u128` is used to prevent overflow.
+            // Adjust calculation for non-standard decimals. `u128` is used to prevent overflow.
             ((fee_usd as u128) * 10_u128.pow(1 + decimals as u32) / (price as u128)) as u64
         }
     };

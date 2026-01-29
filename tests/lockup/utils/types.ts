@@ -5,7 +5,7 @@
 
 import type { BN } from "@coral-xyz/anchor";
 import type { PublicKey } from "@solana/web3.js";
-import type { StreamData } from "../../../target/types/sablier_lockup_structs";
+import type { StreamData, StreamModel } from "../../../target/types/sablier_lockup_structs";
 
 export type Salts = {
   /* Default stream salt. */
@@ -36,3 +36,15 @@ export type UnlockAmounts = {
   cliff: BN;
   start: BN;
 };
+
+export function isLinearModel(
+  model: StreamModel,
+): model is Extract<StreamModel, { linear: unknown }> {
+  return "linear" in model;
+}
+
+export function isTranchedModel(
+  model: StreamModel,
+): model is Extract<StreamModel, { tranched: unknown }> {
+  return "tranched" in model;
+}

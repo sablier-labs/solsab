@@ -8,6 +8,10 @@ use crate::{
     },
 };
 
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
 #[derive(Accounts)]
 pub struct WithdrawalFeeInLamports<'info> {
     /// Read account: the treasury account that receives the withdrawal fee.
@@ -27,6 +31,10 @@ pub struct WithdrawalFeeInLamports<'info> {
     #[account(address = treasury.chainlink_sol_usd_feed)]
     pub chainlink_sol_usd_feed: AccountInfo<'info>,
 }
+
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
 
 pub fn handler(ctx: Context<WithdrawalFeeInLamports>) -> Result<u64> {
     let fee_in_lamports = convert_usd_fee_to_lamports(

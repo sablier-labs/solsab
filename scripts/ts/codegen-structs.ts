@@ -41,7 +41,7 @@ type IdlType = {
   type: {
     kind: "struct" | "enum";
     fields?: IdlField[];
-    variants?: { name: string }[];
+    variants?: { name: string; fields?: (IdlField | string)[] }[];
   };
 };
 
@@ -53,12 +53,14 @@ type IdlType = {
  * - { defined: { name: string } }: Reference to another type in the same IDL
  * - { array: [string, number] }: Array type with element type and size
  * - { option: IdlTypeDefinition }: Optional type with an inner type
+ * - { vec: IdlTypeDefinition }: Vector type (dynamic array)
  */
 type IdlTypeDefinition =
   | string
   | { defined: { name: string } }
   | { array: [string, number] }
-  | { option: IdlTypeDefinition };
+  | { option: IdlTypeDefinition }
+  | { vec: IdlTypeDefinition };
 
 /**
  * Mapping from Rust/Solana primitive types to TypeScript equivalents
@@ -102,22 +104,36 @@ function generateImports(types: IdlType[]): string[] {
   let needsBN = false;
   let needsPublicKey = false;
 
-  // Scan through all struct fields to see what types we need to import
-  _.forEach(types, (type) => {
-    if (type.type.kind !== "struct" || !type.type.fields) {
-      return;
+  const checkType = (typeDef: IdlTypeDefinition) => {
+    const mappedType = mapSolanaTypeToTypeScript(typeDef);
+    if (mappedType.includes("BN")) {
+      needsBN = true;
+    } else if (mappedType.includes("PublicKey")) {
+      needsPublicKey = true;
     }
+  };
 
-    _.forEach(type.type.fields, (field) => {
-      const mappedType = mapSolanaTypeToTypeScript(field.type);
+  const checkFieldType = (field: IdlField) => checkType(field.type);
 
-      // Check if this field requires external type imports
-      if (mappedType.includes("BN")) {
-        needsBN = true;
-      } else if (mappedType.includes("PublicKey")) {
-        needsPublicKey = true;
-      }
-    });
+  // Scan through all types to see what imports we need
+  _.forEach(types, (type) => {
+    if (type.type.kind === "struct" && type.type.fields) {
+      // Scan struct fields
+      _.forEach(type.type.fields, checkFieldType);
+    } else if (type.type.kind === "enum" && type.type.variants) {
+      // Scan enum variant fields
+      _.forEach(type.type.variants, (variant) => {
+        if (variant.fields) {
+          _.forEach(variant.fields, (field) => {
+            if (typeof field === "string") {
+              checkType(field);
+            } else {
+              checkFieldType(field);
+            }
+          });
+        }
+      });
+    }
   });
 
   // Generate import statements only for types we actually use
@@ -135,22 +151,50 @@ function generateImports(types: IdlType[]): string[] {
  * Generates a complete TypeScript type definition from an IDL type
  *
  * Handles two main cases:
- * 1. Enums: Creates union types with string literals
- *    Example: export type StreamStatus = "Pending" | "Streaming" | "Settled";
+ * 1. Enums: Creates union types (all variants are objects to match Anchor's runtime format)
+ *    - Simple enums (no fields): objects with empty fields
+ *      Example: export type StreamStatus = { pending: {} } | { streaming: {} } | { settled: {} };
+ *    - Enums with fields: objects with variant name as key
+ *      Example: export type StreamModel =
+ *                 | { linear: { timestamps: LinearTimestamps; unlocks: LinearUnlocks } }
+ *                 | { tranched: { timestamps: TranchedTimestamps; tranches: Tranche[] } };
  *
  * 2. Structs: Creates object types with typed properties
  *    Example: export type Amounts = {
- *               startUnlock: BN;
- *               cliffUnlock: BN;
+ *               deposited: BN;
+ *               withdrawn: BN;
  *             };
  */
 function generateStructType(idlType: IdlType): string {
   if (idlType.type.kind === "enum") {
-    // Handle enum types - convert to TypeScript union types with string literals
-    // Rust: enum StreamStatus { Pending, Streaming, Settled }
-    // TS:   type StreamStatus = "Pending" | "Streaming" | "Settled"
-    const variants = idlType.type.variants?.map((variant) => `"${variant.name}"`).join(" | ");
-    return `export type ${idlType.name} = ${variants};\n`;
+    const variants = idlType.type.variants?.map((variant) => {
+      if (variant.fields && variant.fields.length > 0) {
+        // Enum variant with fields → object with variant name (camelCase) as key
+        // This matches Anchor's runtime serialization format
+        const fields = variant.fields
+          .map((field, index) => {
+            if (typeof field === "string") {
+              // Unnamed tuple field - generate synthetic name
+              const fieldName = `field${index}`;
+              const fieldType = mapSolanaTypeToTypeScript(field);
+              return `${fieldName}: ${fieldType}`;
+            }
+            // Named field (existing behavior)
+            const fieldName = _.camelCase(field.name);
+            const fieldType = mapSolanaTypeToTypeScript(field.type);
+            return `${fieldName}: ${fieldType}`;
+          })
+          .join("; ");
+        return `{ ${_.camelCase(variant.name)}: { ${fields} } }`;
+      } else {
+        // Simple enum variant → object with empty fields (Anchor's runtime format)
+        return `{ ${_.camelCase(variant.name)}: {} }`;
+      }
+    });
+    if (!variants || variants.length === 0) {
+      return `export type ${idlType.name} = never;\n`;
+    }
+    return `export type ${idlType.name} = ${variants.join(" | ")};\n`;
   }
 
   if (!idlType.type.fields || idlType.type.fields.length === 0) {
@@ -173,10 +217,11 @@ function generateStructType(idlType: IdlType): string {
 /**
  * Converts Rust/Solana types from the IDL to their TypeScript equivalents
  *
- * Handles three main cases:
+ * Handles four main cases:
  * 1. Primitive types (string): Maps using RUST_TYPES lookup table
  * 2. Custom defined types (object with 'defined' key): References another type in the same file
- * 3. Arrays (object with 'array' key): Converts element type and adds []
+ * 3. Fixed arrays (object with 'array' key): Converts element type and adds []
+ * 4. Vectors (object with 'vec' key): Converts element type and adds []
  *
  * @param type - The type definition from the IDL
  * @returns The equivalent TypeScript type string
@@ -195,7 +240,7 @@ function mapSolanaTypeToTypeScript(type: IdlTypeDefinition): string {
       // These will be converted to PascalCase when we generate the type definitions
       return type.defined.name;
     } else if ("array" in type) {
-      // Handle arrays - convert the element type and add array notation
+      // Handle fixed-size arrays - convert the element type and add array notation
       const [elementType] = type.array;
       const mappedElementType = mapSolanaTypeToTypeScript(elementType);
       return `${mappedElementType}[]`;
@@ -203,6 +248,10 @@ function mapSolanaTypeToTypeScript(type: IdlTypeDefinition): string {
       // Handle optional types - convert the inner type and make it nullable
       const innerType = mapSolanaTypeToTypeScript(type.option);
       return `${innerType} | null`;
+    } else if ("vec" in type) {
+      // Handle vectors (dynamic arrays) - convert the element type and add array notation
+      const mappedElementType = mapSolanaTypeToTypeScript(type.vec);
+      return `${mappedElementType}[]`;
     }
   }
 

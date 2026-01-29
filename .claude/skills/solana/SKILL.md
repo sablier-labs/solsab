@@ -59,7 +59,8 @@ programs/{name}/src/
 
 ### Account Struct Organization
 
-Structure account validation in logical sections (see `create_with_timestamps.rs`, `claim.rs`):
+Structure account validation in logical sections (see `create_with_timestamps_ll.rs`, `create_with_durations_lt.rs`,
+`claim.rs`):
 
 | Category            | Description                                      | Examples                                      |
 | ------------------- | ------------------------------------------------ | --------------------------------------------- |
@@ -118,7 +119,7 @@ Structure handlers with validation first, then state updates and interactions, t
 
 ```rust
 pub fn handler(ctx: Context<CreateWithTimestamps>, deposit_amount: u64, ...) -> Result<()> {
-    // Validate parameters
+    // Validate the ix parameters
     check_create(deposit_amount, start_time, cliff_time, end_time, ...)?;
 
     // Update state
@@ -128,7 +129,7 @@ pub fn handler(ctx: Context<CreateWithTimestamps>, deposit_amount: u64, ...) -> 
     transfer_tokens(creator_ata, stream_data_ata, creator, ...)?;
 
     // Emit event for indexers
-    emit!(CreateLockupLinearStream { salt, deposit_token_mint, ... });
+    emit!(CreateLockupStream { salt, deposit_token_mint, ... });
 
     Ok(())
 }

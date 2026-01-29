@@ -43,6 +43,26 @@ pub enum ErrorCode {
     UnlockAmountsSumTooHigh,
 
     // -------------------------------------------------------------------------- //
+    //                          CREATE TRANCHED STREAM                            //
+    // -------------------------------------------------------------------------- //
+    #[msg("Tranches array is empty!")]
+    TranchesArrayEmpty,
+    #[msg("Tranche timestamps must be in strictly ascending order!")]
+    TranchesNotSorted,
+    #[msg("Tranche amount must be greater than zero!")]
+    TrancheAmountZero,
+    #[msg("Stream start time must be strictly less than the first tranche's timestamp!")]
+    StartTimeNotLessThanFirstTranche,
+    #[msg("Tranche amounts and durations arrays must have same length!")]
+    TrancheAmountsDurationsMismatch,
+    #[msg("Too many tranches!")]
+    TooManyTranches,
+    #[msg("Tranche timestamp overflow!")]
+    TrancheTimestampOverflow,
+    #[msg("Tranche amounts sum overflow!")]
+    TrancheAmountsSumOverflow,
+
+    // -------------------------------------------------------------------------- //
     //                               RENOUNCE STREAM                              //
     // -------------------------------------------------------------------------- //
     #[msg("Can't renounce a non-cancelable Stream!")]

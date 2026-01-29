@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
 
+use crate::state::lockup::Tranche;
+
 /// Emitted when a stream is canceled.
 #[event]
 pub struct CancelLockupStream {
@@ -10,15 +12,23 @@ pub struct CancelLockupStream {
     pub stream_nft: Pubkey,
 }
 
-/// Emitted when an LL stream is created.
+/// Emitted when a Lockup stream is created.
 #[event]
-pub struct CreateLockupLinearStream {
+pub struct CreateLockupStream {
     pub deposit_token_decimals: u8,
     pub deposit_token_mint: Pubkey,
+    pub model: CreateStreamModel,
     pub recipient: Pubkey,
     pub salt: u128,
     pub stream_data: Pubkey,
     pub stream_nft: Pubkey,
+}
+
+/// Stream model discriminator for create events.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub enum CreateStreamModel {
+    Linear,
+    Tranched { tranches: Vec<Tranche> },
 }
 
 /// Emitted when fees are collected from the treasury.
