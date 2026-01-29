@@ -77,8 +77,8 @@ pub fn safe_collectible_amount(account: &AccountInfo) -> Result<u64> {
     // Calculate the minimum balance needed for rent exemption.
     let rent_exempt_minimum = rent.minimum_balance(data_len);
 
-    let buffer = 1_000_000; // 0.001 SOL
-    let safe_minimum = rent_exempt_minimum.checked_add(buffer).unwrap();
+    const SAFE_RENT_BUFFER_LAMPORTS: u64 = 1_000_000; // 0.001 SOL
+    let safe_minimum = rent_exempt_minimum.checked_add(SAFE_RENT_BUFFER_LAMPORTS).unwrap();
 
     // Return the collectable amount
     Ok(current_balance.saturating_sub(safe_minimum))

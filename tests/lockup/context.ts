@@ -388,6 +388,7 @@ export class LockupTestContext extends TestContext {
     isDepleted = false,
     wasCanceled = false,
   } = {}): Stream {
+    const nftAddress = this.getStreamNftAddress(salt);
     const data: StreamData = {
       amounts: LINEAR_AMOUNTS(),
       bump: 0,
@@ -395,13 +396,13 @@ export class LockupTestContext extends TestContext {
       isCancelable,
       isDepleted,
       model,
+      nftAddress,
       salt,
       sender: this.sender.keys.publicKey,
       wasCanceled,
     };
     const streamDataAddress = this.getStreamDataAddress(salt);
     const streamDataAta = deriveATAAddress(depositedTokenMint, streamDataAddress, tokenProgram);
-    const nftAddress = this.getStreamNftAddress(salt);
     const collectionAddress = this.getStreamNftCollectionAddress();
 
     // Return the Stream object

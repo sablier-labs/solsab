@@ -119,7 +119,7 @@ fn get_streamed_amount_linear(
     };
 
     // Use u128 scaling for precision in percentage calculation
-    const SCALING_FACTOR: u128 = 1e18 as u128;
+    const SCALING_FACTOR: u128 = 1_000_000_000_000_000_000;
 
     // Calculate time variables. Scale to 18 decimals for increased precision and cast to u128 to prevent overflow.
     let elapsed_time = (now - streaming_start_time) as u128 * SCALING_FACTOR;

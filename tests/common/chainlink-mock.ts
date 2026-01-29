@@ -10,9 +10,10 @@ export class ChainlinkMock {
   /// This data is mocked at "1754142441" Unix timestamp
   public MOCK_CHAINLINK_DATA =
     "YLNFQoCBSXUCAWQUUYa2ANnUYYrbqZcNlEBTsnm1vMbAD/Shxwnxadi/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+AAD9IzGmE6swmiVX6E+mpeINgNJ4h4AyDGib6NC7wlNPTCAvIFVTRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAr+bMBAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD7PsAXAAAAAOkWjmgAAAAAoTdp0wMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+  private readonly mockBuffer = Buffer.from(this.MOCK_CHAINLINK_DATA, "base64");
 
   async accountData(): Promise<AddedAccount> {
-    const MOCK_ACCOUNT_DATA = new Uint8Array(Buffer.from(this.MOCK_CHAINLINK_DATA, "base64"));
+    const MOCK_ACCOUNT_DATA = new Uint8Array(this.mockBuffer);
 
     return {
       address: ProgramId.CHAINLINK_SOL_USD_FEED,
@@ -37,22 +38,20 @@ export class ChainlinkMock {
    * Chainlink's Round.answer is i128 (16 bytes, little-endian) at offset 216.
    */
   public getMockPrice(): BN {
-    const buffer = Buffer.from(this.MOCK_CHAINLINK_DATA, "base64");
     // Read i128 as two u64s (little-endian) and combine
-    const low = buffer.readBigUInt64LE(216);
-    const high = buffer.readBigInt64LE(224);
+    const low = this.mockBuffer.readBigUInt64LE(216);
+    const high = this.mockBuffer.readBigInt64LE(224);
     const fullPrice = low + (high << 64n);
     return toBn(fullPrice);
   }
 
   /**
-   * Reads the timestamp from the mock Chainlink data.
-   * Chainlink's Round.timestamp is u64 (8 bytes, little-endian) at offset 208.
+   * Reads the timestamp from {@link MOCK_CHAINLINK_DATA}.
+   * Parses the u64 at offset 208 (Chainlink's Round.timestamp) and returns it
+   * as a {@link BN} via {@link toBn}.
    */
   public getMockTimestamp(): BN {
-    const buffer = Buffer.from(this.MOCK_CHAINLINK_DATA, "base64");
-    // Read u64 timestamp - safe to convert to number for reasonable timestamps
-    return toBn(buffer.readBigUInt64LE(208));
+    return toBn(this.mockBuffer.readBigUInt64LE(208));
   }
 
   /**
@@ -60,7 +59,6 @@ export class ChainlinkMock {
    * Chainlink decimals is u8 at offset 138.
    */
   public getMockDecimals(): number {
-    const buffer = Buffer.from(this.MOCK_CHAINLINK_DATA, "base64");
-    return buffer[138];
+    return this.mockBuffer[138];
   }
 }

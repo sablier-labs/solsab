@@ -104,14 +104,16 @@ function generateImports(types: IdlType[]): string[] {
   let needsBN = false;
   let needsPublicKey = false;
 
-  const checkFieldType = (field: IdlField) => {
-    const mappedType = mapSolanaTypeToTypeScript(field.type);
+  const checkType = (typeDef: IdlTypeDefinition) => {
+    const mappedType = mapSolanaTypeToTypeScript(typeDef);
     if (mappedType.includes("BN")) {
       needsBN = true;
     } else if (mappedType.includes("PublicKey")) {
       needsPublicKey = true;
     }
   };
+
+  const checkFieldType = (field: IdlField) => checkType(field.type);
 
   // Scan through all types to see what imports we need
   _.forEach(types, (type) => {
@@ -124,13 +126,7 @@ function generateImports(types: IdlType[]): string[] {
         if (variant.fields) {
           _.forEach(variant.fields, (field) => {
             if (typeof field === "string") {
-              // Unnamed tuple field - the field itself is the type
-              const mappedType = mapSolanaTypeToTypeScript(field);
-              if (mappedType.includes("BN")) {
-                needsBN = true;
-              } else if (mappedType.includes("PublicKey")) {
-                needsPublicKey = true;
-              }
+              checkType(field);
             } else {
               checkFieldType(field);
             }
@@ -155,10 +151,10 @@ function generateImports(types: IdlType[]): string[] {
  * Generates a complete TypeScript type definition from an IDL type
  *
  * Handles two main cases:
- * 1. Enums: Creates union types
- *    - Simple enums (no fields): string literals
- *      Example: export type StreamStatus = "Pending" | "Streaming" | "Settled";
- *    - Enums with fields: object types with variant name as key
+ * 1. Enums: Creates union types (all variants are objects to match Anchor's runtime format)
+ *    - Simple enums (no fields): objects with empty fields
+ *      Example: export type StreamStatus = { pending: {} } | { streaming: {} } | { settled: {} };
+ *    - Enums with fields: objects with variant name as key
  *      Example: export type StreamModel =
  *                 | { linear: { timestamps: LinearTimestamps; unlocks: LinearUnlocks } }
  *                 | { tranched: { timestamps: TranchedTimestamps; tranches: Tranche[] } };
@@ -191,11 +187,14 @@ function generateStructType(idlType: IdlType): string {
           .join("; ");
         return `{ ${_.camelCase(variant.name)}: { ${fields} } }`;
       } else {
-        // Simple enum variant → string literal
-        return `"${variant.name}"`;
+        // Simple enum variant → object with empty fields (Anchor's runtime format)
+        return `{ ${_.camelCase(variant.name)}: {} }`;
       }
     });
-    return `export type ${idlType.name} = ${variants?.join(" | ")};\n`;
+    if (!variants || variants.length === 0) {
+      return `export type ${idlType.name} = never;\n`;
+    }
+    return `export type ${idlType.name} = ${variants.join(" | ")};\n`;
   }
 
   if (!idlType.type.fields || idlType.type.fields.length === 0) {

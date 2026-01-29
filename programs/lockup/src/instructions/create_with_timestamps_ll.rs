@@ -199,7 +199,7 @@ pub fn handler(
         .uri(LL_NFT_METADATA_URI.to_string())
         .invoke_signed(&[stream_nft_signer_seeds, collection_authority_signer_seeds])?;
 
-    // Interaction: transfer tokens from the sender's ATA to the StreamData ATA.
+    // Interaction: transfer tokens from the funder's ATA to the StreamData ATA.
     transfer_tokens(
         funder_ata.to_account_info(),
         ctx.accounts.stream_data_ata.to_account_info(),
