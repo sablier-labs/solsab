@@ -1,6 +1,7 @@
-import { BN } from "@coral-xyz/anchor";
+import type BN from "bn.js";
 import { ZERO } from "../../../lib/constants";
 import { usdc } from "../../../lib/convertors";
+import { toBn } from "../../../lib/helpers";
 import type {
   Amounts,
   LinearTimestamps,
@@ -31,50 +32,48 @@ export namespace Seed {
  * All timestamps and durations are in seconds.
  */
 export namespace Time {
-  export const CLIFF_DURATION = new BN(2500);
+  export const CLIFF_DURATION = toBn(2500);
   // We use this fixed timestamp to ensure that the mock Chainlink data is not outdated.
-  export const GENESIS = new BN(1754142441); // August 2, 2025 1:47:21 PM
-  export const START = GENESIS.add(new BN(1000));
-  export const TOTAL_DURATION = new BN(10_000);
+  export const GENESIS = toBn(1754142441); // August 2, 2025 1:47:21 PM
+  export const START = GENESIS.add(toBn(1000));
+  export const TOTAL_DURATION = toBn(10_000);
 
   export const CLIFF = START.add(CLIFF_DURATION);
   export const END = START.add(TOTAL_DURATION);
-  export const MID_26_PERCENT = START.add(new BN(2600));
+  export const MID_26_PERCENT = START.add(toBn(2600));
 }
 
 /*//////////////////////////////////////////////////////////////////////////
                               TRANCHED DEFAULTS
 //////////////////////////////////////////////////////////////////////////*/
 
-export namespace TranchedAmount {
+export namespace TranchedAmounts {
   export const TRANCHE_1 = usdc(2000);
   export const TRANCHE_2 = usdc(3000);
   export const TRANCHE_3 = usdc(5000);
   export const DEPOSIT = TRANCHE_1.add(TRANCHE_2).add(TRANCHE_3); // 10,000
 
-  // Amount streamed after tranche 1 unlocks
-  export const STREAMED_AFTER_T1 = TRANCHE_1;
   // Amount streamed after tranches 1 and 2 unlock
   export const STREAMED_AFTER_T2 = TRANCHE_1.add(TRANCHE_2);
 }
 
 /**
- * Tranche durations (offsets from PREVIOUS tranche, except first which is offset from start).
+ * Tranche durations.
  */
-export namespace TranchedDuration {
-  export const TRANCHE_1 = new BN(2000); // offset from start
-  export const TRANCHE_2 = new BN(2000); // offset from tranche 1
-  export const TRANCHE_3 = new BN(6000); // offset from tranche 2
+export namespace TranchedDurations {
+  export const TRANCHE_1 = toBn(2000); // offset from start
+  export const TRANCHE_2 = toBn(2000); // offset from tranche 1
+  export const TRANCHE_3 = toBn(6000); // offset from tranche 2
 }
 
 /**
  * Absolute tranche timestamps (derived from cumulative durations).
  */
-export namespace TranchedTime {
-  export const TRANCHE_1 = Time.START.add(TranchedDuration.TRANCHE_1); // start + 2000
-  export const TRANCHE_2 = TRANCHE_1.add(TranchedDuration.TRANCHE_2); // T1 + 2000
-  export const TRANCHE_3 = TRANCHE_2.add(TranchedDuration.TRANCHE_3); // T2 + 6000
-  export const MID_TRANCHE_1_2 = TRANCHE_1.add(TranchedDuration.TRANCHE_2.divn(2)); // Between T1 and T2
+export namespace TranchedTimes {
+  export const TRANCHE_1 = Time.START.add(TranchedDurations.TRANCHE_1); // start + 2000
+  export const TRANCHE_2 = TRANCHE_1.add(TranchedDurations.TRANCHE_2); // T1 + 2000
+  export const TRANCHE_3 = TRANCHE_2.add(TranchedDurations.TRANCHE_3); // T2 + 6000
+  export const MID_TRANCHE_1_2 = TRANCHE_1.add(TranchedDurations.TRANCHE_2.divn(2)); // Between T1 and T2
   export const END = TRANCHE_3; // Alias for clarity
 }
 
@@ -146,7 +145,7 @@ export function UNLOCK_AMOUNTS({
 //////////////////////////////////////////////////////////////////////////*/
 
 export function TRANCHED_AMOUNTS({
-  deposited = TranchedAmount.DEPOSIT,
+  deposited = TranchedAmounts.DEPOSIT,
   refunded = ZERO,
   withdrawn = ZERO,
 }: Partial<Amounts> = {}): Amounts {
@@ -159,7 +158,7 @@ export function TRANCHED_AMOUNTS({
 
 export function TRANCHED_TIMESTAMPS({
   start = Time.START,
-  end = TranchedTime.END,
+  end = TranchedTimes.END,
 }: Partial<TranchedTimestamps> = {}): TranchedTimestamps {
   return {
     end,
@@ -168,12 +167,12 @@ export function TRANCHED_TIMESTAMPS({
 }
 
 export function DEFAULT_TRANCHES({
-  tranche1Amount = TranchedAmount.TRANCHE_1,
-  tranche2Amount = TranchedAmount.TRANCHE_2,
-  tranche3Amount = TranchedAmount.TRANCHE_3,
-  tranche1Timestamp = TranchedTime.TRANCHE_1,
-  tranche2Timestamp = TranchedTime.TRANCHE_2,
-  tranche3Timestamp = TranchedTime.TRANCHE_3,
+  tranche1Amount = TranchedAmounts.TRANCHE_1,
+  tranche2Amount = TranchedAmounts.TRANCHE_2,
+  tranche3Amount = TranchedAmounts.TRANCHE_3,
+  tranche1Timestamp = TranchedTimes.TRANCHE_1,
+  tranche2Timestamp = TranchedTimes.TRANCHE_2,
+  tranche3Timestamp = TranchedTimes.TRANCHE_3,
 }: {
   tranche1Amount?: BN;
   tranche2Amount?: BN;

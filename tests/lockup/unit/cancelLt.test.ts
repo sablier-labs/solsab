@@ -1,8 +1,8 @@
-import type { BN } from "@coral-xyz/anchor";
 import {
   ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
   ANCHOR_ERROR__CONSTRAINT_ADDRESS as CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
+import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
@@ -15,7 +15,7 @@ import {
 import { assertAccountNotExists, assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
-import { Time, TranchedAmount, TranchedTime } from "../utils/defaults";
+import { Time, TranchedAmounts, TranchedTimes } from "../utils/defaults";
 import type { Stream } from "../utils/types";
 
 let ctx: LockupTestContext;
@@ -25,7 +25,7 @@ describe("cancelLt", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();
       await ctx.setUpLockup({ initProgram: false });
-      await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+      await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
     });
 
     it("should fail", async () => {
@@ -41,7 +41,7 @@ describe("cancelLt", () => {
 
     describe("given a null stream", () => {
       it("should fail", async () => {
-        await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+        await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
         await expectToThrow(ctx.cancel({ salt: ctx.salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
       });
     });
@@ -49,7 +49,7 @@ describe("cancelLt", () => {
     describe("given a valid stream", () => {
       describe("given an invalid deposited token mint", () => {
         it("should fail", async () => {
-          await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+          await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
           await expectToThrow(
             ctx.cancel({
               depositedTokenMint: ctx.randomToken,
@@ -63,7 +63,7 @@ describe("cancelLt", () => {
       describe("given a valid deposited token mint", () => {
         describe("when stream status is DEPLETED", () => {
           it("should fail", async () => {
-            await ctx.timeTravelTo(TranchedTime.END);
+            await ctx.timeTravelTo(TranchedTimes.END);
             await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
             await expectToThrow(ctx.cancel({ salt: ctx.salts.defaultLt }), "StreamDepleted");
           });
@@ -71,7 +71,7 @@ describe("cancelLt", () => {
 
         describe("when stream is not cancelable", () => {
           it("should fail", async () => {
-            await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+            await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
             await expectToThrow(
               ctx.cancel({ salt: ctx.salts.nonCancelableLt }),
               "StreamIsNotCancelable",
@@ -81,7 +81,7 @@ describe("cancelLt", () => {
 
         describe("when stream status is CANCELED", () => {
           it("should fail", async () => {
-            await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+            await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
             await ctx.cancel({ salt: ctx.salts.defaultLt });
             await sleepFor(7);
             await expectToThrow(ctx.cancel({ salt: ctx.salts.defaultLt }), "StreamCanceled");
@@ -91,7 +91,7 @@ describe("cancelLt", () => {
         describe("when stream is cancelable and not depleted/canceled", () => {
           describe("when signer not sender", () => {
             it("should fail", async () => {
-              await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+              await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
               await expectToThrow(
                 ctx.cancel({ salt: ctx.salts.defaultLt, signer: ctx.recipient.keys }),
                 CONSTRAINT_ADDRESS,
@@ -117,7 +117,7 @@ describe("cancelLt", () => {
                   ctx.banksClient,
                   ctx.defaultBankrunPayer,
                   ctx.randomToken,
-                  TranchedAmount.DEPOSIT,
+                  TranchedAmounts.DEPOSIT,
                   ProgramId.TOKEN,
                   ctx.sender.keys.publicKey,
                 );
@@ -130,7 +130,7 @@ describe("cancelLt", () => {
                 });
 
                 // Time travel to STREAMING status
-                await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+                await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
                 // Cancel the stream
                 await ctx.cancel({
@@ -146,7 +146,7 @@ describe("cancelLt", () => {
                   salt,
                   wasCanceled: true,
                 });
-                const expectedRefund = TranchedAmount.DEPOSIT.sub(TranchedAmount.TRANCHE_1);
+                const expectedRefund = TranchedAmounts.DEPOSIT.sub(TranchedAmounts.TRANCHE_1);
                 expectedStream.data.amounts.refunded = expectedRefund;
 
                 await postCancelAssertions(salt, expectedStream, ZERO);
@@ -172,7 +172,7 @@ describe("cancelLt", () => {
                   isDepleted: true,
                   wasCanceled: true,
                 });
-                expectedStream.data.amounts.refunded = TranchedAmount.DEPOSIT;
+                expectedStream.data.amounts.refunded = TranchedAmounts.DEPOSIT;
 
                 await postCancelAssertions(
                   ctx.salts.defaultLt,
@@ -186,7 +186,7 @@ describe("cancelLt", () => {
               describe("given SPL token", () => {
                 it("should refund deposited - streamed", async () => {
                   // Time travel to after first tranche unlocks
-                  await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+                  await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
                   const beforeSenderBalance = await getATABalance(
                     ctx.banksClient,
@@ -198,7 +198,7 @@ describe("cancelLt", () => {
 
                   // At tranche 1, only tranche 1 amount is streamed
                   // Refund = deposit - tranche_1
-                  const expectedRefund = TranchedAmount.DEPOSIT.sub(TranchedAmount.TRANCHE_1);
+                  const expectedRefund = TranchedAmounts.DEPOSIT.sub(TranchedAmounts.TRANCHE_1);
 
                   const expectedStream = ctx.defaultTranchedStream({
                     isCancelable: false,
@@ -220,7 +220,7 @@ describe("cancelLt", () => {
                   const salt = await ctx.createWithTimestampsLtToken2022();
 
                   // Time travel to after first tranche unlocks
-                  await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+                  await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
                   const beforeSenderBalance = await getATABalance(
                     ctx.banksClient,
@@ -232,7 +232,7 @@ describe("cancelLt", () => {
 
                   // At tranche 1, only tranche 1 amount is streamed
                   // Refund = deposit - tranche_1
-                  const expectedRefund = TranchedAmount.DEPOSIT.sub(TranchedAmount.TRANCHE_1);
+                  const expectedRefund = TranchedAmounts.DEPOSIT.sub(TranchedAmounts.TRANCHE_1);
 
                   const expectedStream = ctx.defaultTranchedStreamToken2022({
                     isCancelable: false,
@@ -248,7 +248,7 @@ describe("cancelLt", () => {
 
             describe("given SETTLED (all tranches unlocked)", () => {
               it("should fail", async () => {
-                await ctx.timeTravelTo(TranchedTime.END);
+                await ctx.timeTravelTo(TranchedTimes.END);
                 await expectToThrow(ctx.cancel({ salt: ctx.salts.defaultLt }), "StreamSettled");
               });
             });

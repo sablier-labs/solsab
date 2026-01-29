@@ -3,15 +3,15 @@
  * IDL types can be found at @see {@link file://./../../../target/types/sablier_lockup_structs.ts}.
  */
 
-import type { BN } from "@coral-xyz/anchor";
 import type { PublicKey } from "@solana/web3.js";
+import type BN from "bn.js";
 import type { StreamData, StreamModel } from "../../../target/types/sablier_lockup_structs";
 
 export type Salts = {
   /* Default linear (LL) stream salt. */
-  default: BN;
+  defaultLl: BN;
   /* The salt of a non-cancelable linear (LL) stream. */
-  nonCancelable: BN;
+  nonCancelableLl: BN;
   /* The salt of a stream that does not exist. */
   nonExisting: BN;
   /* Default tranched (LT) stream salt. */

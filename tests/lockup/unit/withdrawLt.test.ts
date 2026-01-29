@@ -1,9 +1,9 @@
-import type { BN } from "@coral-xyz/anchor";
 import {
   ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
   ANCHOR_ERROR__CONSTRAINT_RAW as CONSTRAINT_RAW,
 } from "@coral-xyz/anchor-errors";
 import type { PublicKey } from "@solana/web3.js";
+import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ZERO } from "../../../lib/constants";
 import type { StreamData } from "../../../target/types/sablier_lockup_structs";
@@ -11,7 +11,7 @@ import { getATABalance } from "../../common/anchor-bankrun";
 import { assertEqBn, assertLteBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
-import { Time, TranchedAmount, TranchedTime } from "../utils/defaults";
+import { Time, TranchedAmounts, TranchedTimes } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
@@ -20,7 +20,7 @@ describe("withdrawLt", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();
       await ctx.setUpLockup({ initProgram: false });
-      await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+      await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
     });
 
     it("should fail", async () => {
@@ -36,7 +36,7 @@ describe("withdrawLt", () => {
 
     describe("given a null stream", () => {
       it("should fail", async () => {
-        await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+        await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
         await expectToThrow(ctx.withdraw({ salt: ctx.salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
       });
     });
@@ -44,7 +44,7 @@ describe("withdrawLt", () => {
     describe("given a valid stream", () => {
       describe("given an invalid deposited token mint", () => {
         it("should fail", async () => {
-          await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+          await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
           await expectToThrow(
             ctx.withdraw({
               depositedTokenMint: ctx.randomToken,
@@ -58,7 +58,7 @@ describe("withdrawLt", () => {
       describe("given a valid deposited token mint", () => {
         describe("when stream status is DEPLETED", () => {
           it("should fail", async () => {
-            await ctx.timeTravelTo(TranchedTime.END);
+            await ctx.timeTravelTo(TranchedTimes.END);
             await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
             await expectToThrow(ctx.withdraw({ salt: ctx.salts.defaultLt }), "StreamDepleted");
           });
@@ -67,7 +67,7 @@ describe("withdrawLt", () => {
         describe("when stream status is not DEPLETED", () => {
           describe("when zero withdraw amount", () => {
             it("should fail", async () => {
-              await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+              await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
               await expectToThrow(
                 ctx.withdraw({
                   salt: ctx.salts.defaultLt,
@@ -81,12 +81,12 @@ describe("withdrawLt", () => {
           describe("when non-zero withdraw amount", () => {
             describe("when withdraw amount overdraws", () => {
               it("should fail", async () => {
-                await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+                await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
                 // After tranche 1, only TranchedAmount.TRANCHE_1 is available
                 await expectToThrow(
                   ctx.withdraw({
                     salt: ctx.salts.defaultLt,
-                    withdrawAmount: TranchedAmount.TRANCHE_1.add(BN_1),
+                    withdrawAmount: TranchedAmounts.TRANCHE_1.add(BN_1),
                   }),
                   "Overdraw",
                 );
@@ -97,7 +97,7 @@ describe("withdrawLt", () => {
               describe("when withdrawal address not recipient", () => {
                 describe("when signer not recipient", () => {
                   it("should fail", async () => {
-                    await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+                    await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
                     await expectToThrow(
                       ctx.withdraw({
                         salt: ctx.salts.defaultLt,
@@ -142,7 +142,7 @@ describe("withdrawLt", () => {
 
                   describe("given after first tranche", () => {
                     it("should withdraw", async () => {
-                      await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+                      await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
                       const treasuryLamportsBefore = await ctx.getTreasuryLamports();
                       const withdrawalRecipientATABalanceBefore = await getATABalance(
@@ -158,11 +158,11 @@ describe("withdrawLt", () => {
                       await ctx.withdraw({
                         salt: ctx.salts.defaultLt,
                         signer: txSignerKeys,
-                        withdrawAmount: TranchedAmount.TRANCHE_1,
+                        withdrawAmount: TranchedAmounts.TRANCHE_1,
                       });
 
                       const expectedStreamData = ctx.defaultTranchedStream().data;
-                      expectedStreamData.amounts.withdrawn = TranchedAmount.TRANCHE_1;
+                      expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
 
                       await postWithdrawAssertions(
                         ctx.salts.defaultLt,
@@ -179,7 +179,7 @@ describe("withdrawLt", () => {
 
                 describe("given SETTLED status (all tranches passed)", () => {
                   it("should allow full withdrawal", async () => {
-                    await ctx.timeTravelTo(TranchedTime.END);
+                    await ctx.timeTravelTo(TranchedTimes.END);
 
                     const treasuryLamportsBefore = await ctx.getTreasuryLamports();
                     const withdrawalRecipientATABalanceBefore = await getATABalance(
@@ -193,11 +193,11 @@ describe("withdrawLt", () => {
                     await ctx.withdraw({
                       salt: ctx.salts.defaultLt,
                       signer: txSignerKeys,
-                      withdrawAmount: TranchedAmount.DEPOSIT,
+                      withdrawAmount: TranchedAmounts.DEPOSIT,
                     });
 
                     const expectedStreamData = ctx.defaultTranchedStream().data;
-                    expectedStreamData.amounts.withdrawn = TranchedAmount.DEPOSIT;
+                    expectedStreamData.amounts.withdrawn = TranchedAmounts.DEPOSIT;
                     expectedStreamData.isCancelable = false;
                     expectedStreamData.isDepleted = true;
 

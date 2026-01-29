@@ -6,11 +6,11 @@ import { lamports, publicKey } from "@metaplex-foundation/umi";
 import * as token from "@solana/spl-token";
 import type { Keypair } from "@solana/web3.js";
 import { PublicKey } from "@solana/web3.js";
-import BN from "bn.js";
+import type BN from "bn.js";
 import type { AccountInfoBytes } from "solana-bankrun";
 import { ProgramId, ZERO } from "../../lib/constants";
 import { ProgramName } from "../../lib/enums";
-import { getPDAAddress } from "../../lib/helpers";
+import { getPDAAddress, toBn } from "../../lib/helpers";
 import IDL from "../../target/idl/sablier_lockup.json";
 import type { SablierLockup as SablierLockupProgram } from "../../target/types/sablier_lockup";
 import type { StreamData, Tranche } from "../../target/types/sablier_lockup_structs";
@@ -27,8 +27,8 @@ import {
   Time,
   TRANCHED_AMOUNTS,
   TRANCHED_MODEL,
-  TranchedAmount,
-  TranchedTime,
+  TranchedAmounts,
+  TranchedTimes,
   UNLOCK_AMOUNTS,
 } from "./utils/defaults";
 import type { Salts, Stream } from "./utils/types";
@@ -73,16 +73,16 @@ export class LockupTestContext extends TestContext {
       // Create the default streams
       this.salts = {
         // Linear (LL) streams
-        default: await this.createWithTimestampsLl(),
+        defaultLl: await this.createWithTimestampsLl(),
         // Tranched (LT) streams
         defaultLt: await this.createWithTimestampsLt(),
-        nonCancelable: await this.createWithTimestampsLl({
+        nonCancelableLl: await this.createWithTimestampsLl({
           isCancelable: false,
         }),
         nonCancelableLt: await this.createWithTimestampsLt({
           isCancelable: false,
         }),
-        nonExisting: new BN(1729),
+        nonExisting: toBn(1729),
       };
     }
   }
@@ -92,7 +92,7 @@ export class LockupTestContext extends TestContext {
   //////////////////////////////////////////////////////////////////////////*/
 
   async cancel({
-    salt = this.salts.default,
+    salt = this.salts.defaultLl,
     signer = this.sender.keys,
     depositedTokenMint = this.usdc,
     depositedTokenProgram = token.TOKEN_PROGRAM_ID,
@@ -175,7 +175,7 @@ export class LockupTestContext extends TestContext {
     depositAmount = Amount.DEPOSIT,
     unlockAmounts = UNLOCK_AMOUNTS(),
     isCancelable = true,
-    salt = new BN(-1),
+    salt = toBn(-1),
   } = {}): Promise<BN> {
     // Use the total supply as the salt for the stream
     salt = salt.isNeg() ? await this.getStreamNftCollectionSize() : salt;
@@ -213,11 +213,15 @@ export class LockupTestContext extends TestContext {
   }
 
   async createWithDurationsLt({
-    trancheAmounts = [TranchedAmount.TRANCHE_1, TranchedAmount.TRANCHE_2, TranchedAmount.TRANCHE_3],
+    trancheAmounts = [
+      TranchedAmounts.TRANCHE_1,
+      TranchedAmounts.TRANCHE_2,
+      TranchedAmounts.TRANCHE_3,
+    ],
     trancheDurations = [
-      TranchedTime.TRANCHE_1.sub(Time.START),
-      TranchedTime.TRANCHE_2.sub(TranchedTime.TRANCHE_1),
-      TranchedTime.TRANCHE_3.sub(TranchedTime.TRANCHE_2),
+      TranchedTimes.TRANCHE_1.sub(Time.START),
+      TranchedTimes.TRANCHE_2.sub(TranchedTimes.TRANCHE_1),
+      TranchedTimes.TRANCHE_3.sub(TranchedTimes.TRANCHE_2),
     ],
     isCancelable = true,
     funder = this.sender.keys,
@@ -225,7 +229,7 @@ export class LockupTestContext extends TestContext {
     recipientPubKey = this.recipient.keys.publicKey,
     depositTokenMint = this.usdc,
     depositTokenProgram = token.TOKEN_PROGRAM_ID,
-    salt = new BN(-1),
+    salt = toBn(-1),
   }: {
     trancheAmounts?: BN[];
     trancheDurations?: BN[];
@@ -265,7 +269,7 @@ export class LockupTestContext extends TestContext {
     recipientPubKey = this.recipient.keys.publicKey,
     depositTokenMint = this.usdc,
     depositTokenProgram = token.TOKEN_PROGRAM_ID,
-    salt = new BN(-1),
+    salt = toBn(-1),
   }: {
     tranches?: Tranche[];
     startTime?: BN;
@@ -319,7 +323,7 @@ export class LockupTestContext extends TestContext {
   }
 
   async renounce({
-    salt = this.salts.default,
+    salt = this.salts.defaultLl,
     signer = this.sender.keys,
     sender = this.sender.keys.publicKey,
   } = {}): Promise<void> {
@@ -337,7 +341,7 @@ export class LockupTestContext extends TestContext {
   }
 
   async withdraw({
-    salt = this.salts.default,
+    salt = this.salts.defaultLl,
     withdrawAmount = Amount.WITHDRAW,
     signer = this.recipient.keys,
     withdrawalRecipient = this.recipient.keys.publicKey,
@@ -371,7 +375,7 @@ export class LockupTestContext extends TestContext {
   }
 
   async withdrawMax({
-    salt = this.salts.default,
+    salt = this.salts.defaultLl,
     signer = this.sender.keys.publicKey,
     withdrawalRecipient = this.recipient.keys.publicKey,
     depositedTokenMint = this.usdc,
@@ -399,7 +403,7 @@ export class LockupTestContext extends TestContext {
                                READ-ONLY INSTRUCTIONS
   //////////////////////////////////////////////////////////////////////////*/
 
-  async refundableAmountOf(salt: BN = this.salts.default): Promise<BN> {
+  async refundableAmountOf(salt: BN = this.salts.defaultLl): Promise<BN> {
     return await this.lockup.methods
       .refundableAmountOf()
       .accounts({
@@ -409,7 +413,7 @@ export class LockupTestContext extends TestContext {
       .view();
   }
 
-  async statusOf(salt = this.salts.default): Promise<string> {
+  async statusOf(salt = this.salts.defaultLl): Promise<string> {
     const result = await this.lockup.methods
       .statusOf()
       .accounts({
@@ -422,7 +426,7 @@ export class LockupTestContext extends TestContext {
     return Object.keys(result)[0];
   }
 
-  async streamExists(salt = this.salts.default): Promise<boolean> {
+  async streamExists(salt = this.salts.defaultLl): Promise<boolean> {
     return await this.lockup.methods
       .streamExists(this.sender.keys.publicKey, salt)
       .accounts({})
@@ -430,7 +434,7 @@ export class LockupTestContext extends TestContext {
       .view();
   }
 
-  async streamedAmountOf(salt = this.salts.default): Promise<BN> {
+  async streamedAmountOf(salt = this.salts.defaultLl): Promise<BN> {
     return await this.lockup.methods
       .streamedAmountOf()
       .accounts({
@@ -448,7 +452,7 @@ export class LockupTestContext extends TestContext {
       .view();
   }
 
-  async withdrawableAmountOf(salt = this.salts.default): Promise<BN> {
+  async withdrawableAmountOf(salt = this.salts.defaultLl): Promise<BN> {
     return await this.lockup.methods
       .withdrawableAmountOf()
       .accounts({
@@ -481,8 +485,8 @@ export class LockupTestContext extends TestContext {
     return await this.getLamportsOf(this.treasuryAddress);
   }
 
-  defaultStream({
-    salt = this.salts.default,
+  defaultLinearStream({
+    salt = this.salts.defaultLl,
     model = LINEAR_MODEL(),
     depositedTokenMint = this.usdc,
     tokenProgram = ProgramId.TOKEN,
@@ -517,13 +521,13 @@ export class LockupTestContext extends TestContext {
     };
   }
 
-  defaultStreamToken2022({
-    salt = this.salts.default,
+  defaultLinearStreamToken2022({
+    salt = this.salts.defaultLl,
     isCancelable = true,
     isDepleted = false,
     wasCanceled = false,
   } = {}): Stream {
-    return this.defaultStream({
+    return this.defaultLinearStream({
       depositedTokenMint: this.dai,
       isCancelable,
       isDepleted,
@@ -584,7 +588,7 @@ export class LockupTestContext extends TestContext {
     });
   }
 
-  async fetchStreamData(salt = this.salts.default): Promise<StreamData> {
+  async fetchStreamData(salt = this.salts.defaultLl): Promise<StreamData> {
     const streamDataAddress = this.getStreamDataAddress(salt);
     const streamDataAcc = await this.banksClient.getAccount(streamDataAddress);
     if (!streamDataAcc) {
@@ -600,7 +604,7 @@ export class LockupTestContext extends TestContext {
     );
   }
 
-  async fetchStreamNft(salt = this.salts.default): Promise<AssetV1> {
+  async fetchStreamNft(salt = this.salts.defaultLl): Promise<AssetV1> {
     const streamNftAddress = this.getStreamNftAddress(salt);
     const streamNftAcc = await this.fetchAccount(streamNftAddress, "Stream NFT");
 
@@ -630,7 +634,7 @@ export class LockupTestContext extends TestContext {
 
   async getStreamNftCollectionSize(): Promise<BN> {
     const nftCollection = await this.fetchStreamNftCollection();
-    return new BN(nftCollection.numMinted);
+    return toBn(nftCollection.numMinted);
   }
 
   /*//////////////////////////////////////////////////////////////////////////
