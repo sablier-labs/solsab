@@ -70,7 +70,7 @@ describe("renounce", () => {
           describe("given non cancelable stream", () => {
             it("should fail", async () => {
               await expectToThrow(
-                ctx.renounce({ salt: ctx.salts.nonCancelable }),
+                ctx.renounce({ salt: ctx.salts.nonCancelableLl }),
                 "StreamAlreadyNonCancelable",
               );
             });
@@ -81,7 +81,7 @@ describe("renounce", () => {
               await ctx.renounce();
 
               const actualStreamData = await ctx.fetchStreamData();
-              const expectedStreamData = ctx.defaultStream().data;
+              const expectedStreamData = ctx.defaultLinearStream().data;
               expectedStreamData.isCancelable = false;
 
               assertEqStreamData(actualStreamData, expectedStreamData);

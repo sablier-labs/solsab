@@ -10,6 +10,8 @@ import {
   LINEAR_TIMESTAMPS,
   LINEAR_UNLOCK_AMOUNTS,
   Time,
+  TranchedAmounts,
+  TranchedTimes,
   UNLOCK_AMOUNTS,
 } from "../../utils/defaults";
 
@@ -187,6 +189,92 @@ describe("streamedAmountOf", () => {
             });
           });
         });
+      });
+    });
+  });
+
+  /*//////////////////////////////////////////////////////////////////////////
+                              TRANCHED STREAMS
+  //////////////////////////////////////////////////////////////////////////*/
+
+  describe("given a tranched stream", () => {
+    describe("given PENDING status (now < start)", () => {
+      it("should return 0", async () => {
+        await ctx.timeTravelTo(Time.START.subn(100));
+        const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+        assertEqBn(actualStreamedAmount, ZERO);
+      });
+    });
+
+    describe("given STREAMING status", () => {
+      describe("given before first tranche", () => {
+        it("should return 0", async () => {
+          await ctx.timeTravelTo(Time.START.addn(100));
+          const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+          assertEqBn(actualStreamedAmount, ZERO);
+        });
+      });
+
+      describe("given exactly at first tranche timestamp", () => {
+        it("should return tranche_1.amount", async () => {
+          await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+          const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+          assertEqBn(actualStreamedAmount, TranchedAmounts.TRANCHE_1);
+        });
+      });
+
+      describe("given between tranche 1 and 2", () => {
+        it("should return tranche_1.amount", async () => {
+          await ctx.timeTravelTo(TranchedTimes.MID_TRANCHE_1_2);
+          const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+          assertEqBn(actualStreamedAmount, TranchedAmounts.TRANCHE_1);
+        });
+      });
+
+      describe("given at second tranche timestamp", () => {
+        it("should return tranche_1 + tranche_2", async () => {
+          await ctx.timeTravelTo(TranchedTimes.TRANCHE_2);
+          const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+          assertEqBn(actualStreamedAmount, TranchedAmounts.STREAMED_AFTER_T2);
+        });
+      });
+
+      describe("given after all tranches", () => {
+        it("should return total deposited", async () => {
+          await ctx.timeTravelTo(TranchedTimes.END.addn(100));
+          const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+          assertEqBn(actualStreamedAmount, TranchedAmounts.DEPOSIT);
+        });
+      });
+    });
+
+    describe("given SETTLED status", () => {
+      it("should return deposited amount", async () => {
+        await ctx.timeTravelTo(TranchedTimes.END);
+        const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+        assertEqBn(actualStreamedAmount, TranchedAmounts.DEPOSIT);
+      });
+    });
+
+    describe("given CANCELED status", () => {
+      it("should return deposited - refunded", async () => {
+        // Cancel after first tranche unlocks
+        await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+        await ctx.cancel({ salt: ctx.salts.defaultLt });
+
+        const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+        // After cancel, streamed = deposited - refunded = tranche_1
+        assertEqBn(actualStreamedAmount, TranchedAmounts.TRANCHE_1);
+      });
+    });
+
+    describe("given DEPLETED status", () => {
+      it("should return withdrawn amount", async () => {
+        await ctx.timeTravelTo(TranchedTimes.END);
+        await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
+
+        const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+        assertEqBn(actualStreamedAmount, TranchedAmounts.DEPOSIT);
       });
     });
   });

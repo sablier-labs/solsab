@@ -1,9 +1,9 @@
-import type { BN } from "@coral-xyz/anchor";
 import {
   ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
   ANCHOR_ERROR__CONSTRAINT_RAW as CONSTRAINT_RAW,
 } from "@coral-xyz/anchor-errors";
 import type { PublicKey } from "@solana/web3.js";
+import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import type { StreamData } from "../../../target/types/sablier_lockup_structs";
@@ -148,7 +148,7 @@ describe("withdraw", () => {
                   describe("when signer recipient", () => {
                     it("should make the withdrawal", async () => {
                       // Get stream info before withdrawal
-                      const stream = ctx.defaultStream();
+                      const stream = ctx.defaultLinearStream();
 
                       // Get the Lamports balance of the Treasury before the withdrawal
                       const treasuryLamportsBefore = await ctx.getTreasuryLamports();
@@ -178,7 +178,7 @@ describe("withdraw", () => {
                       expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
 
                       await postWithdrawAssertions(
-                        ctx.salts.default,
+                        ctx.salts.defaultLl,
                         txSignerKeys.publicKey,
                         txSignerLamportsBefore,
                         treasuryLamportsBefore,
@@ -197,7 +197,7 @@ describe("withdraw", () => {
                 describe("when signer recipient", () => {
                   it("should make the withdrawal", async () => {
                     // Get stream info before withdrawal
-                    const stream = ctx.defaultStream();
+                    const stream = ctx.defaultLinearStream();
 
                     // Get the Lamports balance of the Treasury before the withdrawal
                     const treasuryLamportsBefore = await ctx.getTreasuryLamports();
@@ -222,7 +222,7 @@ describe("withdraw", () => {
                     expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
 
                     await postWithdrawAssertions(
-                      ctx.salts.default,
+                      ctx.salts.defaultLl,
                       txSignerKeys.publicKey,
                       txSignerLamportsBefore,
                       treasuryLamportsBefore,
@@ -241,7 +241,7 @@ describe("withdraw", () => {
                       await ctx.timeTravelTo(Time.END);
 
                       // Get stream info before withdrawal
-                      const stream = ctx.defaultStream();
+                      const stream = ctx.defaultLinearStream();
 
                       // Get the Lamports balance of the Treasury before the withdrawal
                       const treasuryLamportsBefore = await ctx.getTreasuryLamports();
@@ -273,7 +273,7 @@ describe("withdraw", () => {
                       expectedStreamData.isDepleted = true;
 
                       await postWithdrawAssertions(
-                        ctx.salts.default,
+                        ctx.salts.defaultLl,
                         txSignerKeys.publicKey,
                         txSignerLamportsBefore,
                         treasuryLamportsBefore,
@@ -292,7 +292,7 @@ describe("withdraw", () => {
                         await ctx.cancel();
 
                         // Get stream info before withdrawal
-                        const stream = ctx.defaultStream({
+                        const stream = ctx.defaultLinearStream({
                           isCancelable: false,
                           isDepleted: true,
                           wasCanceled: true,
@@ -323,7 +323,7 @@ describe("withdraw", () => {
                         expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
 
                         await postWithdrawAssertions(
-                          ctx.salts.default,
+                          ctx.salts.defaultLl,
                           txSignerKeys.publicKey,
                           txSignerLamportsBefore,
                           treasuryLamportsBefore,
@@ -340,7 +340,7 @@ describe("withdraw", () => {
                       describe("given token SPL standard", () => {
                         it("should make the withdrawal", async () => {
                           // Get stream info before withdrawal
-                          const stream = ctx.defaultStream();
+                          const stream = ctx.defaultLinearStream();
 
                           // Get the Lamports balance of the Treasury before the withdrawal
                           const treasuryLamportsBefore = await ctx.getTreasuryLamports();
@@ -365,7 +365,7 @@ describe("withdraw", () => {
                           const expectedStreamData = stream.data;
                           expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
                           await postWithdrawAssertions(
-                            ctx.salts.default,
+                            ctx.salts.defaultLl,
                             txSignerKeys.publicKey,
                             txSignerLamportsBefore,
                             treasuryLamportsBefore,
@@ -383,7 +383,7 @@ describe("withdraw", () => {
                           const salt = await ctx.createWithTimestampsLlToken2022();
 
                           // Get stream info before withdrawal
-                          const stream = ctx.defaultStreamToken2022({ salt });
+                          const stream = ctx.defaultLinearStreamToken2022({ salt });
 
                           // Get the Lamports balance of the Treasury before the withdrawal
                           const treasuryLamportsBefore = await ctx.getTreasuryLamports();

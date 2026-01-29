@@ -40,7 +40,7 @@ describe("withdrawMax", () => {
           await ctx.timeTravelTo(Time.END);
           await ctx.withdrawMax();
           const actualStreamData = await ctx.fetchStreamData();
-          const expectedStreamData = ctx.defaultStream({
+          const expectedStreamData = ctx.defaultLinearStream({
             isCancelable: false,
             isDepleted: true,
           }).data;
@@ -54,7 +54,7 @@ describe("withdrawMax", () => {
           await ctx.timeTravelTo(Time.MID_26_PERCENT);
           await ctx.withdrawMax();
           const actualStreamData = await ctx.fetchStreamData();
-          const expectedStreamData = ctx.defaultStream().data;
+          const expectedStreamData = ctx.defaultLinearStream().data;
           expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
           assertEqStreamData(actualStreamData, expectedStreamData);
         });

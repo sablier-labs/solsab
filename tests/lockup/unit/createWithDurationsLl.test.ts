@@ -32,7 +32,7 @@ describe("createWithDurationsLl", () => {
         const salt = await ctx.createWithDurationsLl();
 
         const actualStreamData = await ctx.fetchStreamData(salt);
-        const expectedStreamData = ctx.defaultStream({ salt: salt }).data;
+        const expectedStreamData = ctx.defaultLinearStream({ salt: salt }).data;
         assertEqStreamData(actualStreamData, expectedStreamData);
       });
     });
@@ -42,7 +42,7 @@ describe("createWithDurationsLl", () => {
         const salt = await ctx.createWithDurationsLl({ cliffDuration: ZERO });
 
         const actualStreamData = await ctx.fetchStreamData(salt);
-        const expectedStreamData = ctx.defaultStream({
+        const expectedStreamData = ctx.defaultLinearStream({
           model: LINEAR_MODEL({
             timestamps: { cliff: ZERO },
             unlockAmounts: { cliff: ZERO },
