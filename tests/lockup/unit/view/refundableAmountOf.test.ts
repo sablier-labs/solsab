@@ -24,7 +24,7 @@ describe("refundableAmountOf", () => {
   describe("given a valid stream", () => {
     describe("given non cancelable stream", () => {
       it("should return zero", async () => {
-        const actualRefundableAmount = await ctx.refundableAmountOf(ctx.salts.nonCancelable);
+        const actualRefundableAmount = await ctx.refundableAmountOf(ctx.salts.nonCancelableLl);
         const expectedRefundableAmount = ZERO;
         assertEqBn(actualRefundableAmount, expectedRefundableAmount);
       });

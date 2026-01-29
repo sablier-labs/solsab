@@ -1,6 +1,6 @@
-import type { BN } from "@coral-xyz/anchor";
 import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
 import { PublicKey } from "@solana/web3.js";
+import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1000, ZERO } from "../../../lib/constants";
 import { usdc } from "../../../lib/convertors";
@@ -113,7 +113,7 @@ describe("createWithTimestampsLl", () => {
                     unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO, start: ZERO }),
                   });
 
-                  const expectedStream = ctx.defaultStream({
+                  const expectedStream = ctx.defaultLinearStream({
                     model: LINEAR_MODEL({
                       timestamps: { cliff: ZERO },
                       unlockAmounts: { cliff: ZERO, start: ZERO },
@@ -200,7 +200,7 @@ describe("createWithTimestampsLl", () => {
                           salt,
                           beforeCollectionSize,
                           beforeSenderTokenBalance,
-                          ctx.defaultStreamToken2022({ salt: salt }),
+                          ctx.defaultLinearStreamToken2022({ salt: salt }),
                         );
                       });
                     });
@@ -219,7 +219,7 @@ async function assertStreamCreation(
   salt: BN,
   beforeCollectionSize: BN,
   beforeSenderTokenBalance: BN,
-  expectedStream = ctx.defaultStream({ salt }),
+  expectedStream = ctx.defaultLinearStream({ salt }),
   recipient = ctx.recipient.keys.publicKey,
 ) {
   // Assert that core stream accounts exist

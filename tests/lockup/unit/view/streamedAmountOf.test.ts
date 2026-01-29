@@ -10,8 +10,8 @@ import {
   LINEAR_TIMESTAMPS,
   LINEAR_UNLOCK_AMOUNTS,
   Time,
-  TranchedAmount,
-  TranchedTime,
+  TranchedAmounts,
+  TranchedTimes,
   UNLOCK_AMOUNTS,
 } from "../../utils/defaults";
 
@@ -217,64 +217,64 @@ describe("streamedAmountOf", () => {
 
       describe("given exactly at first tranche timestamp", () => {
         it("should return tranche_1.amount", async () => {
-          await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+          await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
           const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
-          assertEqBn(actualStreamedAmount, TranchedAmount.TRANCHE_1);
+          assertEqBn(actualStreamedAmount, TranchedAmounts.TRANCHE_1);
         });
       });
 
       describe("given between tranche 1 and 2", () => {
         it("should return tranche_1.amount", async () => {
-          await ctx.timeTravelTo(TranchedTime.MID_TRANCHE_1_2);
+          await ctx.timeTravelTo(TranchedTimes.MID_TRANCHE_1_2);
           const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
-          assertEqBn(actualStreamedAmount, TranchedAmount.TRANCHE_1);
+          assertEqBn(actualStreamedAmount, TranchedAmounts.TRANCHE_1);
         });
       });
 
       describe("given at second tranche timestamp", () => {
         it("should return tranche_1 + tranche_2", async () => {
-          await ctx.timeTravelTo(TranchedTime.TRANCHE_2);
+          await ctx.timeTravelTo(TranchedTimes.TRANCHE_2);
           const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
-          assertEqBn(actualStreamedAmount, TranchedAmount.STREAMED_AFTER_T2);
+          assertEqBn(actualStreamedAmount, TranchedAmounts.STREAMED_AFTER_T2);
         });
       });
 
       describe("given after all tranches", () => {
         it("should return total deposited", async () => {
-          await ctx.timeTravelTo(TranchedTime.END.addn(100));
+          await ctx.timeTravelTo(TranchedTimes.END.addn(100));
           const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
-          assertEqBn(actualStreamedAmount, TranchedAmount.DEPOSIT);
+          assertEqBn(actualStreamedAmount, TranchedAmounts.DEPOSIT);
         });
       });
     });
 
     describe("given SETTLED status", () => {
       it("should return deposited amount", async () => {
-        await ctx.timeTravelTo(TranchedTime.END);
+        await ctx.timeTravelTo(TranchedTimes.END);
         const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
-        assertEqBn(actualStreamedAmount, TranchedAmount.DEPOSIT);
+        assertEqBn(actualStreamedAmount, TranchedAmounts.DEPOSIT);
       });
     });
 
     describe("given CANCELED status", () => {
       it("should return deposited - refunded", async () => {
         // Cancel after first tranche unlocks
-        await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+        await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
         await ctx.cancel({ salt: ctx.salts.defaultLt });
 
         const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
         // After cancel, streamed = deposited - refunded = tranche_1
-        assertEqBn(actualStreamedAmount, TranchedAmount.TRANCHE_1);
+        assertEqBn(actualStreamedAmount, TranchedAmounts.TRANCHE_1);
       });
     });
 
     describe("given DEPLETED status", () => {
       it("should return withdrawn amount", async () => {
-        await ctx.timeTravelTo(TranchedTime.END);
+        await ctx.timeTravelTo(TranchedTimes.END);
         await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
 
         const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
-        assertEqBn(actualStreamedAmount, TranchedAmount.DEPOSIT);
+        assertEqBn(actualStreamedAmount, TranchedAmounts.DEPOSIT);
       });
     });
   });

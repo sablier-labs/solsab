@@ -6,7 +6,7 @@ import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1 } from "../../../lib/constants";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
-import { TranchedTime } from "../utils/defaults";
+import { TranchedTimes } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
@@ -38,7 +38,7 @@ describe("renounceLt", () => {
       describe("given cold stream", () => {
         describe("given DEPLETED status", () => {
           it("should fail", async () => {
-            await ctx.timeTravelTo(TranchedTime.END);
+            await ctx.timeTravelTo(TranchedTimes.END);
             await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
             await expectToThrow(
               ctx.renounce({ salt: ctx.salts.defaultLt }),
@@ -49,7 +49,7 @@ describe("renounceLt", () => {
 
         describe("given CANCELED status", () => {
           it("should fail", async () => {
-            await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+            await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
             await ctx.cancel({ salt: ctx.salts.defaultLt });
             await expectToThrow(
               ctx.renounce({ salt: ctx.salts.defaultLt }),
@@ -60,7 +60,7 @@ describe("renounceLt", () => {
 
         describe("given SETTLED status", () => {
           it("should fail", async () => {
-            await ctx.timeTravelTo(TranchedTime.END);
+            await ctx.timeTravelTo(TranchedTimes.END);
             await expectToThrow(
               ctx.renounce({ salt: ctx.salts.defaultLt }),
               "StreamAlreadyNonCancelable",

@@ -1,8 +1,8 @@
-import type { BN } from "@coral-xyz/anchor";
 import {
   ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
   ANCHOR_ERROR__CONSTRAINT_ADDRESS as CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
+import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
@@ -95,7 +95,7 @@ describe("cancel", () => {
             describe("given non cancelable stream", () => {
               it("should fail", async () => {
                 await expectToThrow(
-                  ctx.cancel({ salt: ctx.salts.nonCancelable }),
+                  ctx.cancel({ salt: ctx.salts.nonCancelableLl }),
                   "StreamIsNotCancelable",
                 );
               });
@@ -139,7 +139,7 @@ describe("cancel", () => {
                   });
 
                   // Assert the cancelation
-                  const expectedStream = ctx.defaultStream({
+                  const expectedStream = ctx.defaultLinearStream({
                     depositedTokenMint: ctx.randomToken,
                     isCancelable: false,
                     salt: salt,
@@ -167,7 +167,7 @@ describe("cancel", () => {
                   await ctx.cancel();
 
                   // Assert the cancelation
-                  const expectedStream = ctx.defaultStream({
+                  const expectedStream = ctx.defaultLinearStream({
                     isCancelable: false,
                     isDepleted: true,
                     wasCanceled: true,
@@ -176,7 +176,7 @@ describe("cancel", () => {
 
                   // Assert the cancelation
                   await postCancelAssertions(
-                    ctx.salts.default,
+                    ctx.salts.defaultLl,
                     expectedStream,
                     beforeSenderBalance,
                   );
@@ -194,7 +194,7 @@ describe("cancel", () => {
                     // Cancel the stream
                     await ctx.cancel();
 
-                    const expectedStream = ctx.defaultStream({
+                    const expectedStream = ctx.defaultLinearStream({
                       isCancelable: false,
                       wasCanceled: true,
                     });
@@ -202,7 +202,7 @@ describe("cancel", () => {
 
                     // Assert the cancelation
                     await postCancelAssertions(
-                      ctx.salts.default,
+                      ctx.salts.defaultLl,
                       expectedStream,
                       beforeSenderBalance,
                     );
@@ -222,7 +222,7 @@ describe("cancel", () => {
                     // Cancel the stream
                     await ctx.cancelToken2022(salt);
 
-                    const expectedStream = ctx.defaultStreamToken2022({
+                    const expectedStream = ctx.defaultLinearStreamToken2022({
                       isCancelable: false,
                       salt: salt,
                       wasCanceled: true,

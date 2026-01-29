@@ -1,4 +1,4 @@
-import type { BN } from "@coral-xyz/anchor";
+import type BN from "bn.js";
 import { SCALING_FACTOR, ZERO } from "../../../lib/constants";
 import type {
   Amounts,

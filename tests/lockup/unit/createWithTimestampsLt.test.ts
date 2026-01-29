@@ -1,9 +1,9 @@
-import type { BN } from "@coral-xyz/anchor";
 import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
 import { PublicKey } from "@solana/web3.js";
-import BNjs from "bn.js";
+import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { MAX_U64, ZERO } from "../../../lib/constants";
+import { toBn } from "../../../lib/helpers";
 import type { Tranche } from "../../../target/types/sablier_lockup_structs";
 import { getATABalance } from "../../common/anchor-bankrun";
 import { assertAccountExists, assertEqBn, assertEqPublicKey } from "../../common/assertions";
@@ -13,8 +13,8 @@ import {
   DEFAULT_TRANCHES,
   Time,
   TRANCHED_MODEL,
-  TranchedAmount,
-  TranchedTime,
+  TranchedAmounts,
+  TranchedTimes,
 } from "../utils/defaults";
 
 let ctx: LockupTestContext;
@@ -42,7 +42,7 @@ describe("createWithTimestampsLt", () => {
         // Individual tranche amounts are validated before summing the deposit
         await expectToThrow(
           ctx.createWithTimestampsLt({
-            tranches: [{ amount: ZERO, timestamp: TranchedTime.TRANCHE_1 }],
+            tranches: [{ amount: ZERO, timestamp: TranchedTimes.TRANCHE_1 }],
           }),
           "TrancheAmountZero",
         );
@@ -80,7 +80,7 @@ describe("createWithTimestampsLt", () => {
       it("should fail when start time equals first tranche timestamp", async () => {
         await expectToThrow(
           ctx.createWithTimestampsLt({
-            startTime: TranchedTime.TRANCHE_1,
+            startTime: TranchedTimes.TRANCHE_1,
             tranches: DEFAULT_TRANCHES(),
           }),
           "StartTimeNotLessThanFirstTranche",
@@ -90,7 +90,7 @@ describe("createWithTimestampsLt", () => {
       it("should fail when start time is greater than first tranche timestamp", async () => {
         await expectToThrow(
           ctx.createWithTimestampsLt({
-            startTime: TranchedTime.TRANCHE_1.addn(1),
+            startTime: TranchedTimes.TRANCHE_1.addn(1),
             tranches: DEFAULT_TRANCHES(),
           }),
           "StartTimeNotLessThanFirstTranche",
@@ -101,9 +101,9 @@ describe("createWithTimestampsLt", () => {
     describe("given tranches not in ascending order", () => {
       it("should fail", async () => {
         const tranches: Tranche[] = [
-          { amount: TranchedAmount.TRANCHE_1, timestamp: TranchedTime.TRANCHE_2 },
-          { amount: TranchedAmount.TRANCHE_2, timestamp: TranchedTime.TRANCHE_1 },
-          { amount: TranchedAmount.TRANCHE_3, timestamp: TranchedTime.TRANCHE_3 },
+          { amount: TranchedAmounts.TRANCHE_1, timestamp: TranchedTimes.TRANCHE_2 },
+          { amount: TranchedAmounts.TRANCHE_2, timestamp: TranchedTimes.TRANCHE_1 },
+          { amount: TranchedAmounts.TRANCHE_3, timestamp: TranchedTimes.TRANCHE_3 },
         ];
 
         await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TranchesNotSorted");
@@ -113,9 +113,9 @@ describe("createWithTimestampsLt", () => {
     describe("given duplicate tranche timestamps", () => {
       it("should fail", async () => {
         const tranches: Tranche[] = [
-          { amount: TranchedAmount.TRANCHE_1, timestamp: TranchedTime.TRANCHE_1 },
-          { amount: TranchedAmount.TRANCHE_2, timestamp: TranchedTime.TRANCHE_1 },
-          { amount: TranchedAmount.TRANCHE_3, timestamp: TranchedTime.TRANCHE_3 },
+          { amount: TranchedAmounts.TRANCHE_1, timestamp: TranchedTimes.TRANCHE_1 },
+          { amount: TranchedAmounts.TRANCHE_2, timestamp: TranchedTimes.TRANCHE_1 },
+          { amount: TranchedAmounts.TRANCHE_3, timestamp: TranchedTimes.TRANCHE_3 },
         ];
 
         await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TranchesNotSorted");
@@ -125,9 +125,9 @@ describe("createWithTimestampsLt", () => {
     describe("given tranche with zero amount", () => {
       it("should fail", async () => {
         const tranches: Tranche[] = [
-          { amount: TranchedAmount.TRANCHE_1, timestamp: TranchedTime.TRANCHE_1 },
-          { amount: ZERO, timestamp: TranchedTime.TRANCHE_2 },
-          { amount: TranchedAmount.TRANCHE_3, timestamp: TranchedTime.TRANCHE_3 },
+          { amount: TranchedAmounts.TRANCHE_1, timestamp: TranchedTimes.TRANCHE_1 },
+          { amount: ZERO, timestamp: TranchedTimes.TRANCHE_2 },
+          { amount: TranchedAmounts.TRANCHE_3, timestamp: TranchedTimes.TRANCHE_3 },
         ];
 
         await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TrancheAmountZero");
@@ -137,8 +137,8 @@ describe("createWithTimestampsLt", () => {
     describe("given tranche amounts sum overflow", () => {
       it("should fail", async () => {
         const tranches: Tranche[] = [
-          { amount: MAX_U64, timestamp: TranchedTime.TRANCHE_1 },
-          { amount: new BNjs(1), timestamp: TranchedTime.TRANCHE_2 },
+          { amount: MAX_U64, timestamp: TranchedTimes.TRANCHE_1 },
+          { amount: toBn(1), timestamp: TranchedTimes.TRANCHE_2 },
         ];
 
         await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TrancheAmountsSumOverflow");
@@ -152,14 +152,14 @@ describe("createWithTimestampsLt", () => {
           const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
 
           const singleTranche: Tranche[] = [
-            { amount: TranchedAmount.DEPOSIT, timestamp: TranchedTime.TRANCHE_1 },
+            { amount: TranchedAmounts.DEPOSIT, timestamp: TranchedTimes.TRANCHE_1 },
           ];
 
           const salt = await ctx.createWithTimestampsLt({ tranches: singleTranche });
 
           const expectedStream = ctx.defaultTranchedStream({
             model: TRANCHED_MODEL({
-              timestamps: { end: TranchedTime.TRANCHE_1 },
+              timestamps: { end: TranchedTimes.TRANCHE_1 },
               tranches: singleTranche,
             }),
             salt,

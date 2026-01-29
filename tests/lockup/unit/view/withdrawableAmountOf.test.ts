@@ -3,7 +3,7 @@ import { ZERO } from "../../../../lib/constants";
 import { toBn } from "../../../../lib/helpers";
 import { assertEqBn } from "../../../common/assertions";
 import { LockupTestContext } from "../../context";
-import { Amount, Time, TranchedAmount, TranchedTime } from "../../utils/defaults";
+import { Amount, Time, TranchedAmounts, TranchedTimes } from "../../utils/defaults";
 
 let ctx: LockupTestContext;
 
@@ -110,40 +110,40 @@ describe("withdrawableAmountOf", () => {
 
     describe("given after first tranche, no withdrawals", () => {
       it("should return tranche_1.amount", async () => {
-        await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+        await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
         const actualWithdrawableAmount = await ctx.withdrawableAmountOf(ctx.salts.defaultLt);
-        assertEqBn(actualWithdrawableAmount, TranchedAmount.TRANCHE_1);
+        assertEqBn(actualWithdrawableAmount, TranchedAmounts.TRANCHE_1);
       });
     });
 
     describe("given after first tranche, partial withdrawal", () => {
       it("should return tranche_1.amount - withdrawn", async () => {
-        await ctx.timeTravelTo(TranchedTime.TRANCHE_1);
+        await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
         // Withdraw half of tranche 1
-        const partialWithdraw = TranchedAmount.TRANCHE_1.divn(2);
+        const partialWithdraw = TranchedAmounts.TRANCHE_1.divn(2);
         await ctx.withdraw({
           salt: ctx.salts.defaultLt,
           withdrawAmount: partialWithdraw,
         });
 
         const actualWithdrawableAmount = await ctx.withdrawableAmountOf(ctx.salts.defaultLt);
-        const expectedWithdrawableAmount = TranchedAmount.TRANCHE_1.sub(partialWithdraw);
+        const expectedWithdrawableAmount = TranchedAmounts.TRANCHE_1.sub(partialWithdraw);
         assertEqBn(actualWithdrawableAmount, expectedWithdrawableAmount);
       });
     });
 
     describe("given after all tranches, no withdrawals", () => {
       it("should return deposited", async () => {
-        await ctx.timeTravelTo(TranchedTime.END);
+        await ctx.timeTravelTo(TranchedTimes.END);
         const actualWithdrawableAmount = await ctx.withdrawableAmountOf(ctx.salts.defaultLt);
-        assertEqBn(actualWithdrawableAmount, TranchedAmount.DEPOSIT);
+        assertEqBn(actualWithdrawableAmount, TranchedAmounts.DEPOSIT);
       });
     });
 
     describe("given DEPLETED", () => {
       it("should return 0", async () => {
-        await ctx.timeTravelTo(TranchedTime.END);
+        await ctx.timeTravelTo(TranchedTimes.END);
         await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
         const actualWithdrawableAmount = await ctx.withdrawableAmountOf(ctx.salts.defaultLt);
         assertEqBn(actualWithdrawableAmount, ZERO);
