@@ -9,15 +9,19 @@ use crate::{
     state::{lockup::*, Treasury},
     utils::{
         constants::{
-            nft::{NFT_METADATA_URI, NFT_NAME_PREFIX},
+            nft::{LL_NFT_METADATA_URI, LL_NFT_NAME_PREFIX},
             seeds::*,
             ANCHOR_DISCRIMINATOR_SIZE,
         },
-        events::CreateLockupLinearStream,
+        events::{CreateLockupStream, CreateStreamModel},
         transfer_helper::transfer_tokens,
-        validations::check_create,
+        validations::check_create_linear,
     },
 };
+
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
 
 #[derive(Accounts)]
 #[instruction(salt: u128)]
@@ -128,6 +132,10 @@ pub struct CreateWithTimestamps<'info> {
     pub system_program: Program<'info, System>,
 }
 
+// -------------------------------------------------------------------------- //
+//                                 IX HANDLER                                 //
+// -------------------------------------------------------------------------- //
+
 /// See the documentation for [`fn@crate::sablier_lockup::create_with_timestamps_ll`].
 #[allow(clippy::too_many_arguments)]
 pub fn handler(
@@ -148,20 +156,20 @@ pub fn handler(
     let sender_key = &ctx.accounts.sender.key();
     let stream_nft = &ctx.accounts.stream_nft;
 
-    // Validate parameters
-    check_create(deposit_amount, start_time, cliff_time, end_time, start_unlock_amount, cliff_unlock_amount)?;
+    // Validate the ix parameters.
+    check_create_linear(deposit_amount, start_time, cliff_time, end_time, start_unlock_amount, cliff_unlock_amount)?;
 
-    // Effect: create the stream data.
-    ctx.accounts.stream_data.create(
-        deposit_token_mint.key(),
+    // Effect: create the linear stream data.
+    ctx.accounts.stream_data.create_linear(
         ctx.bumps.stream_data,
         cliff_time,
         cliff_unlock_amount,
         deposit_amount,
+        deposit_token_mint.key(),
         end_time,
+        is_cancelable,
         stream_nft.key(),
         salt,
-        is_cancelable,
         *sender_key,
         start_time,
         start_unlock_amount,
@@ -174,7 +182,7 @@ pub fn handler(
     // "Sablier LL Stream #[first 5 chars of asset key]...[last 5 chars of asset key]"
     let stream_nft_key = stream_nft.key().to_string();
     let stream_nft_name =
-        format!("{NFT_NAME_PREFIX}{}...{}", &stream_nft_key[..5], &stream_nft_key[stream_nft_key.len() - 5..]);
+        format!("{LL_NFT_NAME_PREFIX}{}...{}", &stream_nft_key[..5], &stream_nft_key[stream_nft_key.len() - 5..]);
 
     let stream_nft_signer_seeds: &[&[u8]] =
         &[STREAM_NFT, sender_key.as_ref(), &salt.to_le_bytes(), &[ctx.bumps.stream_nft]];
@@ -188,10 +196,10 @@ pub fn handler(
         .payer(&funder.to_account_info())
         .system_program(&ctx.accounts.system_program.to_account_info())
         .name(stream_nft_name)
-        .uri(NFT_METADATA_URI.to_string())
+        .uri(LL_NFT_METADATA_URI.to_string())
         .invoke_signed(&[stream_nft_signer_seeds, collection_authority_signer_seeds])?;
 
-    // Interaction: transfer tokens from the sender's ATA to the StreamData ATA.
+    // Interaction: transfer tokens from the funder's ATA to the StreamData ATA.
     transfer_tokens(
         funder_ata.to_account_info(),
         ctx.accounts.stream_data_ata.to_account_info(),
@@ -204,13 +212,14 @@ pub fn handler(
     )?;
 
     // Log the newly created stream.
-    emit!(CreateLockupLinearStream {
-        salt,
+    emit!(CreateLockupStream {
         deposit_token_decimals: deposit_token_mint.decimals,
         deposit_token_mint: deposit_token_mint.key(),
+        model: CreateStreamModel::Linear,
         recipient: recipient.key(),
+        salt,
         stream_data: ctx.accounts.stream_data.key(),
-        stream_nft: stream_nft.key()
+        stream_nft: stream_nft.key(),
     });
 
     Ok(())

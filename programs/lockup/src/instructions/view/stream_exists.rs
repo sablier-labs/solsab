@@ -2,6 +2,10 @@ use anchor_lang::prelude::*;
 
 use crate::utils::constants::seeds::STREAM_NFT;
 
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
 #[derive(Accounts)]
 #[instruction(_sender: Pubkey, _salt: u128)]
 pub struct StreamExists<'info> {
