@@ -2,7 +2,11 @@ use anchor_lang::prelude::*;
 
 use crate::state::Campaign;
 
-// Common context used by multiple view instructions
+// -------------------------------------------------------------------------- //
+//                                IX ACCOUNTS                                 //
+// -------------------------------------------------------------------------- //
+
+/// Common context used by multiple view instructions.
 #[derive(Accounts)]
 pub struct CampaignView<'info> {
     // -------------------------------------------------------------------------- //
