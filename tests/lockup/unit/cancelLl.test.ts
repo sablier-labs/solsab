@@ -15,7 +15,7 @@ import {
 import { assertAccountNotExists, assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
-import { Amount, Time } from "../utils/defaults";
+import { LinearAmounts, Time } from "../utils/defaults";
 import type { Stream } from "../utils/types";
 
 let ctx: LockupTestContext;
@@ -119,7 +119,7 @@ describe("cancel", () => {
                     ctx.banksClient,
                     ctx.defaultBankrunPayer,
                     ctx.randomToken,
-                    Amount.DEPOSIT,
+                    LinearAmounts.DEPOSIT,
                     ProgramId.TOKEN,
                     ctx.sender.keys.publicKey,
                   );
@@ -146,7 +146,7 @@ describe("cancel", () => {
                     tokenProgram: ProgramId.TOKEN,
                     wasCanceled: true,
                   });
-                  expectedStream.data.amounts.refunded = Amount.REFUND;
+                  expectedStream.data.amounts.refunded = LinearAmounts.REFUND;
 
                   // Assert the cancelation
                   await postCancelAssertions(salt, expectedStream, ZERO);
@@ -172,7 +172,7 @@ describe("cancel", () => {
                     isDepleted: true,
                     wasCanceled: true,
                   });
-                  expectedStream.data.amounts.refunded = Amount.DEPOSIT;
+                  expectedStream.data.amounts.refunded = LinearAmounts.DEPOSIT;
 
                   // Assert the cancelation
                   await postCancelAssertions(
@@ -198,7 +198,7 @@ describe("cancel", () => {
                       isCancelable: false,
                       wasCanceled: true,
                     });
-                    expectedStream.data.amounts.refunded = Amount.REFUND;
+                    expectedStream.data.amounts.refunded = LinearAmounts.REFUND;
 
                     // Assert the cancelation
                     await postCancelAssertions(
@@ -227,7 +227,7 @@ describe("cancel", () => {
                       salt: salt,
                       wasCanceled: true,
                     });
-                    expectedStream.data.amounts.refunded = Amount.REFUND;
+                    expectedStream.data.amounts.refunded = LinearAmounts.REFUND;
 
                     // Assert the cancelation
                     await postCancelAssertions(salt, expectedStream, beforeSenderBalance);

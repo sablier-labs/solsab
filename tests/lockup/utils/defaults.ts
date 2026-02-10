@@ -12,7 +12,7 @@ import type {
 } from "../../../target/types/sablier_lockup_structs";
 import type { UnlockAmounts } from "./types";
 
-export namespace Amount {
+export namespace LinearAmounts {
   export const CLIFF = usdc("2500.000001");
   export const DEPOSIT = usdc(10_000);
   export const START = ZERO;
@@ -70,9 +70,9 @@ export namespace TranchedDurations {
  * Absolute tranche timestamps (derived from cumulative durations).
  */
 export namespace TranchedTimes {
-  export const TRANCHE_1 = Time.START.add(TranchedDurations.TRANCHE_1); // start + 2000
-  export const TRANCHE_2 = TRANCHE_1.add(TranchedDurations.TRANCHE_2); // T1 + 2000
-  export const TRANCHE_3 = TRANCHE_2.add(TranchedDurations.TRANCHE_3); // T2 + 6000
+  export const TRANCHE_1 = Time.START.add(TranchedDurations.TRANCHE_1);
+  export const TRANCHE_2 = TRANCHE_1.add(TranchedDurations.TRANCHE_2);
+  export const TRANCHE_3 = TRANCHE_2.add(TranchedDurations.TRANCHE_3);
   export const MID_TRANCHE_1_2 = TRANCHE_1.add(TranchedDurations.TRANCHE_2.divn(2)); // Between T1 and T2
   export const END = TRANCHE_3; // Alias for clarity
 }
@@ -82,7 +82,7 @@ export namespace TranchedTimes {
  */
 
 export function LINEAR_AMOUNTS({
-  deposited = Amount.DEPOSIT,
+  deposited = LinearAmounts.DEPOSIT,
   refunded = ZERO,
   withdrawn = ZERO,
 }: Partial<Amounts> = {}): Amounts {
@@ -106,8 +106,8 @@ export function LINEAR_TIMESTAMPS({
 }
 
 export function LINEAR_UNLOCK_AMOUNTS({
-  cliff = Amount.CLIFF,
-  start = Amount.START,
+  cliff = LinearAmounts.CLIFF,
+  start = LinearAmounts.START,
 }: Partial<LinearUnlockAmounts> = {}): LinearUnlockAmounts {
   return {
     cliff,
@@ -131,8 +131,8 @@ export function LINEAR_MODEL({
 }
 
 export function UNLOCK_AMOUNTS({
-  cliff = Amount.CLIFF,
-  start = Amount.START,
+  cliff = LinearAmounts.CLIFF,
+  start = LinearAmounts.START,
 }: Partial<UnlockAmounts> = {}): UnlockAmounts {
   return {
     cliff,

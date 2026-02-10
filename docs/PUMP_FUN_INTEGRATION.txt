@@ -1,0 +1,86 @@
+PUMP.FUN × SABLIER
+Trust Infrastructure for Memecoins
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TL;DR
+THE PROBLEMS
+99% of Pump.Fun tokens fail because of:
+Holder dumps — No way to verify commitment from creators, whales, or team
+Secondary LP rugs — Additional liquidity added post-graduation can be pulled anytime
+No engagement tools — Nothing keeps holders around after graduation
+THE COMPETITION
+Raydium LaunchLab already has token vesting and LP locks (Burn & Earn). Jupiter Studio offers 0-80% vested supply and optional LP unlock schedules. Both are competing for Pump.Fun's users with these trust features. Pump.Fun needs to match — and exceed — what competitors offer.
+THE SOLUTIONS
+Sablier products can power the following 3 trust features on Pump.Fun:
+Token Locks for Any Holder — "🔒50% Token Supply locked until July 2026"
+Liquidity Locks — "🔐100 SOL worth of Token Liquidity locked until 2027"
+Holder Rewards — "🎁 Rewards Available: Claim 100 USDC"
+
+All verified on-chain, not just empty promises. Creators, whales, team members, regular token holders — anyone can prove commitment.
+THE DEAL
+50/50 revenue split between Sablier and Pump.Fun on all fees charged by Sablier (i.e. $1 per lock withdrawal and $2 per reward claim)
+WHY SABLIER
+6+ years of on-chain token distribution
+$500M TVL
+Notable users: Uniswap, Ethena, Fluid
+Never hacked
+Extensively audited
+Already live on Solana mainnet (see our launch announcement here)
+THE ASK
+30-minute technical call to scope the integration.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+THE PROBLEMS
+The Numbers
+15.80M+ tokens created (so far) on Pump.Fun
+~1% graduation rate
+99% of tokens fail
+Why Tokens Fail
+Pump.Fun partially addresses liquidity rugs by burning the initial LP tokens upon token graduation to Pump Swap. However, the vast majority of tokens launched on Pump.Fun still die because of:
+
+Holder dumps — No mechanism to verify commitment from creators, whales, the team or community
+Secondary LP rugs — Additional liquidity (added manually post-graduation) can be pulled anytime
+No engagement tools — Nothing keeps holders engaged after graduation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+THE SOLUTIONS
+1. Token Locks
+Any holder locks tokens → Token page shows verified lock badge → Buyers see commitment
+
+Creators prove they won't dump
+Whales prove they're diamond hands
+Team/advisors show transparent vesting
+Lock is an NFT (tradeable if holder wants to exit early)
+Unlocks on schedule (linearly, with an optional cliff - or in a timelock fashion)
+2. Additional Liquidity Locks
+Secondary LPs lock their positions → Badge shows locked liquidity amount and duration
+
+Only applies to liquidity added after graduation (as the initial graduation LP is already burned).
+3. Community Rewards
+Anyone deposits rewards → Snapshot taken → Community members claim directly from the token page
+
+Keeps token communities engaged post-graduation
+Can be targeted to a specific type of community members, e.g:
+“Distribute rewards to the users who have bought the token in the last 24h”
+“Distribute rewards to the users who have added liquidity in the last 7d”
+Can also be used by Pump.Fun, itself, as a means to keep the overall community engaged
+e.g. by distributing a small % of the Pump.Fun revenues back to a random token community
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REVENUE MODEL
+50/50 split on all Sablier fees:
+
+ACTION
+FEE
+PUMP.FUN’S SHARE
+Lock withdrawal
+$1
+$0.50
+Reward claim
+$2
+$1.00
+
+
+Pump.Fun earns passive revenue. Sablier builds and maintains the token distribution infrastructure.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

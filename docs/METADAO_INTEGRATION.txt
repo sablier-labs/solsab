@@ -1,0 +1,122 @@
+METADAO × SABLIER
+Battle-Tested Vesting + Recurring Revenues
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TL;DR
+THE OPPORTUNITY
+MetaDAO has two project types: STAMP projects (requiring 24-month investor vesting) and Permissionless projects (needing trust signals). Sablier’s Token Distribution products (6+ years, $500M TVL, extensively audited and never hacked) fits both — plus enables new mechanics like Vesting Bonuses and ecosystem rewards. Every withdrawal and claim generates recurring revenue for MetaDAO, long after the ICO is over.
+THE PROOF
+Fjord Foundry ($1B+ raised from 100k+ participants) already uses Sablier to offer token vesting as a native feature to the projects launching on its platform. Sablier can do the same for MetaDAO — purpose-built for this.
+WHAT SABLIER BRINGS
+Integrating Sablier’s on-chain products could enable the following features for MetaDAO:
+
+
+Pre-ICO Investor Vesting — 24-month linear unlock per STAMP terms
+Founder/Team Token Locks — voluntary proof of commitment for both STAMP and Permissionless projects
+ICO Vesting Bonus — "Vest 50% for 6 months → receive 15% bonus tokens"
+Ecosystem Rewards — reward campaigns, investment milestones, holding loyalty
+
+All on-chain, verifiable and integrated into the MetaDAO ICO page. Locks are NFTs — tradeable on secondary markets.
+THE DEAL
+50/50 revenue split on all Sablier fees ($0.99 per vesting withdrawal or reward claim). MetaDAO receives $0.50 from every transaction — not just at ICO time, but every time an investor withdraws or a community member claims a reward. This creates a recurring revenue stream that grows with each new ICO.
+WHY SABLIER
+6+ years of onchain token distribution
+14.8k MAUs
+$522.58M TVL (Enable “Vesting” in top-right)
+Notable users: Ethena, Fluid, Uniswap Governance
+Never hacked and extensively audited
+Already live on Solana mainnet (see the app here, and our launch announcement here)
+WHY NOW
+As more projects adopt the STAMP, each one will need 24-month vesting. Permissionless launches need trust signals to stand out. A rewards layer compounds in value the earlier it's built. And MetaDAO's current revenue is largely one-time (ICO fees) — Sablier adds a recurring revenue layer that keeps generating fees for months and years after each ICO.
+THE ASK
+30-minute technical call to scope the integration.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+THE OPPORTUNITY
+MetaDAO’s Trust Model + Sablier’s Vesting Layer
+Futarchy, the bid wall, and the STAMP contract give MetaDAO the strongest investor protection framework on Solana. MetaDAO can integrate Sablier's existing on-chain products — Lockup (token vesting) and Merkle Airdrops (token distribution) — to add features across both project types:
+
+For Post-Raise (STAMP) projects:
+- STAMP-compliant vesting for pre-ICO investors — using Sablier Lockup: 24-month linear unlock, audited, battle-tested, with NFT-based locks that let investors trade their position instead of waiting
+
+For Permissionless projects:
+- Voluntary founder/team token locks — using Sablier Lockup: without curation, founders who lock their tokens via Sablier stand out from those who don't. A verified on-chain lock becomes a trust signal for ICO participants.
+
+For both:
+- A new "Vesting Bonus" mechanic for ICO participants — using Sablier Lockup: optional, per-project, rewarding investors who commit long-term with bonus tokens
+- Ecosystem rewards — using Sablier Merkle Airdrops: reward campaign participation, investment milestones, holding loyalty, and more
+
+Sablier's products are already live on Solana mainnet — MetaDAO integrates them, while Sablier continues expanding and maintaining them. And every vesting withdrawal and reward claim generates fee revenue for MetaDAO — turning each ICO from a one-time event into an ongoing revenue source.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHAT SABLIER BRINGS
+Pre-ICO Investor Vesting (STAMP Compliance)
+MetaDAO integrates Sablier Lockup into the ICO flow: STAMP investors' tokens enter a Sablier lock → 24-month linear unlock begins at Delivery Notice → investor withdraws as tokens unlock
+
+- Fully compliant with STAMP's 24-month linear vesting requirement
+- Verifiable on-chain: anyone can confirm that investor tokens are properly locked
+- Dashboard for investors to track unlocked amounts and withdraw
+- Works out of the box for every MetaDAO ICO
+- Each lock is an NFT — investors who need early liquidity can sell their locked position on secondary markets instead of waiting or pressuring the project
+Founder/Team Token Locks for Permissionless Projects
+Without curation, permissionless projects need other ways to signal legitimacy. MetaDAO integrates Sablier Lockup as an optional trust feature for founders:
+
+- Founders lock a portion of their team tokens → MetaDAO ICO page shows a verified lock badge
+- Fully voluntary — but projects that lock stand out from those that don't
+- Configurable lock duration and unlock curve (e.g. linear, cliff + linear, etc.)
+- Each lock is an NFT — tradeable on secondary markets if the founder needs early liquidity
+- ICO participants can verify the lock on-chain before committing capital
+
+For permissionless projects, this is the closest equivalent to what STAMP enforces for post-raise projects — but driven by market incentives rather than legal obligation.
+ ICO Vesting Bonus (Optional, Per-Project)
+A new ICO mechanic MetaDAO could build on top of Sablier Lockup:
+
+- By default, ICO participants receive 100% liquid tokens at TGE (current behavior, unchanged)
+- Projects can optionally enable a "Vesting Bonus" — investors who choose to vest a portion of their tokens receive bonus allocation
+- Configurable per project, e.g.: "Vest 50% of your tokens for up to 6 months → receive up to 15% more tokens"
+- Each ICO investor may even get a toggle to configure their preferred split between liquid and vested tokens
+- Creates self-selected alignment: long-term believers get rewarded with more tokens, short-term participants get immediate liquidity
+- Reduces day-1 sell pressure organically — without forcing anyone into a lock
+
+This doesn't replace the bid wall. It complements it by giving projects another tool to attract committed holders.
+ Ecosystem Rewards
+MetaDAO integrates Sablier Merkle Airdrops for reward campaigns to incentivize engagement:
+
+- Campaign participation — e.g. "Reward for users who voted on 5+ proposals this month"
+- Investment milestones — e.g. "Reward for users who invested $10k+ via MetaDAO" or "Reward for users who participated in 3+ ICOs"
+- Holding loyalty — e.g. "Reward for holders who haven't sold or transferred tokens in 90+ days"
+- Project-specific campaigns — each launched project can run its own reward distributions
+
+Claimable directly from the MetaDAO interface.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REVENUE MODEL
+50/50 split on all Sablier fees:
+
+ACTION
+FEE
+METADAO’S SHARE
+Lockup withdrawal or reward claim
+$0.99
+$0.50
+
+
+Unlike ICO fees (one-time), vesting withdrawals and reward claims generate recurring revenue over months and years. A single ICO produces ongoing income every time an investor withdraws unlocked tokens or a community member claims a reward. As MetaDAO's ICO count grows, these revenue streams compound.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHY NOW
+- STAMP projects: Ranger was MetaDAO's first ICO with pre-ICO investors. As more projects adopt the STAMP, each one will need 24-month vesting infrastructure.
+- Permissionless projects: As MetaDAO opens up to more uncurated launches, trust signals become critical. Verified token locks are the simplest way for founders to stand out.
+- Rewards: The earlier MetaDAO builds a rewards layer, the more it can use it to grow and retain its community across ICOs.
+- Recurring revenue: MetaDAO's current revenue is largely one-time (ICO fees). Sablier integration adds a recurring stream — every vesting withdrawal and reward claim generates fees for months and years after each ICO.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NEXT STEP
+30-minute technical call to scope the integration.
+
+Paul R. Berg — Founder
+  Email: prb@sablier.com · Telegram: @PaulRBerg
+  Calendly: calendly.com/paul-sablier
+
+Iaroslav Mazur — Solana Engineer
+  Email: iaroslav@sablier.com · Telegram: @IarosIav

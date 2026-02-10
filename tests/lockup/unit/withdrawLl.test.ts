@@ -16,7 +16,7 @@ import {
 } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
-import { Amount, Time } from "../utils/defaults";
+import { LinearAmounts, Time } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
@@ -84,7 +84,7 @@ describe("withdraw", () => {
               it("should fail", async () => {
                 await expectToThrow(
                   ctx.withdraw({
-                    withdrawAmount: Amount.WITHDRAW.add(BN_1),
+                    withdrawAmount: LinearAmounts.WITHDRAW.add(BN_1),
                   }),
                   "Overdraw",
                 );
@@ -112,14 +112,14 @@ describe("withdraw", () => {
                       ctx.banksClient,
                       ctx.defaultBankrunPayer,
                       ctx.randomToken,
-                      Amount.DEPOSIT,
+                      LinearAmounts.DEPOSIT,
                       ProgramId.TOKEN,
                       ctx.sender.keys.publicKey,
                     );
 
                     // Create a new stream with a random token
                     const salt = await ctx.createWithTimestampsLl({
-                      depositAmount: Amount.DEPOSIT,
+                      depositAmount: LinearAmounts.DEPOSIT,
                       depositTokenMint: ctx.randomToken,
                     });
 
@@ -175,7 +175,7 @@ describe("withdraw", () => {
                       });
 
                       const expectedStreamData = stream.data;
-                      expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
+                      expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
 
                       await postWithdrawAssertions(
                         ctx.salts.defaultLl,
@@ -219,7 +219,7 @@ describe("withdraw", () => {
                     await ctx.withdraw({ signer: txSignerKeys });
 
                     const expectedStreamData = stream.data;
-                    expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
+                    expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
 
                     await postWithdrawAssertions(
                       ctx.salts.defaultLl,
@@ -264,11 +264,11 @@ describe("withdraw", () => {
                       );
                       await ctx.withdraw({
                         signer: txSignerKeys,
-                        withdrawAmount: Amount.DEPOSIT,
+                        withdrawAmount: LinearAmounts.DEPOSIT,
                       });
 
                       const expectedStreamData = stream.data;
-                      expectedStreamData.amounts.withdrawn = Amount.DEPOSIT;
+                      expectedStreamData.amounts.withdrawn = LinearAmounts.DEPOSIT;
                       expectedStreamData.isCancelable = false;
                       expectedStreamData.isDepleted = true;
 
@@ -319,8 +319,8 @@ describe("withdraw", () => {
                         );
                         await ctx.withdraw({ signer: txSignerKeys });
                         const expectedStreamData = stream.data;
-                        expectedStreamData.amounts.refunded = Amount.REFUND;
-                        expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
+                        expectedStreamData.amounts.refunded = LinearAmounts.REFUND;
+                        expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
 
                         await postWithdrawAssertions(
                           ctx.salts.defaultLl,
@@ -363,7 +363,7 @@ describe("withdraw", () => {
                           );
                           await ctx.withdraw({ signer: txSignerKeys });
                           const expectedStreamData = stream.data;
-                          expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
+                          expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
                           await postWithdrawAssertions(
                             ctx.salts.defaultLl,
                             txSignerKeys.publicKey,
@@ -407,7 +407,7 @@ describe("withdraw", () => {
                           await ctx.withdrawToken2022(salt, txSignerKeys);
 
                           const expectedStreamData = stream.data;
-                          expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
+                          expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
                           await postWithdrawAssertions(
                             salt,
                             txSignerKeys.publicKey,

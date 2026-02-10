@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1 } from "../../../lib/constants";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
-import { Amount, Time } from "../utils/defaults";
+import { LinearAmounts, Time } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
@@ -44,7 +44,7 @@ describe("withdrawMax", () => {
             isCancelable: false,
             isDepleted: true,
           }).data;
-          expectedStreamData.amounts.withdrawn = Amount.DEPOSIT;
+          expectedStreamData.amounts.withdrawn = LinearAmounts.DEPOSIT;
           assertEqStreamData(actualStreamData, expectedStreamData);
         });
       });
@@ -55,7 +55,7 @@ describe("withdrawMax", () => {
           await ctx.withdrawMax();
           const actualStreamData = await ctx.fetchStreamData();
           const expectedStreamData = ctx.defaultLinearStream().data;
-          expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
+          expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
           assertEqStreamData(actualStreamData, expectedStreamData);
         });
       });

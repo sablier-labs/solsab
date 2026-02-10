@@ -18,11 +18,11 @@ import { buildSignAndProcessTx, deriveATAAddress, getATABalance } from "../commo
 import { TestContext } from "../common/context";
 import type { Treasury, User } from "../common/types";
 import {
-  Amount,
   DEFAULT_TRANCHES,
   LINEAR_AMOUNTS,
   LINEAR_MODEL,
   LINEAR_TIMESTAMPS,
+  LinearAmounts,
   Seed,
   Time,
   TRANCHED_AMOUNTS,
@@ -144,11 +144,11 @@ export class LockupTestContext extends TestContext {
     const createWithDurationsLlIx = await this.lockup.methods
       .createWithDurationsLl(
         salt,
-        Amount.DEPOSIT,
+        LinearAmounts.DEPOSIT,
         cliffDuration,
         Time.TOTAL_DURATION,
-        Amount.START,
-        cliffDuration.isZero() ? ZERO : Amount.CLIFF,
+        LinearAmounts.START,
+        cliffDuration.isZero() ? ZERO : LinearAmounts.CLIFF,
         true,
       )
       .accounts({
@@ -172,7 +172,7 @@ export class LockupTestContext extends TestContext {
     depositTokenMint = this.usdc,
     depositTokenProgram = token.TOKEN_PROGRAM_ID,
     timestamps = LINEAR_TIMESTAMPS(),
-    depositAmount = Amount.DEPOSIT,
+    depositAmount = LinearAmounts.DEPOSIT,
     unlockAmounts = UNLOCK_AMOUNTS(),
     isCancelable = true,
     salt = toBn(-1),
@@ -342,7 +342,7 @@ export class LockupTestContext extends TestContext {
 
   async withdraw({
     salt = this.salts.defaultLl,
-    withdrawAmount = Amount.WITHDRAW,
+    withdrawAmount = LinearAmounts.WITHDRAW,
     signer = this.recipient.keys,
     withdrawalRecipient = this.recipient.keys.publicKey,
     depositedTokenMint = this.usdc,
