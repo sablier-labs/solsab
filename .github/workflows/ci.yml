@@ -13,11 +13,8 @@ jobs:
   ci:
     runs-on: "macos-latest"
     steps:
-      - name: "Check out the repo"
-        uses: "actions/checkout@v4"
-
       - name: "Set up Sablier devkit and install Node.js dependencies"
-        uses: "sablier-labs/devkit/actions/setup@main"
+        uses: "sablier-labs/devkit/actions/setup@v1"
         with:
           package-manager: "bun"
 
