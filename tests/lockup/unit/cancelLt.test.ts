@@ -61,34 +61,33 @@ describe("cancelLt", () => {
       });
 
       describe("given a valid deposited token mint", () => {
-        describe("when stream status is DEPLETED", () => {
-          it("should fail", async () => {
-            await ctx.timeTravelTo(TranchedTimes.END);
-            await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
-            await expectToThrow(ctx.cancel({ salt: ctx.salts.defaultLt }), "StreamDepleted");
+        describe("given cold stream", () => {
+          describe("given DEPLETED status", () => {
+            it("should fail", async () => {
+              await ctx.timeTravelTo(TranchedTimes.END);
+              await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
+              await expectToThrow(ctx.cancel({ salt: ctx.salts.defaultLt }), "StreamDepleted");
+            });
+          });
+
+          describe("given CANCELED status", () => {
+            it("should fail", async () => {
+              await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+              await ctx.cancel({ salt: ctx.salts.defaultLt });
+              await sleepFor(7);
+              await expectToThrow(ctx.cancel({ salt: ctx.salts.defaultLt }), "StreamCanceled");
+            });
+          });
+
+          describe("given SETTLED status", () => {
+            it("should fail", async () => {
+              await ctx.timeTravelTo(TranchedTimes.END);
+              await expectToThrow(ctx.cancel({ salt: ctx.salts.defaultLt }), "StreamSettled");
+            });
           });
         });
 
-        describe("when stream is not cancelable", () => {
-          it("should fail", async () => {
-            await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
-            await expectToThrow(
-              ctx.cancel({ salt: ctx.salts.nonCancelableLt }),
-              "StreamIsNotCancelable",
-            );
-          });
-        });
-
-        describe("when stream status is CANCELED", () => {
-          it("should fail", async () => {
-            await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
-            await ctx.cancel({ salt: ctx.salts.defaultLt });
-            await sleepFor(7);
-            await expectToThrow(ctx.cancel({ salt: ctx.salts.defaultLt }), "StreamCanceled");
-          });
-        });
-
-        describe("when stream is cancelable and not depleted/canceled", () => {
+        describe("given warm stream", () => {
           describe("when signer not sender", () => {
             it("should fail", async () => {
               await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
@@ -100,93 +99,74 @@ describe("cancelLt", () => {
           });
 
           describe("when signer sender", () => {
-            describe("when the sender does not have ATA", () => {
-              it("should cancel the stream and create ATA", async () => {
-                // Derive the sender's ATA for the random token
-                const senderATA = deriveATAAddress(
-                  ctx.randomToken,
-                  ctx.sender.keys.publicKey,
-                  ProgramId.TOKEN,
-                );
-
-                // Assert the sender's ATA doesn't exist
-                await assertAccountNotExists(ctx, senderATA, "Sender's ATA");
-
-                // Create ATA for & mint random token to the stream funder
-                await createATAAndFund(
-                  ctx.banksClient,
-                  ctx.defaultBankrunPayer,
-                  ctx.randomToken,
-                  TranchedAmounts.DEPOSIT,
-                  ProgramId.TOKEN,
-                  ctx.sender.keys.publicKey,
-                );
-
-                // Create a tranched stream with a random token
-                const salt = await ctx.createWithTimestampsLt({
-                  depositTokenMint: ctx.randomToken,
-                  depositTokenProgram: ProgramId.TOKEN,
-                  funder: ctx.sender.keys,
-                });
-
-                // Time travel to STREAMING status
+            describe("given non cancelable stream", () => {
+              it("should fail", async () => {
                 await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
-
-                // Cancel the stream
-                await ctx.cancel({
-                  depositedTokenMint: ctx.randomToken,
-                  depositedTokenProgram: ProgramId.TOKEN,
-                  salt,
-                });
-
-                // Assert the cancelation
-                const expectedStream = ctx.defaultTranchedStream({
-                  depositedTokenMint: ctx.randomToken,
-                  isCancelable: false,
-                  salt,
-                  wasCanceled: true,
-                });
-                const expectedRefund = TranchedAmounts.DEPOSIT.sub(TranchedAmounts.TRANCHE_1);
-                expectedStream.data.amounts.refunded = expectedRefund;
-
-                await postCancelAssertions(salt, expectedStream, ZERO);
-              });
-            });
-
-            describe("given PENDING (no tranches unlocked)", () => {
-              it("should refund full deposit", async () => {
-                // Go back in time so that the stream is PENDING
-                await ctx.timeTravelTo(Time.GENESIS);
-
-                const beforeSenderBalance = await getATABalance(
-                  ctx.banksClient,
-                  ctx.sender.usdcATA,
-                );
-
-                // Cancel the stream
-                await ctx.cancel({ salt: ctx.salts.defaultLt });
-
-                // Assert the cancelation - full refund when nothing streamed
-                const expectedStream = ctx.defaultTranchedStream({
-                  isCancelable: false,
-                  isDepleted: true,
-                  wasCanceled: true,
-                });
-                expectedStream.data.amounts.refunded = TranchedAmounts.DEPOSIT;
-
-                await postCancelAssertions(
-                  ctx.salts.defaultLt,
-                  expectedStream,
-                  beforeSenderBalance,
+                await expectToThrow(
+                  ctx.cancel({ salt: ctx.salts.nonCancelableLt }),
+                  "StreamIsNotCancelable",
                 );
               });
             });
 
-            describe("given STREAMING (some tranches unlocked)", () => {
-              describe("given SPL token", () => {
-                it("should refund deposited - streamed", async () => {
-                  // Time travel to after first tranche unlocks
+            describe("given cancelable stream", () => {
+              describe("when the sender does not have ATA", () => {
+                it("should cancel the stream and create ATA", async () => {
+                  // Derive the sender's ATA for the random token
+                  const senderATA = deriveATAAddress(
+                    ctx.randomToken,
+                    ctx.sender.keys.publicKey,
+                    ProgramId.TOKEN,
+                  );
+
+                  // Assert the sender's ATA doesn't exist
+                  await assertAccountNotExists(ctx, senderATA, "Sender's ATA");
+
+                  // Create ATA for & mint random token to the stream funder
+                  await createATAAndFund(
+                    ctx.banksClient,
+                    ctx.defaultBankrunPayer,
+                    ctx.randomToken,
+                    TranchedAmounts.DEPOSIT,
+                    ProgramId.TOKEN,
+                    ctx.sender.keys.publicKey,
+                  );
+
+                  // Create a tranched stream with a random token
+                  const salt = await ctx.createWithTimestampsLt({
+                    depositTokenMint: ctx.randomToken,
+                    depositTokenProgram: ProgramId.TOKEN,
+                    funder: ctx.sender.keys,
+                  });
+
+                  // Time travel to STREAMING status
                   await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+
+                  // Cancel the stream
+                  await ctx.cancel({
+                    depositedTokenMint: ctx.randomToken,
+                    depositedTokenProgram: ProgramId.TOKEN,
+                    salt,
+                  });
+
+                  // Assert the cancelation
+                  const expectedStream = ctx.defaultTranchedStream({
+                    depositedTokenMint: ctx.randomToken,
+                    isCancelable: false,
+                    salt,
+                    wasCanceled: true,
+                  });
+                  const expectedRefund = TranchedAmounts.DEPOSIT.sub(TranchedAmounts.TRANCHE_1);
+                  expectedStream.data.amounts.refunded = expectedRefund;
+
+                  await postCancelAssertions(salt, expectedStream, ZERO);
+                });
+              });
+
+              describe("given PENDING (no tranches unlocked)", () => {
+                it("should refund full deposit", async () => {
+                  // Go back in time so that the stream is PENDING
+                  await ctx.timeTravelTo(Time.GENESIS);
 
                   const beforeSenderBalance = await getATABalance(
                     ctx.banksClient,
@@ -196,15 +176,13 @@ describe("cancelLt", () => {
                   // Cancel the stream
                   await ctx.cancel({ salt: ctx.salts.defaultLt });
 
-                  // At tranche 1, only tranche 1 amount is streamed
-                  // Refund = deposit - tranche_1
-                  const expectedRefund = TranchedAmounts.DEPOSIT.sub(TranchedAmounts.TRANCHE_1);
-
+                  // Assert the cancelation - full refund when nothing streamed
                   const expectedStream = ctx.defaultTranchedStream({
                     isCancelable: false,
+                    isDepleted: true,
                     wasCanceled: true,
                   });
-                  expectedStream.data.amounts.refunded = expectedRefund;
+                  expectedStream.data.amounts.refunded = TranchedAmounts.DEPOSIT;
 
                   await postCancelAssertions(
                     ctx.salts.defaultLt,
@@ -214,42 +192,68 @@ describe("cancelLt", () => {
                 });
               });
 
-              describe("given Token2022", () => {
-                it("should refund deposited - streamed", async () => {
-                  // Create a Token2022 LT stream
-                  const salt = await ctx.createWithTimestampsLtToken2022();
+              describe("given STREAMING (some tranches unlocked)", () => {
+                describe("given SPL token", () => {
+                  it("should refund deposited - streamed", async () => {
+                    // Time travel to after first tranche unlocks
+                    await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
-                  // Time travel to after first tranche unlocks
-                  await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+                    const beforeSenderBalance = await getATABalance(
+                      ctx.banksClient,
+                      ctx.sender.usdcATA,
+                    );
 
-                  const beforeSenderBalance = await getATABalance(
-                    ctx.banksClient,
-                    ctx.sender.daiATA,
-                  );
+                    // Cancel the stream
+                    await ctx.cancel({ salt: ctx.salts.defaultLt });
 
-                  // Cancel the stream
-                  await ctx.cancelToken2022(salt);
+                    // At tranche 1, only tranche 1 amount is streamed
+                    // Refund = deposit - tranche_1
+                    const expectedRefund = TranchedAmounts.DEPOSIT.sub(TranchedAmounts.TRANCHE_1);
 
-                  // At tranche 1, only tranche 1 amount is streamed
-                  // Refund = deposit - tranche_1
-                  const expectedRefund = TranchedAmounts.DEPOSIT.sub(TranchedAmounts.TRANCHE_1);
+                    const expectedStream = ctx.defaultTranchedStream({
+                      isCancelable: false,
+                      wasCanceled: true,
+                    });
+                    expectedStream.data.amounts.refunded = expectedRefund;
 
-                  const expectedStream = ctx.defaultTranchedStreamToken2022({
-                    isCancelable: false,
-                    salt,
-                    wasCanceled: true,
+                    await postCancelAssertions(
+                      ctx.salts.defaultLt,
+                      expectedStream,
+                      beforeSenderBalance,
+                    );
                   });
-                  expectedStream.data.amounts.refunded = expectedRefund;
-
-                  await postCancelAssertions(salt, expectedStream, beforeSenderBalance);
                 });
-              });
-            });
 
-            describe("given SETTLED (all tranches unlocked)", () => {
-              it("should fail", async () => {
-                await ctx.timeTravelTo(TranchedTimes.END);
-                await expectToThrow(ctx.cancel({ salt: ctx.salts.defaultLt }), "StreamSettled");
+                describe("given Token2022", () => {
+                  it("should refund deposited - streamed", async () => {
+                    // Create a Token2022 LT stream
+                    const salt = await ctx.createWithTimestampsLtToken2022();
+
+                    // Time travel to after first tranche unlocks
+                    await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+
+                    const beforeSenderBalance = await getATABalance(
+                      ctx.banksClient,
+                      ctx.sender.daiATA,
+                    );
+
+                    // Cancel the stream
+                    await ctx.cancelToken2022(salt);
+
+                    // At tranche 1, only tranche 1 amount is streamed
+                    // Refund = deposit - tranche_1
+                    const expectedRefund = TranchedAmounts.DEPOSIT.sub(TranchedAmounts.TRANCHE_1);
+
+                    const expectedStream = ctx.defaultTranchedStreamToken2022({
+                      isCancelable: false,
+                      salt,
+                      wasCanceled: true,
+                    });
+                    expectedStream.data.amounts.refunded = expectedRefund;
+
+                    await postCancelAssertions(salt, expectedStream, beforeSenderBalance);
+                  });
+                });
               });
             });
           });

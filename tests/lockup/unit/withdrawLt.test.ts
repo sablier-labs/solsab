@@ -5,10 +5,15 @@ import {
 import type { PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
-import { BN_1, ZERO } from "../../../lib/constants";
+import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import type { StreamData } from "../../../target/types/sablier_lockup_structs";
-import { getATABalance } from "../../common/anchor-bankrun";
-import { assertEqBn, assertLteBn } from "../../common/assertions";
+import { createATAAndFund, deriveATAAddress, getATABalance } from "../../common/anchor-bankrun";
+import {
+  assertAccountExists,
+  assertAccountNotExists,
+  assertEqBn,
+  assertLteBn,
+} from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { Time, TranchedAmounts, TranchedTimes } from "../utils/defaults";
@@ -108,6 +113,42 @@ describe("withdrawLt", () => {
                     );
                   });
                 });
+
+                describe("when recipient doesn't have an ATA for the stream's asset", () => {
+                  it("should create the ATA", async () => {
+                    await createATAAndFund(
+                      ctx.banksClient,
+                      ctx.defaultBankrunPayer,
+                      ctx.randomToken,
+                      TranchedAmounts.DEPOSIT,
+                      ProgramId.TOKEN,
+                      ctx.sender.keys.publicKey,
+                    );
+
+                    const salt = await ctx.createWithTimestampsLt({
+                      depositTokenMint: ctx.randomToken,
+                      depositTokenProgram: ProgramId.TOKEN,
+                    });
+
+                    await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+
+                    const recipientATA = deriveATAAddress(
+                      ctx.randomToken,
+                      ctx.recipient.keys.publicKey,
+                      ProgramId.TOKEN,
+                    );
+
+                    await assertAccountNotExists(ctx, recipientATA, "Recipient's ATA");
+
+                    await ctx.withdraw({
+                      depositedTokenMint: ctx.randomToken,
+                      salt,
+                      withdrawAmount: TranchedAmounts.TRANCHE_1,
+                    });
+
+                    await assertAccountExists(ctx, recipientATA, "Recipient's ATA");
+                  });
+                });
               });
 
               describe("when withdrawal address recipient", () => {
@@ -141,38 +182,81 @@ describe("withdrawLt", () => {
                   });
 
                   describe("given after first tranche", () => {
-                    it("should withdraw", async () => {
-                      await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+                    describe("given SPL token", () => {
+                      it("should withdraw", async () => {
+                        await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
-                      const treasuryLamportsBefore = await ctx.getTreasuryLamports();
-                      const withdrawalRecipientATABalanceBefore = await getATABalance(
-                        ctx.banksClient,
-                        ctx.recipient.usdcATA,
-                      );
+                        const treasuryLamportsBefore = await ctx.getTreasuryLamports();
+                        const withdrawalRecipientATABalanceBefore = await getATABalance(
+                          ctx.banksClient,
+                          ctx.recipient.usdcATA,
+                        );
 
-                      const txSignerKeys = ctx.recipient.keys;
-                      const txSignerLamportsBefore = await ctx.getLamportsOf(
-                        txSignerKeys.publicKey,
-                      );
+                        const txSignerKeys = ctx.recipient.keys;
+                        const txSignerLamportsBefore = await ctx.getLamportsOf(
+                          txSignerKeys.publicKey,
+                        );
 
-                      await ctx.withdraw({
-                        salt: ctx.salts.defaultLt,
-                        signer: txSignerKeys,
-                        withdrawAmount: TranchedAmounts.TRANCHE_1,
+                        await ctx.withdraw({
+                          salt: ctx.salts.defaultLt,
+                          signer: txSignerKeys,
+                          withdrawAmount: TranchedAmounts.TRANCHE_1,
+                        });
+
+                        const expectedStreamData = ctx.defaultTranchedStream().data;
+                        expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
+
+                        await postWithdrawAssertions(
+                          ctx.salts.defaultLt,
+                          txSignerKeys.publicKey,
+                          txSignerLamportsBefore,
+                          treasuryLamportsBefore,
+                          ctx.recipient.usdcATA,
+                          withdrawalRecipientATABalanceBefore,
+                          expectedStreamData,
+                        );
                       });
+                    });
 
-                      const expectedStreamData = ctx.defaultTranchedStream().data;
-                      expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
+                    describe("given Token2022", () => {
+                      it("should withdraw", async () => {
+                        const salt = await ctx.createWithTimestampsLtToken2022();
+                        await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
-                      await postWithdrawAssertions(
-                        ctx.salts.defaultLt,
-                        txSignerKeys.publicKey,
-                        txSignerLamportsBefore,
-                        treasuryLamportsBefore,
-                        ctx.recipient.usdcATA,
-                        withdrawalRecipientATABalanceBefore,
-                        expectedStreamData,
-                      );
+                        const treasuryLamportsBefore = await ctx.getTreasuryLamports();
+                        const withdrawalRecipientATABalanceBefore = await getATABalance(
+                          ctx.banksClient,
+                          ctx.recipient.daiATA,
+                        );
+
+                        const txSignerKeys = ctx.recipient.keys;
+                        const txSignerLamportsBefore = await ctx.getLamportsOf(
+                          txSignerKeys.publicKey,
+                        );
+
+                        await ctx.withdraw({
+                          depositedTokenMint: ctx.dai,
+                          depositedTokenProgram: ProgramId.TOKEN_2022,
+                          salt,
+                          signer: txSignerKeys,
+                          withdrawAmount: TranchedAmounts.TRANCHE_1,
+                        });
+
+                        const expectedStreamData = ctx.defaultTranchedStreamToken2022({
+                          salt,
+                        }).data;
+                        expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
+
+                        await postWithdrawAssertions(
+                          salt,
+                          txSignerKeys.publicKey,
+                          txSignerLamportsBefore,
+                          treasuryLamportsBefore,
+                          ctx.recipient.daiATA,
+                          withdrawalRecipientATABalanceBefore,
+                          expectedStreamData,
+                        );
+                      });
                     });
                   });
                 });

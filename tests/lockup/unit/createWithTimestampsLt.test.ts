@@ -3,6 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { MAX_U64, ZERO } from "../../../lib/constants";
+import { usdc } from "../../../lib/convertors";
 import { toBn } from "../../../lib/helpers";
 import type { Tranche } from "../../../target/types/sablier_lockup_structs";
 import { getATABalance } from "../../common/anchor-bankrun";
@@ -72,9 +73,16 @@ describe("createWithTimestampsLt", () => {
       });
     });
 
-    // NOTE: Tests for MAX_TRANCHES boundary (49, 50, 51 tranches) are omitted because
-    // transactions with that many tranches exceed Solana's 1232-byte transaction size limit.
-    // The MAX_TRANCHES validation is tested at the Rust program level.
+    describe("given too many tranches", () => {
+      it("should fail", async () => {
+        const tranches: Tranche[] = Array.from({ length: 31 }, (_, i) => ({
+          amount: toBn(1),
+          timestamp: Time.START.addn(i + 1),
+        }));
+
+        await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TooManyTranches");
+      });
+    });
 
     describe("given start time >= first tranche timestamp", () => {
       it("should fail when start time equals first tranche timestamp", async () => {
@@ -142,6 +150,27 @@ describe("createWithTimestampsLt", () => {
         ];
 
         await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TrancheAmountsSumOverflow");
+      });
+    });
+
+    describe("when sender lacks an ATA for deposited token", () => {
+      it("should fail", async () => {
+        await expectToThrow(
+          ctx.createWithTimestampsLt({
+            depositTokenMint: ctx.randomToken,
+          }),
+          ACCOUNT_NOT_INITIALIZED,
+        );
+      });
+    });
+
+    describe("when sender has an insufficient token balance", () => {
+      it("should fail", async () => {
+        const tranches: Tranche[] = [
+          { amount: usdc(1_000_000).addn(1), timestamp: TranchedTimes.TRANCHE_1 },
+        ];
+
+        await expectToThrow(ctx.createWithTimestampsLt({ tranches }), 0x1);
       });
     });
 
@@ -217,27 +246,6 @@ describe("createWithTimestampsLt", () => {
           const salt = await ctx.createWithTimestampsLt();
 
           await assertStreamCreation(salt, beforeCollectionSize, beforeSenderTokenBalance);
-        });
-      });
-
-      describe("given is_cancelable = false", () => {
-        it("should create non-cancelable stream", async () => {
-          const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
-          const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
-
-          const salt = await ctx.createWithTimestampsLt({ isCancelable: false });
-
-          const expectedStream = ctx.defaultTranchedStream({
-            isCancelable: false,
-            salt,
-          });
-
-          await assertStreamCreation(
-            salt,
-            beforeCollectionSize,
-            beforeSenderTokenBalance,
-            expectedStream,
-          );
         });
       });
     });

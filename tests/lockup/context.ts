@@ -133,9 +133,13 @@ export class LockupTestContext extends TestContext {
 
   async createWithDurationsLl({
     cliffDuration = Time.CLIFF_DURATION,
+    totalDuration = Time.TOTAL_DURATION,
+    isCancelable = true,
     salt,
   }: {
     cliffDuration?: BN;
+    totalDuration?: BN;
+    isCancelable?: boolean;
     salt?: BN;
   } = {}): Promise<BN> {
     // Use the total supply as the salt for the stream
@@ -146,10 +150,10 @@ export class LockupTestContext extends TestContext {
         salt,
         LinearAmounts.DEPOSIT,
         cliffDuration,
-        Time.TOTAL_DURATION,
+        totalDuration,
         LinearAmounts.START,
         cliffDuration.isZero() ? ZERO : LinearAmounts.CLIFF,
-        true,
+        isCancelable,
       )
       .accounts({
         depositTokenMint: this.usdc,

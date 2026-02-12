@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1 } from "../../../lib/constants";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
-import { LinearAmounts, Time } from "../utils/defaults";
+import { LinearAmounts, Time, TranchedAmounts, TranchedTimes } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
@@ -34,7 +34,7 @@ describe("withdrawMax", () => {
       });
     });
 
-    describe("given a valid stream", () => {
+    describe("given a valid LL stream", () => {
       describe("given end time not in the future", () => {
         it("should make the max withdrawal", async () => {
           await ctx.timeTravelTo(Time.END);
@@ -56,6 +56,33 @@ describe("withdrawMax", () => {
           const actualStreamData = await ctx.fetchStreamData();
           const expectedStreamData = ctx.defaultLinearStream().data;
           expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
+          assertEqStreamData(actualStreamData, expectedStreamData);
+        });
+      });
+    });
+
+    describe("given a valid LT stream", () => {
+      describe("given end time not in the future", () => {
+        it("should make the max withdrawal", async () => {
+          await ctx.timeTravelTo(TranchedTimes.END);
+          await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
+          const actualStreamData = await ctx.fetchStreamData(ctx.salts.defaultLt);
+          const expectedStreamData = ctx.defaultTranchedStream({
+            isCancelable: false,
+            isDepleted: true,
+          }).data;
+          expectedStreamData.amounts.withdrawn = TranchedAmounts.DEPOSIT;
+          assertEqStreamData(actualStreamData, expectedStreamData);
+        });
+      });
+
+      describe("given end time in the future", () => {
+        it("should make the max withdrawal", async () => {
+          await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+          await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
+          const actualStreamData = await ctx.fetchStreamData(ctx.salts.defaultLt);
+          const expectedStreamData = ctx.defaultTranchedStream().data;
+          expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
           assertEqStreamData(actualStreamData, expectedStreamData);
         });
       });
