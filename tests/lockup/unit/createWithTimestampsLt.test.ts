@@ -38,214 +38,228 @@ describe("createWithTimestampsLt", () => {
       await ctx.setUpLockup();
     });
 
-    describe("given tranche amount is zero", () => {
-      it("should fail", async () => {
-        // Individual tranche amounts are validated before summing the deposit
-        await expectToThrow(
-          ctx.createWithTimestampsLt({
-            tranches: [{ amount: ZERO, timestamp: TranchedTimes.TRANCHE_1 }],
-          }),
-          "TrancheAmountZero",
-        );
-      });
-    });
-
-    describe("given start time is zero", () => {
-      it("should fail", async () => {
-        await expectToThrow(
-          ctx.createWithTimestampsLt({
-            startTime: ZERO,
-          }),
-          "StartTimeZero",
-        );
-      });
-    });
-
     describe("given empty tranches array", () => {
       it("should fail", async () => {
-        // Empty tranches array is validated before computing deposit amount
-        await expectToThrow(
-          ctx.createWithTimestampsLt({
-            tranches: [],
-          }),
-          "TranchesArrayEmpty",
-        );
+        await expectToThrow(ctx.createWithTimestampsLt({ tranches: [] }), "TranchesArrayEmpty");
       });
     });
 
-    describe("given too many tranches", () => {
-      it("should fail", async () => {
-        const tranches: Tranche[] = Array.from({ length: 31 }, (_, i) => ({
-          amount: toBn(1),
-          timestamp: Time.START.addn(i + 1),
-        }));
+    describe("given non-empty tranches array", () => {
+      describe("given too many tranches", () => {
+        it("should fail", async () => {
+          const tranches: Tranche[] = Array.from({ length: 31 }, (_, i) => ({
+            amount: toBn(1),
+            timestamp: Time.START.addn(i + 1),
+          }));
 
-        await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TooManyTranches");
-      });
-    });
-
-    describe("given start time >= first tranche timestamp", () => {
-      it("should fail when start time equals first tranche timestamp", async () => {
-        await expectToThrow(
-          ctx.createWithTimestampsLt({
-            startTime: TranchedTimes.TRANCHE_1,
-            tranches: DEFAULT_TRANCHES(),
-          }),
-          "StartTimeNotLessThanFirstTranche",
-        );
-      });
-
-      it("should fail when start time is greater than first tranche timestamp", async () => {
-        await expectToThrow(
-          ctx.createWithTimestampsLt({
-            startTime: TranchedTimes.TRANCHE_1.addn(1),
-            tranches: DEFAULT_TRANCHES(),
-          }),
-          "StartTimeNotLessThanFirstTranche",
-        );
-      });
-    });
-
-    describe("given tranches not in ascending order", () => {
-      it("should fail", async () => {
-        const tranches: Tranche[] = [
-          { amount: TranchedAmounts.TRANCHE_1, timestamp: TranchedTimes.TRANCHE_2 },
-          { amount: TranchedAmounts.TRANCHE_2, timestamp: TranchedTimes.TRANCHE_1 },
-          { amount: TranchedAmounts.TRANCHE_3, timestamp: TranchedTimes.TRANCHE_3 },
-        ];
-
-        await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TranchesNotSorted");
-      });
-    });
-
-    describe("given duplicate tranche timestamps", () => {
-      it("should fail", async () => {
-        const tranches: Tranche[] = [
-          { amount: TranchedAmounts.TRANCHE_1, timestamp: TranchedTimes.TRANCHE_1 },
-          { amount: TranchedAmounts.TRANCHE_2, timestamp: TranchedTimes.TRANCHE_1 },
-          { amount: TranchedAmounts.TRANCHE_3, timestamp: TranchedTimes.TRANCHE_3 },
-        ];
-
-        await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TranchesNotSorted");
-      });
-    });
-
-    describe("given tranche with zero amount", () => {
-      it("should fail", async () => {
-        const tranches: Tranche[] = [
-          { amount: TranchedAmounts.TRANCHE_1, timestamp: TranchedTimes.TRANCHE_1 },
-          { amount: ZERO, timestamp: TranchedTimes.TRANCHE_2 },
-          { amount: TranchedAmounts.TRANCHE_3, timestamp: TranchedTimes.TRANCHE_3 },
-        ];
-
-        await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TrancheAmountZero");
-      });
-    });
-
-    describe("given tranche amounts sum overflow", () => {
-      it("should fail", async () => {
-        const tranches: Tranche[] = [
-          { amount: MAX_U64, timestamp: TranchedTimes.TRANCHE_1 },
-          { amount: toBn(1), timestamp: TranchedTimes.TRANCHE_2 },
-        ];
-
-        await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TrancheAmountsSumOverflow");
-      });
-    });
-
-    describe("when sender lacks an ATA for deposited token", () => {
-      it("should fail", async () => {
-        await expectToThrow(
-          ctx.createWithTimestampsLt({
-            depositTokenMint: ctx.randomToken,
-          }),
-          ACCOUNT_NOT_INITIALIZED,
-        );
-      });
-    });
-
-    describe("when sender has an insufficient token balance", () => {
-      it("should fail", async () => {
-        const tranches: Tranche[] = [
-          { amount: usdc(1_000_000).addn(1), timestamp: TranchedTimes.TRANCHE_1 },
-        ];
-
-        await expectToThrow(ctx.createWithTimestampsLt({ tranches }), 0x1);
-      });
-    });
-
-    describe("given valid parameters", () => {
-      describe("given single tranche", () => {
-        it("should create the stream", async () => {
-          const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
-          const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
-
-          const singleTranche: Tranche[] = [
-            { amount: TranchedAmounts.DEPOSIT, timestamp: TranchedTimes.TRANCHE_1 },
-          ];
-
-          const salt = await ctx.createWithTimestampsLt({ tranches: singleTranche });
-
-          const expectedStream = ctx.defaultTranchedStream({
-            model: TRANCHED_MODEL({
-              timestamps: { end: TranchedTimes.TRANCHE_1 },
-              tranches: singleTranche,
-            }),
-            salt,
-          });
-
-          await assertStreamCreation(
-            salt,
-            beforeCollectionSize,
-            beforeSenderTokenBalance,
-            expectedStream,
-          );
+          await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TooManyTranches");
         });
       });
 
-      describe("given multiple tranches (3)", () => {
-        describe("given SPL token", () => {
-          it("should create the stream", async () => {
-            const beforeSenderTokenBalance = await getATABalance(
-              ctx.banksClient,
-              ctx.sender.usdcATA,
-            );
-            const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
-
-            const salt = await ctx.createWithTimestampsLt();
-
-            await assertStreamCreation(salt, beforeCollectionSize, beforeSenderTokenBalance);
+      describe("given valid tranche count", () => {
+        describe("given start time is zero", () => {
+          it("should fail", async () => {
+            await expectToThrow(ctx.createWithTimestampsLt({ startTime: ZERO }), "StartTimeZero");
           });
         });
 
-        describe("given Token2022", () => {
-          it("should create the stream", async () => {
-            const beforeSenderTokenBalance = await ctx.getSenderTokenBalance(ctx.dai);
-            const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
+        describe("given start time is not zero", () => {
+          describe("given start time >= first tranche timestamp", () => {
+            it("should fail when start time equals first tranche timestamp", async () => {
+              await expectToThrow(
+                ctx.createWithTimestampsLt({
+                  startTime: TranchedTimes.TRANCHE_1,
+                  tranches: DEFAULT_TRANCHES(),
+                }),
+                "StartTimeNotLessThanFirstTranche",
+              );
+            });
 
-            const salt = await ctx.createWithTimestampsLtToken2022();
-
-            await assertStreamCreation(
-              salt,
-              beforeCollectionSize,
-              beforeSenderTokenBalance,
-              ctx.defaultTranchedStreamToken2022({ salt }),
-            );
+            it("should fail when start time is greater than first tranche timestamp", async () => {
+              await expectToThrow(
+                ctx.createWithTimestampsLt({
+                  startTime: TranchedTimes.TRANCHE_1.addn(1),
+                  tranches: DEFAULT_TRANCHES(),
+                }),
+                "StartTimeNotLessThanFirstTranche",
+              );
+            });
           });
-        });
-      });
 
-      describe("given start time in the past", () => {
-        it("should create the stream", async () => {
-          // Time travel to after the default start time
-          await ctx.timeTravelTo(Time.START.addn(500));
+          describe("given start time < first tranche timestamp", () => {
+            describe("given tranches not in ascending order", () => {
+              it("should fail", async () => {
+                const tranches: Tranche[] = [
+                  { amount: TranchedAmounts.TRANCHE_1, timestamp: TranchedTimes.TRANCHE_2 },
+                  { amount: TranchedAmounts.TRANCHE_2, timestamp: TranchedTimes.TRANCHE_1 },
+                  { amount: TranchedAmounts.TRANCHE_3, timestamp: TranchedTimes.TRANCHE_3 },
+                ];
 
-          const beforeSenderTokenBalance = await getATABalance(ctx.banksClient, ctx.sender.usdcATA);
-          const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
+                await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TranchesNotSorted");
+              });
 
-          const salt = await ctx.createWithTimestampsLt();
+              it("should fail with duplicate timestamps", async () => {
+                const tranches: Tranche[] = [
+                  { amount: TranchedAmounts.TRANCHE_1, timestamp: TranchedTimes.TRANCHE_1 },
+                  { amount: TranchedAmounts.TRANCHE_2, timestamp: TranchedTimes.TRANCHE_1 },
+                  { amount: TranchedAmounts.TRANCHE_3, timestamp: TranchedTimes.TRANCHE_3 },
+                ];
 
-          await assertStreamCreation(salt, beforeCollectionSize, beforeSenderTokenBalance);
+                await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TranchesNotSorted");
+              });
+            });
+
+            describe("given tranches in ascending order", () => {
+              describe("given a tranche with zero amount", () => {
+                it("should fail", async () => {
+                  const tranches: Tranche[] = [
+                    { amount: TranchedAmounts.TRANCHE_1, timestamp: TranchedTimes.TRANCHE_1 },
+                    { amount: ZERO, timestamp: TranchedTimes.TRANCHE_2 },
+                    { amount: TranchedAmounts.TRANCHE_3, timestamp: TranchedTimes.TRANCHE_3 },
+                  ];
+
+                  await expectToThrow(
+                    ctx.createWithTimestampsLt({ tranches }),
+                    "TrancheAmountZero",
+                  );
+                });
+              });
+
+              describe("given all tranche amounts not zero", () => {
+                describe("given tranche amounts sum overflow", () => {
+                  it("should fail", async () => {
+                    const tranches: Tranche[] = [
+                      { amount: MAX_U64, timestamp: TranchedTimes.TRANCHE_1 },
+                      { amount: toBn(1), timestamp: TranchedTimes.TRANCHE_2 },
+                    ];
+
+                    await expectToThrow(
+                      ctx.createWithTimestampsLt({ tranches }),
+                      "TrancheAmountsSumOverflow",
+                    );
+                  });
+                });
+
+                describe("given tranche amounts sum does not overflow", () => {
+                  describe("when sender lacks an ATA for deposited token", () => {
+                    it("should fail", async () => {
+                      await expectToThrow(
+                        ctx.createWithTimestampsLt({
+                          depositTokenMint: ctx.randomToken,
+                        }),
+                        ACCOUNT_NOT_INITIALIZED,
+                      );
+                    });
+                  });
+
+                  describe("when sender has an ATA for deposited token", () => {
+                    describe("when sender has insufficient token balance", () => {
+                      it("should fail", async () => {
+                        const tranches: Tranche[] = [
+                          { amount: usdc(1_000_000).addn(1), timestamp: TranchedTimes.TRANCHE_1 },
+                        ];
+
+                        await expectToThrow(ctx.createWithTimestampsLt({ tranches }), 0x1);
+                      });
+                    });
+
+                    describe("when sender has sufficient token balance", () => {
+                      describe("given single tranche", () => {
+                        it("should create the stream", async () => {
+                          const beforeSenderTokenBalance = await getATABalance(
+                            ctx.banksClient,
+                            ctx.sender.usdcATA,
+                          );
+                          const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
+
+                          const singleTranche: Tranche[] = [
+                            { amount: TranchedAmounts.DEPOSIT, timestamp: TranchedTimes.TRANCHE_1 },
+                          ];
+
+                          const salt = await ctx.createWithTimestampsLt({
+                            tranches: singleTranche,
+                          });
+
+                          const expectedStream = ctx.defaultTranchedStream({
+                            model: TRANCHED_MODEL({
+                              timestamps: { end: TranchedTimes.TRANCHE_1 },
+                              tranches: singleTranche,
+                            }),
+                            salt,
+                          });
+
+                          await assertStreamCreation(
+                            salt,
+                            beforeCollectionSize,
+                            beforeSenderTokenBalance,
+                            expectedStream,
+                          );
+                        });
+                      });
+
+                      describe("given multiple tranches (3)", () => {
+                        describe("given SPL token", () => {
+                          it("should create the stream", async () => {
+                            const beforeSenderTokenBalance = await getATABalance(
+                              ctx.banksClient,
+                              ctx.sender.usdcATA,
+                            );
+                            const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
+
+                            const salt = await ctx.createWithTimestampsLt();
+
+                            await assertStreamCreation(
+                              salt,
+                              beforeCollectionSize,
+                              beforeSenderTokenBalance,
+                            );
+                          });
+                        });
+
+                        describe("given Token2022", () => {
+                          it("should create the stream", async () => {
+                            const beforeSenderTokenBalance = await ctx.getSenderTokenBalance(
+                              ctx.dai,
+                            );
+                            const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
+
+                            const salt = await ctx.createWithTimestampsLtToken2022();
+
+                            await assertStreamCreation(
+                              salt,
+                              beforeCollectionSize,
+                              beforeSenderTokenBalance,
+                              ctx.defaultTranchedStreamToken2022({ salt }),
+                            );
+                          });
+                        });
+                      });
+
+                      describe("given start time in the past", () => {
+                        it("should create the stream", async () => {
+                          await ctx.timeTravelTo(Time.START.addn(500));
+
+                          const beforeSenderTokenBalance = await getATABalance(
+                            ctx.banksClient,
+                            ctx.sender.usdcATA,
+                          );
+                          const beforeCollectionSize = await ctx.getStreamNftCollectionSize();
+
+                          const salt = await ctx.createWithTimestampsLt();
+
+                          await assertStreamCreation(
+                            salt,
+                            beforeCollectionSize,
+                            beforeSenderTokenBalance,
+                          );
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
         });
       });
     });

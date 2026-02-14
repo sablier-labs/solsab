@@ -108,7 +108,7 @@ describe("cancel", () => {
                   const senderATA = deriveATAAddress(
                     ctx.randomToken,
                     ctx.sender.keys.publicKey,
-                    ProgramId.TOKEN,
+                    ProgramId.SPL_TOKEN,
                   );
 
                   // Assert the sender's ATA doesn't exist
@@ -120,21 +120,21 @@ describe("cancel", () => {
                     ctx.defaultBankrunPayer,
                     ctx.randomToken,
                     LinearAmounts.DEPOSIT,
-                    ProgramId.TOKEN,
+                    ProgramId.SPL_TOKEN,
                     ctx.sender.keys.publicKey,
                   );
 
                   // Create a stream with a random token
                   const salt = await ctx.createWithTimestampsLl({
                     depositTokenMint: ctx.randomToken,
-                    depositTokenProgram: ProgramId.TOKEN,
+                    depositTokenProgram: ProgramId.SPL_TOKEN,
                     funder: ctx.sender.keys,
                   });
 
                   // Cancel the stream
                   await ctx.cancel({
                     depositedTokenMint: ctx.randomToken,
-                    depositedTokenProgram: ProgramId.TOKEN,
+                    depositedTokenProgram: ProgramId.SPL_TOKEN,
                     salt,
                   });
 
@@ -143,7 +143,7 @@ describe("cancel", () => {
                     depositedTokenMint: ctx.randomToken,
                     isCancelable: false,
                     salt: salt,
-                    tokenProgram: ProgramId.TOKEN,
+                    tokenProgram: ProgramId.SPL_TOKEN,
                     wasCanceled: true,
                   });
                   expectedStream.data.amounts.refunded = LinearAmounts.REFUND;

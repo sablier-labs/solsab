@@ -50,70 +50,72 @@ describe("createWithDurationsLt", () => {
       });
     });
 
-    describe("given duration causes timestamp overflow", () => {
-      it("should fail", async () => {
-        await expectToThrow(
-          ctx.createWithDurationsLt({
-            trancheAmounts: [TranchedAmounts.TRANCHE_1, TranchedAmounts.TRANCHE_2],
-            trancheDurations: [toBn(1000), MAX_U64],
-          }),
-          "TrancheTimestampOverflow",
-        );
-      });
-    });
-
-    describe("given valid parameters", () => {
-      describe("given single tranche", () => {
-        it("should create with current_time as start", async () => {
-          const currentTime = Time.START;
-          const duration = toBn(5000);
-          const salt = await ctx.createWithDurationsLt({
-            trancheAmounts: [TranchedAmounts.DEPOSIT],
-            trancheDurations: [duration],
-          });
-
-          const actualStreamData = await ctx.fetchStreamData(salt);
-          const expectedTimestamp = currentTime.add(duration);
-          const expectedStreamData = ctx.defaultTranchedStream({
-            model: TRANCHED_MODEL({
-              timestamps: { end: expectedTimestamp, start: currentTime },
-              tranches: [{ amount: TranchedAmounts.DEPOSIT, timestamp: expectedTimestamp }],
+    describe("given amounts.length == durations.length", () => {
+      describe("given duration causes timestamp overflow", () => {
+        it("should fail", async () => {
+          await expectToThrow(
+            ctx.createWithDurationsLt({
+              trancheAmounts: [TranchedAmounts.TRANCHE_1, TranchedAmounts.TRANCHE_2],
+              trancheDurations: [toBn(1000), MAX_U64],
             }),
-            salt,
-          }).data;
-
-          assertEqStreamData(actualStreamData, expectedStreamData);
+            "TrancheTimestampOverflow",
+          );
         });
       });
 
-      describe("given multiple tranches", () => {
-        it("should create with cumulative timestamps", async () => {
-          const currentTime = Time.START;
-          const salt = await ctx.createWithDurationsLt();
+      describe("given duration does not cause timestamp overflow", () => {
+        describe("given single tranche", () => {
+          it("should create with current_time as start", async () => {
+            const currentTime = Time.START;
+            const duration = toBn(5000);
+            const salt = await ctx.createWithDurationsLt({
+              trancheAmounts: [TranchedAmounts.DEPOSIT],
+              trancheDurations: [duration],
+            });
 
-          const actualStreamData = await ctx.fetchStreamData(salt);
+            const actualStreamData = await ctx.fetchStreamData(salt);
+            const expectedTimestamp = currentTime.add(duration);
+            const expectedStreamData = ctx.defaultTranchedStream({
+              model: TRANCHED_MODEL({
+                timestamps: { end: expectedTimestamp, start: currentTime },
+                tranches: [{ amount: TranchedAmounts.DEPOSIT, timestamp: expectedTimestamp }],
+              }),
+              salt,
+            }).data;
 
-          // Calculate expected timestamps:
-          // T1 = currentTime + duration1
-          // T2 = T1 + duration2
-          // T3 = T2 + duration3
-          const t1 = currentTime.add(TranchedDurations.TRANCHE_1);
-          const t2 = t1.add(TranchedDurations.TRANCHE_2);
-          const t3 = t2.add(TranchedDurations.TRANCHE_3);
+            assertEqStreamData(actualStreamData, expectedStreamData);
+          });
+        });
 
-          const expectedStreamData = ctx.defaultTranchedStream({
-            model: TRANCHED_MODEL({
-              timestamps: { end: t3, start: currentTime },
-              tranches: [
-                { amount: TranchedAmounts.TRANCHE_1, timestamp: t1 },
-                { amount: TranchedAmounts.TRANCHE_2, timestamp: t2 },
-                { amount: TranchedAmounts.TRANCHE_3, timestamp: t3 },
-              ],
-            }),
-            salt,
-          }).data;
+        describe("given multiple tranches", () => {
+          it("should create with cumulative timestamps", async () => {
+            const currentTime = Time.START;
+            const salt = await ctx.createWithDurationsLt();
 
-          assertEqStreamData(actualStreamData, expectedStreamData);
+            const actualStreamData = await ctx.fetchStreamData(salt);
+
+            // Calculate expected timestamps:
+            // T1 = currentTime + duration1
+            // T2 = T1 + duration2
+            // T3 = T2 + duration3
+            const t1 = currentTime.add(TranchedDurations.TRANCHE_1);
+            const t2 = t1.add(TranchedDurations.TRANCHE_2);
+            const t3 = t2.add(TranchedDurations.TRANCHE_3);
+
+            const expectedStreamData = ctx.defaultTranchedStream({
+              model: TRANCHED_MODEL({
+                timestamps: { end: t3, start: currentTime },
+                tranches: [
+                  { amount: TranchedAmounts.TRANCHE_1, timestamp: t1 },
+                  { amount: TranchedAmounts.TRANCHE_2, timestamp: t2 },
+                  { amount: TranchedAmounts.TRANCHE_3, timestamp: t3 },
+                ],
+              }),
+              salt,
+            }).data;
+
+            assertEqStreamData(actualStreamData, expectedStreamData);
+          });
         });
       });
     });

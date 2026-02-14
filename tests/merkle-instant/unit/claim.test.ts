@@ -107,7 +107,7 @@ describe("claim", () => {
                       ctx.defaultBankrunPayer,
                       ctx.randomToken,
                       Amount.AGGREGATE,
-                      ProgramId.TOKEN,
+                      ProgramId.SPL_TOKEN,
                       ctx.campaignCreator.keys.publicKey,
                     );
 
@@ -121,7 +121,7 @@ describe("claim", () => {
                       campaign,
                       ctx.recipient.keys,
                       ctx.randomToken,
-                      ProgramId.TOKEN,
+                      ProgramId.SPL_TOKEN,
                       false,
                     );
                   });
@@ -170,7 +170,7 @@ async function testClaim(
   campaign = ctx.defaultCampaign,
   claimer = ctx.recipient.keys,
   tokenMint = ctx.usdc,
-  tokenProgram = ProgramId.TOKEN,
+  tokenProgram = ProgramId.SPL_TOKEN,
   recipientAtaExists = true,
 ): Promise<void> {
   // Assert that the claim was not made yet.

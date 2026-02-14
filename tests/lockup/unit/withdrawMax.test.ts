@@ -34,56 +34,58 @@ describe("withdrawMax", () => {
       });
     });
 
-    describe("given a valid LL stream", () => {
-      describe("given end time not in the future", () => {
-        it("should make the max withdrawal", async () => {
-          await ctx.timeTravelTo(Time.END);
-          await ctx.withdrawMax();
-          const actualStreamData = await ctx.fetchStreamData();
-          const expectedStreamData = ctx.defaultLinearStream({
-            isCancelable: false,
-            isDepleted: true,
-          }).data;
-          expectedStreamData.amounts.withdrawn = LinearAmounts.DEPOSIT;
-          assertEqStreamData(actualStreamData, expectedStreamData);
+    describe("given a valid stream", () => {
+      describe("given LL model", () => {
+        describe("given end time not in the future", () => {
+          it("should make the max withdrawal", async () => {
+            await ctx.timeTravelTo(Time.END);
+            await ctx.withdrawMax();
+            const actualStreamData = await ctx.fetchStreamData();
+            const expectedStreamData = ctx.defaultLinearStream({
+              isCancelable: false,
+              isDepleted: true,
+            }).data;
+            expectedStreamData.amounts.withdrawn = LinearAmounts.DEPOSIT;
+            assertEqStreamData(actualStreamData, expectedStreamData);
+          });
+        });
+
+        describe("given end time in the future", () => {
+          it("should make the max withdrawal", async () => {
+            await ctx.timeTravelTo(Time.MID_26_PERCENT);
+            await ctx.withdrawMax();
+            const actualStreamData = await ctx.fetchStreamData();
+            const expectedStreamData = ctx.defaultLinearStream().data;
+            expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
+            assertEqStreamData(actualStreamData, expectedStreamData);
+          });
         });
       });
 
-      describe("given end time in the future", () => {
-        it("should make the max withdrawal", async () => {
-          await ctx.timeTravelTo(Time.MID_26_PERCENT);
-          await ctx.withdrawMax();
-          const actualStreamData = await ctx.fetchStreamData();
-          const expectedStreamData = ctx.defaultLinearStream().data;
-          expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
-          assertEqStreamData(actualStreamData, expectedStreamData);
+      describe("given LT model", () => {
+        describe("given end time not in the future", () => {
+          it("should make the max withdrawal", async () => {
+            await ctx.timeTravelTo(TranchedTimes.END);
+            await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
+            const actualStreamData = await ctx.fetchStreamData(ctx.salts.defaultLt);
+            const expectedStreamData = ctx.defaultTranchedStream({
+              isCancelable: false,
+              isDepleted: true,
+            }).data;
+            expectedStreamData.amounts.withdrawn = TranchedAmounts.DEPOSIT;
+            assertEqStreamData(actualStreamData, expectedStreamData);
+          });
         });
-      });
-    });
 
-    describe("given a valid LT stream", () => {
-      describe("given end time not in the future", () => {
-        it("should make the max withdrawal", async () => {
-          await ctx.timeTravelTo(TranchedTimes.END);
-          await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
-          const actualStreamData = await ctx.fetchStreamData(ctx.salts.defaultLt);
-          const expectedStreamData = ctx.defaultTranchedStream({
-            isCancelable: false,
-            isDepleted: true,
-          }).data;
-          expectedStreamData.amounts.withdrawn = TranchedAmounts.DEPOSIT;
-          assertEqStreamData(actualStreamData, expectedStreamData);
-        });
-      });
-
-      describe("given end time in the future", () => {
-        it("should make the max withdrawal", async () => {
-          await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
-          await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
-          const actualStreamData = await ctx.fetchStreamData(ctx.salts.defaultLt);
-          const expectedStreamData = ctx.defaultTranchedStream().data;
-          expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
-          assertEqStreamData(actualStreamData, expectedStreamData);
+        describe("given end time in the future", () => {
+          it("should make the max withdrawal", async () => {
+            await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+            await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
+            const actualStreamData = await ctx.fetchStreamData(ctx.salts.defaultLt);
+            const expectedStreamData = ctx.defaultTranchedStream().data;
+            expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
+            assertEqStreamData(actualStreamData, expectedStreamData);
+          });
         });
       });
     });

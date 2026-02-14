@@ -116,7 +116,7 @@ describe("cancelLt", () => {
                   const senderATA = deriveATAAddress(
                     ctx.randomToken,
                     ctx.sender.keys.publicKey,
-                    ProgramId.TOKEN,
+                    ProgramId.SPL_TOKEN,
                   );
 
                   // Assert the sender's ATA doesn't exist
@@ -128,14 +128,14 @@ describe("cancelLt", () => {
                     ctx.defaultBankrunPayer,
                     ctx.randomToken,
                     TranchedAmounts.DEPOSIT,
-                    ProgramId.TOKEN,
+                    ProgramId.SPL_TOKEN,
                     ctx.sender.keys.publicKey,
                   );
 
                   // Create a tranched stream with a random token
                   const salt = await ctx.createWithTimestampsLt({
                     depositTokenMint: ctx.randomToken,
-                    depositTokenProgram: ProgramId.TOKEN,
+                    depositTokenProgram: ProgramId.SPL_TOKEN,
                     funder: ctx.sender.keys,
                   });
 
@@ -145,7 +145,7 @@ describe("cancelLt", () => {
                   // Cancel the stream
                   await ctx.cancel({
                     depositedTokenMint: ctx.randomToken,
-                    depositedTokenProgram: ProgramId.TOKEN,
+                    depositedTokenProgram: ProgramId.SPL_TOKEN,
                     salt,
                   });
 

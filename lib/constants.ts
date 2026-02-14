@@ -23,6 +23,6 @@ export namespace ProgramId {
     "99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY6jZ96ynrR",
   );
   export const MPL_CORE = new PublicKey("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d");
-  export const TOKEN = TOKEN_PROGRAM_ID;
+  export const SPL_TOKEN = TOKEN_PROGRAM_ID;
   export const TOKEN_2022 = TOKEN_2022_PROGRAM_ID;
 }

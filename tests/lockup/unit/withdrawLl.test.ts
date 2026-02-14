@@ -113,7 +113,7 @@ describe("withdraw", () => {
                       ctx.defaultBankrunPayer,
                       ctx.randomToken,
                       LinearAmounts.DEPOSIT,
-                      ProgramId.TOKEN,
+                      ProgramId.SPL_TOKEN,
                       ctx.sender.keys.publicKey,
                     );
 
@@ -127,7 +127,7 @@ describe("withdraw", () => {
                     const recipientATA = deriveATAAddress(
                       ctx.randomToken,
                       ctx.recipient.keys.publicKey,
-                      ProgramId.TOKEN,
+                      ProgramId.SPL_TOKEN,
                     );
 
                     // Assert that the recipient's ATA does not exist

@@ -121,13 +121,13 @@ describe("withdrawLt", () => {
                       ctx.defaultBankrunPayer,
                       ctx.randomToken,
                       TranchedAmounts.DEPOSIT,
-                      ProgramId.TOKEN,
+                      ProgramId.SPL_TOKEN,
                       ctx.sender.keys.publicKey,
                     );
 
                     const salt = await ctx.createWithTimestampsLt({
                       depositTokenMint: ctx.randomToken,
-                      depositTokenProgram: ProgramId.TOKEN,
+                      depositTokenProgram: ProgramId.SPL_TOKEN,
                     });
 
                     await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
@@ -135,7 +135,7 @@ describe("withdrawLt", () => {
                     const recipientATA = deriveATAAddress(
                       ctx.randomToken,
                       ctx.recipient.keys.publicKey,
-                      ProgramId.TOKEN,
+                      ProgramId.SPL_TOKEN,
                     );
 
                     await assertAccountNotExists(ctx, recipientATA, "Recipient's ATA");
@@ -181,7 +181,7 @@ describe("withdrawLt", () => {
                     });
                   });
 
-                  describe("given after first tranche", () => {
+                  describe("when after first tranche", () => {
                     describe("given SPL token", () => {
                       it("should withdraw", async () => {
                         await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);

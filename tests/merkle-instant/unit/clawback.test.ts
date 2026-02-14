@@ -114,7 +114,7 @@ describe("clawback", () => {
                       ctx.defaultBankrunPayer,
                       ctx.randomToken,
                       Amount.AGGREGATE,
-                      ProgramId.TOKEN,
+                      ProgramId.SPL_TOKEN,
                       ctx.campaignCreator.keys.publicKey,
                     );
 
@@ -125,7 +125,7 @@ describe("clawback", () => {
                     const clawbackRecipientAta = deriveATAAddress(
                       ctx.randomToken,
                       ctx.clawbackRecipient.keys.publicKey,
-                      ProgramId.TOKEN,
+                      ProgramId.SPL_TOKEN,
                     );
                     await assertAccountNotExists(
                       ctx,
@@ -179,7 +179,7 @@ describe("clawback", () => {
 async function testClawback({
   campaign = ctx.defaultCampaign,
   airdropTokenMint = ctx.usdc,
-  airdropTokenProgram = ProgramId.TOKEN,
+  airdropTokenProgram = ProgramId.SPL_TOKEN,
   clawbackRecipient = ctx.clawbackRecipient.keys.publicKey,
   clawbackRecipientAtaExists = true,
 } = {}) {
