@@ -1,4 +1,4 @@
-import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
+import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
 import { PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
@@ -26,7 +26,7 @@ describe("createWithTimestampsLl", () => {
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.createWithTimestampsLl({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.createWithTimestampsLl({ salt: ZERO }), ERR_ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -36,7 +36,7 @@ describe("createWithTimestampsLl", () => {
       await ctx.setUpLockup();
     });
 
-    describe("when deposit amount zero", () => {
+    describe("when deposit amount is zero", () => {
       it("should fail", async () => {
         await expectToThrow(
           ctx.createWithTimestampsLl({ depositAmount: ZERO }),
@@ -45,7 +45,7 @@ describe("createWithTimestampsLl", () => {
       });
     });
 
-    describe("when deposit amount not zero", () => {
+    describe("when deposit amount is not zero", () => {
       describe("when start time is zero", () => {
         it("should fail", async () => {
           await expectToThrow(
@@ -64,7 +64,7 @@ describe("createWithTimestampsLl", () => {
               ctx.createWithTimestampsLl({
                 depositTokenMint: ctx.randomToken,
               }),
-              ACCOUNT_NOT_INITIALIZED,
+              ERR_ACCOUNT_NOT_INITIALIZED,
             );
           });
         });
@@ -82,8 +82,8 @@ describe("createWithTimestampsLl", () => {
           });
 
           describe("when sender has a sufficient token balance", () => {
-            describe("when cliff time zero", () => {
-              describe("when cliff unlock amount not zero", () => {
+            describe("when cliff time is zero", () => {
+              describe("when cliff unlock amount is not zero", () => {
                 it("should fail", async () => {
                   await expectToThrow(
                     ctx.createWithTimestampsLl({
@@ -137,7 +137,7 @@ describe("createWithTimestampsLl", () => {
               });
             });
 
-            describe("when cliff time not zero", () => {
+            describe("when cliff time is not zero", () => {
               describe("when start time not less than cliff time", () => {
                 it("should fail", async () => {
                   await expectToThrow(
@@ -178,7 +178,7 @@ describe("createWithTimestampsLl", () => {
                     });
                   });
 
-                  describe("when unlock amounts sum not exceed deposit amount", () => {
+                  describe("when unlock amounts sum does not exceed deposit amount", () => {
                     describe("when token SPL standard", () => {
                       it("should create the stream", async () => {
                         const beforeSenderTokenBalance = await getATABalance(

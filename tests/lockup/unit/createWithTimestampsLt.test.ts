@@ -1,4 +1,4 @@
-import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
+import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
 import { PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
@@ -28,7 +28,7 @@ describe("createWithTimestampsLt", () => {
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.createWithTimestampsLt({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.createWithTimestampsLt({ salt: ZERO }), ERR_ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -65,24 +65,28 @@ describe("createWithTimestampsLt", () => {
 
         describe("given start time is not zero", () => {
           describe("given start time >= first tranche timestamp", () => {
-            it("should fail when start time equals first tranche timestamp", async () => {
-              await expectToThrow(
-                ctx.createWithTimestampsLt({
-                  startTime: TranchedTimes.TRANCHE_1,
-                  tranches: DEFAULT_TRANCHES(),
-                }),
-                "StartTimeNotLessThanFirstTranche",
-              );
+            describe("when start time equals first tranche timestamp", () => {
+              it("should fail", async () => {
+                await expectToThrow(
+                  ctx.createWithTimestampsLt({
+                    startTime: TranchedTimes.TRANCHE_1,
+                    tranches: DEFAULT_TRANCHES(),
+                  }),
+                  "StartTimeNotLessThanFirstTranche",
+                );
+              });
             });
 
-            it("should fail when start time is greater than first tranche timestamp", async () => {
-              await expectToThrow(
-                ctx.createWithTimestampsLt({
-                  startTime: TranchedTimes.TRANCHE_1.addn(1),
-                  tranches: DEFAULT_TRANCHES(),
-                }),
-                "StartTimeNotLessThanFirstTranche",
-              );
+            describe("when start time is greater than first tranche timestamp", () => {
+              it("should fail", async () => {
+                await expectToThrow(
+                  ctx.createWithTimestampsLt({
+                    startTime: TranchedTimes.TRANCHE_1.addn(1),
+                    tranches: DEFAULT_TRANCHES(),
+                  }),
+                  "StartTimeNotLessThanFirstTranche",
+                );
+              });
             });
           });
 
@@ -98,14 +102,19 @@ describe("createWithTimestampsLt", () => {
                 await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TranchesNotSorted");
               });
 
-              it("should fail with duplicate timestamps", async () => {
-                const tranches: Tranche[] = [
-                  { amount: TranchedAmounts.TRANCHE_1, timestamp: TranchedTimes.TRANCHE_1 },
-                  { amount: TranchedAmounts.TRANCHE_2, timestamp: TranchedTimes.TRANCHE_1 },
-                  { amount: TranchedAmounts.TRANCHE_3, timestamp: TranchedTimes.TRANCHE_3 },
-                ];
+              describe("given duplicate timestamps", () => {
+                it("should fail", async () => {
+                  const tranches: Tranche[] = [
+                    { amount: TranchedAmounts.TRANCHE_1, timestamp: TranchedTimes.TRANCHE_1 },
+                    { amount: TranchedAmounts.TRANCHE_2, timestamp: TranchedTimes.TRANCHE_1 },
+                    { amount: TranchedAmounts.TRANCHE_3, timestamp: TranchedTimes.TRANCHE_3 },
+                  ];
 
-                await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TranchesNotSorted");
+                  await expectToThrow(
+                    ctx.createWithTimestampsLt({ tranches }),
+                    "TranchesNotSorted",
+                  );
+                });
               });
             });
 
@@ -147,7 +156,7 @@ describe("createWithTimestampsLt", () => {
                         ctx.createWithTimestampsLt({
                           depositTokenMint: ctx.randomToken,
                         }),
-                        ACCOUNT_NOT_INITIALIZED,
+                        ERR_ACCOUNT_NOT_INITIALIZED,
                       );
                     });
                   });

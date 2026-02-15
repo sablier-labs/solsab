@@ -1,4 +1,4 @@
-import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
+import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { ZERO } from "../../../lib/constants";
 import { LockupTestContext } from "../context";
@@ -16,7 +16,7 @@ describe("createWithDurationsLl", () => {
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.createWithDurationsLl({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.createWithDurationsLl({ salt: ZERO }), ERR_ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -27,7 +27,7 @@ describe("createWithDurationsLl", () => {
       await ctx.timeTravelTo(Time.START);
     });
 
-    describe("when cliff duration not zero", () => {
+    describe("when cliff duration is not zero", () => {
       it("it should create the stream", async () => {
         const salt = await ctx.createWithDurationsLl();
 
@@ -37,7 +37,7 @@ describe("createWithDurationsLl", () => {
       });
     });
 
-    describe("when cliff duration zero", () => {
+    describe("when cliff duration is zero", () => {
       it("it should create the stream", async () => {
         const salt = await ctx.createWithDurationsLl({ cliffDuration: ZERO });
 

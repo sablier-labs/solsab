@@ -1,6 +1,6 @@
 import {
-  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
-  ANCHOR_ERROR__CONSTRAINT_RAW as CONSTRAINT_RAW,
+  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED,
+  ANCHOR_ERROR__CONSTRAINT_RAW as ERR_CONSTRAINT_RAW,
 } from "@coral-xyz/anchor-errors";
 import type { PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
@@ -20,7 +20,7 @@ import { LinearAmounts, Time } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
-describe("withdraw", () => {
+describe("withdrawLl", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();
@@ -30,7 +30,7 @@ describe("withdraw", () => {
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.withdraw({ salt: BN_1 }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.withdraw({ salt: BN_1 }), ERR_ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -44,7 +44,10 @@ describe("withdraw", () => {
 
     describe("given a null stream", () => {
       it("should fail", async () => {
-        await expectToThrow(ctx.withdraw({ salt: ctx.salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
+        await expectToThrow(
+          ctx.withdraw({ salt: ctx.salts.nonExisting }),
+          ERR_ACCOUNT_NOT_INITIALIZED,
+        );
       });
     });
 
@@ -53,7 +56,7 @@ describe("withdraw", () => {
         it("should fail", async () => {
           await expectToThrow(
             ctx.withdraw({ depositedTokenMint: ctx.randomToken }),
-            ACCOUNT_NOT_INITIALIZED,
+            ERR_ACCOUNT_NOT_INITIALIZED,
           );
         });
       });
@@ -92,60 +95,60 @@ describe("withdraw", () => {
             });
 
             describe("when withdraw amount does not overdraw", () => {
-              describe("when withdrawal address not recipient", () => {
-                describe("when signer not recipient", () => {
+              describe("when withdrawal address is not recipient", () => {
+                describe("when signer is not recipient", () => {
                   it("should fail", async () => {
                     await expectToThrow(
                       ctx.withdraw({
                         signer: ctx.sender.keys,
                         withdrawalRecipient: ctx.sender.keys.publicKey,
                       }),
-                      CONSTRAINT_RAW,
+                      ERR_CONSTRAINT_RAW,
                     );
                   });
                 });
 
-                describe("when recipient doesn't have an ATA for the Stream's asset", () => {
-                  it("should create the ATA", async () => {
-                    // Set up the sender for the test
-                    await createATAAndFund(
-                      ctx.banksClient,
-                      ctx.defaultBankrunPayer,
-                      ctx.randomToken,
-                      LinearAmounts.DEPOSIT,
-                      ProgramId.SPL_TOKEN,
-                      ctx.sender.keys.publicKey,
-                    );
+                describe("when signer is recipient", () => {
+                  describe("when recipient doesn't have an ATA for the Stream's asset", () => {
+                    it("should create the ATA", async () => {
+                      // Set up the sender for the test
+                      await createATAAndFund(
+                        ctx.banksClient,
+                        ctx.defaultBankrunPayer,
+                        ctx.randomToken,
+                        LinearAmounts.DEPOSIT,
+                        ProgramId.SPL_TOKEN,
+                        ctx.sender.keys.publicKey,
+                      );
 
-                    // Create a new stream with a random token
-                    const salt = await ctx.createWithTimestampsLl({
-                      depositAmount: LinearAmounts.DEPOSIT,
-                      depositTokenMint: ctx.randomToken,
+                      // Create a new stream with a random token
+                      const salt = await ctx.createWithTimestampsLl({
+                        depositAmount: LinearAmounts.DEPOSIT,
+                        depositTokenMint: ctx.randomToken,
+                      });
+
+                      // Derive the recipient's ATA address
+                      const recipientATA = deriveATAAddress(
+                        ctx.randomToken,
+                        ctx.recipient.keys.publicKey,
+                        ProgramId.SPL_TOKEN,
+                      );
+
+                      // Assert that the recipient's ATA does not exist
+                      await assertAccountNotExists(ctx, recipientATA, "Recipient's ATA");
+
+                      // Perform the withdrawal
+                      await ctx.withdraw({
+                        depositedTokenMint: ctx.randomToken,
+                        salt,
+                      });
+
+                      // Assert that the recipient's ATA was created
+                      await assertAccountExists(ctx, recipientATA, "Recipient's ATA");
                     });
-
-                    // Derive the recipient's ATA address
-                    const recipientATA = deriveATAAddress(
-                      ctx.randomToken,
-                      ctx.recipient.keys.publicKey,
-                      ProgramId.SPL_TOKEN,
-                    );
-
-                    // Assert that the recipient's ATA does not exist
-                    await assertAccountNotExists(ctx, recipientATA, "Recipient's ATA");
-
-                    // Perform the withdrawal
-                    await ctx.withdraw({
-                      depositedTokenMint: ctx.randomToken,
-                      salt,
-                    });
-
-                    // Assert that the recipient's ATA was created
-                    await assertAccountExists(ctx, recipientATA, "Recipient's ATA");
                   });
-                });
 
-                describe("when recipient has an ATA for the Stream's asset", () => {
-                  describe("when signer recipient", () => {
+                  describe("when recipient has an ATA for the Stream's asset", () => {
                     it("should make the withdrawal", async () => {
                       // Get stream info before withdrawal
                       const stream = ctx.defaultLinearStream();
@@ -193,8 +196,8 @@ describe("withdraw", () => {
                 });
               });
 
-              describe("when withdrawal address recipient", () => {
-                describe("when signer recipient", () => {
+              describe("when withdrawal address is recipient", () => {
+                describe("when signer is recipient", () => {
                   it("should make the withdrawal", async () => {
                     // Get stream info before withdrawal
                     const stream = ctx.defaultLinearStream();
@@ -235,7 +238,7 @@ describe("withdraw", () => {
                   });
                 });
 
-                describe("when signer not recipient", () => {
+                describe("when signer is not recipient", () => {
                   describe("when stream status is SETTLED", () => {
                     it("should make the withdrawal", async () => {
                       await ctx.timeTravelTo(Time.END);

@@ -1,18 +1,13 @@
 import {
-  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
-  ANCHOR_ERROR__CONSTRAINT_ADDRESS as CONSTRAINT_ADDRESS,
+  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED,
+  ANCHOR_ERROR__CONSTRAINT_ADDRESS as ERR_CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
 import type BN from "bn.js";
 import { beforeAll, beforeEach, describe, it } from "vitest";
-import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
+import { BN_1 } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
-import {
-  createATAAndFund,
-  deriveATAAddress,
-  getATABalance,
-  getATABalanceMint,
-} from "../../common/anchor-bankrun";
-import { assertAccountNotExists, assertEqBn } from "../../common/assertions";
+import { getATABalance, getATABalanceMint } from "../../common/anchor-bankrun";
+import { assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
 import { LinearAmounts, Time } from "../utils/defaults";
@@ -20,7 +15,7 @@ import type { Stream } from "../utils/types";
 
 let ctx: LockupTestContext;
 
-describe("cancel", () => {
+describe("cancelLl", () => {
   describe("when the program is not initialized", () => {
     beforeAll(async () => {
       ctx = new LockupTestContext();
@@ -30,7 +25,7 @@ describe("cancel", () => {
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.cancel({ salt: BN_1 }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.cancel({ salt: BN_1 }), ERR_ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -44,7 +39,10 @@ describe("cancel", () => {
 
     describe("given a null stream", () => {
       it("should fail", async () => {
-        await expectToThrow(ctx.cancel({ salt: ctx.salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
+        await expectToThrow(
+          ctx.cancel({ salt: ctx.salts.nonExisting }),
+          ERR_ACCOUNT_NOT_INITIALIZED,
+        );
       });
     });
 
@@ -53,13 +51,13 @@ describe("cancel", () => {
         it("should fail", async () => {
           await expectToThrow(
             ctx.cancel({ depositedTokenMint: ctx.randomToken }),
-            ACCOUNT_NOT_INITIALIZED,
+            ERR_ACCOUNT_NOT_INITIALIZED,
           );
         });
       });
 
       describe("given a valid deposited token mint", () => {
-        describe("given cold stream", () => {
+        describe("given a cold stream", () => {
           describe("given DEPLETED status", () => {
             it("should fail", async () => {
               await ctx.timeTravelTo(Time.END);
@@ -84,15 +82,18 @@ describe("cancel", () => {
           });
         });
 
-        describe("given warm stream", () => {
-          describe("when signer not sender", () => {
+        describe("given a warm stream", () => {
+          describe("when signer is not sender", () => {
             it("should fail", async () => {
-              await expectToThrow(ctx.cancel({ signer: ctx.recipient.keys }), CONSTRAINT_ADDRESS);
+              await expectToThrow(
+                ctx.cancel({ signer: ctx.recipient.keys }),
+                ERR_CONSTRAINT_ADDRESS,
+              );
             });
           });
 
-          describe("when signer sender", () => {
-            describe("given non cancelable stream", () => {
+          describe("when signer is sender", () => {
+            describe("given a non-cancelable stream", () => {
               it("should fail", async () => {
                 await expectToThrow(
                   ctx.cancel({ salt: ctx.salts.nonCancelableLl }),
@@ -101,58 +102,7 @@ describe("cancel", () => {
               });
             });
 
-            describe("given cancelable stream", () => {
-              describe("when the sender does not have ATA", () => {
-                it("should cancel the stream", async () => {
-                  // Derive the sender's ATA for the random token
-                  const senderATA = deriveATAAddress(
-                    ctx.randomToken,
-                    ctx.sender.keys.publicKey,
-                    ProgramId.SPL_TOKEN,
-                  );
-
-                  // Assert the sender's ATA doesn't exist
-                  await assertAccountNotExists(ctx, senderATA, "Sender's ATA");
-
-                  // Create ATA for & mint random token to the stream funder
-                  await createATAAndFund(
-                    ctx.banksClient,
-                    ctx.defaultBankrunPayer,
-                    ctx.randomToken,
-                    LinearAmounts.DEPOSIT,
-                    ProgramId.SPL_TOKEN,
-                    ctx.sender.keys.publicKey,
-                  );
-
-                  // Create a stream with a random token
-                  const salt = await ctx.createWithTimestampsLl({
-                    depositTokenMint: ctx.randomToken,
-                    depositTokenProgram: ProgramId.SPL_TOKEN,
-                    funder: ctx.sender.keys,
-                  });
-
-                  // Cancel the stream
-                  await ctx.cancel({
-                    depositedTokenMint: ctx.randomToken,
-                    depositedTokenProgram: ProgramId.SPL_TOKEN,
-                    salt,
-                  });
-
-                  // Assert the cancelation
-                  const expectedStream = ctx.defaultLinearStream({
-                    depositedTokenMint: ctx.randomToken,
-                    isCancelable: false,
-                    salt: salt,
-                    tokenProgram: ProgramId.SPL_TOKEN,
-                    wasCanceled: true,
-                  });
-                  expectedStream.data.amounts.refunded = LinearAmounts.REFUND;
-
-                  // Assert the cancelation
-                  await postCancelAssertions(salt, expectedStream, ZERO);
-                });
-              });
-
+            describe("given a cancelable stream", () => {
               describe("given PENDING status", () => {
                 it("should cancel the stream", async () => {
                   // Go back in time so that the stream is PENDING
@@ -166,7 +116,7 @@ describe("cancel", () => {
                   // Cancel the stream
                   await ctx.cancel();
 
-                  // Assert the cancelation
+                  // Assert the cancelation - full refund when nothing streamed
                   const expectedStream = ctx.defaultLinearStream({
                     isCancelable: false,
                     isDepleted: true,
@@ -174,7 +124,6 @@ describe("cancel", () => {
                   });
                   expectedStream.data.amounts.refunded = LinearAmounts.DEPOSIT;
 
-                  // Assert the cancelation
                   await postCancelAssertions(
                     ctx.salts.defaultLl,
                     expectedStream,

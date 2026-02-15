@@ -1,6 +1,6 @@
 import {
-  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
-  ANCHOR_ERROR__CONSTRAINT_ADDRESS as CONSTRAINT_ADDRESS,
+  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED,
+  ANCHOR_ERROR__CONSTRAINT_ADDRESS as ERR_CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { REDUNDANCY_BUFFER } from "../../../lib/constants";
@@ -18,7 +18,7 @@ describe("collectFees", () => {
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.collectFees(), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.collectFees(), ERR_ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -31,7 +31,7 @@ describe("collectFees", () => {
     describe("when signer is not the authorized fee collector", () => {
       it("should fail", async () => {
         await ctx.simulateFeeGeneration();
-        await expectToThrow(ctx.collectFees(ctx.eve.keys), CONSTRAINT_ADDRESS);
+        await expectToThrow(ctx.collectFees(ctx.eve.keys), ERR_CONSTRAINT_ADDRESS);
       });
     });
 

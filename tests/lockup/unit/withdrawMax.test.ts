@@ -1,4 +1,4 @@
-import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
+import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { BN_1 } from "../../../lib/constants";
 import { LockupTestContext } from "../context";
@@ -15,7 +15,7 @@ describe("withdrawMax", () => {
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.withdrawMax({ salt: BN_1 }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.withdrawMax({ salt: BN_1 }), ERR_ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -29,13 +29,13 @@ describe("withdrawMax", () => {
       it("should fail", async () => {
         await expectToThrow(
           ctx.withdrawMax({ salt: ctx.salts.nonExisting }),
-          ACCOUNT_NOT_INITIALIZED,
+          ERR_ACCOUNT_NOT_INITIALIZED,
         );
       });
     });
 
     describe("given a valid stream", () => {
-      describe("given LL model", () => {
+      describe("given a LL stream", () => {
         describe("given end time not in the future", () => {
           it("should make the max withdrawal", async () => {
             await ctx.timeTravelTo(Time.END);
@@ -62,7 +62,7 @@ describe("withdrawMax", () => {
         });
       });
 
-      describe("given LT model", () => {
+      describe("given a LT stream", () => {
         describe("given end time not in the future", () => {
           it("should make the max withdrawal", async () => {
             await ctx.timeTravelTo(TranchedTimes.END);

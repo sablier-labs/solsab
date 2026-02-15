@@ -21,7 +21,7 @@ describe("statusOf", () => {
   });
 
   describe("given a valid stream", () => {
-    describe("given LL model", () => {
+    describe("given a LL stream", () => {
       describe("when the stream has been depleted", () => {
         it("should return DEPLETED", async () => {
           await ctx.timeTravelTo(Time.END);
@@ -68,7 +68,7 @@ describe("statusOf", () => {
       });
     });
 
-    describe("given LT model", () => {
+    describe("given a LT stream", () => {
       describe("when the stream has been depleted", () => {
         it("should return DEPLETED", async () => {
           await ctx.timeTravelTo(TranchedTimes.END);

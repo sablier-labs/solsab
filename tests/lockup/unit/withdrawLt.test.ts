@@ -1,6 +1,6 @@
 import {
-  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
-  ANCHOR_ERROR__CONSTRAINT_RAW as CONSTRAINT_RAW,
+  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED,
+  ANCHOR_ERROR__CONSTRAINT_RAW as ERR_CONSTRAINT_RAW,
 } from "@coral-xyz/anchor-errors";
 import type { PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
@@ -29,7 +29,7 @@ describe("withdrawLt", () => {
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.withdraw({ salt: BN_1 }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.withdraw({ salt: BN_1 }), ERR_ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -42,7 +42,10 @@ describe("withdrawLt", () => {
     describe("given a null stream", () => {
       it("should fail", async () => {
         await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
-        await expectToThrow(ctx.withdraw({ salt: ctx.salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
+        await expectToThrow(
+          ctx.withdraw({ salt: ctx.salts.nonExisting }),
+          ERR_ACCOUNT_NOT_INITIALIZED,
+        );
       });
     });
 
@@ -55,7 +58,7 @@ describe("withdrawLt", () => {
               depositedTokenMint: ctx.randomToken,
               salt: ctx.salts.defaultLt,
             }),
-            ACCOUNT_NOT_INITIALIZED,
+            ERR_ACCOUNT_NOT_INITIALIZED,
           );
         });
       });
@@ -99,8 +102,8 @@ describe("withdrawLt", () => {
             });
 
             describe("when withdraw amount does not overdraw", () => {
-              describe("when withdrawal address not recipient", () => {
-                describe("when signer not recipient", () => {
+              describe("when withdrawal address is not recipient", () => {
+                describe("when signer is not recipient", () => {
                   it("should fail", async () => {
                     await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
                     await expectToThrow(
@@ -109,82 +112,271 @@ describe("withdrawLt", () => {
                         signer: ctx.sender.keys,
                         withdrawalRecipient: ctx.sender.keys.publicKey,
                       }),
-                      CONSTRAINT_RAW,
+                      ERR_CONSTRAINT_RAW,
                     );
                   });
                 });
 
-                describe("when recipient doesn't have an ATA for the stream's asset", () => {
-                  it("should create the ATA", async () => {
-                    await createATAAndFund(
-                      ctx.banksClient,
-                      ctx.defaultBankrunPayer,
-                      ctx.randomToken,
-                      TranchedAmounts.DEPOSIT,
-                      ProgramId.SPL_TOKEN,
-                      ctx.sender.keys.publicKey,
-                    );
+                describe("when signer is recipient", () => {
+                  describe("when recipient doesn't have an ATA for the stream's asset", () => {
+                    it("should create the ATA", async () => {
+                      await createATAAndFund(
+                        ctx.banksClient,
+                        ctx.defaultBankrunPayer,
+                        ctx.randomToken,
+                        TranchedAmounts.DEPOSIT,
+                        ProgramId.SPL_TOKEN,
+                        ctx.sender.keys.publicKey,
+                      );
 
-                    const salt = await ctx.createWithTimestampsLt({
-                      depositTokenMint: ctx.randomToken,
-                      depositTokenProgram: ProgramId.SPL_TOKEN,
+                      const salt = await ctx.createWithTimestampsLt({
+                        depositTokenMint: ctx.randomToken,
+                        depositTokenProgram: ProgramId.SPL_TOKEN,
+                      });
+
+                      await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+
+                      const recipientATA = deriveATAAddress(
+                        ctx.randomToken,
+                        ctx.recipient.keys.publicKey,
+                        ProgramId.SPL_TOKEN,
+                      );
+
+                      await assertAccountNotExists(ctx, recipientATA, "Recipient's ATA");
+
+                      await ctx.withdraw({
+                        depositedTokenMint: ctx.randomToken,
+                        salt,
+                        withdrawAmount: TranchedAmounts.TRANCHE_1,
+                      });
+
+                      await assertAccountExists(ctx, recipientATA, "Recipient's ATA");
                     });
+                  });
 
-                    await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+                  describe("when recipient has an ATA for the stream's asset", () => {
+                    it("should make the withdrawal", async () => {
+                      await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
-                    const recipientATA = deriveATAAddress(
-                      ctx.randomToken,
-                      ctx.recipient.keys.publicKey,
-                      ProgramId.SPL_TOKEN,
-                    );
+                      const treasuryLamportsBefore = await ctx.getTreasuryLamports();
+                      const withdrawalRecipientATABalanceBefore = await getATABalance(
+                        ctx.banksClient,
+                        ctx.sender.usdcATA,
+                      );
 
-                    await assertAccountNotExists(ctx, recipientATA, "Recipient's ATA");
+                      const txSignerKeys = ctx.recipient.keys;
+                      const txSignerLamportsBefore = await ctx.getLamportsOf(
+                        txSignerKeys.publicKey,
+                      );
 
-                    await ctx.withdraw({
-                      depositedTokenMint: ctx.randomToken,
-                      salt,
-                      withdrawAmount: TranchedAmounts.TRANCHE_1,
+                      await ctx.withdraw({
+                        salt: ctx.salts.defaultLt,
+                        signer: txSignerKeys,
+                        withdrawAmount: TranchedAmounts.TRANCHE_1,
+                        withdrawalRecipient: ctx.sender.keys.publicKey,
+                      });
+
+                      const expectedStreamData = ctx.defaultTranchedStream().data;
+                      expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
+
+                      await postWithdrawAssertions(
+                        ctx.salts.defaultLt,
+                        txSignerKeys.publicKey,
+                        txSignerLamportsBefore,
+                        treasuryLamportsBefore,
+                        ctx.sender.usdcATA,
+                        withdrawalRecipientATABalanceBefore,
+                        expectedStreamData,
+                      );
                     });
-
-                    await assertAccountExists(ctx, recipientATA, "Recipient's ATA");
                   });
                 });
               });
 
-              describe("when withdrawal address recipient", () => {
-                describe("given PENDING status (before start)", () => {
-                  it("should fail with Overdraw", async () => {
-                    // Time travel to before the start time
-                    await ctx.timeTravelTo(Time.START.subn(100));
-                    await expectToThrow(
-                      ctx.withdraw({
+              describe("when withdrawal address is recipient", () => {
+                describe("when signer is recipient", () => {
+                  describe("given STREAMING status", () => {
+                    describe("given before first tranche", () => {
+                      it("should fail", async () => {
+                        // Time travel to after start but before first tranche
+                        await ctx.timeTravelTo(Time.START.addn(100));
+                        await expectToThrow(
+                          ctx.withdraw({
+                            salt: ctx.salts.defaultLt,
+                            withdrawAmount: BN_1,
+                          }),
+                          "Overdraw",
+                        );
+                      });
+                    });
+
+                    describe("when after first tranche", () => {
+                      describe("given SPL token", () => {
+                        it("should withdraw", async () => {
+                          await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+
+                          const treasuryLamportsBefore = await ctx.getTreasuryLamports();
+                          const withdrawalRecipientATABalanceBefore = await getATABalance(
+                            ctx.banksClient,
+                            ctx.recipient.usdcATA,
+                          );
+
+                          const txSignerKeys = ctx.recipient.keys;
+                          const txSignerLamportsBefore = await ctx.getLamportsOf(
+                            txSignerKeys.publicKey,
+                          );
+
+                          await ctx.withdraw({
+                            salt: ctx.salts.defaultLt,
+                            signer: txSignerKeys,
+                            withdrawAmount: TranchedAmounts.TRANCHE_1,
+                          });
+
+                          const expectedStreamData = ctx.defaultTranchedStream().data;
+                          expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
+
+                          await postWithdrawAssertions(
+                            ctx.salts.defaultLt,
+                            txSignerKeys.publicKey,
+                            txSignerLamportsBefore,
+                            treasuryLamportsBefore,
+                            ctx.recipient.usdcATA,
+                            withdrawalRecipientATABalanceBefore,
+                            expectedStreamData,
+                          );
+                        });
+                      });
+
+                      describe("given Token2022", () => {
+                        it("should withdraw", async () => {
+                          const salt = await ctx.createWithTimestampsLtToken2022();
+                          await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+
+                          const treasuryLamportsBefore = await ctx.getTreasuryLamports();
+                          const withdrawalRecipientATABalanceBefore = await getATABalance(
+                            ctx.banksClient,
+                            ctx.recipient.daiATA,
+                          );
+
+                          const txSignerKeys = ctx.recipient.keys;
+                          const txSignerLamportsBefore = await ctx.getLamportsOf(
+                            txSignerKeys.publicKey,
+                          );
+
+                          await ctx.withdraw({
+                            depositedTokenMint: ctx.dai,
+                            depositedTokenProgram: ProgramId.TOKEN_2022,
+                            salt,
+                            signer: txSignerKeys,
+                            withdrawAmount: TranchedAmounts.TRANCHE_1,
+                          });
+
+                          const expectedStreamData = ctx.defaultTranchedStreamToken2022({
+                            salt,
+                          }).data;
+                          expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
+
+                          await postWithdrawAssertions(
+                            salt,
+                            txSignerKeys.publicKey,
+                            txSignerLamportsBefore,
+                            treasuryLamportsBefore,
+                            ctx.recipient.daiATA,
+                            withdrawalRecipientATABalanceBefore,
+                            expectedStreamData,
+                          );
+                        });
+                      });
+                    });
+                  });
+
+                  describe("given SETTLED status", () => {
+                    it("should allow full withdrawal", async () => {
+                      await ctx.timeTravelTo(TranchedTimes.END);
+
+                      const treasuryLamportsBefore = await ctx.getTreasuryLamports();
+                      const withdrawalRecipientATABalanceBefore = await getATABalance(
+                        ctx.banksClient,
+                        ctx.recipient.usdcATA,
+                      );
+
+                      const txSignerKeys = ctx.recipient.keys;
+                      const txSignerLamportsBefore = await ctx.getLamportsOf(
+                        txSignerKeys.publicKey,
+                      );
+
+                      await ctx.withdraw({
                         salt: ctx.salts.defaultLt,
-                        withdrawAmount: BN_1,
-                      }),
-                      "Overdraw",
-                    );
+                        signer: txSignerKeys,
+                        withdrawAmount: TranchedAmounts.DEPOSIT,
+                      });
+
+                      const expectedStreamData = ctx.defaultTranchedStream().data;
+                      expectedStreamData.amounts.withdrawn = TranchedAmounts.DEPOSIT;
+                      expectedStreamData.isCancelable = false;
+                      expectedStreamData.isDepleted = true;
+
+                      await postWithdrawAssertions(
+                        ctx.salts.defaultLt,
+                        txSignerKeys.publicKey,
+                        txSignerLamportsBefore,
+                        treasuryLamportsBefore,
+                        ctx.recipient.usdcATA,
+                        withdrawalRecipientATABalanceBefore,
+                        expectedStreamData,
+                      );
+                    });
                   });
                 });
 
-                describe("given STREAMING status", () => {
-                  describe("given before first tranche", () => {
-                    it("should fail with Overdraw", async () => {
-                      // Time travel to after start but before first tranche
-                      await ctx.timeTravelTo(Time.START.addn(100));
-                      await expectToThrow(
-                        ctx.withdraw({
-                          salt: ctx.salts.defaultLt,
-                          withdrawAmount: BN_1,
-                        }),
-                        "Overdraw",
+                describe("when signer is not recipient", () => {
+                  describe("when stream status is SETTLED", () => {
+                    it("should make the withdrawal", async () => {
+                      await ctx.timeTravelTo(TranchedTimes.END);
+
+                      const treasuryLamportsBefore = await ctx.getTreasuryLamports();
+                      const withdrawalRecipientATABalanceBefore = await getATABalance(
+                        ctx.banksClient,
+                        ctx.recipient.usdcATA,
+                      );
+
+                      const txSignerKeys = ctx.sender.keys;
+                      const txSignerLamportsBefore = await ctx.getLamportsOf(
+                        txSignerKeys.publicKey,
+                      );
+
+                      await ctx.withdraw({
+                        salt: ctx.salts.defaultLt,
+                        signer: txSignerKeys,
+                        withdrawAmount: TranchedAmounts.DEPOSIT,
+                      });
+
+                      const expectedStreamData = ctx.defaultTranchedStream().data;
+                      expectedStreamData.amounts.withdrawn = TranchedAmounts.DEPOSIT;
+                      expectedStreamData.isCancelable = false;
+                      expectedStreamData.isDepleted = true;
+
+                      await postWithdrawAssertions(
+                        ctx.salts.defaultLt,
+                        txSignerKeys.publicKey,
+                        txSignerLamportsBefore,
+                        treasuryLamportsBefore,
+                        ctx.recipient.usdcATA,
+                        withdrawalRecipientATABalanceBefore,
+                        expectedStreamData,
                       );
                     });
                   });
 
-                  describe("when after first tranche", () => {
-                    describe("given SPL token", () => {
-                      it("should withdraw", async () => {
+                  describe("when stream status is not SETTLED", () => {
+                    describe("when stream status is CANCELED", () => {
+                      it("should make the withdrawal", async () => {
                         await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+                        await ctx.cancel({ salt: ctx.salts.defaultLt });
+
+                        const expectedRefund = TranchedAmounts.DEPOSIT.sub(
+                          TranchedAmounts.TRANCHE_1,
+                        );
 
                         const treasuryLamportsBefore = await ctx.getTreasuryLamports();
                         const withdrawalRecipientATABalanceBefore = await getATABalance(
@@ -192,7 +384,7 @@ describe("withdrawLt", () => {
                           ctx.recipient.usdcATA,
                         );
 
-                        const txSignerKeys = ctx.recipient.keys;
+                        const txSignerKeys = ctx.sender.keys;
                         const txSignerLamportsBefore = await ctx.getLamportsOf(
                           txSignerKeys.publicKey,
                         );
@@ -203,7 +395,12 @@ describe("withdrawLt", () => {
                           withdrawAmount: TranchedAmounts.TRANCHE_1,
                         });
 
-                        const expectedStreamData = ctx.defaultTranchedStream().data;
+                        const expectedStreamData = ctx.defaultTranchedStream({
+                          isCancelable: false,
+                          isDepleted: true,
+                          wasCanceled: true,
+                        }).data;
+                        expectedStreamData.amounts.refunded = expectedRefund;
                         expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
 
                         await postWithdrawAssertions(
@@ -218,82 +415,43 @@ describe("withdrawLt", () => {
                       });
                     });
 
-                    describe("given Token2022", () => {
-                      it("should withdraw", async () => {
-                        const salt = await ctx.createWithTimestampsLtToken2022();
-                        await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+                    describe("when stream status is STREAMING", () => {
+                      describe("given SPL token", () => {
+                        it("should make the withdrawal", async () => {
+                          await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
-                        const treasuryLamportsBefore = await ctx.getTreasuryLamports();
-                        const withdrawalRecipientATABalanceBefore = await getATABalance(
-                          ctx.banksClient,
-                          ctx.recipient.daiATA,
-                        );
+                          const treasuryLamportsBefore = await ctx.getTreasuryLamports();
+                          const withdrawalRecipientATABalanceBefore = await getATABalance(
+                            ctx.banksClient,
+                            ctx.recipient.usdcATA,
+                          );
 
-                        const txSignerKeys = ctx.recipient.keys;
-                        const txSignerLamportsBefore = await ctx.getLamportsOf(
-                          txSignerKeys.publicKey,
-                        );
+                          const txSignerKeys = ctx.sender.keys;
+                          const txSignerLamportsBefore = await ctx.getLamportsOf(
+                            txSignerKeys.publicKey,
+                          );
 
-                        await ctx.withdraw({
-                          depositedTokenMint: ctx.dai,
-                          depositedTokenProgram: ProgramId.TOKEN_2022,
-                          salt,
-                          signer: txSignerKeys,
-                          withdrawAmount: TranchedAmounts.TRANCHE_1,
+                          await ctx.withdraw({
+                            salt: ctx.salts.defaultLt,
+                            signer: txSignerKeys,
+                            withdrawAmount: TranchedAmounts.TRANCHE_1,
+                          });
+
+                          const expectedStreamData = ctx.defaultTranchedStream().data;
+                          expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
+
+                          await postWithdrawAssertions(
+                            ctx.salts.defaultLt,
+                            txSignerKeys.publicKey,
+                            txSignerLamportsBefore,
+                            treasuryLamportsBefore,
+                            ctx.recipient.usdcATA,
+                            withdrawalRecipientATABalanceBefore,
+                            expectedStreamData,
+                          );
                         });
-
-                        const expectedStreamData = ctx.defaultTranchedStreamToken2022({
-                          salt,
-                        }).data;
-                        expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
-
-                        await postWithdrawAssertions(
-                          salt,
-                          txSignerKeys.publicKey,
-                          txSignerLamportsBefore,
-                          treasuryLamportsBefore,
-                          ctx.recipient.daiATA,
-                          withdrawalRecipientATABalanceBefore,
-                          expectedStreamData,
-                        );
                       });
                     });
-                  });
-                });
-
-                describe("given SETTLED status (all tranches passed)", () => {
-                  it("should allow full withdrawal", async () => {
-                    await ctx.timeTravelTo(TranchedTimes.END);
-
-                    const treasuryLamportsBefore = await ctx.getTreasuryLamports();
-                    const withdrawalRecipientATABalanceBefore = await getATABalance(
-                      ctx.banksClient,
-                      ctx.recipient.usdcATA,
-                    );
-
-                    const txSignerKeys = ctx.recipient.keys;
-                    const txSignerLamportsBefore = await ctx.getLamportsOf(txSignerKeys.publicKey);
-
-                    await ctx.withdraw({
-                      salt: ctx.salts.defaultLt,
-                      signer: txSignerKeys,
-                      withdrawAmount: TranchedAmounts.DEPOSIT,
-                    });
-
-                    const expectedStreamData = ctx.defaultTranchedStream().data;
-                    expectedStreamData.amounts.withdrawn = TranchedAmounts.DEPOSIT;
-                    expectedStreamData.isCancelable = false;
-                    expectedStreamData.isDepleted = true;
-
-                    await postWithdrawAssertions(
-                      ctx.salts.defaultLt,
-                      txSignerKeys.publicKey,
-                      txSignerLamportsBefore,
-                      treasuryLamportsBefore,
-                      ctx.recipient.usdcATA,
-                      withdrawalRecipientATABalanceBefore,
-                      expectedStreamData,
-                    );
                   });
                 });
               });

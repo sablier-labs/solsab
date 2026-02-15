@@ -32,7 +32,7 @@ describe("streamedAmountOf", () => {
   });
 
   describe("given a valid stream", () => {
-    describe("given LL model", () => {
+    describe("given a LL stream", () => {
       describe("given a canceled stream", () => {
         describe("when the stream has not been depleted", () => {
           it("should return the correct streamed amount", async () => {
@@ -95,7 +95,7 @@ describe("streamedAmountOf", () => {
         });
 
         describe("given STREAMING status", () => {
-          describe("given cliff time zero", () => {
+          describe("given cliff time is zero", () => {
             it("should return the correct streamed amount", async () => {
               const salt = await ctx.createWithTimestampsLl({
                 timestamps: LINEAR_TIMESTAMPS({ cliff: ZERO }),
@@ -109,7 +109,7 @@ describe("streamedAmountOf", () => {
             });
           });
 
-          describe("given cliff time not zero", () => {
+          describe("given cliff time is not zero", () => {
             describe("given cliff time in the future", () => {
               it("should return the start amount", async () => {
                 const startUnlockAmount = toBn(1);
@@ -194,7 +194,7 @@ describe("streamedAmountOf", () => {
       });
     });
 
-    describe("given LT model", () => {
+    describe("given a LT stream", () => {
       describe("given a canceled stream", () => {
         describe("when the stream has not been depleted", () => {
           it("should return the correct streamed amount", async () => {

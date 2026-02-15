@@ -21,7 +21,7 @@ describe("refundableAmountOf", () => {
   });
 
   describe("given a valid stream", () => {
-    describe("given LL model", () => {
+    describe("given a LL stream", () => {
       describe("given a non cancelable stream", () => {
         it("should return zero", async () => {
           const actualRefundableAmount = await ctx.refundableAmountOf(ctx.salts.nonCancelableLl);
@@ -95,7 +95,7 @@ describe("refundableAmountOf", () => {
       });
     });
 
-    describe("given LT model", () => {
+    describe("given a LT stream", () => {
       describe("given a non cancelable stream", () => {
         it("should return zero", async () => {
           const actualRefundableAmount = await ctx.refundableAmountOf(ctx.salts.nonCancelableLt);

@@ -1,4 +1,4 @@
-import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
+import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
 import { beforeAll, beforeEach, describe, it } from "vitest";
 import { MAX_U64, ZERO } from "../../../lib/constants";
 import { toBn } from "../../../lib/helpers";
@@ -17,7 +17,7 @@ describe("createWithDurationsLt", () => {
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.createWithDurationsLt({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.createWithDurationsLt({ salt: ZERO }), ERR_ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -29,24 +29,28 @@ describe("createWithDurationsLt", () => {
     });
 
     describe("given amounts.length != durations.length", () => {
-      it("should fail when amounts array is longer", async () => {
-        await expectToThrow(
-          ctx.createWithDurationsLt({
-            trancheAmounts: [TranchedAmounts.TRANCHE_1, TranchedAmounts.TRANCHE_2],
-            trancheDurations: [TranchedDurations.TRANCHE_1],
-          }),
-          "TrancheAmountsDurationsMismatch",
-        );
+      describe("when amounts array is longer", () => {
+        it("should fail", async () => {
+          await expectToThrow(
+            ctx.createWithDurationsLt({
+              trancheAmounts: [TranchedAmounts.TRANCHE_1, TranchedAmounts.TRANCHE_2],
+              trancheDurations: [TranchedDurations.TRANCHE_1],
+            }),
+            "TrancheAmountsDurationsMismatch",
+          );
+        });
       });
 
-      it("should fail when durations array is longer", async () => {
-        await expectToThrow(
-          ctx.createWithDurationsLt({
-            trancheAmounts: [TranchedAmounts.TRANCHE_1],
-            trancheDurations: [TranchedDurations.TRANCHE_1, TranchedDurations.TRANCHE_2],
-          }),
-          "TrancheAmountsDurationsMismatch",
-        );
+      describe("when durations array is longer", () => {
+        it("should fail", async () => {
+          await expectToThrow(
+            ctx.createWithDurationsLt({
+              trancheAmounts: [TranchedAmounts.TRANCHE_1],
+              trancheDurations: [TranchedDurations.TRANCHE_1, TranchedDurations.TRANCHE_2],
+            }),
+            "TrancheAmountsDurationsMismatch",
+          );
+        });
       });
     });
 
@@ -65,7 +69,7 @@ describe("createWithDurationsLt", () => {
 
       describe("given duration does not cause timestamp overflow", () => {
         describe("given single tranche", () => {
-          it("should create with current_time as start", async () => {
+          it("should create the stream", async () => {
             const currentTime = Time.START;
             const duration = toBn(5000);
             const salt = await ctx.createWithDurationsLt({
@@ -88,7 +92,7 @@ describe("createWithDurationsLt", () => {
         });
 
         describe("given multiple tranches", () => {
-          it("should create with cumulative timestamps", async () => {
+          it("should create the stream", async () => {
             const currentTime = Time.START;
             const salt = await ctx.createWithDurationsLt();
 

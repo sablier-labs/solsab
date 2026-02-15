@@ -21,7 +21,7 @@ describe("withdrawableAmountOf", () => {
   });
 
   describe("given a valid stream", () => {
-    describe("given LL model", () => {
+    describe("given a LL stream", () => {
       describe("given a canceled stream", () => {
         it("should return the correct amount", async () => {
           await ctx.timeTravelTo(Time.MID_26_PERCENT);
@@ -62,7 +62,7 @@ describe("withdrawableAmountOf", () => {
         });
 
         describe("given STREAMING status", () => {
-          describe("given cliff time in future", () => {
+          describe("given cliff time in the future", () => {
             it("should return zero", async () => {
               await ctx.timeTravelTo(Time.CLIFF.subn(1));
               const actualWithdrawableAmount = await ctx.withdrawableAmountOf();
@@ -95,7 +95,7 @@ describe("withdrawableAmountOf", () => {
       });
     });
 
-    describe("given LT model", () => {
+    describe("given a LT stream", () => {
       describe("given a canceled stream", () => {
         it("should return the correct amount", async () => {
           await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
