@@ -158,10 +158,15 @@ describe("withdrawLt", () => {
                     it("should make the withdrawal", async () => {
                       await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
+                      const stream = ctx.defaultTranchedStream();
                       const treasuryLamportsBefore = await ctx.getTreasuryLamports();
                       const withdrawalRecipientATABalanceBefore = await getATABalance(
                         ctx.banksClient,
                         ctx.sender.usdcATA,
+                      );
+                      const streamDataAtaBalanceBefore = await getATABalance(
+                        ctx.banksClient,
+                        stream.dataAta,
                       );
 
                       const txSignerKeys = ctx.recipient.keys;
@@ -176,7 +181,7 @@ describe("withdrawLt", () => {
                         withdrawalRecipient: ctx.sender.keys.publicKey,
                       });
 
-                      const expectedStreamData = ctx.defaultTranchedStream().data;
+                      const expectedStreamData = stream.data;
                       expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
 
                       await postWithdrawAssertions(
@@ -187,6 +192,8 @@ describe("withdrawLt", () => {
                         ctx.sender.usdcATA,
                         withdrawalRecipientATABalanceBefore,
                         expectedStreamData,
+                        stream.dataAta,
+                        streamDataAtaBalanceBefore,
                       );
                     });
                   });
@@ -215,10 +222,15 @@ describe("withdrawLt", () => {
                         it("should withdraw", async () => {
                           await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
+                          const stream = ctx.defaultTranchedStream();
                           const treasuryLamportsBefore = await ctx.getTreasuryLamports();
                           const withdrawalRecipientATABalanceBefore = await getATABalance(
                             ctx.banksClient,
                             ctx.recipient.usdcATA,
+                          );
+                          const streamDataAtaBalanceBefore = await getATABalance(
+                            ctx.banksClient,
+                            stream.dataAta,
                           );
 
                           const txSignerKeys = ctx.recipient.keys;
@@ -232,7 +244,7 @@ describe("withdrawLt", () => {
                             withdrawAmount: TranchedAmounts.TRANCHE_1,
                           });
 
-                          const expectedStreamData = ctx.defaultTranchedStream().data;
+                          const expectedStreamData = stream.data;
                           expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
 
                           await postWithdrawAssertions(
@@ -243,6 +255,8 @@ describe("withdrawLt", () => {
                             ctx.recipient.usdcATA,
                             withdrawalRecipientATABalanceBefore,
                             expectedStreamData,
+                            stream.dataAta,
+                            streamDataAtaBalanceBefore,
                           );
                         });
                       });
@@ -252,10 +266,15 @@ describe("withdrawLt", () => {
                           const salt = await ctx.createWithTimestampsLtToken2022();
                           await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
+                          const stream = ctx.defaultTranchedStreamToken2022({ salt });
                           const treasuryLamportsBefore = await ctx.getTreasuryLamports();
                           const withdrawalRecipientATABalanceBefore = await getATABalance(
                             ctx.banksClient,
                             ctx.recipient.daiATA,
+                          );
+                          const streamDataAtaBalanceBefore = await getATABalance(
+                            ctx.banksClient,
+                            stream.dataAta,
                           );
 
                           const txSignerKeys = ctx.recipient.keys;
@@ -271,9 +290,7 @@ describe("withdrawLt", () => {
                             withdrawAmount: TranchedAmounts.TRANCHE_1,
                           });
 
-                          const expectedStreamData = ctx.defaultTranchedStreamToken2022({
-                            salt,
-                          }).data;
+                          const expectedStreamData = stream.data;
                           expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
 
                           await postWithdrawAssertions(
@@ -284,6 +301,8 @@ describe("withdrawLt", () => {
                             ctx.recipient.daiATA,
                             withdrawalRecipientATABalanceBefore,
                             expectedStreamData,
+                            stream.dataAta,
+                            streamDataAtaBalanceBefore,
                           );
                         });
                       });
@@ -294,10 +313,15 @@ describe("withdrawLt", () => {
                     it("should allow full withdrawal", async () => {
                       await ctx.timeTravelTo(TranchedTimes.END);
 
+                      const stream = ctx.defaultTranchedStream();
                       const treasuryLamportsBefore = await ctx.getTreasuryLamports();
                       const withdrawalRecipientATABalanceBefore = await getATABalance(
                         ctx.banksClient,
                         ctx.recipient.usdcATA,
+                      );
+                      const streamDataAtaBalanceBefore = await getATABalance(
+                        ctx.banksClient,
+                        stream.dataAta,
                       );
 
                       const txSignerKeys = ctx.recipient.keys;
@@ -311,7 +335,7 @@ describe("withdrawLt", () => {
                         withdrawAmount: TranchedAmounts.DEPOSIT,
                       });
 
-                      const expectedStreamData = ctx.defaultTranchedStream().data;
+                      const expectedStreamData = stream.data;
                       expectedStreamData.amounts.withdrawn = TranchedAmounts.DEPOSIT;
                       expectedStreamData.isCancelable = false;
                       expectedStreamData.isDepleted = true;
@@ -324,6 +348,8 @@ describe("withdrawLt", () => {
                         ctx.recipient.usdcATA,
                         withdrawalRecipientATABalanceBefore,
                         expectedStreamData,
+                        stream.dataAta,
+                        streamDataAtaBalanceBefore,
                       );
                     });
                   });
@@ -334,10 +360,15 @@ describe("withdrawLt", () => {
                     it("should make the withdrawal", async () => {
                       await ctx.timeTravelTo(TranchedTimes.END);
 
+                      const stream = ctx.defaultTranchedStream();
                       const treasuryLamportsBefore = await ctx.getTreasuryLamports();
                       const withdrawalRecipientATABalanceBefore = await getATABalance(
                         ctx.banksClient,
                         ctx.recipient.usdcATA,
+                      );
+                      const streamDataAtaBalanceBefore = await getATABalance(
+                        ctx.banksClient,
+                        stream.dataAta,
                       );
 
                       const txSignerKeys = ctx.sender.keys;
@@ -351,7 +382,7 @@ describe("withdrawLt", () => {
                         withdrawAmount: TranchedAmounts.DEPOSIT,
                       });
 
-                      const expectedStreamData = ctx.defaultTranchedStream().data;
+                      const expectedStreamData = stream.data;
                       expectedStreamData.amounts.withdrawn = TranchedAmounts.DEPOSIT;
                       expectedStreamData.isCancelable = false;
                       expectedStreamData.isDepleted = true;
@@ -364,6 +395,8 @@ describe("withdrawLt", () => {
                         ctx.recipient.usdcATA,
                         withdrawalRecipientATABalanceBefore,
                         expectedStreamData,
+                        stream.dataAta,
+                        streamDataAtaBalanceBefore,
                       );
                     });
                   });
@@ -378,10 +411,19 @@ describe("withdrawLt", () => {
                           TranchedAmounts.TRANCHE_1,
                         );
 
+                        const stream = ctx.defaultTranchedStream({
+                          isCancelable: false,
+                          isDepleted: true,
+                          wasCanceled: true,
+                        });
                         const treasuryLamportsBefore = await ctx.getTreasuryLamports();
                         const withdrawalRecipientATABalanceBefore = await getATABalance(
                           ctx.banksClient,
                           ctx.recipient.usdcATA,
+                        );
+                        const streamDataAtaBalanceBefore = await getATABalance(
+                          ctx.banksClient,
+                          stream.dataAta,
                         );
 
                         const txSignerKeys = ctx.sender.keys;
@@ -395,11 +437,7 @@ describe("withdrawLt", () => {
                           withdrawAmount: TranchedAmounts.TRANCHE_1,
                         });
 
-                        const expectedStreamData = ctx.defaultTranchedStream({
-                          isCancelable: false,
-                          isDepleted: true,
-                          wasCanceled: true,
-                        }).data;
+                        const expectedStreamData = stream.data;
                         expectedStreamData.amounts.refunded = expectedRefund;
                         expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
 
@@ -411,6 +449,8 @@ describe("withdrawLt", () => {
                           ctx.recipient.usdcATA,
                           withdrawalRecipientATABalanceBefore,
                           expectedStreamData,
+                          stream.dataAta,
+                          streamDataAtaBalanceBefore,
                         );
                       });
                     });
@@ -420,10 +460,15 @@ describe("withdrawLt", () => {
                         it("should make the withdrawal", async () => {
                           await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
 
+                          const stream = ctx.defaultTranchedStream();
                           const treasuryLamportsBefore = await ctx.getTreasuryLamports();
                           const withdrawalRecipientATABalanceBefore = await getATABalance(
                             ctx.banksClient,
                             ctx.recipient.usdcATA,
+                          );
+                          const streamDataAtaBalanceBefore = await getATABalance(
+                            ctx.banksClient,
+                            stream.dataAta,
                           );
 
                           const txSignerKeys = ctx.sender.keys;
@@ -437,7 +482,7 @@ describe("withdrawLt", () => {
                             withdrawAmount: TranchedAmounts.TRANCHE_1,
                           });
 
-                          const expectedStreamData = ctx.defaultTranchedStream().data;
+                          const expectedStreamData = stream.data;
                           expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
 
                           await postWithdrawAssertions(
@@ -448,6 +493,8 @@ describe("withdrawLt", () => {
                             ctx.recipient.usdcATA,
                             withdrawalRecipientATABalanceBefore,
                             expectedStreamData,
+                            stream.dataAta,
+                            streamDataAtaBalanceBefore,
                           );
                         });
                       });
@@ -471,6 +518,8 @@ async function postWithdrawAssertions(
   withdrawalRecipientATA: PublicKey,
   withdrawalRecipientATABalanceBefore: BN,
   expectedStreamData: StreamData,
+  streamDataAta: PublicKey,
+  streamDataAtaBalanceBefore: BN,
 ) {
   // Assert that the Stream state has been updated correctly
   const actualStreamData = await ctx.fetchStreamData(salt);
@@ -500,4 +549,8 @@ async function postWithdrawAssertions(
     withdrawalRecipientTokenBalance,
     withdrawalRecipientATABalanceBefore.add(expectedWithdrawnAmount),
   );
+
+  // Assert that the StreamData ATA balance has decreased by the withdrawn amount
+  const streamDataAtaBalanceAfter = await getATABalance(ctx.banksClient, streamDataAta);
+  assertEqBn(streamDataAtaBalanceAfter, streamDataAtaBalanceBefore.sub(expectedWithdrawnAmount));
 }

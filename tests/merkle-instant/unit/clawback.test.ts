@@ -72,13 +72,13 @@ describe("clawback", () => {
         });
 
         describe("when the signer is the campaign creator", () => {
-          describe("when first claim is not made", () => {
+          describe("when the first claim is not made", () => {
             it("should clawback", async () => {
               await testClawback();
             });
           });
 
-          describe("when first claim made", () => {
+          describe("when the first claim is made", () => {
             beforeEach(async () => {
               await ctx.claim();
             });

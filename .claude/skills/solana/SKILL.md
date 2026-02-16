@@ -14,8 +14,8 @@ Trident-based fuzz testing.
 
 ## Formatting Rule
 
-**CRITICAL**: After making any code changes, you MUST run `just full-check` to verify formatting and linting pass. If it
-fails, run `just full-write` to auto-fix formatting issues. Do NOT leave a reply with failing checks.
+**CRITICAL**: After making any code changes, you MUST run `just full-check` to verify that formatting and linting pass.
+If it fails, run `just full-write` to auto-fix formatting issues. Do NOT leave a reply with failing checks.
 
 ```bash
 # Always run after code changes

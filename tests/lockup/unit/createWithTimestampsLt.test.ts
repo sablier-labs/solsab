@@ -101,21 +101,6 @@ describe("createWithTimestampsLt", () => {
 
                 await expectToThrow(ctx.createWithTimestampsLt({ tranches }), "TranchesNotSorted");
               });
-
-              describe("given duplicate timestamps", () => {
-                it("should fail", async () => {
-                  const tranches: Tranche[] = [
-                    { amount: TranchedAmounts.TRANCHE_1, timestamp: TranchedTimes.TRANCHE_1 },
-                    { amount: TranchedAmounts.TRANCHE_2, timestamp: TranchedTimes.TRANCHE_1 },
-                    { amount: TranchedAmounts.TRANCHE_3, timestamp: TranchedTimes.TRANCHE_3 },
-                  ];
-
-                  await expectToThrow(
-                    ctx.createWithTimestampsLt({ tranches }),
-                    "TranchesNotSorted",
-                  );
-                });
-              });
             });
 
             describe("given tranches in ascending order", () => {

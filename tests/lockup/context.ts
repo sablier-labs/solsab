@@ -179,10 +179,21 @@ export class LockupTestContext extends TestContext {
     depositAmount = LinearAmounts.DEPOSIT,
     unlockAmounts = UNLOCK_AMOUNTS(),
     isCancelable = true,
-    salt = toBn(-1),
+    salt,
+  }: {
+    funder?: Keypair;
+    senderPubKey?: PublicKey;
+    recipientPubKey?: PublicKey;
+    depositTokenMint?: PublicKey;
+    depositTokenProgram?: PublicKey;
+    timestamps?: { start: BN; cliff: BN; end: BN };
+    depositAmount?: BN;
+    unlockAmounts?: { start: BN; cliff: BN };
+    isCancelable?: boolean;
+    salt?: BN;
   } = {}): Promise<BN> {
     // Use the total supply as the salt for the stream
-    salt = salt.isNeg() ? await this.getStreamNftCollectionSize() : salt;
+    salt = salt ?? (await this.getStreamNftCollectionSize());
 
     const txIx = await this.lockup.methods
       .createWithTimestampsLl(
@@ -233,7 +244,7 @@ export class LockupTestContext extends TestContext {
     recipientPubKey = this.recipient.keys.publicKey,
     depositTokenMint = this.usdc,
     depositTokenProgram = token.TOKEN_PROGRAM_ID,
-    salt = toBn(-1),
+    salt,
   }: {
     trancheAmounts?: BN[];
     trancheDurations?: BN[];
@@ -246,7 +257,7 @@ export class LockupTestContext extends TestContext {
     salt?: BN;
   } = {}): Promise<BN> {
     // Use the total supply as the salt for the stream
-    salt = salt.isNeg() ? await this.getStreamNftCollectionSize() : salt;
+    salt = salt ?? (await this.getStreamNftCollectionSize());
 
     const txIx = await this.lockup.methods
       .createWithDurationsLt(salt, trancheAmounts, trancheDurations, isCancelable)
@@ -273,7 +284,7 @@ export class LockupTestContext extends TestContext {
     recipientPubKey = this.recipient.keys.publicKey,
     depositTokenMint = this.usdc,
     depositTokenProgram = token.TOKEN_PROGRAM_ID,
-    salt = toBn(-1),
+    salt,
   }: {
     tranches?: Tranche[];
     startTime?: BN;
@@ -286,7 +297,7 @@ export class LockupTestContext extends TestContext {
     salt?: BN;
   } = {}): Promise<BN> {
     // Use the total supply as the salt for the stream
-    salt = salt.isNeg() ? await this.getStreamNftCollectionSize() : salt;
+    salt = salt ?? (await this.getStreamNftCollectionSize());
 
     const txIx = await this.lockup.methods
       .createWithTimestampsLt(salt, startTime, tranches, isCancelable)
@@ -380,7 +391,7 @@ export class LockupTestContext extends TestContext {
 
   async withdrawMax({
     salt = this.salts.defaultLl,
-    signer = this.sender.keys.publicKey,
+    signer = this.sender.keys,
     withdrawalRecipient = this.recipient.keys.publicKey,
     depositedTokenMint = this.usdc,
     depositedTokenProgram = token.TOKEN_PROGRAM_ID,
@@ -394,13 +405,13 @@ export class LockupTestContext extends TestContext {
         chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
         depositedTokenMint,
         depositedTokenProgram,
-        signer,
+        signer: signer.publicKey,
         streamNft,
         withdrawalRecipient,
       })
       .instruction();
 
-    await buildSignAndProcessTx(this.banksClient, withdrawMaxIx, this.sender.keys);
+    await buildSignAndProcessTx(this.banksClient, withdrawMaxIx, signer);
   }
 
   /*//////////////////////////////////////////////////////////////////////////

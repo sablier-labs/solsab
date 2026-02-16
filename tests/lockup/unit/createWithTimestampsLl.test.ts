@@ -8,13 +8,7 @@ import { getATABalance } from "../../common/anchor-bankrun";
 import { assertAccountExists, assertEqBn, assertEqPublicKey } from "../../common/assertions";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
-import {
-  LINEAR_MODEL,
-  LINEAR_TIMESTAMPS,
-  LinearAmounts,
-  Time,
-  UNLOCK_AMOUNTS,
-} from "../utils/defaults";
+import { LINEAR_MODEL, LINEAR_TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
@@ -267,7 +261,7 @@ async function assertStreamCreation(
   );
 
   // Assert that the Sender's balance has changed correctly
-  const expectedTokenBalance = beforeSenderTokenBalance.sub(LinearAmounts.DEPOSIT);
+  const expectedTokenBalance = beforeSenderTokenBalance.sub(expectedStream.data.amounts.deposited);
   const afterSenderTokenBalance = await ctx.getSenderTokenBalance(
     expectedStream.data.depositedTokenMint,
   );
