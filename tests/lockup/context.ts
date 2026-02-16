@@ -29,7 +29,7 @@ import {
   TRANCHED_AMOUNTS,
   TRANCHED_MODEL,
   TranchedAmounts,
-  TranchedTimes,
+  TranchedDurations,
 } from "./utils/defaults";
 import type { Salts, Stream } from "./utils/types";
 
@@ -234,9 +234,9 @@ export class LockupTestContext extends TestContext {
       TranchedAmounts.TRANCHE_3,
     ],
     trancheDurations = [
-      TranchedTimes.TRANCHE_1.sub(Time.START),
-      TranchedTimes.TRANCHE_2.sub(TranchedTimes.TRANCHE_1),
-      TranchedTimes.TRANCHE_3.sub(TranchedTimes.TRANCHE_2),
+      TranchedDurations.TRANCHE_1,
+      TranchedDurations.TRANCHE_2,
+      TranchedDurations.TRANCHE_3,
     ],
     isCancelable = true,
     funder = this.sender.keys,
