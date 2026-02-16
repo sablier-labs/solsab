@@ -78,12 +78,3 @@ describe("collectFees", () => {
 async function getFeeRecipientLamports() {
   return await ctx.getSenderLamports();
 }
-
-/// Helper function to withdraw multiple times so that there are fees collected
-// async function withdrawTwice() {
-//   await ctx.timeTravelTo(Time.MID_26_PERCENT);
-//   await ctx.withdrawMax();
-//   await ctx.timeTravelTo(Time.END);
-//   await sleepFor(7);
-//   await ctx.withdrawMax();
-// }

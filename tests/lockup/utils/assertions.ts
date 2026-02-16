@@ -1,3 +1,5 @@
+import { PublicKey } from "@solana/web3.js";
+import type BN from "bn.js";
 import { assert } from "vitest";
 import type { ProgramErrorName } from "../../../target/types/sablier_lockup_errors";
 import { ProgramErrorCode } from "../../../target/types/sablier_lockup_errors";
@@ -9,11 +11,13 @@ import type {
   StreamModel,
 } from "../../../target/types/sablier_lockup_structs";
 import {
+  assertAccountExists,
   assertEqBn,
   assertEqPublicKey,
   expectToThrow as baseExpectToThrow,
 } from "../../common/assertions";
-import type { UnlockAmounts } from "./types";
+import type { LockupTestContext } from "../context";
+import type { Stream, UnlockAmounts } from "./types";
 import { isLinearModel, isTranchedModel } from "./types";
 
 export function assertEqStreamData(a: StreamData, b: StreamData) {
@@ -59,6 +63,60 @@ export function expectToThrow(
   errorNameOrCode: ProgramErrorName | number,
 ) {
   return baseExpectToThrow(promise, ProgramErrorCode, errorNameOrCode);
+}
+
+export async function assertStreamCreation(
+  ctx: LockupTestContext,
+  salt: BN,
+  beforeCollectionSize: BN,
+  beforeSenderTokenBalance: BN,
+  expectedStream: Stream,
+  recipient: PublicKey = ctx.recipient.keys.publicKey,
+) {
+  // Assert that core stream accounts exist
+  await assertAccountExists(ctx, expectedStream.nftAddress, "Stream NFT doesn't exist");
+  await assertAccountExists(ctx, expectedStream.dataAddress, "Stream Data doesn't exist");
+  await assertAccountExists(ctx, expectedStream.dataAta, "Stream Data ATA doesn't exist");
+
+  // Assert the contents of the Stream Data account
+  const actualStreamData = await ctx.fetchStreamData(salt);
+  assertEqStreamData(actualStreamData, expectedStream.data);
+
+  // Fetch the Stream NFT
+  const streamNft = await ctx.fetchStreamNft(salt);
+
+  // Assert that the Stream NFT is owned by the recipient
+  assertEqPublicKey(
+    new PublicKey(streamNft.owner),
+    recipient,
+    "Stream NFT isn't owned by the recipient",
+  );
+
+  // Assert that the Update Authority of the Stream NFT isn't undefined
+  if (!streamNft.updateAuthority.address) {
+    throw new Error("Stream NFT update authority is undefined");
+  }
+
+  // Assert that the Stream NFT has been added to the collection
+  assertEqPublicKey(
+    new PublicKey(streamNft.updateAuthority.address),
+    ctx.nftCollectionAddress,
+    "Stream NFT isn't added to the collection",
+  );
+
+  // Assert that the collection size has increased by exactly 1
+  assertEqBn(
+    await ctx.getStreamNftCollectionSize(),
+    beforeCollectionSize.addn(1),
+    "Collection size should have increased by exactly 1",
+  );
+
+  // Assert that the Sender's balance has changed correctly
+  const expectedTokenBalance = beforeSenderTokenBalance.sub(expectedStream.data.amounts.deposited);
+  const afterSenderTokenBalance = await ctx.getSenderTokenBalance(
+    expectedStream.data.depositedTokenMint,
+  );
+  assertEqBn(expectedTokenBalance, afterSenderTokenBalance, "sender balance not updated correctly");
 }
 
 /* -------------------------------------------------------------------------- */

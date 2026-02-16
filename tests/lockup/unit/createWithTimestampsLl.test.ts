@@ -1,13 +1,10 @@
 import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
-import { PublicKey } from "@solana/web3.js";
-import type BN from "bn.js";
 import { beforeEach, describe, it } from "vitest";
 import { BN_1000, ZERO } from "../../../lib/constants";
 import { usdc } from "../../../lib/convertors";
 import { getATABalance } from "../../common/anchor-bankrun";
-import { assertAccountExists, assertEqBn, assertEqPublicKey } from "../../common/assertions";
 import { LockupTestContext } from "../context";
-import { assertEqStreamData, expectToThrow } from "../utils/assertions";
+import { assertStreamCreation, expectToThrow } from "../utils/assertions";
 import { LINEAR_MODEL, LINEAR_TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defaults";
 
 let ctx: LockupTestContext;
@@ -122,6 +119,7 @@ describe("createWithTimestampsLl", () => {
                   });
 
                   await assertStreamCreation(
+                    ctx,
                     salt,
                     beforeCollectionSize,
                     beforeSenderTokenBalance,
@@ -183,9 +181,11 @@ describe("createWithTimestampsLl", () => {
                         const salt = await ctx.createWithTimestampsLl();
 
                         await assertStreamCreation(
+                          ctx,
                           salt,
                           beforeCollectionSize,
                           beforeSenderTokenBalance,
+                          ctx.defaultLinearStream({ salt }),
                         );
                       });
                     });
@@ -197,6 +197,7 @@ describe("createWithTimestampsLl", () => {
                         const salt = await ctx.createWithTimestampsLlToken2022();
 
                         await assertStreamCreation(
+                          ctx,
                           salt,
                           beforeCollectionSize,
                           beforeSenderTokenBalance,
@@ -214,56 +215,3 @@ describe("createWithTimestampsLl", () => {
     });
   });
 });
-
-async function assertStreamCreation(
-  salt: BN,
-  beforeCollectionSize: BN,
-  beforeSenderTokenBalance: BN,
-  expectedStream = ctx.defaultLinearStream({ salt }),
-  recipient = ctx.recipient.keys.publicKey,
-) {
-  // Assert that core stream accounts exist
-  await assertAccountExists(ctx, expectedStream.nftAddress, "Stream NFT doesn't exist");
-  await assertAccountExists(ctx, expectedStream.dataAddress, "Stream Data doesn't exist");
-  await assertAccountExists(ctx, expectedStream.dataAta, "Stream Data ATA doesn't exist");
-
-  // Assert the contents of the Stream Data account
-  const actualStreamData = await ctx.fetchStreamData(salt);
-  assertEqStreamData(actualStreamData, expectedStream.data);
-
-  // Fetch the Stream NFT
-  const streamNft = await ctx.fetchStreamNft(salt);
-
-  // Assert that the Stream NFT is owned by the recipient
-  assertEqPublicKey(
-    new PublicKey(streamNft.owner),
-    recipient,
-    "Stream NFT isn't owned by the recipient",
-  );
-
-  // Assert that the Update Authority of the Stream NFT isn't undefined
-  if (!streamNft.updateAuthority.address) {
-    throw new Error("Stream NFT update authority is undefined");
-  }
-
-  // Assert that the Stream NFT has been added to the collection
-  assertEqPublicKey(
-    new PublicKey(streamNft.updateAuthority.address),
-    ctx.nftCollectionAddress,
-    "Stream NFT isn't added to the collection",
-  );
-
-  // Assert that the collection size has increased by exactly 1
-  assertEqBn(
-    await ctx.getStreamNftCollectionSize(),
-    beforeCollectionSize.addn(1),
-    "Collection size should have increased by exactly 1",
-  );
-
-  // Assert that the Sender's balance has changed correctly
-  const expectedTokenBalance = beforeSenderTokenBalance.sub(expectedStream.data.amounts.deposited);
-  const afterSenderTokenBalance = await ctx.getSenderTokenBalance(
-    expectedStream.data.depositedTokenMint,
-  );
-  assertEqBn(expectedTokenBalance, afterSenderTokenBalance, "sender balance not updated correctly");
-}
