@@ -1,10 +1,9 @@
 import { BN } from "@coral-xyz/anchor";
 import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { PublicKey, LAMPORTS_PER_SOL as raw_LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 
 export const BN_1 = new BN(1);
 export const BN_1000 = new BN(1000);
-export const LAMPORTS_PER_SOL = new BN(raw_LAMPORTS_PER_SOL);
 export const MAX_U64 = new BN("18446744073709551615"); // 2^64 - 1
 export const REDUNDANCY_BUFFER = new BN(1_000_000); // 0.001 SOL
 export const SABLIER_ADMIN = new PublicKey("7eJiuqfoRMNx2T83jzjEMBFNY6gx7mS5MHJ5e44f3DGC");

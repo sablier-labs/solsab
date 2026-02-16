@@ -36,7 +36,7 @@ describe("createWithDurationsLt", () => {
               trancheAmounts: [TranchedAmounts.TRANCHE_1, TranchedAmounts.TRANCHE_2],
               trancheDurations: [TranchedDurations.TRANCHE_1],
             }),
-            "TrancheAmountsDurationsMismatch",
+            "TrancheAmountsAndDurationsMismatch",
           );
         });
       });
@@ -48,7 +48,7 @@ describe("createWithDurationsLt", () => {
               trancheAmounts: [TranchedAmounts.TRANCHE_1],
               trancheDurations: [TranchedDurations.TRANCHE_1, TranchedDurations.TRANCHE_2],
             }),
-            "TrancheAmountsDurationsMismatch",
+            "TrancheAmountsAndDurationsMismatch",
           );
         });
       });

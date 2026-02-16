@@ -220,51 +220,6 @@ impl StreamData {
         Ok(())
     }
 
-    /// State update for the [`fn@crate::sablier_lockup::create_with_timestamps_ll`] instruction.
-    #[allow(clippy::too_many_arguments)]
-    pub fn create(
-        &mut self,
-        deposited_token_mint: Pubkey,
-        bump: u8,
-        cliff_time: u64,
-        cliff_unlock_amount: u64,
-        deposit_amount: u64,
-        end_time: u64,
-        nft_address: Pubkey,
-        salt: u128,
-        is_cancelable: bool,
-        sender: Pubkey,
-        start_time: u64,
-        start_unlock_amount: u64,
-    ) -> Result<()> {
-        self.bump = bump;
-        self.amounts = Amounts {
-            deposited: deposit_amount,
-            refunded: 0,
-            withdrawn: 0,
-        };
-        self.deposited_token_mint = deposited_token_mint;
-        self.is_cancelable = is_cancelable;
-        self.is_depleted = false;
-        self.nft_address = nft_address;
-        self.salt = salt;
-        self.sender = sender;
-        self.model = StreamModel::Linear {
-            timestamps: LinearTimestamps {
-                start: start_time,
-                cliff: cliff_time,
-                end: end_time,
-            },
-            unlock_amounts: LinearUnlockAmounts {
-                start: start_unlock_amount,
-                cliff: cliff_unlock_amount,
-            },
-        };
-        self.was_canceled = false;
-
-        Ok(())
-    }
-
     /// State update for the [`fn@crate::sablier_lockup::renounce`] instruction.
     pub fn renounce(&mut self) -> Result<()> {
         self.is_cancelable = false;

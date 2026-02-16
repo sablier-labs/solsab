@@ -20,7 +20,7 @@ pub fn handler(
 ) -> Result<()> {
     // Validate: amounts and durations must have same length.
     if tranche_amounts.len() != tranche_durations.len() {
-        return Err(ErrorCode::TrancheAmountsDurationsMismatch.into());
+        return Err(ErrorCode::TrancheAmountsAndDurationsMismatch.into());
     }
 
     // Get current time as stream start.
