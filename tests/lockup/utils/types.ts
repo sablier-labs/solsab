@@ -36,11 +36,6 @@ export type Stream = {
   nftCollectionAddress: PublicKey;
 };
 
-export type UnlockAmounts = {
-  cliff: BN;
-  start: BN;
-};
-
 export function isLinearModel(
   model: StreamModel,
 ): model is Extract<StreamModel, { linear: unknown }> {

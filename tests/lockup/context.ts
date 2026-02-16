@@ -22,6 +22,7 @@ import {
   LINEAR_AMOUNTS,
   LINEAR_MODEL,
   LINEAR_TIMESTAMPS,
+  LINEAR_UNLOCK_AMOUNTS,
   LinearAmounts,
   Seed,
   Time,
@@ -29,7 +30,6 @@ import {
   TRANCHED_MODEL,
   TranchedAmounts,
   TranchedTimes,
-  UNLOCK_AMOUNTS,
 } from "./utils/defaults";
 import type { Salts, Stream } from "./utils/types";
 
@@ -177,7 +177,7 @@ export class LockupTestContext extends TestContext {
     depositTokenProgram = token.TOKEN_PROGRAM_ID,
     timestamps = LINEAR_TIMESTAMPS(),
     depositAmount = LinearAmounts.DEPOSIT,
-    unlockAmounts = UNLOCK_AMOUNTS(),
+    unlockAmounts = LINEAR_UNLOCK_AMOUNTS(),
     isCancelable = true,
     salt,
   }: {

@@ -28,7 +28,7 @@ describe("createWithDurationsLl", () => {
     });
 
     describe("when cliff duration is not zero", () => {
-      it("it should create the stream", async () => {
+      it("should create the stream", async () => {
         const salt = await ctx.createWithDurationsLl();
 
         const actualStreamData = await ctx.fetchStreamData(salt);
@@ -38,7 +38,7 @@ describe("createWithDurationsLl", () => {
     });
 
     describe("when cliff duration is zero", () => {
-      it("it should create the stream", async () => {
+      it("should create the stream", async () => {
         const salt = await ctx.createWithDurationsLl({ cliffDuration: ZERO });
 
         const actualStreamData = await ctx.fetchStreamData(salt);

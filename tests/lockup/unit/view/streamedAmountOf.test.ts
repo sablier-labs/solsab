@@ -12,7 +12,6 @@ import {
   Time,
   TranchedAmounts,
   TranchedTimes,
-  UNLOCK_AMOUNTS,
 } from "../../utils/defaults";
 
 let ctx: LockupTestContext;
@@ -99,7 +98,7 @@ describe("streamedAmountOf", () => {
             it("should return the correct streamed amount", async () => {
               const salt = await ctx.createWithTimestampsLl({
                 timestamps: LINEAR_TIMESTAMPS({ cliff: ZERO }),
-                unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO }),
+                unlockAmounts: LINEAR_UNLOCK_AMOUNTS({ cliff: ZERO }),
               });
               await ctx.timeTravelTo(Time.MID_26_PERCENT);
 
@@ -114,7 +113,7 @@ describe("streamedAmountOf", () => {
               it("should return the start amount", async () => {
                 const startUnlockAmount = toBn(1);
                 const salt = await ctx.createWithTimestampsLl({
-                  unlockAmounts: UNLOCK_AMOUNTS({ start: startUnlockAmount }),
+                  unlockAmounts: LINEAR_UNLOCK_AMOUNTS({ start: startUnlockAmount }),
                 });
                 await ctx.timeTravelTo(Time.CLIFF.subn(1));
 
@@ -138,7 +137,7 @@ describe("streamedAmountOf", () => {
                 it("should return the correct streamed amount", async () => {
                   const startUnlockAmount = toBn(1);
                   const salt = await ctx.createWithTimestampsLl({
-                    unlockAmounts: UNLOCK_AMOUNTS({ start: startUnlockAmount }),
+                    unlockAmounts: LINEAR_UNLOCK_AMOUNTS({ start: startUnlockAmount }),
                   });
                   await ctx.timeTravelTo(Time.MID_26_PERCENT);
 
@@ -160,7 +159,7 @@ describe("streamedAmountOf", () => {
                 describe("given cliff unlock amount zero", () => {
                   it("should return the correct streamed amount", async () => {
                     const salt = await ctx.createWithTimestampsLl({
-                      unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO }),
+                      unlockAmounts: LINEAR_UNLOCK_AMOUNTS({ cliff: ZERO }),
                     });
 
                     await ctx.timeTravelTo(Time.MID_26_PERCENT);

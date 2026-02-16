@@ -10,7 +10,6 @@ import type {
   Tranche,
   TranchedTimestamps,
 } from "../../../target/types/sablier_lockup_structs";
-import type { UnlockAmounts } from "./types";
 
 export namespace LinearAmounts {
   export const CLIFF = usdc("2500.000001");
@@ -127,16 +126,6 @@ export function LINEAR_MODEL({
       timestamps: LINEAR_TIMESTAMPS(timestampOverrides),
       unlockAmounts: LINEAR_UNLOCK_AMOUNTS(unlockAmountsOverrides),
     },
-  };
-}
-
-export function UNLOCK_AMOUNTS({
-  cliff = LinearAmounts.CLIFF,
-  start = LinearAmounts.START,
-}: Partial<UnlockAmounts> = {}): UnlockAmounts {
-  return {
-    cliff,
-    start,
   };
 }
 

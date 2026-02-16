@@ -5,7 +5,7 @@ import { usdc } from "../../../lib/convertors";
 import { getATABalance } from "../../common/anchor-bankrun";
 import { LockupTestContext } from "../context";
 import { assertStreamCreation, expectToThrow } from "../utils/assertions";
-import { LINEAR_MODEL, LINEAR_TIMESTAMPS, Time, UNLOCK_AMOUNTS } from "../utils/defaults";
+import { LINEAR_MODEL, LINEAR_TIMESTAMPS, LINEAR_UNLOCK_AMOUNTS, Time } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
@@ -107,7 +107,7 @@ describe("createWithTimestampsLl", () => {
 
                   const salt = await ctx.createWithTimestampsLl({
                     timestamps: LINEAR_TIMESTAMPS({ cliff: ZERO }),
-                    unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO, start: ZERO }),
+                    unlockAmounts: LINEAR_UNLOCK_AMOUNTS({ cliff: ZERO, start: ZERO }),
                   });
 
                   const expectedStream = ctx.defaultLinearStream({

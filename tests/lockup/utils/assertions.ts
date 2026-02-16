@@ -10,14 +10,16 @@ import type {
   StreamData,
   StreamModel,
 } from "../../../target/types/sablier_lockup_structs";
+import { getATABalance, getATABalanceMint } from "../../common/anchor-bankrun";
 import {
   assertAccountExists,
   assertEqBn,
   assertEqPublicKey,
+  assertLteBn,
   expectToThrow as baseExpectToThrow,
 } from "../../common/assertions";
 import type { LockupTestContext } from "../context";
-import type { Stream, UnlockAmounts } from "./types";
+import type { Stream } from "./types";
 import { isLinearModel, isTranchedModel } from "./types";
 
 export function assertEqStreamData(a: StreamData, b: StreamData) {
@@ -51,11 +53,6 @@ export function assertEqLinearTimestamps(a: LinearTimestamps, b: LinearTimestamp
 export function assertEqLinearUnlockAmounts(a: LinearUnlockAmounts, b: LinearUnlockAmounts) {
   assertEqBn(a.cliff, b.cliff, "cliff unlock amounts mismatch");
   assertEqBn(a.start, b.start, "start unlock amounts mismatch");
-}
-
-export function assertEqUnlockAmounts(a: UnlockAmounts, b: UnlockAmounts) {
-  assertEqBn(a.cliff, b.cliff);
-  assertEqBn(a.start, b.start);
 }
 
 export function expectToThrow(
@@ -117,6 +114,84 @@ export async function assertStreamCreation(
     expectedStream.data.depositedTokenMint,
   );
   assertEqBn(expectedTokenBalance, afterSenderTokenBalance, "sender balance not updated correctly");
+}
+
+export async function postCancelAssertions(
+  ctx: LockupTestContext,
+  salt: BN,
+  expectedStream: Stream,
+  beforeSenderBalance: BN,
+) {
+  // Assert that the Stream state has been updated correctly
+  const actualStreamData = await ctx.fetchStreamData(salt);
+  assertEqStreamData(actualStreamData, expectedStream.data);
+
+  // Assert the Sender's ATA balance
+  const afterSenderBalance = await getATABalanceMint(
+    ctx.banksClient,
+    expectedStream.data.sender,
+    expectedStream.data.depositedTokenMint,
+  );
+
+  const actualBalanceRefunded = afterSenderBalance.sub(beforeSenderBalance);
+  assertEqBn(actualBalanceRefunded, expectedStream.data.amounts.refunded);
+
+  // Assert the StreamData ATA balance
+  const actualStreamDataBalance = await getATABalanceMint(
+    ctx.banksClient,
+    expectedStream.dataAddress,
+    expectedStream.data.depositedTokenMint,
+  );
+  const expectedStreamDataBalance = expectedStream.data.amounts.deposited.sub(
+    expectedStream.data.amounts.refunded,
+  );
+  assertEqBn(actualStreamDataBalance, expectedStreamDataBalance);
+}
+
+export async function postWithdrawAssertions(
+  ctx: LockupTestContext,
+  salt: BN,
+  txSigner: PublicKey,
+  txSignerLamportsBefore: BN,
+  treasuryLamportsBefore: BN,
+  withdrawalRecipientATA: PublicKey,
+  withdrawalRecipientATABalanceBefore: BN,
+  expectedStreamData: StreamData,
+  streamDataAta: PublicKey,
+  streamDataAtaBalanceBefore: BN,
+) {
+  // Assert that the Stream state has been updated correctly
+  const actualStreamData = await ctx.fetchStreamData(salt);
+  assertEqStreamData(actualStreamData, expectedStreamData);
+
+  const expectedFee = await ctx.withdrawalFeeInLamports();
+
+  // Get the Lamports balance of the Treasury after the withdrawal
+  const treasuryLamportsAfter = await ctx.getTreasuryLamports();
+
+  // Assert that the tx signer lamports balance has decreased by, at least, the withdrawal fee amount.
+  const txSignerLamportsAfter = await ctx.getLamportsOf(txSigner);
+  assertLteBn(txSignerLamportsAfter, txSignerLamportsBefore.sub(expectedFee));
+
+  // Assert that the Treasury has been credited with the withdrawal fee.
+  assertEqBn(treasuryLamportsAfter, treasuryLamportsBefore.add(expectedFee));
+
+  // Get the withdrawal recipient's token balance
+  const withdrawalRecipientTokenBalance = await getATABalance(
+    ctx.banksClient,
+    withdrawalRecipientATA,
+  );
+
+  // Assert that the withdrawal recipient's token balance has been changed correctly
+  const expectedWithdrawnAmount = expectedStreamData.amounts.withdrawn;
+  assertEqBn(
+    withdrawalRecipientTokenBalance,
+    withdrawalRecipientATABalanceBefore.add(expectedWithdrawnAmount),
+  );
+
+  // Assert that the StreamData ATA balance has decreased by the withdrawn amount
+  const streamDataAtaBalanceAfter = await getATABalance(ctx.banksClient, streamDataAta);
+  assertEqBn(streamDataAtaBalanceAfter, streamDataAtaBalanceBefore.sub(expectedWithdrawnAmount));
 }
 
 /* -------------------------------------------------------------------------- */

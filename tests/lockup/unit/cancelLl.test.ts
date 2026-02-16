@@ -2,16 +2,13 @@ import {
   ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED,
   ANCHOR_ERROR__CONSTRAINT_ADDRESS as ERR_CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
-import type BN from "bn.js";
 import { beforeEach, describe, it } from "vitest";
 import { BN_1 } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
-import { getATABalance, getATABalanceMint } from "../../common/anchor-bankrun";
-import { assertEqBn } from "../../common/assertions";
+import { getATABalance } from "../../common/anchor-bankrun";
 import { LockupTestContext } from "../context";
-import { assertEqStreamData, expectToThrow } from "../utils/assertions";
+import { expectToThrow, postCancelAssertions } from "../utils/assertions";
 import { LinearAmounts, Time } from "../utils/defaults";
-import type { Stream } from "../utils/types";
 
 let ctx: LockupTestContext;
 
@@ -125,6 +122,7 @@ describe("cancelLl", () => {
                   expectedStream.data.amounts.refunded = LinearAmounts.DEPOSIT;
 
                   await postCancelAssertions(
+                    ctx,
                     ctx.salts.defaultLl,
                     expectedStream,
                     beforeSenderBalance,
@@ -151,6 +149,7 @@ describe("cancelLl", () => {
 
                     // Assert the cancelation
                     await postCancelAssertions(
+                      ctx,
                       ctx.salts.defaultLl,
                       expectedStream,
                       beforeSenderBalance,
@@ -179,7 +178,7 @@ describe("cancelLl", () => {
                     expectedStream.data.amounts.refunded = LinearAmounts.REFUND;
 
                     // Assert the cancelation
-                    await postCancelAssertions(salt, expectedStream, beforeSenderBalance);
+                    await postCancelAssertions(ctx, salt, expectedStream, beforeSenderBalance);
                   });
                 });
               });
@@ -190,30 +189,3 @@ describe("cancelLl", () => {
     });
   });
 });
-
-async function postCancelAssertions(salt: BN, expectedStream: Stream, beforeSenderBalance: BN) {
-  // Assert that the Stream state has been updated correctly
-  const actualStreamData = await ctx.fetchStreamData(salt);
-  assertEqStreamData(actualStreamData, expectedStream.data);
-
-  // Assert the Sender's ATA balance
-  const afterSenderBalance = await getATABalanceMint(
-    ctx.banksClient,
-    expectedStream.data.sender,
-    expectedStream.data.depositedTokenMint,
-  );
-
-  const actualBalanceRefunded = afterSenderBalance.sub(beforeSenderBalance);
-  assertEqBn(actualBalanceRefunded, expectedStream.data.amounts.refunded);
-
-  // Assert the StreamData ATA balance
-  const actualStreamDataBalance = await getATABalanceMint(
-    ctx.banksClient,
-    expectedStream.dataAddress,
-    expectedStream.data.depositedTokenMint,
-  );
-  const expectedStreamDataBalance = expectedStream.data.amounts.deposited.sub(
-    expectedStream.data.amounts.refunded,
-  );
-  assertEqBn(actualStreamDataBalance, expectedStreamDataBalance);
-}

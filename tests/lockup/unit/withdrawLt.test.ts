@@ -2,20 +2,12 @@ import {
   ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED,
   ANCHOR_ERROR__CONSTRAINT_RAW as ERR_CONSTRAINT_RAW,
 } from "@coral-xyz/anchor-errors";
-import type { PublicKey } from "@solana/web3.js";
-import type BN from "bn.js";
 import { beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
-import type { StreamData } from "../../../target/types/sablier_lockup_structs";
 import { createATAAndFund, deriveATAAddress, getATABalance } from "../../common/anchor-bankrun";
-import {
-  assertAccountExists,
-  assertAccountNotExists,
-  assertEqBn,
-  assertLteBn,
-} from "../../common/assertions";
+import { assertAccountExists, assertAccountNotExists } from "../../common/assertions";
 import { LockupTestContext } from "../context";
-import { assertEqStreamData, expectToThrow } from "../utils/assertions";
+import { expectToThrow, postWithdrawAssertions } from "../utils/assertions";
 import { Time, TranchedAmounts, TranchedTimes } from "../utils/defaults";
 
 let ctx: LockupTestContext;
@@ -185,6 +177,7 @@ describe("withdrawLt", () => {
                       expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
 
                       await postWithdrawAssertions(
+                        ctx,
                         ctx.salts.defaultLt,
                         txSignerKeys.publicKey,
                         txSignerLamportsBefore,
@@ -248,6 +241,7 @@ describe("withdrawLt", () => {
                           expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
 
                           await postWithdrawAssertions(
+                            ctx,
                             ctx.salts.defaultLt,
                             txSignerKeys.publicKey,
                             txSignerLamportsBefore,
@@ -294,6 +288,7 @@ describe("withdrawLt", () => {
                           expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
 
                           await postWithdrawAssertions(
+                            ctx,
                             salt,
                             txSignerKeys.publicKey,
                             txSignerLamportsBefore,
@@ -341,6 +336,7 @@ describe("withdrawLt", () => {
                       expectedStreamData.isDepleted = true;
 
                       await postWithdrawAssertions(
+                        ctx,
                         ctx.salts.defaultLt,
                         txSignerKeys.publicKey,
                         txSignerLamportsBefore,
@@ -388,6 +384,7 @@ describe("withdrawLt", () => {
                       expectedStreamData.isDepleted = true;
 
                       await postWithdrawAssertions(
+                        ctx,
                         ctx.salts.defaultLt,
                         txSignerKeys.publicKey,
                         txSignerLamportsBefore,
@@ -442,6 +439,7 @@ describe("withdrawLt", () => {
                         expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
 
                         await postWithdrawAssertions(
+                          ctx,
                           ctx.salts.defaultLt,
                           txSignerKeys.publicKey,
                           txSignerLamportsBefore,
@@ -486,6 +484,7 @@ describe("withdrawLt", () => {
                           expectedStreamData.amounts.withdrawn = TranchedAmounts.TRANCHE_1;
 
                           await postWithdrawAssertions(
+                            ctx,
                             ctx.salts.defaultLt,
                             txSignerKeys.publicKey,
                             txSignerLamportsBefore,
@@ -509,48 +508,3 @@ describe("withdrawLt", () => {
     });
   });
 });
-
-async function postWithdrawAssertions(
-  salt: BN,
-  txSigner: PublicKey,
-  txSignerLamportsBefore: BN,
-  treasuryLamportsBefore: BN,
-  withdrawalRecipientATA: PublicKey,
-  withdrawalRecipientATABalanceBefore: BN,
-  expectedStreamData: StreamData,
-  streamDataAta: PublicKey,
-  streamDataAtaBalanceBefore: BN,
-) {
-  // Assert that the Stream state has been updated correctly
-  const actualStreamData = await ctx.fetchStreamData(salt);
-  assertEqStreamData(actualStreamData, expectedStreamData);
-
-  const expectedFee = await ctx.withdrawalFeeInLamports();
-
-  // Get the Lamports balance of the Treasury after the withdrawal
-  const treasuryLamportsAfter = await ctx.getTreasuryLamports();
-
-  // Assert that the tx signer lamports balance has decreased by, at least, the withdrawal fee amount.
-  const txSignerLamportsAfter = await ctx.getLamportsOf(txSigner);
-  assertLteBn(txSignerLamportsAfter, txSignerLamportsBefore.sub(expectedFee));
-
-  // Assert that the Treasury has been credited with the withdrawal fee.
-  assertEqBn(treasuryLamportsAfter, treasuryLamportsBefore.add(expectedFee));
-
-  // Get the withdrawal recipient's token balance
-  const withdrawalRecipientTokenBalance = await getATABalance(
-    ctx.banksClient,
-    withdrawalRecipientATA,
-  );
-
-  // Assert that the withdrawal recipient's token balance has been changed correctly
-  const expectedWithdrawnAmount = expectedStreamData.amounts.withdrawn;
-  assertEqBn(
-    withdrawalRecipientTokenBalance,
-    withdrawalRecipientATABalanceBefore.add(expectedWithdrawnAmount),
-  );
-
-  // Assert that the StreamData ATA balance has decreased by the withdrawn amount
-  const streamDataAtaBalanceAfter = await getATABalance(ctx.banksClient, streamDataAta);
-  assertEqBn(streamDataAtaBalanceAfter, streamDataAtaBalanceBefore.sub(expectedWithdrawnAmount));
-}
