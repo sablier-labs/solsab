@@ -1,6 +1,6 @@
-import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
+import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
 import { PublicKey } from "@solana/web3.js";
-import { assert, beforeAll, beforeEach, describe, it } from "vitest";
+import { assert, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
 import { createATAAndFund, getATABalanceMint } from "../../common/anchor-bankrun";
@@ -13,7 +13,7 @@ let ctx: MerkleInstantTestContext;
 
 describe("claim", () => {
   describe("when the program is not initialized", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       ctx = new MerkleInstantTestContext();
       await ctx.setUpMerkleInstant({
         initProgram: false,
@@ -23,14 +23,17 @@ describe("claim", () => {
     describe("when the campaign doesn't exist", () => {
       it("should fail", async () => {
         // Passing a non-Campaign account since no Campaigns exist yet
-        await expectToThrow(ctx.claim({ campaign: new PublicKey(12345) }), ACCOUNT_NOT_INITIALIZED);
+        await expectToThrow(
+          ctx.claim({ campaign: new PublicKey(12345) }),
+          ERR_ACCOUNT_NOT_INITIALIZED,
+        );
       });
     });
 
     describe("when the campaign exists", () => {
       it("should fail", async () => {
         const campaign = await ctx.createCampaign({ name: "Test Campaign" });
-        await expectToThrow(ctx.claim({ campaign: campaign }), ACCOUNT_NOT_INITIALIZED);
+        await expectToThrow(ctx.claim({ campaign: campaign }), ERR_ACCOUNT_NOT_INITIALIZED);
       });
     });
   });
@@ -39,7 +42,10 @@ describe("claim", () => {
     describe("when the campaign doesn't exist", () => {
       it("should fail", async () => {
         // Claim from a non-existent Campaign
-        await expectToThrow(ctx.claim({ campaign: new PublicKey(12345) }), ACCOUNT_NOT_INITIALIZED);
+        await expectToThrow(
+          ctx.claim({ campaign: new PublicKey(12345) }),
+          ERR_ACCOUNT_NOT_INITIALIZED,
+        );
       });
     });
 
@@ -52,7 +58,10 @@ describe("claim", () => {
       describe("when the token mint is invalid", () => {
         it("should fail", async () => {
           // Claim from the Campaign with an invalid token mint
-          await expectToThrow(ctx.claim({ airdropTokenMint: ctx.dai }), ACCOUNT_NOT_INITIALIZED);
+          await expectToThrow(
+            ctx.claim({ airdropTokenMint: ctx.dai }),
+            ERR_ACCOUNT_NOT_INITIALIZED,
+          );
         });
       });
 
@@ -107,7 +116,7 @@ describe("claim", () => {
                       ctx.defaultBankrunPayer,
                       ctx.randomToken,
                       Amount.AGGREGATE,
-                      ProgramId.TOKEN,
+                      ProgramId.SPL_TOKEN,
                       ctx.campaignCreator.keys.publicKey,
                     );
 
@@ -121,7 +130,7 @@ describe("claim", () => {
                       campaign,
                       ctx.recipient.keys,
                       ctx.randomToken,
-                      ProgramId.TOKEN,
+                      ProgramId.SPL_TOKEN,
                       false,
                     );
                   });
@@ -170,7 +179,7 @@ async function testClaim(
   campaign = ctx.defaultCampaign,
   claimer = ctx.recipient.keys,
   tokenMint = ctx.usdc,
-  tokenProgram = ProgramId.TOKEN,
+  tokenProgram = ProgramId.SPL_TOKEN,
   recipientAtaExists = true,
 ): Promise<void> {
   // Assert that the claim was not made yet.

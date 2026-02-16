@@ -1,8 +1,8 @@
 import {
-  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
-  ANCHOR_ERROR__CONSTRAINT_ADDRESS as CONSTRAINT_ADDRESS,
+  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED,
+  ANCHOR_ERROR__CONSTRAINT_ADDRESS as ERR_CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
-import { beforeAll, beforeEach, describe, it } from "vitest";
+import { beforeEach, describe, it } from "vitest";
 import { REDUNDANCY_BUFFER } from "../../../lib/constants";
 import { assertEqBn } from "../../common/assertions";
 import { LockupTestContext } from "../context";
@@ -12,13 +12,13 @@ let ctx: LockupTestContext;
 
 describe("collectFees", () => {
   describe("when the program is not initialized", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       ctx = new LockupTestContext();
       await ctx.setUpLockup({ initProgram: false });
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.collectFees(), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.collectFees(), ERR_ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -31,7 +31,7 @@ describe("collectFees", () => {
     describe("when signer is not the authorized fee collector", () => {
       it("should fail", async () => {
         await ctx.simulateFeeGeneration();
-        await expectToThrow(ctx.collectFees(ctx.eve.keys), CONSTRAINT_ADDRESS);
+        await expectToThrow(ctx.collectFees(ctx.eve.keys), ERR_CONSTRAINT_ADDRESS);
       });
     });
 
@@ -78,12 +78,3 @@ describe("collectFees", () => {
 async function getFeeRecipientLamports() {
   return await ctx.getSenderLamports();
 }
-
-/// Helper function to withdraw multiple times so that there are fees collected
-// async function withdrawTwice() {
-//   await ctx.timeTravelTo(Time.MID_26_PERCENT);
-//   await ctx.withdrawMax();
-//   await ctx.timeTravelTo(Time.END);
-//   await sleepFor(7);
-//   await ctx.withdrawMax();
-// }

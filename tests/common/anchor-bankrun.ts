@@ -163,19 +163,6 @@ export async function getATABalance(banksClient: BanksClient, ataAddress: Public
   return toBn(accountData.amount);
 }
 
-export async function getMintTotalSupplyOf(
-  banksClient: BanksClient,
-  mintAddress: PublicKey,
-): Promise<BN> {
-  const mintAccount = await banksClient.getAccount(mintAddress);
-  if (!mintAccount) {
-    throw new Error("The queried mint account does not exist!");
-  }
-
-  const mintData = token.MintLayout.decode(mintAccount.data);
-  return toBn(mintData.supply);
-}
-
 export async function transfer(
   banksClient: BanksClient,
   payer: Signer,

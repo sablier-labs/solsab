@@ -100,7 +100,7 @@ export class MerkleInstantTestContext extends TestContext {
     amount = Amount.CLAIM,
     recipientAddress = this.recipient.keys.publicKey,
     airdropTokenMint = this.usdc,
-    airdropTokenProgram = ProgramId.TOKEN,
+    airdropTokenProgram = ProgramId.SPL_TOKEN,
   } = {}): Promise<void> {
     const txIx = await this.merkleInstant.methods
       .claim(this.defaultIndex, amount, this.defaultMerkleProof)
@@ -136,7 +136,7 @@ export class MerkleInstantTestContext extends TestContext {
     amount = Amount.CLAWBACK,
     clawbackRecipient = this.clawbackRecipient.keys.publicKey,
     airdropTokenMint = this.usdc,
-    airdropTokenProgram = ProgramId.TOKEN,
+    airdropTokenProgram = ProgramId.SPL_TOKEN,
   } = {}): Promise<void> {
     const txIx = await this.merkleInstant.methods
       .clawback(amount)
@@ -174,7 +174,7 @@ export class MerkleInstantTestContext extends TestContext {
     startTime = Campaign.START_TIME,
     expirationTime = Campaign.EXPIRATION_TIME,
     airdropTokenMint = this.usdc,
-    airdropTokenProgram = ProgramId.TOKEN,
+    airdropTokenProgram = ProgramId.SPL_TOKEN,
   } = {}): Promise<PublicKey> {
     // Derive the address of the campaign
     const campaign = getPDAAddress(

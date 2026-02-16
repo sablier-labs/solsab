@@ -1,10 +1,10 @@
 import type { BN } from "@coral-xyz/anchor";
 import {
-  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
-  ANCHOR_ERROR__CONSTRAINT_ADDRESS as CONSTRAINT_ADDRESS,
+  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED,
+  ANCHOR_ERROR__CONSTRAINT_ADDRESS as ERR_CONSTRAINT_ADDRESS,
 } from "@coral-xyz/anchor-errors";
 import { PublicKey } from "@solana/web3.js";
-import { beforeAll, beforeEach, describe, it } from "vitest";
+import { beforeEach, describe, it } from "vitest";
 import { ProgramId, ZERO } from "../../../lib/constants";
 import { createATAAndFund, deriveATAAddress, getATABalanceMint } from "../../common/anchor-bankrun";
 import { assertAccountExists, assertAccountNotExists, assertEqBn } from "../../common/assertions";
@@ -16,7 +16,7 @@ let ctx: MerkleInstantTestContext;
 
 describe("clawback", () => {
   describe("when the program is not initialized", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       ctx = new MerkleInstantTestContext();
       await ctx.setUpMerkleInstant({
         initProgram: false,
@@ -27,7 +27,7 @@ describe("clawback", () => {
       // Passing a non-Campaign account since no Campaigns exist yet
       await expectToThrow(
         ctx.clawback({ campaign: new PublicKey(12345) }),
-        ACCOUNT_NOT_INITIALIZED,
+        ERR_ACCOUNT_NOT_INITIALIZED,
       );
     });
   });
@@ -42,7 +42,7 @@ describe("clawback", () => {
       it("should fail", async () => {
         await expectToThrow(
           ctx.clawback({ campaign: new PublicKey(12345) }),
-          ACCOUNT_NOT_INITIALIZED,
+          ERR_ACCOUNT_NOT_INITIALIZED,
         );
       });
     });
@@ -54,7 +54,7 @@ describe("clawback", () => {
             ctx.clawback({
               airdropTokenMint: ctx.dai,
             }),
-            ACCOUNT_NOT_INITIALIZED,
+            ERR_ACCOUNT_NOT_INITIALIZED,
           );
         });
       });
@@ -66,19 +66,19 @@ describe("clawback", () => {
               ctx.clawback({
                 signer: ctx.eve.keys,
               }),
-              CONSTRAINT_ADDRESS,
+              ERR_CONSTRAINT_ADDRESS,
             );
           });
         });
 
         describe("when the signer is the campaign creator", () => {
-          describe("when first claim not made", () => {
+          describe("when the first claim is not made", () => {
             it("should clawback", async () => {
               await testClawback();
             });
           });
 
-          describe("when first claim made", () => {
+          describe("when the first claim is made", () => {
             beforeEach(async () => {
               await ctx.claim();
             });
@@ -114,7 +114,7 @@ describe("clawback", () => {
                       ctx.defaultBankrunPayer,
                       ctx.randomToken,
                       Amount.AGGREGATE,
-                      ProgramId.TOKEN,
+                      ProgramId.SPL_TOKEN,
                       ctx.campaignCreator.keys.publicKey,
                     );
 
@@ -125,7 +125,7 @@ describe("clawback", () => {
                     const clawbackRecipientAta = deriveATAAddress(
                       ctx.randomToken,
                       ctx.clawbackRecipient.keys.publicKey,
-                      ProgramId.TOKEN,
+                      ProgramId.SPL_TOKEN,
                     );
                     await assertAccountNotExists(
                       ctx,
@@ -179,7 +179,7 @@ describe("clawback", () => {
 async function testClawback({
   campaign = ctx.defaultCampaign,
   airdropTokenMint = ctx.usdc,
-  airdropTokenProgram = ProgramId.TOKEN,
+  airdropTokenProgram = ProgramId.SPL_TOKEN,
   clawbackRecipient = ctx.clawbackRecipient.keys.publicKey,
   clawbackRecipientAtaExists = true,
 } = {}) {

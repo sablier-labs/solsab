@@ -6,25 +6,30 @@ import { lamports, publicKey } from "@metaplex-foundation/umi";
 import * as token from "@solana/spl-token";
 import type { Keypair } from "@solana/web3.js";
 import { PublicKey } from "@solana/web3.js";
-import BN from "bn.js";
+import type BN from "bn.js";
 import type { AccountInfoBytes } from "solana-bankrun";
 import { ProgramId, ZERO } from "../../lib/constants";
 import { ProgramName } from "../../lib/enums";
-import { getPDAAddress } from "../../lib/helpers";
+import { getPDAAddress, toBn } from "../../lib/helpers";
 import IDL from "../../target/idl/sablier_lockup.json";
 import type { SablierLockup as SablierLockupProgram } from "../../target/types/sablier_lockup";
-import type { StreamData } from "../../target/types/sablier_lockup_structs";
+import type { StreamData, Tranche } from "../../target/types/sablier_lockup_structs";
 import { buildSignAndProcessTx, deriveATAAddress, getATABalance } from "../common/anchor-bankrun";
 import { TestContext } from "../common/context";
 import type { Treasury, User } from "../common/types";
 import {
-  Amount,
+  DEFAULT_TRANCHES,
   LINEAR_AMOUNTS,
   LINEAR_MODEL,
   LINEAR_TIMESTAMPS,
+  LINEAR_UNLOCK_AMOUNTS,
+  LinearAmounts,
   Seed,
   Time,
-  UNLOCK_AMOUNTS,
+  TRANCHED_AMOUNTS,
+  TRANCHED_MODEL,
+  TranchedAmounts,
+  TranchedDurations,
 } from "./utils/defaults";
 import type { Salts, Stream } from "./utils/types";
 
@@ -67,11 +72,17 @@ export class LockupTestContext extends TestContext {
 
       // Create the default streams
       this.salts = {
-        default: await this.createWithTimestampsLl(),
-        nonCancelable: await this.createWithTimestampsLl({
+        // Linear (LL) streams
+        defaultLl: await this.createWithTimestampsLl(),
+        // Tranched (LT) streams
+        defaultLt: await this.createWithTimestampsLt(),
+        nonCancelableLl: await this.createWithTimestampsLl({
           isCancelable: false,
         }),
-        nonExisting: new BN(1729),
+        nonCancelableLt: await this.createWithTimestampsLt({
+          isCancelable: false,
+        }),
+        nonExisting: toBn(1729),
       };
     }
   }
@@ -81,7 +92,7 @@ export class LockupTestContext extends TestContext {
   //////////////////////////////////////////////////////////////////////////*/
 
   async cancel({
-    salt = this.salts.default,
+    salt = this.salts.defaultLl,
     signer = this.sender.keys,
     depositedTokenMint = this.usdc,
     depositedTokenProgram = token.TOKEN_PROGRAM_ID,
@@ -122,9 +133,13 @@ export class LockupTestContext extends TestContext {
 
   async createWithDurationsLl({
     cliffDuration = Time.CLIFF_DURATION,
+    totalDuration = Time.TOTAL_DURATION,
+    isCancelable = true,
     salt,
   }: {
     cliffDuration?: BN;
+    totalDuration?: BN;
+    isCancelable?: boolean;
     salt?: BN;
   } = {}): Promise<BN> {
     // Use the total supply as the salt for the stream
@@ -133,12 +148,12 @@ export class LockupTestContext extends TestContext {
     const createWithDurationsLlIx = await this.lockup.methods
       .createWithDurationsLl(
         salt,
-        Amount.DEPOSIT,
+        LinearAmounts.DEPOSIT,
         cliffDuration,
-        Time.TOTAL_DURATION,
-        Amount.START,
-        cliffDuration.isZero() ? ZERO : Amount.CLIFF,
-        true,
+        totalDuration,
+        LinearAmounts.START,
+        cliffDuration.isZero() ? ZERO : LinearAmounts.CLIFF,
+        isCancelable,
       )
       .accounts({
         depositTokenMint: this.usdc,
@@ -161,13 +176,24 @@ export class LockupTestContext extends TestContext {
     depositTokenMint = this.usdc,
     depositTokenProgram = token.TOKEN_PROGRAM_ID,
     timestamps = LINEAR_TIMESTAMPS(),
-    depositAmount = Amount.DEPOSIT,
-    unlockAmounts = UNLOCK_AMOUNTS(),
+    depositAmount = LinearAmounts.DEPOSIT,
+    unlockAmounts = LINEAR_UNLOCK_AMOUNTS(),
     isCancelable = true,
-    salt = new BN(-1),
+    salt,
+  }: {
+    funder?: Keypair;
+    senderPubKey?: PublicKey;
+    recipientPubKey?: PublicKey;
+    depositTokenMint?: PublicKey;
+    depositTokenProgram?: PublicKey;
+    timestamps?: { start: BN; cliff: BN; end: BN };
+    depositAmount?: BN;
+    unlockAmounts?: { start: BN; cliff: BN };
+    isCancelable?: boolean;
+    salt?: BN;
   } = {}): Promise<BN> {
     // Use the total supply as the salt for the stream
-    salt = salt.isNeg() ? await this.getStreamNftCollectionSize() : salt;
+    salt = salt ?? (await this.getStreamNftCollectionSize());
 
     const txIx = await this.lockup.methods
       .createWithTimestampsLl(
@@ -201,6 +227,101 @@ export class LockupTestContext extends TestContext {
     });
   }
 
+  async createWithDurationsLt({
+    trancheAmounts = [
+      TranchedAmounts.TRANCHE_1,
+      TranchedAmounts.TRANCHE_2,
+      TranchedAmounts.TRANCHE_3,
+    ],
+    trancheDurations = [
+      TranchedDurations.TRANCHE_1,
+      TranchedDurations.TRANCHE_2,
+      TranchedDurations.TRANCHE_3,
+    ],
+    isCancelable = true,
+    funder = this.sender.keys,
+    senderPubKey = this.sender.keys.publicKey,
+    recipientPubKey = this.recipient.keys.publicKey,
+    depositTokenMint = this.usdc,
+    depositTokenProgram = token.TOKEN_PROGRAM_ID,
+    salt,
+  }: {
+    trancheAmounts?: BN[];
+    trancheDurations?: BN[];
+    isCancelable?: boolean;
+    funder?: Keypair;
+    senderPubKey?: PublicKey;
+    recipientPubKey?: PublicKey;
+    depositTokenMint?: PublicKey;
+    depositTokenProgram?: PublicKey;
+    salt?: BN;
+  } = {}): Promise<BN> {
+    // Use the total supply as the salt for the stream
+    salt = salt ?? (await this.getStreamNftCollectionSize());
+
+    const txIx = await this.lockup.methods
+      .createWithDurationsLt(salt, trancheAmounts, trancheDurations, isCancelable)
+      .accounts({
+        depositTokenMint,
+        depositTokenProgram,
+        funder: funder.publicKey,
+        recipient: recipientPubKey,
+        sender: senderPubKey,
+      })
+      .instruction();
+
+    await buildSignAndProcessTx(this.banksClient, txIx, funder);
+
+    return salt;
+  }
+
+  async createWithTimestampsLt({
+    tranches = DEFAULT_TRANCHES(),
+    startTime = Time.START,
+    isCancelable = true,
+    funder = this.sender.keys,
+    senderPubKey = this.sender.keys.publicKey,
+    recipientPubKey = this.recipient.keys.publicKey,
+    depositTokenMint = this.usdc,
+    depositTokenProgram = token.TOKEN_PROGRAM_ID,
+    salt,
+  }: {
+    tranches?: Tranche[];
+    startTime?: BN;
+    isCancelable?: boolean;
+    funder?: Keypair;
+    senderPubKey?: PublicKey;
+    recipientPubKey?: PublicKey;
+    depositTokenMint?: PublicKey;
+    depositTokenProgram?: PublicKey;
+    salt?: BN;
+  } = {}): Promise<BN> {
+    // Use the total supply as the salt for the stream
+    salt = salt ?? (await this.getStreamNftCollectionSize());
+
+    const txIx = await this.lockup.methods
+      .createWithTimestampsLt(salt, startTime, tranches, isCancelable)
+      .accounts({
+        depositTokenMint,
+        depositTokenProgram,
+        funder: funder.publicKey,
+        recipient: recipientPubKey,
+        sender: senderPubKey,
+      })
+      .instruction();
+
+    await buildSignAndProcessTx(this.banksClient, txIx, funder);
+
+    return salt;
+  }
+
+  async createWithTimestampsLtToken2022(): Promise<BN> {
+    return await this.createWithTimestampsLt({
+      depositTokenMint: this.dai,
+      depositTokenProgram: token.TOKEN_2022_PROGRAM_ID,
+    });
+  }
+
   async initializeLockup(): Promise<void> {
     const initializeIx = await this.lockup.methods
       .initialize(
@@ -217,7 +338,7 @@ export class LockupTestContext extends TestContext {
   }
 
   async renounce({
-    salt = this.salts.default,
+    salt = this.salts.defaultLl,
     signer = this.sender.keys,
     sender = this.sender.keys.publicKey,
   } = {}): Promise<void> {
@@ -235,8 +356,8 @@ export class LockupTestContext extends TestContext {
   }
 
   async withdraw({
-    salt = this.salts.default,
-    withdrawAmount = Amount.WITHDRAW,
+    salt = this.salts.defaultLl,
+    withdrawAmount = LinearAmounts.WITHDRAW,
     signer = this.recipient.keys,
     withdrawalRecipient = this.recipient.keys.publicKey,
     depositedTokenMint = this.usdc,
@@ -269,8 +390,8 @@ export class LockupTestContext extends TestContext {
   }
 
   async withdrawMax({
-    salt = this.salts.default,
-    signer = this.sender.keys.publicKey,
+    salt = this.salts.defaultLl,
+    signer = this.sender.keys,
     withdrawalRecipient = this.recipient.keys.publicKey,
     depositedTokenMint = this.usdc,
     depositedTokenProgram = token.TOKEN_PROGRAM_ID,
@@ -284,20 +405,20 @@ export class LockupTestContext extends TestContext {
         chainlinkSolUsdFeed: ProgramId.CHAINLINK_SOL_USD_FEED,
         depositedTokenMint,
         depositedTokenProgram,
-        signer,
+        signer: signer.publicKey,
         streamNft,
         withdrawalRecipient,
       })
       .instruction();
 
-    await buildSignAndProcessTx(this.banksClient, withdrawMaxIx, this.sender.keys);
+    await buildSignAndProcessTx(this.banksClient, withdrawMaxIx, signer);
   }
 
   /*//////////////////////////////////////////////////////////////////////////
                                READ-ONLY INSTRUCTIONS
   //////////////////////////////////////////////////////////////////////////*/
 
-  async refundableAmountOf(salt: BN = this.salts.default): Promise<BN> {
+  async refundableAmountOf(salt: BN = this.salts.defaultLl): Promise<BN> {
     return await this.lockup.methods
       .refundableAmountOf()
       .accounts({
@@ -307,7 +428,7 @@ export class LockupTestContext extends TestContext {
       .view();
   }
 
-  async statusOf(salt = this.salts.default): Promise<string> {
+  async statusOf(salt = this.salts.defaultLl): Promise<string> {
     const result = await this.lockup.methods
       .statusOf()
       .accounts({
@@ -320,7 +441,7 @@ export class LockupTestContext extends TestContext {
     return Object.keys(result)[0];
   }
 
-  async streamExists(salt = this.salts.default): Promise<boolean> {
+  async streamExists(salt = this.salts.defaultLl): Promise<boolean> {
     return await this.lockup.methods
       .streamExists(this.sender.keys.publicKey, salt)
       .accounts({})
@@ -328,7 +449,7 @@ export class LockupTestContext extends TestContext {
       .view();
   }
 
-  async streamedAmountOf(salt = this.salts.default): Promise<BN> {
+  async streamedAmountOf(salt = this.salts.defaultLl): Promise<BN> {
     return await this.lockup.methods
       .streamedAmountOf()
       .accounts({
@@ -346,7 +467,7 @@ export class LockupTestContext extends TestContext {
       .view();
   }
 
-  async withdrawableAmountOf(salt = this.salts.default): Promise<BN> {
+  async withdrawableAmountOf(salt = this.salts.defaultLl): Promise<BN> {
     return await this.lockup.methods
       .withdrawableAmountOf()
       .accounts({
@@ -379,11 +500,11 @@ export class LockupTestContext extends TestContext {
     return await this.getLamportsOf(this.treasuryAddress);
   }
 
-  defaultStream({
-    salt = this.salts.default,
+  defaultLinearStream({
+    salt = this.salts.defaultLl,
     model = LINEAR_MODEL(),
     depositedTokenMint = this.usdc,
-    tokenProgram = ProgramId.TOKEN,
+    tokenProgram = ProgramId.SPL_TOKEN,
     isCancelable = true,
     isDepleted = false,
     wasCanceled = false,
@@ -415,13 +536,13 @@ export class LockupTestContext extends TestContext {
     };
   }
 
-  defaultStreamToken2022({
-    salt = this.salts.default,
+  defaultLinearStreamToken2022({
+    salt = this.salts.defaultLl,
     isCancelable = true,
     isDepleted = false,
     wasCanceled = false,
   } = {}): Stream {
-    return this.defaultStream({
+    return this.defaultLinearStream({
       depositedTokenMint: this.dai,
       isCancelable,
       isDepleted,
@@ -431,7 +552,58 @@ export class LockupTestContext extends TestContext {
     });
   }
 
-  async fetchStreamData(salt = this.salts.default): Promise<StreamData> {
+  defaultTranchedStream({
+    salt = this.salts.defaultLt,
+    model = TRANCHED_MODEL(),
+    depositedTokenMint = this.usdc,
+    tokenProgram = ProgramId.SPL_TOKEN,
+    isCancelable = true,
+    isDepleted = false,
+    wasCanceled = false,
+  } = {}): Stream {
+    const nftAddress = this.getStreamNftAddress(salt);
+    const data: StreamData = {
+      amounts: TRANCHED_AMOUNTS(),
+      bump: 0,
+      depositedTokenMint,
+      isCancelable,
+      isDepleted,
+      model,
+      nftAddress,
+      salt,
+      sender: this.sender.keys.publicKey,
+      wasCanceled,
+    };
+    const streamDataAddress = this.getStreamDataAddress(salt);
+    const streamDataAta = deriveATAAddress(depositedTokenMint, streamDataAddress, tokenProgram);
+    const collectionAddress = this.getStreamNftCollectionAddress();
+
+    return {
+      data,
+      dataAddress: streamDataAddress,
+      dataAta: streamDataAta,
+      nftAddress,
+      nftCollectionAddress: collectionAddress,
+    };
+  }
+
+  defaultTranchedStreamToken2022({
+    salt = this.salts.defaultLt,
+    isCancelable = true,
+    isDepleted = false,
+    wasCanceled = false,
+  } = {}): Stream {
+    return this.defaultTranchedStream({
+      depositedTokenMint: this.dai,
+      isCancelable,
+      isDepleted,
+      salt,
+      tokenProgram: ProgramId.TOKEN_2022,
+      wasCanceled,
+    });
+  }
+
+  async fetchStreamData(salt = this.salts.defaultLl): Promise<StreamData> {
     const streamDataAddress = this.getStreamDataAddress(salt);
     const streamDataAcc = await this.banksClient.getAccount(streamDataAddress);
     if (!streamDataAcc) {
@@ -447,7 +619,7 @@ export class LockupTestContext extends TestContext {
     );
   }
 
-  async fetchStreamNft(salt = this.salts.default): Promise<AssetV1> {
+  async fetchStreamNft(salt = this.salts.defaultLl): Promise<AssetV1> {
     const streamNftAddress = this.getStreamNftAddress(salt);
     const streamNftAcc = await this.fetchAccount(streamNftAddress, "Stream NFT");
 
@@ -477,7 +649,7 @@ export class LockupTestContext extends TestContext {
 
   async getStreamNftCollectionSize(): Promise<BN> {
     const nftCollection = await this.fetchStreamNftCollection();
-    return new BN(nftCollection.numMinted);
+    return toBn(nftCollection.numMinted);
   }
 
   /*//////////////////////////////////////////////////////////////////////////

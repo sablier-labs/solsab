@@ -1,5 +1,5 @@
-import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
-import { beforeAll, beforeEach, describe, it } from "vitest";
+import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
+import { beforeEach, describe, it } from "vitest";
 import { ZERO } from "../../../lib/constants";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
@@ -9,14 +9,14 @@ let ctx: LockupTestContext;
 
 describe("createWithDurationsLl", () => {
   describe("when the program is not initialized", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       ctx = new LockupTestContext();
       await ctx.setUpLockup({ initProgram: false });
       await ctx.timeTravelTo(Time.START);
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.createWithDurationsLl({ salt: ZERO }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.createWithDurationsLl({ salt: ZERO }), ERR_ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -27,22 +27,22 @@ describe("createWithDurationsLl", () => {
       await ctx.timeTravelTo(Time.START);
     });
 
-    describe("when cliff duration not zero", () => {
-      it("it should create the stream", async () => {
+    describe("when cliff duration is not zero", () => {
+      it("should create the stream", async () => {
         const salt = await ctx.createWithDurationsLl();
 
         const actualStreamData = await ctx.fetchStreamData(salt);
-        const expectedStreamData = ctx.defaultStream({ salt: salt }).data;
+        const expectedStreamData = ctx.defaultLinearStream({ salt: salt }).data;
         assertEqStreamData(actualStreamData, expectedStreamData);
       });
     });
 
-    describe("when cliff duration zero", () => {
-      it("it should create the stream", async () => {
+    describe("when cliff duration is zero", () => {
+      it("should create the stream", async () => {
         const salt = await ctx.createWithDurationsLl({ cliffDuration: ZERO });
 
         const actualStreamData = await ctx.fetchStreamData(salt);
-        const expectedStreamData = ctx.defaultStream({
+        const expectedStreamData = ctx.defaultLinearStream({
           model: LINEAR_MODEL({
             timestamps: { cliff: ZERO },
             unlockAmounts: { cliff: ZERO },

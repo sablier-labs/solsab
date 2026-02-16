@@ -1,28 +1,20 @@
-import type { BN } from "@coral-xyz/anchor";
 import {
-  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ACCOUNT_NOT_INITIALIZED,
-  ANCHOR_ERROR__CONSTRAINT_RAW as CONSTRAINT_RAW,
+  ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED,
+  ANCHOR_ERROR__CONSTRAINT_RAW as ERR_CONSTRAINT_RAW,
 } from "@coral-xyz/anchor-errors";
-import type { PublicKey } from "@solana/web3.js";
-import { beforeAll, beforeEach, describe, it } from "vitest";
+import { beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
-import type { StreamData } from "../../../target/types/sablier_lockup_structs";
 import { createATAAndFund, deriveATAAddress, getATABalance } from "../../common/anchor-bankrun";
-import {
-  assertAccountExists,
-  assertAccountNotExists,
-  assertEqBn,
-  assertLteBn,
-} from "../../common/assertions";
+import { assertAccountExists, assertAccountNotExists } from "../../common/assertions";
 import { LockupTestContext } from "../context";
-import { assertEqStreamData, expectToThrow } from "../utils/assertions";
-import { Amount, Time } from "../utils/defaults";
+import { expectToThrow, postWithdrawAssertions } from "../utils/assertions";
+import { LinearAmounts, Time } from "../utils/defaults";
 
 let ctx: LockupTestContext;
 
-describe("withdraw", () => {
+describe("withdrawLl", () => {
   describe("when the program is not initialized", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       ctx = new LockupTestContext();
       await ctx.setUpLockup({ initProgram: false });
       // Set the time to 26% of the stream duration
@@ -30,7 +22,7 @@ describe("withdraw", () => {
     });
 
     it("should fail", async () => {
-      await expectToThrow(ctx.withdraw({ salt: BN_1 }), ACCOUNT_NOT_INITIALIZED);
+      await expectToThrow(ctx.withdraw({ salt: BN_1 }), ERR_ACCOUNT_NOT_INITIALIZED);
     });
   });
 
@@ -44,7 +36,10 @@ describe("withdraw", () => {
 
     describe("given a null stream", () => {
       it("should fail", async () => {
-        await expectToThrow(ctx.withdraw({ salt: ctx.salts.nonExisting }), ACCOUNT_NOT_INITIALIZED);
+        await expectToThrow(
+          ctx.withdraw({ salt: ctx.salts.nonExisting }),
+          ERR_ACCOUNT_NOT_INITIALIZED,
+        );
       });
     });
 
@@ -53,7 +48,7 @@ describe("withdraw", () => {
         it("should fail", async () => {
           await expectToThrow(
             ctx.withdraw({ depositedTokenMint: ctx.randomToken }),
-            ACCOUNT_NOT_INITIALIZED,
+            ERR_ACCOUNT_NOT_INITIALIZED,
           );
         });
       });
@@ -79,12 +74,12 @@ describe("withdraw", () => {
             });
           });
 
-          describe("when non zero withdraw amount", () => {
+          describe("when non-zero withdraw amount", () => {
             describe("when withdraw amount overdraws", () => {
               it("should fail", async () => {
                 await expectToThrow(
                   ctx.withdraw({
-                    withdrawAmount: Amount.WITHDRAW.add(BN_1),
+                    withdrawAmount: LinearAmounts.WITHDRAW.add(BN_1),
                   }),
                   "Overdraw",
                 );
@@ -92,63 +87,63 @@ describe("withdraw", () => {
             });
 
             describe("when withdraw amount does not overdraw", () => {
-              describe("when withdrawal address not recipient", () => {
-                describe("when signer not recipient", () => {
+              describe("when withdrawal address is not recipient", () => {
+                describe("when signer is not recipient", () => {
                   it("should fail", async () => {
                     await expectToThrow(
                       ctx.withdraw({
                         signer: ctx.sender.keys,
                         withdrawalRecipient: ctx.sender.keys.publicKey,
                       }),
-                      CONSTRAINT_RAW,
+                      ERR_CONSTRAINT_RAW,
                     );
                   });
                 });
 
-                describe("when recipient doesn't have an ATA for the Stream's asset", () => {
-                  it("should create the ATA", async () => {
-                    // Set up the sender for the test
-                    await createATAAndFund(
-                      ctx.banksClient,
-                      ctx.defaultBankrunPayer,
-                      ctx.randomToken,
-                      Amount.DEPOSIT,
-                      ProgramId.TOKEN,
-                      ctx.sender.keys.publicKey,
-                    );
+                describe("when signer is recipient", () => {
+                  describe("when recipient doesn't have an ATA for the Stream's asset", () => {
+                    it("should create the ATA", async () => {
+                      // Set up the sender for the test
+                      await createATAAndFund(
+                        ctx.banksClient,
+                        ctx.defaultBankrunPayer,
+                        ctx.randomToken,
+                        LinearAmounts.DEPOSIT,
+                        ProgramId.SPL_TOKEN,
+                        ctx.sender.keys.publicKey,
+                      );
 
-                    // Create a new stream with a random token
-                    const salt = await ctx.createWithTimestampsLl({
-                      depositAmount: Amount.DEPOSIT,
-                      depositTokenMint: ctx.randomToken,
+                      // Create a new stream with a random token
+                      const salt = await ctx.createWithTimestampsLl({
+                        depositAmount: LinearAmounts.DEPOSIT,
+                        depositTokenMint: ctx.randomToken,
+                      });
+
+                      // Derive the recipient's ATA address
+                      const recipientATA = deriveATAAddress(
+                        ctx.randomToken,
+                        ctx.recipient.keys.publicKey,
+                        ProgramId.SPL_TOKEN,
+                      );
+
+                      // Assert that the recipient's ATA does not exist
+                      await assertAccountNotExists(ctx, recipientATA, "Recipient's ATA");
+
+                      // Perform the withdrawal
+                      await ctx.withdraw({
+                        depositedTokenMint: ctx.randomToken,
+                        salt,
+                      });
+
+                      // Assert that the recipient's ATA was created
+                      await assertAccountExists(ctx, recipientATA, "Recipient's ATA");
                     });
-
-                    // Derive the recipient's ATA address
-                    const recipientATA = deriveATAAddress(
-                      ctx.randomToken,
-                      ctx.recipient.keys.publicKey,
-                      ProgramId.TOKEN,
-                    );
-
-                    // Assert that the recipient's ATA does not exist
-                    await assertAccountNotExists(ctx, recipientATA, "Recipient's ATA");
-
-                    // Perform the withdrawal
-                    await ctx.withdraw({
-                      depositedTokenMint: ctx.randomToken,
-                      salt,
-                    });
-
-                    // Assert that the recipient's ATA was created
-                    await assertAccountExists(ctx, recipientATA, "Recipient's ATA");
                   });
-                });
 
-                describe("when recipient has an ATA for the Stream's asset", () => {
-                  describe("when signer recipient", () => {
+                  describe("when recipient has an ATA for the Stream's asset", () => {
                     it("should make the withdrawal", async () => {
                       // Get stream info before withdrawal
-                      const stream = ctx.defaultStream();
+                      const stream = ctx.defaultLinearStream();
 
                       // Get the Lamports balance of the Treasury before the withdrawal
                       const treasuryLamportsBefore = await ctx.getTreasuryLamports();
@@ -175,10 +170,11 @@ describe("withdraw", () => {
                       });
 
                       const expectedStreamData = stream.data;
-                      expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
+                      expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
 
                       await postWithdrawAssertions(
-                        ctx.salts.default,
+                        ctx,
+                        ctx.salts.defaultLl,
                         txSignerKeys.publicKey,
                         txSignerLamportsBefore,
                         treasuryLamportsBefore,
@@ -193,11 +189,11 @@ describe("withdraw", () => {
                 });
               });
 
-              describe("when withdrawal address recipient", () => {
-                describe("when signer recipient", () => {
+              describe("when withdrawal address is recipient", () => {
+                describe("when signer is recipient", () => {
                   it("should make the withdrawal", async () => {
                     // Get stream info before withdrawal
-                    const stream = ctx.defaultStream();
+                    const stream = ctx.defaultLinearStream();
 
                     // Get the Lamports balance of the Treasury before the withdrawal
                     const treasuryLamportsBefore = await ctx.getTreasuryLamports();
@@ -219,10 +215,11 @@ describe("withdraw", () => {
                     await ctx.withdraw({ signer: txSignerKeys });
 
                     const expectedStreamData = stream.data;
-                    expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
+                    expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
 
                     await postWithdrawAssertions(
-                      ctx.salts.default,
+                      ctx,
+                      ctx.salts.defaultLl,
                       txSignerKeys.publicKey,
                       txSignerLamportsBefore,
                       treasuryLamportsBefore,
@@ -235,13 +232,13 @@ describe("withdraw", () => {
                   });
                 });
 
-                describe("when signer not recipient", () => {
+                describe("when signer is not recipient", () => {
                   describe("when stream status is SETTLED", () => {
                     it("should make the withdrawal", async () => {
                       await ctx.timeTravelTo(Time.END);
 
                       // Get stream info before withdrawal
-                      const stream = ctx.defaultStream();
+                      const stream = ctx.defaultLinearStream();
 
                       // Get the Lamports balance of the Treasury before the withdrawal
                       const treasuryLamportsBefore = await ctx.getTreasuryLamports();
@@ -264,16 +261,17 @@ describe("withdraw", () => {
                       );
                       await ctx.withdraw({
                         signer: txSignerKeys,
-                        withdrawAmount: Amount.DEPOSIT,
+                        withdrawAmount: LinearAmounts.DEPOSIT,
                       });
 
                       const expectedStreamData = stream.data;
-                      expectedStreamData.amounts.withdrawn = Amount.DEPOSIT;
+                      expectedStreamData.amounts.withdrawn = LinearAmounts.DEPOSIT;
                       expectedStreamData.isCancelable = false;
                       expectedStreamData.isDepleted = true;
 
                       await postWithdrawAssertions(
-                        ctx.salts.default,
+                        ctx,
+                        ctx.salts.defaultLl,
                         txSignerKeys.publicKey,
                         txSignerLamportsBefore,
                         treasuryLamportsBefore,
@@ -292,7 +290,7 @@ describe("withdraw", () => {
                         await ctx.cancel();
 
                         // Get stream info before withdrawal
-                        const stream = ctx.defaultStream({
+                        const stream = ctx.defaultLinearStream({
                           isCancelable: false,
                           isDepleted: true,
                           wasCanceled: true,
@@ -319,11 +317,12 @@ describe("withdraw", () => {
                         );
                         await ctx.withdraw({ signer: txSignerKeys });
                         const expectedStreamData = stream.data;
-                        expectedStreamData.amounts.refunded = Amount.REFUND;
-                        expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
+                        expectedStreamData.amounts.refunded = LinearAmounts.REFUND;
+                        expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
 
                         await postWithdrawAssertions(
-                          ctx.salts.default,
+                          ctx,
+                          ctx.salts.defaultLl,
                           txSignerKeys.publicKey,
                           txSignerLamportsBefore,
                           treasuryLamportsBefore,
@@ -340,7 +339,7 @@ describe("withdraw", () => {
                       describe("given token SPL standard", () => {
                         it("should make the withdrawal", async () => {
                           // Get stream info before withdrawal
-                          const stream = ctx.defaultStream();
+                          const stream = ctx.defaultLinearStream();
 
                           // Get the Lamports balance of the Treasury before the withdrawal
                           const treasuryLamportsBefore = await ctx.getTreasuryLamports();
@@ -363,9 +362,10 @@ describe("withdraw", () => {
                           );
                           await ctx.withdraw({ signer: txSignerKeys });
                           const expectedStreamData = stream.data;
-                          expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
+                          expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
                           await postWithdrawAssertions(
-                            ctx.salts.default,
+                            ctx,
+                            ctx.salts.defaultLl,
                             txSignerKeys.publicKey,
                             txSignerLamportsBefore,
                             treasuryLamportsBefore,
@@ -383,7 +383,7 @@ describe("withdraw", () => {
                           const salt = await ctx.createWithTimestampsLlToken2022();
 
                           // Get stream info before withdrawal
-                          const stream = ctx.defaultStreamToken2022({ salt });
+                          const stream = ctx.defaultLinearStreamToken2022({ salt });
 
                           // Get the Lamports balance of the Treasury before the withdrawal
                           const treasuryLamportsBefore = await ctx.getTreasuryLamports();
@@ -407,8 +407,9 @@ describe("withdraw", () => {
                           await ctx.withdrawToken2022(salt, txSignerKeys);
 
                           const expectedStreamData = stream.data;
-                          expectedStreamData.amounts.withdrawn = Amount.WITHDRAW;
+                          expectedStreamData.amounts.withdrawn = LinearAmounts.WITHDRAW;
                           await postWithdrawAssertions(
+                            ctx,
                             salt,
                             txSignerKeys.publicKey,
                             txSignerLamportsBefore,
@@ -432,49 +433,3 @@ describe("withdraw", () => {
     });
   });
 });
-
-async function postWithdrawAssertions(
-  salt: BN,
-  txSigner: PublicKey,
-  txSignerLamportsBefore: BN,
-  treasuryLamportsBefore: BN,
-  withdrawalRecipientATA: PublicKey,
-  withdrawalRecipientATABalanceBefore: BN,
-  expectedStreamData: StreamData,
-  streamDataAta: PublicKey,
-  streamDataAtaBalanceBefore: BN,
-) {
-  // Assert that the Stream state has been updated correctly
-  const actualStreamData = await ctx.fetchStreamData(salt);
-  assertEqStreamData(actualStreamData, expectedStreamData);
-
-  const expectedFee = await ctx.withdrawalFeeInLamports();
-
-  // Get the Lamports balance of the Treasury after the withdrawal
-  const treasuryLamportsAfter = await ctx.getTreasuryLamports();
-
-  // Assert that the tx signer lamports balance has decreased by, at least, the withdrawal fee amount.
-  // We use `<=` because we don't know the gas cost in advance.
-  const txSignerLamportsAfter = await ctx.getLamportsOf(txSigner);
-  assertLteBn(txSignerLamportsAfter, txSignerLamportsBefore.sub(expectedFee));
-
-  // Assert that the Treasury has been credited with the withdrawal fee.
-  assertEqBn(treasuryLamportsAfter, treasuryLamportsBefore.add(expectedFee));
-
-  // Get the withdrawal recipient's token balance
-  const withdrawalRecipientTokenBalance = await getATABalance(
-    ctx.banksClient,
-    withdrawalRecipientATA,
-  );
-
-  // Assert that the withdrawal recipient's token balance has been changed correctly
-  const expectedWithdrawnAmount = expectedStreamData.amounts.withdrawn;
-  assertEqBn(
-    withdrawalRecipientTokenBalance,
-    withdrawalRecipientATABalanceBefore.add(expectedWithdrawnAmount),
-  );
-
-  // Assert that the StreamData ATA balance has decreased by the withdrawn amount
-  const streamDataAtaBalanceAfter = await getATABalance(ctx.banksClient, streamDataAta);
-  assertEqBn(streamDataAtaBalanceAfter, streamDataAtaBalanceBefore.sub(expectedWithdrawnAmount));
-}

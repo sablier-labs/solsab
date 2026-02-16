@@ -54,7 +54,7 @@ pub enum ErrorCode {
     #[msg("Stream start time must be strictly less than the first tranche's timestamp!")]
     StartTimeNotLessThanFirstTranche,
     #[msg("Tranche amounts and durations arrays must have same length!")]
-    TrancheAmountsDurationsMismatch,
+    TrancheAmountsAndDurationsMismatch,
     #[msg("Too many tranches!")]
     TooManyTranches,
     #[msg("Tranche timestamp overflow!")]

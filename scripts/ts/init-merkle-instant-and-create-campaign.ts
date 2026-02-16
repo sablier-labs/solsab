@@ -39,7 +39,7 @@ async function createCampaign({
   startTime = Campaign.START_TIME,
   expirationTime = Campaign.EXPIRATION_TIME,
   airdropTokenMint = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"), // USDC on Devnet
-  airdropTokenProgram = ProgramId.TOKEN,
+  airdropTokenProgram = ProgramId.SPL_TOKEN,
 } = {}) {
   // Set a higher compute unit limit so that the transaction doesn't fail
   const increaseCULimitIx = ComputeBudgetProgram.setComputeUnitLimit({ units: 1_000_000 });

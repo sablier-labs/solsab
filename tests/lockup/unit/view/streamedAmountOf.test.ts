@@ -5,12 +5,13 @@ import { assertEqBn } from "../../../common/assertions";
 import { LockupTestContext } from "../../context";
 import { getLinearStreamedAmount } from "../../utils/calculations";
 import {
-  Amount,
   LINEAR_AMOUNTS,
   LINEAR_TIMESTAMPS,
   LINEAR_UNLOCK_AMOUNTS,
+  LinearAmounts,
   Time,
-  UNLOCK_AMOUNTS,
+  TranchedAmounts,
+  TranchedTimes,
 } from "../../utils/defaults";
 
 let ctx: LockupTestContext;
@@ -30,140 +31,118 @@ describe("streamedAmountOf", () => {
   });
 
   describe("given a valid stream", () => {
-    describe("given a canceled stream", () => {
-      describe("given CANCELED status", () => {
-        it("should return the correct streamed amount", async () => {
-          await ctx.timeTravelTo(Time.MID_26_PERCENT);
-          await ctx.cancel();
-          const actualStreamedAmount = await ctx.streamedAmountOf();
-          const expectedStreamedAmount = Amount.STREAMED_26_PERCENT;
-          assertEqBn(actualStreamedAmount, expectedStreamedAmount);
-        });
-      });
-
-      describe("given DEPLETED status", () => {
-        it("should return the correct streamed amount", async () => {
-          await ctx.timeTravelTo(Time.MID_26_PERCENT);
-          await ctx.cancel();
-          await ctx.withdrawMax();
-
-          let actualStreamedAmount = await ctx.streamedAmountOf();
-          const expectedStreamedAmount = Amount.STREAMED_26_PERCENT;
-          assertEqBn(actualStreamedAmount, expectedStreamedAmount);
-
-          await ctx.timeTravelTo(Time.MID_26_PERCENT.add(toBn(10)));
-
-          // It should remain the same over time
-          actualStreamedAmount = await ctx.streamedAmountOf();
-          assertEqBn(actualStreamedAmount, expectedStreamedAmount);
-        });
-      });
-    });
-
-    describe("given a not canceled stream", () => {
-      describe("given PENDING status", () => {
-        it("should return zero", async () => {
-          await ctx.timeTravelTo(Time.START.sub(toBn(1)));
-          const actualStreamedAmount = await ctx.streamedAmountOf();
-          const expectedStreamedAmount = ZERO;
-          assertEqBn(actualStreamedAmount, expectedStreamedAmount);
-        });
-      });
-
-      describe("given SETTLED status", () => {
-        it("should return the deposited amount", async () => {
-          await ctx.timeTravelTo(Time.END);
-
-          const actualStreamedAmount = await ctx.streamedAmountOf();
-          const expectedStreamedAmount = Amount.DEPOSIT;
-          assertEqBn(actualStreamedAmount, expectedStreamedAmount);
-        });
-      });
-
-      describe("given DEPLETED status", () => {
-        it("should return the deposited amount", async () => {
-          await ctx.timeTravelTo(Time.END);
-          await ctx.withdrawMax();
-
-          const actualStreamedAmount = await ctx.streamedAmountOf();
-          const expectedStreamedAmount = Amount.DEPOSIT;
-          assertEqBn(actualStreamedAmount, expectedStreamedAmount);
-        });
-      });
-
-      describe("given STREAMING status", () => {
-        describe("given cliff time zero", () => {
+    describe("given a LL stream", () => {
+      describe("given a canceled stream", () => {
+        describe("when the stream has not been depleted", () => {
           it("should return the correct streamed amount", async () => {
-            const salt = await ctx.createWithTimestampsLl({
-              timestamps: LINEAR_TIMESTAMPS({ cliff: ZERO }),
-              unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO }),
-            });
             await ctx.timeTravelTo(Time.MID_26_PERCENT);
-
-            const actualStreamedAmount = await ctx.streamedAmountOf(salt);
-            const expectedStreamedAmount = Amount.STREAMED_26_PERCENT;
+            await ctx.cancel();
+            const actualStreamedAmount = await ctx.streamedAmountOf();
+            const expectedStreamedAmount = LinearAmounts.STREAMED_26_PERCENT;
             assertEqBn(actualStreamedAmount, expectedStreamedAmount);
           });
         });
 
-        describe("given cliff time not zero", () => {
-          describe("given cliff time in the future", () => {
-            it("should return the start amount", async () => {
-              const startUnlockAmount = toBn(1);
+        describe("when the stream has been depleted", () => {
+          it("should return the correct streamed amount", async () => {
+            await ctx.timeTravelTo(Time.MID_26_PERCENT);
+            await ctx.cancel();
+            await ctx.withdrawMax();
+
+            let actualStreamedAmount = await ctx.streamedAmountOf();
+            const expectedStreamedAmount = LinearAmounts.STREAMED_26_PERCENT;
+            assertEqBn(actualStreamedAmount, expectedStreamedAmount);
+
+            await ctx.timeTravelTo(Time.MID_26_PERCENT.addn(10));
+
+            // It should remain the same over time
+            actualStreamedAmount = await ctx.streamedAmountOf();
+            assertEqBn(actualStreamedAmount, expectedStreamedAmount);
+          });
+        });
+      });
+
+      describe("given a not canceled stream", () => {
+        describe("given PENDING status", () => {
+          it("should return zero", async () => {
+            await ctx.timeTravelTo(Time.START.subn(1));
+            const actualStreamedAmount = await ctx.streamedAmountOf();
+            const expectedStreamedAmount = ZERO;
+            assertEqBn(actualStreamedAmount, expectedStreamedAmount);
+          });
+        });
+
+        describe("given SETTLED status", () => {
+          it("should return the deposited amount", async () => {
+            await ctx.timeTravelTo(Time.END);
+
+            const actualStreamedAmount = await ctx.streamedAmountOf();
+            const expectedStreamedAmount = LinearAmounts.DEPOSIT;
+            assertEqBn(actualStreamedAmount, expectedStreamedAmount);
+          });
+        });
+
+        describe("given DEPLETED status", () => {
+          it("should return the deposited amount", async () => {
+            await ctx.timeTravelTo(Time.END);
+            await ctx.withdrawMax();
+
+            const actualStreamedAmount = await ctx.streamedAmountOf();
+            const expectedStreamedAmount = LinearAmounts.DEPOSIT;
+            assertEqBn(actualStreamedAmount, expectedStreamedAmount);
+          });
+        });
+
+        describe("given STREAMING status", () => {
+          describe("given cliff time is zero", () => {
+            it("should return the correct streamed amount", async () => {
               const salt = await ctx.createWithTimestampsLl({
-                unlockAmounts: UNLOCK_AMOUNTS({ start: startUnlockAmount }),
+                timestamps: LINEAR_TIMESTAMPS({ cliff: ZERO }),
+                unlockAmounts: LINEAR_UNLOCK_AMOUNTS({ cliff: ZERO }),
               });
-              await ctx.timeTravelTo(Time.CLIFF.sub(toBn(1)));
+              await ctx.timeTravelTo(Time.MID_26_PERCENT);
 
               const actualStreamedAmount = await ctx.streamedAmountOf(salt);
-              const expectedStreamedAmount = startUnlockAmount;
+              const expectedStreamedAmount = LinearAmounts.STREAMED_26_PERCENT;
               assertEqBn(actualStreamedAmount, expectedStreamedAmount);
             });
           });
 
-          describe("given cliff time in the present", () => {
-            it("should return the correct streamed amount", async () => {
-              await ctx.timeTravelTo(Time.CLIFF);
-              const actualStreamedAmount = await ctx.streamedAmountOf();
-              const expectedStreamedAmount = Amount.CLIFF;
-              assertEqBn(actualStreamedAmount, expectedStreamedAmount);
-            });
-          });
-
-          describe("given cliff time in the past", () => {
-            describe("given start unlock amount not zero", () => {
-              it("should return the correct streamed amount", async () => {
+          describe("given cliff time is not zero", () => {
+            describe("given cliff time in the future", () => {
+              it("should return the start amount", async () => {
                 const startUnlockAmount = toBn(1);
                 const salt = await ctx.createWithTimestampsLl({
-                  unlockAmounts: UNLOCK_AMOUNTS({ start: startUnlockAmount }),
+                  unlockAmounts: LINEAR_UNLOCK_AMOUNTS({ start: startUnlockAmount }),
                 });
-                await ctx.timeTravelTo(Time.MID_26_PERCENT);
-
-                const amounts = LINEAR_AMOUNTS();
-                const unlockAmounts = LINEAR_UNLOCK_AMOUNTS({ start: startUnlockAmount });
+                await ctx.timeTravelTo(Time.CLIFF.subn(1));
 
                 const actualStreamedAmount = await ctx.streamedAmountOf(salt);
-                const expectedStreamedAmount = getLinearStreamedAmount(
-                  amounts,
-                  Time.MID_26_PERCENT,
-                  LINEAR_TIMESTAMPS(),
-                  unlockAmounts,
-                );
+                const expectedStreamedAmount = startUnlockAmount;
                 assertEqBn(actualStreamedAmount, expectedStreamedAmount);
               });
             });
 
-            describe("given start unlock amount zero", () => {
-              describe("given cliff unlock amount zero", () => {
-                it("should return the correct streamed amount", async () => {
-                  const salt = await ctx.createWithTimestampsLl({
-                    unlockAmounts: UNLOCK_AMOUNTS({ cliff: ZERO }),
-                  });
+            describe("given cliff time in the present", () => {
+              it("should return the correct streamed amount", async () => {
+                await ctx.timeTravelTo(Time.CLIFF);
+                const actualStreamedAmount = await ctx.streamedAmountOf();
+                const expectedStreamedAmount = LinearAmounts.CLIFF;
+                assertEqBn(actualStreamedAmount, expectedStreamedAmount);
+              });
+            });
 
+            describe("given cliff time in the past", () => {
+              describe("given start unlock amount not zero", () => {
+                it("should return the correct streamed amount", async () => {
+                  const startUnlockAmount = toBn(1);
+                  const salt = await ctx.createWithTimestampsLl({
+                    unlockAmounts: LINEAR_UNLOCK_AMOUNTS({ start: startUnlockAmount }),
+                  });
                   await ctx.timeTravelTo(Time.MID_26_PERCENT);
 
                   const amounts = LINEAR_AMOUNTS();
-                  const unlockAmounts = LINEAR_UNLOCK_AMOUNTS({ cliff: ZERO });
+                  const unlockAmounts = LINEAR_UNLOCK_AMOUNTS({ start: startUnlockAmount });
 
                   const actualStreamedAmount = await ctx.streamedAmountOf(salt);
                   const expectedStreamedAmount = getLinearStreamedAmount(
@@ -176,15 +155,125 @@ describe("streamedAmountOf", () => {
                 });
               });
 
-              describe("given cliff unlock amount not zero", () => {
-                it("should return the correct streamed amount", async () => {
-                  await ctx.timeTravelTo(Time.MID_26_PERCENT);
-                  const actualStreamedAmount = await ctx.streamedAmountOf();
-                  const expectedStreamedAmount = Amount.STREAMED_26_PERCENT;
-                  assertEqBn(actualStreamedAmount, expectedStreamedAmount);
+              describe("given start unlock amount zero", () => {
+                describe("given cliff unlock amount zero", () => {
+                  it("should return the correct streamed amount", async () => {
+                    const salt = await ctx.createWithTimestampsLl({
+                      unlockAmounts: LINEAR_UNLOCK_AMOUNTS({ cliff: ZERO }),
+                    });
+
+                    await ctx.timeTravelTo(Time.MID_26_PERCENT);
+
+                    const amounts = LINEAR_AMOUNTS();
+                    const unlockAmounts = LINEAR_UNLOCK_AMOUNTS({ cliff: ZERO });
+
+                    const actualStreamedAmount = await ctx.streamedAmountOf(salt);
+                    const expectedStreamedAmount = getLinearStreamedAmount(
+                      amounts,
+                      Time.MID_26_PERCENT,
+                      LINEAR_TIMESTAMPS(),
+                      unlockAmounts,
+                    );
+                    assertEqBn(actualStreamedAmount, expectedStreamedAmount);
+                  });
+                });
+
+                describe("given cliff unlock amount not zero", () => {
+                  it("should return the correct streamed amount", async () => {
+                    await ctx.timeTravelTo(Time.MID_26_PERCENT);
+                    const actualStreamedAmount = await ctx.streamedAmountOf();
+                    const expectedStreamedAmount = LinearAmounts.STREAMED_26_PERCENT;
+                    assertEqBn(actualStreamedAmount, expectedStreamedAmount);
+                  });
                 });
               });
             });
+          });
+        });
+      });
+    });
+
+    describe("given a LT stream", () => {
+      describe("given a canceled stream", () => {
+        describe("when the stream has not been depleted", () => {
+          it("should return the correct streamed amount", async () => {
+            await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+            await ctx.cancel({ salt: ctx.salts.defaultLt });
+
+            const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+            // After cancel, streamed = deposited - refunded = tranche_1
+            assertEqBn(actualStreamedAmount, TranchedAmounts.TRANCHE_1);
+          });
+        });
+
+        describe("when the stream has been depleted", () => {
+          it("should return the correct streamed amount", async () => {
+            await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
+            await ctx.cancel({ salt: ctx.salts.defaultLt });
+            await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
+
+            let actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+            assertEqBn(actualStreamedAmount, TranchedAmounts.TRANCHE_1);
+
+            await ctx.timeTravelTo(TranchedTimes.TRANCHE_2);
+
+            // It should remain the same over time
+            actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+            assertEqBn(actualStreamedAmount, TranchedAmounts.TRANCHE_1);
+          });
+        });
+      });
+
+      describe("given a not canceled stream", () => {
+        describe("given PENDING status", () => {
+          it("should return 0", async () => {
+            await ctx.timeTravelTo(Time.START.subn(1));
+            const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+            assertEqBn(actualStreamedAmount, ZERO);
+          });
+        });
+
+        describe("given STREAMING status", () => {
+          describe("given before first tranche", () => {
+            it("should return 0", async () => {
+              await ctx.timeTravelTo(TranchedTimes.TRANCHE_1.subn(1));
+              const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+              assertEqBn(actualStreamedAmount, ZERO);
+            });
+          });
+
+          describe("given between tranche 1 and 2", () => {
+            it("should return the correct amount", async () => {
+              await ctx.timeTravelTo(TranchedTimes.MID_TRANCHE_1_2);
+              const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+              assertEqBn(actualStreamedAmount, TranchedAmounts.TRANCHE_1);
+            });
+          });
+
+          describe("given now > end time", () => {
+            it("should return the deposited amount", async () => {
+              await ctx.timeTravelTo(TranchedTimes.END.addn(1));
+              const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+              assertEqBn(actualStreamedAmount, TranchedAmounts.DEPOSIT);
+            });
+          });
+        });
+
+        describe("given SETTLED status", () => {
+          it("should return the deposited amount", async () => {
+            await ctx.timeTravelTo(TranchedTimes.END);
+            const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+            assertEqBn(actualStreamedAmount, TranchedAmounts.DEPOSIT);
+          });
+        });
+
+        describe("given DEPLETED status", () => {
+          it("should return the deposited amount", async () => {
+            await ctx.timeTravelTo(TranchedTimes.END);
+            await ctx.withdrawMax({ salt: ctx.salts.defaultLt });
+
+            const actualStreamedAmount = await ctx.streamedAmountOf(ctx.salts.defaultLt);
+            assertEqBn(actualStreamedAmount, TranchedAmounts.DEPOSIT);
           });
         });
       });
