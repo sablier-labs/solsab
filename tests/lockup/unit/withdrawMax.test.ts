@@ -1,5 +1,5 @@
 import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
-import { beforeAll, beforeEach, describe, it } from "vitest";
+import { beforeEach, describe, it } from "vitest";
 import { BN_1 } from "../../../lib/constants";
 import { LockupTestContext } from "../context";
 import { assertEqStreamData, expectToThrow } from "../utils/assertions";
@@ -9,7 +9,7 @@ let ctx: LockupTestContext;
 
 describe("withdrawMax", () => {
   describe("when the program is not initialized", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       ctx = new LockupTestContext();
       await ctx.setUpLockup({ initProgram: false });
     });

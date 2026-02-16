@@ -1,6 +1,6 @@
 import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
 import { PublicKey } from "@solana/web3.js";
-import { assert, beforeAll, beforeEach, describe, it } from "vitest";
+import { assert, beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import { sleepFor } from "../../../lib/helpers";
 import { createATAAndFund, getATABalanceMint } from "../../common/anchor-bankrun";
@@ -13,7 +13,7 @@ let ctx: MerkleInstantTestContext;
 
 describe("claim", () => {
   describe("when the program is not initialized", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       ctx = new MerkleInstantTestContext();
       await ctx.setUpMerkleInstant({
         initProgram: false,

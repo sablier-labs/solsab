@@ -1,7 +1,7 @@
 import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED as ERR_ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
 import { PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
-import { beforeAll, beforeEach, describe, it } from "vitest";
+import { beforeEach, describe, it } from "vitest";
 import { BN_1000, ZERO } from "../../../lib/constants";
 import { usdc } from "../../../lib/convertors";
 import { getATABalance } from "../../common/anchor-bankrun";
@@ -14,7 +14,7 @@ let ctx: LockupTestContext;
 
 describe("createWithTimestampsLl", () => {
   describe("when the program is not initialized", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       ctx = new LockupTestContext();
       await ctx.setUpLockup({ initProgram: false });
     });
@@ -200,7 +200,7 @@ describe("createWithTimestampsLl", () => {
                           salt,
                           beforeCollectionSize,
                           beforeSenderTokenBalance,
-                          ctx.defaultLinearStreamToken2022({ salt: salt }),
+                          ctx.defaultLinearStreamToken2022({ salt }),
                         );
                       });
                     });

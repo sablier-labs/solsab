@@ -230,7 +230,7 @@ describe("cancel", () => {
   let ctx: LockupTestContext;
 
   describe("when program is not initialized", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       ctx = new LockupTestContext();
       await ctx.setUpLockup({ initProgram: false });
     });

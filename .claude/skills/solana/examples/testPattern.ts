@@ -10,7 +10,7 @@
 
 // Import patterns from actual tests:
 // import { ANCHOR_ERROR__ACCOUNT_NOT_INITIALIZED } from "@coral-xyz/anchor-errors";
-// import { beforeAll, beforeEach, describe, it } from "vitest";
+// import { beforeEach, describe, it } from "vitest";
 // import { assertEqBn, expectToThrow } from "../../common/assertions";
 // import { LockupTestContext } from "../context";
 // import { Amount, Time } from "../utils/defaults";
@@ -20,7 +20,7 @@ let ctx: LockupTestContext;
 describe("withdraw", () => {
   // Test uninitialized program state
   describe("when the program is not initialized", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       ctx = new LockupTestContext();
       await ctx.setUpLockup({ initProgram: false });
       await ctx.timeTravelTo(Time.MID_26_PERCENT);

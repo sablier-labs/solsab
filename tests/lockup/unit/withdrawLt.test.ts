@@ -4,7 +4,7 @@ import {
 } from "@coral-xyz/anchor-errors";
 import type { PublicKey } from "@solana/web3.js";
 import type BN from "bn.js";
-import { beforeAll, beforeEach, describe, it } from "vitest";
+import { beforeEach, describe, it } from "vitest";
 import { BN_1, ProgramId, ZERO } from "../../../lib/constants";
 import type { StreamData } from "../../../target/types/sablier_lockup_structs";
 import { createATAAndFund, deriveATAAddress, getATABalance } from "../../common/anchor-bankrun";
@@ -22,7 +22,7 @@ let ctx: LockupTestContext;
 
 describe("withdrawLt", () => {
   describe("when the program is not initialized", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       ctx = new LockupTestContext();
       await ctx.setUpLockup({ initProgram: false });
       await ctx.timeTravelTo(TranchedTimes.TRANCHE_1);
