@@ -12,40 +12,34 @@ pub fn create_with_timestamps_ll(trident: &mut Trident, fuzz_accounts: &mut Acco
     };
 
     // Get values needed for PDA derivations
-    let creator = fuzz_accounts.creator.get(trident).unwrap();
+    let funder = fuzz_accounts.funder.get(trident).unwrap();
     let deposit_token_mint = fuzz_accounts.deposit_token_mint.get(trident).unwrap();
     let deposit_token_program = fuzz_accounts.deposit_token_program.get(trident).unwrap();
     let recipient = fuzz_accounts.recipient.get(trident).unwrap();
     let sender = fuzz_accounts.sender.get(trident).unwrap();
-    let nft_token_program = fuzz_accounts.nft_token_program.get(trident).unwrap();
+    let treasury = fuzz_accounts.treasury.get(trident).unwrap();
+    let stream_nft_collection = fuzz_accounts.stream_nft_collection.get(trident).unwrap();
 
     let ata_program: Pubkey = ASSOCIATED_TOKEN_PROGRAM_ID.parse().unwrap();
-    let metadata_program: Pubkey = TOKEN_METADATA_PROGRAM_ID.parse().unwrap();
 
-    // Derive creator ATA
-    let creator_ata = fuzz_accounts.creator_ata.insert(
+    // Derive funder ATA
+    let funder_ata = fuzz_accounts.funder_ata.insert(
         trident,
         Some(PdaSeeds::new(
-            &[creator.as_ref(), deposit_token_program.as_ref(), deposit_token_mint.as_ref()],
+            &[funder.as_ref(), deposit_token_program.as_ref(), deposit_token_mint.as_ref()],
             ata_program,
         )),
     );
 
-    // Derive stream NFT mint PDA
-    let stream_nft_mint = fuzz_accounts
-        .stream_nft_mint
-        .insert(trident, Some(PdaSeeds::new(&[STREAM_NFT_MINT, sender.as_ref(), &salt.to_le_bytes()], program_id)));
-
-    // Derive recipient stream NFT ATA
-    let recipient_stream_nft_ata = fuzz_accounts.recipient_stream_nft_ata.insert(
-        trident,
-        Some(PdaSeeds::new(&[recipient.as_ref(), nft_token_program.as_ref(), stream_nft_mint.as_ref()], ata_program)),
-    );
+    // Derive stream NFT PDA (MPL Core asset)
+    let stream_nft = fuzz_accounts
+        .stream_nft
+        .insert(trident, Some(PdaSeeds::new(&[STREAM_NFT, sender.as_ref(), &salt.to_le_bytes()], program_id)));
 
     // Derive stream data PDA
     let stream_data = fuzz_accounts
         .stream_data
-        .insert(trident, Some(PdaSeeds::new(&[STREAM_DATA, stream_nft_mint.as_ref()], program_id)));
+        .insert(trident, Some(PdaSeeds::new(&[STREAM_DATA, stream_nft.as_ref()], program_id)));
 
     // Derive stream data ATA
     let stream_data_ata = fuzz_accounts.stream_data_ata.insert(
@@ -56,49 +50,28 @@ pub fn create_with_timestamps_ll(trident: &mut Trident, fuzz_accounts: &mut Acco
         )),
     );
 
-    // Derive stream NFT master edition
-    let stream_nft_master_edition = fuzz_accounts.stream_nft_master_edition.insert(
-        trident,
-        Some(PdaSeeds::new(
-            &[METADATA, metadata_program.as_ref(), stream_nft_mint.as_ref(), EDITION],
-            metadata_program,
-        )),
-    );
-
-    // Derive stream NFT metadata
-    let stream_nft_metadata = fuzz_accounts.stream_nft_metadata.insert(
-        trident,
-        Some(PdaSeeds::new(&[METADATA, metadata_program.as_ref(), stream_nft_mint.as_ref()], metadata_program)),
-    );
-
-    // Build instruction accounts (NFT collection accounts fetched inline)
+    // Build instruction accounts
     let accounts = CreateWithTimestampsLlInstructionAccounts::new(
-        creator,
-        creator_ata,
+        funder,
+        funder_ata,
         recipient,
         sender,
-        fuzz_accounts.nft_collection_data.get(trident).unwrap(),
-        fuzz_accounts.nft_collection_master_edition.get(trident).unwrap(),
-        fuzz_accounts.nft_collection_metadata.get(trident).unwrap(),
-        fuzz_accounts.nft_collection_mint.get(trident).unwrap(),
+        treasury,
+        stream_nft_collection,
         deposit_token_mint,
-        stream_nft_mint,
-        recipient_stream_nft_ata,
         stream_data,
         stream_data_ata,
-        stream_nft_master_edition,
-        stream_nft_metadata,
+        stream_nft,
         deposit_token_program,
-        nft_token_program,
     );
 
     // Build instruction data
     let data = get_data(trident, salt, is_default_stream);
 
-    // Mint tokens to creator's ATA
-    let mint_tokens_ix = trident.mint_to(&creator_ata, &deposit_token_mint, &creator, data.deposit_amount);
+    // Mint tokens to funder's ATA
+    let mint_tokens_ix = trident.mint_to(&funder_ata, &deposit_token_mint, &funder, data.deposit_amount);
     let mint_result = trident.process_transaction(&[mint_tokens_ix], None);
-    assert!(mint_result.is_success(), "Failed to mint {} tokens to creator ATA", data.deposit_amount);
+    assert!(mint_result.is_success(), "Failed to mint {} tokens to funder ATA", data.deposit_amount);
 
     let ix = CreateWithTimestampsLlInstruction::data(data.clone()).accounts(accounts.clone()).instruction();
     let result = trident.process_transaction(&[ix], Some("CreateWithTimestampsLL"));
@@ -174,31 +147,29 @@ fn assertions(
     data: CreateWithTimestampsLlInstructionData,
 ) {
     // Account assertions - verify accounts were created
-    assert!(account_exists(trident, &accounts.stream_nft_mint), "stream_nft_mint account was not created");
-    assert!(
-        account_exists(trident, &accounts.recipient_stream_nft_ata),
-        "recipient_stream_nft_ata account was not created"
-    );
+    assert!(account_exists(trident, &accounts.stream_nft), "stream_nft account was not created");
     assert!(account_exists(trident, &accounts.stream_data), "stream_data account was not created");
     assert!(account_exists(trident, &accounts.stream_data_ata), "stream_data_ata account was not created");
-    assert!(
-        account_exists(trident, &accounts.stream_nft_master_edition),
-        "stream_nft_master_edition account was not created"
-    );
-    assert!(account_exists(trident, &accounts.stream_nft_metadata), "stream_nft_metadata account was not created");
+
+    // Verify the stream NFT is owned by the recipient
+    let nft_owner = get_mpl_core_asset_owner(trident, &accounts.stream_nft);
+    assert_eq!(nft_owner, accounts.recipient, "stream NFT should be owned by the recipient");
 
     // Data assertions - retrieve and verify stream data
     let stream_data = get_stream_data(trident, &accounts.stream_data);
 
+    // Extract linear timestamps and unlock amounts from the model
+    let (start, cliff, end, start_unlock, cliff_unlock) = get_linear_params(&stream_data);
+
     // Verify timestamps
-    assert_eq!(stream_data.timestamps.start, data.start_time, "start_time mismatch");
-    assert_eq!(stream_data.timestamps.cliff, data.cliff_time, "cliff_time mismatch");
-    assert_eq!(stream_data.timestamps.end, data.end_time, "end_time mismatch");
+    assert_eq!(start, data.start_time, "start_time mismatch");
+    assert_eq!(cliff, data.cliff_time, "cliff_time mismatch");
+    assert_eq!(end, data.end_time, "end_time mismatch");
 
     // Verify amounts
     assert_eq!(stream_data.amounts.deposited, data.deposit_amount, "deposit_amount mismatch");
-    assert_eq!(stream_data.amounts.start_unlock, data.start_unlock_amount, "start_unlock_amount mismatch");
-    assert_eq!(stream_data.amounts.cliff_unlock, data.cliff_unlock_amount, "cliff_unlock_amount mismatch");
+    assert_eq!(start_unlock, data.start_unlock_amount, "start_unlock_amount mismatch");
+    assert_eq!(cliff_unlock, data.cliff_unlock_amount, "cliff_unlock_amount mismatch");
     assert_eq!(stream_data.amounts.withdrawn, 0, "withdrawn should be 0 initially");
     assert_eq!(stream_data.amounts.refunded, 0, "refunded should be 0 initially");
 
@@ -213,12 +184,4 @@ fn assertions(
     // Verify token balances
     let stream_data_ata_balance = get_ata_token_balance(trident, &accounts.stream_data_ata);
     assert_eq!(stream_data_ata_balance, data.deposit_amount, "stream_data_ata balance should equal deposit_amount");
-
-    // Verify stream NFT mint supply
-    let stream_nft_mint_supply = get_mint_total_supply(trident, &accounts.stream_nft_mint);
-    assert_eq!(stream_nft_mint_supply, 1, "Stream NFT Mint total supply should be 1");
-
-    // Verify recipient received the stream NFT
-    let recipient_nft_balance = get_ata_token_balance(trident, &accounts.recipient_stream_nft_ata);
-    assert_eq!(recipient_nft_balance, 1, "recipient should have 1 stream NFT");
 }

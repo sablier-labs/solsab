@@ -56,7 +56,7 @@ pub mod sablier_lockup {
 
         pub stream_data_ata: AccountMeta,
 
-        pub stream_nft_mint: AccountMeta,
+        pub stream_nft: AccountMeta,
 
         pub associated_token_program: AccountMeta,
 
@@ -78,7 +78,7 @@ pub mod sablier_lockup {
 
         pub stream_data_ata: Pubkey,
 
-        pub stream_nft_mint: Pubkey,
+        pub stream_nft: Pubkey,
 
         pub deposited_token_program: Pubkey,
     }
@@ -95,7 +95,7 @@ pub mod sablier_lockup {
 
             stream_data_ata: Pubkey,
 
-            stream_nft_mint: Pubkey,
+            stream_nft: Pubkey,
 
             deposited_token_program: Pubkey,
         ) -> Self {
@@ -110,7 +110,7 @@ pub mod sablier_lockup {
 
                 stream_data_ata,
 
-                stream_nft_mint,
+                stream_nft,
 
                 deposited_token_program,
             }
@@ -152,7 +152,7 @@ pub mod sablier_lockup {
 
             self.accounts.stream_data_ata = AccountMeta::new(accounts.stream_data_ata, false);
 
-            self.accounts.stream_nft_mint = AccountMeta::new_readonly(accounts.stream_nft_mint, false);
+            self.accounts.stream_nft = AccountMeta::new_readonly(accounts.stream_nft, false);
 
             self.accounts.associated_token_program =
                 AccountMeta::new_readonly(pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"), false);
@@ -183,7 +183,7 @@ pub mod sablier_lockup {
 
             metas.push(self.accounts.stream_data_ata.clone());
 
-            metas.push(self.accounts.stream_nft_mint.clone());
+            metas.push(self.accounts.stream_nft.clone());
 
             metas.push(self.accounts.associated_token_program.clone());
 
@@ -326,157 +326,107 @@ pub mod sablier_lockup {
     /// Account metadata for CreateWithDurationsLl instruction
     #[derive(Debug, Clone, Default)]
     pub struct CreateWithDurationsLlInstructionAccountMetas {
-        pub creator: AccountMeta,
+        pub funder: AccountMeta,
 
-        pub creator_ata: AccountMeta,
+        pub funder_ata: AccountMeta,
 
         pub recipient: AccountMeta,
 
         pub sender: AccountMeta,
 
-        pub nft_collection_data: AccountMeta,
+        pub treasury: AccountMeta,
 
-        pub nft_collection_master_edition: AccountMeta,
-
-        pub nft_collection_metadata: AccountMeta,
-
-        pub nft_collection_mint: AccountMeta,
+        pub stream_nft_collection: AccountMeta,
 
         pub deposit_token_mint: AccountMeta,
-
-        pub stream_nft_mint: AccountMeta,
-
-        pub recipient_stream_nft_ata: AccountMeta,
 
         pub stream_data: AccountMeta,
 
         pub stream_data_ata: AccountMeta,
 
-        pub stream_nft_master_edition: AccountMeta,
-
-        pub stream_nft_metadata: AccountMeta,
+        pub stream_nft: AccountMeta,
 
         pub associated_token_program: AccountMeta,
 
         pub deposit_token_program: AccountMeta,
 
-        pub nft_token_program: AccountMeta,
-
-        pub token_metadata_program: AccountMeta,
+        pub mpl_core_program: AccountMeta,
 
         pub system_program: AccountMeta,
-
-        pub rent: AccountMeta,
     }
 
     /// Account pubkeys for CreateWithDurationsLl instruction
     #[derive(Debug, Clone)]
     pub struct CreateWithDurationsLlInstructionAccounts {
-        pub creator: Pubkey,
+        pub funder: Pubkey,
 
-        pub creator_ata: Pubkey,
+        pub funder_ata: Pubkey,
 
         pub recipient: Pubkey,
 
         pub sender: Pubkey,
 
-        pub nft_collection_data: Pubkey,
+        pub treasury: Pubkey,
 
-        pub nft_collection_master_edition: Pubkey,
-
-        pub nft_collection_metadata: Pubkey,
-
-        pub nft_collection_mint: Pubkey,
+        pub stream_nft_collection: Pubkey,
 
         pub deposit_token_mint: Pubkey,
-
-        pub stream_nft_mint: Pubkey,
-
-        pub recipient_stream_nft_ata: Pubkey,
 
         pub stream_data: Pubkey,
 
         pub stream_data_ata: Pubkey,
 
-        pub stream_nft_master_edition: Pubkey,
-
-        pub stream_nft_metadata: Pubkey,
+        pub stream_nft: Pubkey,
 
         pub deposit_token_program: Pubkey,
-
-        pub nft_token_program: Pubkey,
     }
 
     impl CreateWithDurationsLlInstructionAccounts {
         pub fn new(
-            creator: Pubkey,
+            funder: Pubkey,
 
-            creator_ata: Pubkey,
+            funder_ata: Pubkey,
 
             recipient: Pubkey,
 
             sender: Pubkey,
 
-            nft_collection_data: Pubkey,
+            treasury: Pubkey,
 
-            nft_collection_master_edition: Pubkey,
-
-            nft_collection_metadata: Pubkey,
-
-            nft_collection_mint: Pubkey,
+            stream_nft_collection: Pubkey,
 
             deposit_token_mint: Pubkey,
-
-            stream_nft_mint: Pubkey,
-
-            recipient_stream_nft_ata: Pubkey,
 
             stream_data: Pubkey,
 
             stream_data_ata: Pubkey,
 
-            stream_nft_master_edition: Pubkey,
-
-            stream_nft_metadata: Pubkey,
+            stream_nft: Pubkey,
 
             deposit_token_program: Pubkey,
-
-            nft_token_program: Pubkey,
         ) -> Self {
             Self {
-                creator,
+                funder,
 
-                creator_ata,
+                funder_ata,
 
                 recipient,
 
                 sender,
 
-                nft_collection_data,
+                treasury,
 
-                nft_collection_master_edition,
-
-                nft_collection_metadata,
-
-                nft_collection_mint,
+                stream_nft_collection,
 
                 deposit_token_mint,
-
-                stream_nft_mint,
-
-                recipient_stream_nft_ata,
 
                 stream_data,
 
                 stream_data_ata,
 
-                stream_nft_master_edition,
-
-                stream_nft_metadata,
+                stream_nft,
 
                 deposit_token_program,
-
-                nft_token_program,
             }
         }
     }
@@ -548,52 +498,36 @@ pub mod sablier_lockup {
         }
 
         pub fn accounts(mut self, accounts: CreateWithDurationsLlInstructionAccounts) -> Self {
-            self.accounts.creator = AccountMeta::new(accounts.creator, true);
+            self.accounts.funder = AccountMeta::new(accounts.funder, true);
 
-            self.accounts.creator_ata = AccountMeta::new(accounts.creator_ata, false);
+            self.accounts.funder_ata = AccountMeta::new(accounts.funder_ata, false);
 
             self.accounts.recipient = AccountMeta::new_readonly(accounts.recipient, false);
 
             self.accounts.sender = AccountMeta::new_readonly(accounts.sender, false);
 
-            self.accounts.nft_collection_data = AccountMeta::new(accounts.nft_collection_data, false);
+            self.accounts.treasury = AccountMeta::new_readonly(accounts.treasury, false);
 
-            self.accounts.nft_collection_master_edition =
-                AccountMeta::new_readonly(accounts.nft_collection_master_edition, false);
-
-            self.accounts.nft_collection_metadata = AccountMeta::new(accounts.nft_collection_metadata, false);
-
-            self.accounts.nft_collection_mint = AccountMeta::new_readonly(accounts.nft_collection_mint, false);
+            self.accounts.stream_nft_collection = AccountMeta::new(accounts.stream_nft_collection, false);
 
             self.accounts.deposit_token_mint = AccountMeta::new_readonly(accounts.deposit_token_mint, false);
-
-            self.accounts.stream_nft_mint = AccountMeta::new(accounts.stream_nft_mint, false);
-
-            self.accounts.recipient_stream_nft_ata = AccountMeta::new(accounts.recipient_stream_nft_ata, false);
 
             self.accounts.stream_data = AccountMeta::new(accounts.stream_data, false);
 
             self.accounts.stream_data_ata = AccountMeta::new(accounts.stream_data_ata, false);
 
-            self.accounts.stream_nft_master_edition = AccountMeta::new(accounts.stream_nft_master_edition, false);
-
-            self.accounts.stream_nft_metadata = AccountMeta::new(accounts.stream_nft_metadata, false);
+            self.accounts.stream_nft = AccountMeta::new(accounts.stream_nft, false);
 
             self.accounts.associated_token_program =
                 AccountMeta::new_readonly(pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"), false);
 
             self.accounts.deposit_token_program = AccountMeta::new_readonly(accounts.deposit_token_program, false);
 
-            self.accounts.nft_token_program = AccountMeta::new_readonly(accounts.nft_token_program, false);
-
-            self.accounts.token_metadata_program =
-                AccountMeta::new_readonly(pubkey!("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"), false);
+            self.accounts.mpl_core_program =
+                AccountMeta::new_readonly(pubkey!("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"), false);
 
             self.accounts.system_program =
                 AccountMeta::new_readonly(pubkey!("11111111111111111111111111111111"), false);
-
-            self.accounts.rent =
-                AccountMeta::new_readonly(pubkey!("SysvarRent111111111111111111111111111111111"), false);
 
             self
         }
@@ -606,47 +540,278 @@ pub mod sablier_lockup {
         fn to_account_metas(&self) -> Vec<AccountMeta> {
             let mut metas = Vec::new();
 
-            metas.push(self.accounts.creator.clone());
+            metas.push(self.accounts.funder.clone());
 
-            metas.push(self.accounts.creator_ata.clone());
+            metas.push(self.accounts.funder_ata.clone());
 
             metas.push(self.accounts.recipient.clone());
 
             metas.push(self.accounts.sender.clone());
 
-            metas.push(self.accounts.nft_collection_data.clone());
+            metas.push(self.accounts.treasury.clone());
 
-            metas.push(self.accounts.nft_collection_master_edition.clone());
-
-            metas.push(self.accounts.nft_collection_metadata.clone());
-
-            metas.push(self.accounts.nft_collection_mint.clone());
+            metas.push(self.accounts.stream_nft_collection.clone());
 
             metas.push(self.accounts.deposit_token_mint.clone());
-
-            metas.push(self.accounts.stream_nft_mint.clone());
-
-            metas.push(self.accounts.recipient_stream_nft_ata.clone());
 
             metas.push(self.accounts.stream_data.clone());
 
             metas.push(self.accounts.stream_data_ata.clone());
 
-            metas.push(self.accounts.stream_nft_master_edition.clone());
-
-            metas.push(self.accounts.stream_nft_metadata.clone());
+            metas.push(self.accounts.stream_nft.clone());
 
             metas.push(self.accounts.associated_token_program.clone());
 
             metas.push(self.accounts.deposit_token_program.clone());
 
-            metas.push(self.accounts.nft_token_program.clone());
-
-            metas.push(self.accounts.token_metadata_program.clone());
+            metas.push(self.accounts.mpl_core_program.clone());
 
             metas.push(self.accounts.system_program.clone());
 
-            metas.push(self.accounts.rent.clone());
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: CreateWithDurationsLt
+    // ....................................................................
+
+    /// Main instruction struct for CreateWithDurationsLt
+    pub struct CreateWithDurationsLtInstruction {
+        pub accounts: CreateWithDurationsLtInstructionAccountMetas,
+        pub data: CreateWithDurationsLtInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for CreateWithDurationsLt instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct CreateWithDurationsLtInstructionAccountMetas {
+        pub funder: AccountMeta,
+
+        pub funder_ata: AccountMeta,
+
+        pub recipient: AccountMeta,
+
+        pub sender: AccountMeta,
+
+        pub treasury: AccountMeta,
+
+        pub stream_nft_collection: AccountMeta,
+
+        pub deposit_token_mint: AccountMeta,
+
+        pub stream_data: AccountMeta,
+
+        pub stream_data_ata: AccountMeta,
+
+        pub stream_nft: AccountMeta,
+
+        pub associated_token_program: AccountMeta,
+
+        pub deposit_token_program: AccountMeta,
+
+        pub mpl_core_program: AccountMeta,
+
+        pub system_program: AccountMeta,
+    }
+
+    /// Account pubkeys for CreateWithDurationsLt instruction
+    #[derive(Debug, Clone)]
+    pub struct CreateWithDurationsLtInstructionAccounts {
+        pub funder: Pubkey,
+
+        pub funder_ata: Pubkey,
+
+        pub recipient: Pubkey,
+
+        pub sender: Pubkey,
+
+        pub treasury: Pubkey,
+
+        pub stream_nft_collection: Pubkey,
+
+        pub deposit_token_mint: Pubkey,
+
+        pub stream_data: Pubkey,
+
+        pub stream_data_ata: Pubkey,
+
+        pub stream_nft: Pubkey,
+
+        pub deposit_token_program: Pubkey,
+    }
+
+    impl CreateWithDurationsLtInstructionAccounts {
+        pub fn new(
+            funder: Pubkey,
+
+            funder_ata: Pubkey,
+
+            recipient: Pubkey,
+
+            sender: Pubkey,
+
+            treasury: Pubkey,
+
+            stream_nft_collection: Pubkey,
+
+            deposit_token_mint: Pubkey,
+
+            stream_data: Pubkey,
+
+            stream_data_ata: Pubkey,
+
+            stream_nft: Pubkey,
+
+            deposit_token_program: Pubkey,
+        ) -> Self {
+            Self {
+                funder,
+
+                funder_ata,
+
+                recipient,
+
+                sender,
+
+                treasury,
+
+                stream_nft_collection,
+
+                deposit_token_mint,
+
+                stream_data,
+
+                stream_data_ata,
+
+                stream_nft,
+
+                deposit_token_program,
+            }
+        }
+    }
+
+    /// Instruction data for CreateWithDurationsLt
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct CreateWithDurationsLtInstructionData {
+        pub salt: u128,
+
+        pub tranche_amounts: Vec<u64>,
+
+        pub tranche_durations: Vec<u64>,
+
+        pub is_cancelable: bool,
+    }
+
+    impl CreateWithDurationsLtInstructionData {
+        pub fn new(salt: u128, tranche_amounts: Vec<u64>, tranche_durations: Vec<u64>, is_cancelable: bool) -> Self {
+            Self {
+                salt,
+
+                tranche_amounts,
+
+                tranche_durations,
+
+                is_cancelable,
+            }
+        }
+    }
+
+    /// Implementation for CreateWithDurationsLtInstruction
+    impl CreateWithDurationsLtInstruction {
+        fn discriminator() -> [u8; 8] {
+            [44u8, 118u8, 253u8, 208u8, 0u8, 59u8, 235u8, 190u8]
+        }
+
+        pub fn data(data: CreateWithDurationsLtInstructionData) -> Self {
+            Self {
+                accounts: CreateWithDurationsLtInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: CreateWithDurationsLtInstructionAccounts) -> Self {
+            self.accounts.funder = AccountMeta::new(accounts.funder, true);
+
+            self.accounts.funder_ata = AccountMeta::new(accounts.funder_ata, false);
+
+            self.accounts.recipient = AccountMeta::new_readonly(accounts.recipient, false);
+
+            self.accounts.sender = AccountMeta::new_readonly(accounts.sender, false);
+
+            self.accounts.treasury = AccountMeta::new_readonly(accounts.treasury, false);
+
+            self.accounts.stream_nft_collection = AccountMeta::new(accounts.stream_nft_collection, false);
+
+            self.accounts.deposit_token_mint = AccountMeta::new_readonly(accounts.deposit_token_mint, false);
+
+            self.accounts.stream_data = AccountMeta::new(accounts.stream_data, false);
+
+            self.accounts.stream_data_ata = AccountMeta::new(accounts.stream_data_ata, false);
+
+            self.accounts.stream_nft = AccountMeta::new(accounts.stream_nft, false);
+
+            self.accounts.associated_token_program =
+                AccountMeta::new_readonly(pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"), false);
+
+            self.accounts.deposit_token_program = AccountMeta::new_readonly(accounts.deposit_token_program, false);
+
+            self.accounts.mpl_core_program =
+                AccountMeta::new_readonly(pubkey!("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"), false);
+
+            self.accounts.system_program =
+                AccountMeta::new_readonly(pubkey!("11111111111111111111111111111111"), false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.funder.clone());
+
+            metas.push(self.accounts.funder_ata.clone());
+
+            metas.push(self.accounts.recipient.clone());
+
+            metas.push(self.accounts.sender.clone());
+
+            metas.push(self.accounts.treasury.clone());
+
+            metas.push(self.accounts.stream_nft_collection.clone());
+
+            metas.push(self.accounts.deposit_token_mint.clone());
+
+            metas.push(self.accounts.stream_data.clone());
+
+            metas.push(self.accounts.stream_data_ata.clone());
+
+            metas.push(self.accounts.stream_nft.clone());
+
+            metas.push(self.accounts.associated_token_program.clone());
+
+            metas.push(self.accounts.deposit_token_program.clone());
+
+            metas.push(self.accounts.mpl_core_program.clone());
+
+            metas.push(self.accounts.system_program.clone());
 
             metas.extend(self.remaining_accounts.clone());
             metas
@@ -677,157 +842,107 @@ pub mod sablier_lockup {
     /// Account metadata for CreateWithTimestampsLl instruction
     #[derive(Debug, Clone, Default)]
     pub struct CreateWithTimestampsLlInstructionAccountMetas {
-        pub creator: AccountMeta,
+        pub funder: AccountMeta,
 
-        pub creator_ata: AccountMeta,
+        pub funder_ata: AccountMeta,
 
         pub recipient: AccountMeta,
 
         pub sender: AccountMeta,
 
-        pub nft_collection_data: AccountMeta,
+        pub treasury: AccountMeta,
 
-        pub nft_collection_master_edition: AccountMeta,
-
-        pub nft_collection_metadata: AccountMeta,
-
-        pub nft_collection_mint: AccountMeta,
+        pub stream_nft_collection: AccountMeta,
 
         pub deposit_token_mint: AccountMeta,
-
-        pub stream_nft_mint: AccountMeta,
-
-        pub recipient_stream_nft_ata: AccountMeta,
 
         pub stream_data: AccountMeta,
 
         pub stream_data_ata: AccountMeta,
 
-        pub stream_nft_master_edition: AccountMeta,
-
-        pub stream_nft_metadata: AccountMeta,
+        pub stream_nft: AccountMeta,
 
         pub associated_token_program: AccountMeta,
 
         pub deposit_token_program: AccountMeta,
 
-        pub nft_token_program: AccountMeta,
-
-        pub token_metadata_program: AccountMeta,
+        pub mpl_core_program: AccountMeta,
 
         pub system_program: AccountMeta,
-
-        pub rent: AccountMeta,
     }
 
     /// Account pubkeys for CreateWithTimestampsLl instruction
     #[derive(Debug, Clone)]
     pub struct CreateWithTimestampsLlInstructionAccounts {
-        pub creator: Pubkey,
+        pub funder: Pubkey,
 
-        pub creator_ata: Pubkey,
+        pub funder_ata: Pubkey,
 
         pub recipient: Pubkey,
 
         pub sender: Pubkey,
 
-        pub nft_collection_data: Pubkey,
+        pub treasury: Pubkey,
 
-        pub nft_collection_master_edition: Pubkey,
-
-        pub nft_collection_metadata: Pubkey,
-
-        pub nft_collection_mint: Pubkey,
+        pub stream_nft_collection: Pubkey,
 
         pub deposit_token_mint: Pubkey,
-
-        pub stream_nft_mint: Pubkey,
-
-        pub recipient_stream_nft_ata: Pubkey,
 
         pub stream_data: Pubkey,
 
         pub stream_data_ata: Pubkey,
 
-        pub stream_nft_master_edition: Pubkey,
-
-        pub stream_nft_metadata: Pubkey,
+        pub stream_nft: Pubkey,
 
         pub deposit_token_program: Pubkey,
-
-        pub nft_token_program: Pubkey,
     }
 
     impl CreateWithTimestampsLlInstructionAccounts {
         pub fn new(
-            creator: Pubkey,
+            funder: Pubkey,
 
-            creator_ata: Pubkey,
+            funder_ata: Pubkey,
 
             recipient: Pubkey,
 
             sender: Pubkey,
 
-            nft_collection_data: Pubkey,
+            treasury: Pubkey,
 
-            nft_collection_master_edition: Pubkey,
-
-            nft_collection_metadata: Pubkey,
-
-            nft_collection_mint: Pubkey,
+            stream_nft_collection: Pubkey,
 
             deposit_token_mint: Pubkey,
-
-            stream_nft_mint: Pubkey,
-
-            recipient_stream_nft_ata: Pubkey,
 
             stream_data: Pubkey,
 
             stream_data_ata: Pubkey,
 
-            stream_nft_master_edition: Pubkey,
-
-            stream_nft_metadata: Pubkey,
+            stream_nft: Pubkey,
 
             deposit_token_program: Pubkey,
-
-            nft_token_program: Pubkey,
         ) -> Self {
             Self {
-                creator,
+                funder,
 
-                creator_ata,
+                funder_ata,
 
                 recipient,
 
                 sender,
 
-                nft_collection_data,
+                treasury,
 
-                nft_collection_master_edition,
-
-                nft_collection_metadata,
-
-                nft_collection_mint,
+                stream_nft_collection,
 
                 deposit_token_mint,
-
-                stream_nft_mint,
-
-                recipient_stream_nft_ata,
 
                 stream_data,
 
                 stream_data_ata,
 
-                stream_nft_master_edition,
-
-                stream_nft_metadata,
+                stream_nft,
 
                 deposit_token_program,
-
-                nft_token_program,
             }
         }
     }
@@ -905,52 +1020,36 @@ pub mod sablier_lockup {
         }
 
         pub fn accounts(mut self, accounts: CreateWithTimestampsLlInstructionAccounts) -> Self {
-            self.accounts.creator = AccountMeta::new(accounts.creator, true);
+            self.accounts.funder = AccountMeta::new(accounts.funder, true);
 
-            self.accounts.creator_ata = AccountMeta::new(accounts.creator_ata, false);
+            self.accounts.funder_ata = AccountMeta::new(accounts.funder_ata, false);
 
             self.accounts.recipient = AccountMeta::new_readonly(accounts.recipient, false);
 
             self.accounts.sender = AccountMeta::new_readonly(accounts.sender, false);
 
-            self.accounts.nft_collection_data = AccountMeta::new(accounts.nft_collection_data, false);
+            self.accounts.treasury = AccountMeta::new_readonly(accounts.treasury, false);
 
-            self.accounts.nft_collection_master_edition =
-                AccountMeta::new_readonly(accounts.nft_collection_master_edition, false);
-
-            self.accounts.nft_collection_metadata = AccountMeta::new(accounts.nft_collection_metadata, false);
-
-            self.accounts.nft_collection_mint = AccountMeta::new_readonly(accounts.nft_collection_mint, false);
+            self.accounts.stream_nft_collection = AccountMeta::new(accounts.stream_nft_collection, false);
 
             self.accounts.deposit_token_mint = AccountMeta::new_readonly(accounts.deposit_token_mint, false);
-
-            self.accounts.stream_nft_mint = AccountMeta::new(accounts.stream_nft_mint, false);
-
-            self.accounts.recipient_stream_nft_ata = AccountMeta::new(accounts.recipient_stream_nft_ata, false);
 
             self.accounts.stream_data = AccountMeta::new(accounts.stream_data, false);
 
             self.accounts.stream_data_ata = AccountMeta::new(accounts.stream_data_ata, false);
 
-            self.accounts.stream_nft_master_edition = AccountMeta::new(accounts.stream_nft_master_edition, false);
-
-            self.accounts.stream_nft_metadata = AccountMeta::new(accounts.stream_nft_metadata, false);
+            self.accounts.stream_nft = AccountMeta::new(accounts.stream_nft, false);
 
             self.accounts.associated_token_program =
                 AccountMeta::new_readonly(pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"), false);
 
             self.accounts.deposit_token_program = AccountMeta::new_readonly(accounts.deposit_token_program, false);
 
-            self.accounts.nft_token_program = AccountMeta::new_readonly(accounts.nft_token_program, false);
-
-            self.accounts.token_metadata_program =
-                AccountMeta::new_readonly(pubkey!("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"), false);
+            self.accounts.mpl_core_program =
+                AccountMeta::new_readonly(pubkey!("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"), false);
 
             self.accounts.system_program =
                 AccountMeta::new_readonly(pubkey!("11111111111111111111111111111111"), false);
-
-            self.accounts.rent =
-                AccountMeta::new_readonly(pubkey!("SysvarRent111111111111111111111111111111111"), false);
 
             self
         }
@@ -963,47 +1062,278 @@ pub mod sablier_lockup {
         fn to_account_metas(&self) -> Vec<AccountMeta> {
             let mut metas = Vec::new();
 
-            metas.push(self.accounts.creator.clone());
+            metas.push(self.accounts.funder.clone());
 
-            metas.push(self.accounts.creator_ata.clone());
+            metas.push(self.accounts.funder_ata.clone());
 
             metas.push(self.accounts.recipient.clone());
 
             metas.push(self.accounts.sender.clone());
 
-            metas.push(self.accounts.nft_collection_data.clone());
+            metas.push(self.accounts.treasury.clone());
 
-            metas.push(self.accounts.nft_collection_master_edition.clone());
-
-            metas.push(self.accounts.nft_collection_metadata.clone());
-
-            metas.push(self.accounts.nft_collection_mint.clone());
+            metas.push(self.accounts.stream_nft_collection.clone());
 
             metas.push(self.accounts.deposit_token_mint.clone());
-
-            metas.push(self.accounts.stream_nft_mint.clone());
-
-            metas.push(self.accounts.recipient_stream_nft_ata.clone());
 
             metas.push(self.accounts.stream_data.clone());
 
             metas.push(self.accounts.stream_data_ata.clone());
 
-            metas.push(self.accounts.stream_nft_master_edition.clone());
-
-            metas.push(self.accounts.stream_nft_metadata.clone());
+            metas.push(self.accounts.stream_nft.clone());
 
             metas.push(self.accounts.associated_token_program.clone());
 
             metas.push(self.accounts.deposit_token_program.clone());
 
-            metas.push(self.accounts.nft_token_program.clone());
-
-            metas.push(self.accounts.token_metadata_program.clone());
+            metas.push(self.accounts.mpl_core_program.clone());
 
             metas.push(self.accounts.system_program.clone());
 
-            metas.push(self.accounts.rent.clone());
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: CreateWithTimestampsLt
+    // ....................................................................
+
+    /// Main instruction struct for CreateWithTimestampsLt
+    pub struct CreateWithTimestampsLtInstruction {
+        pub accounts: CreateWithTimestampsLtInstructionAccountMetas,
+        pub data: CreateWithTimestampsLtInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for CreateWithTimestampsLt instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct CreateWithTimestampsLtInstructionAccountMetas {
+        pub funder: AccountMeta,
+
+        pub funder_ata: AccountMeta,
+
+        pub recipient: AccountMeta,
+
+        pub sender: AccountMeta,
+
+        pub treasury: AccountMeta,
+
+        pub stream_nft_collection: AccountMeta,
+
+        pub deposit_token_mint: AccountMeta,
+
+        pub stream_data: AccountMeta,
+
+        pub stream_data_ata: AccountMeta,
+
+        pub stream_nft: AccountMeta,
+
+        pub associated_token_program: AccountMeta,
+
+        pub deposit_token_program: AccountMeta,
+
+        pub mpl_core_program: AccountMeta,
+
+        pub system_program: AccountMeta,
+    }
+
+    /// Account pubkeys for CreateWithTimestampsLt instruction
+    #[derive(Debug, Clone)]
+    pub struct CreateWithTimestampsLtInstructionAccounts {
+        pub funder: Pubkey,
+
+        pub funder_ata: Pubkey,
+
+        pub recipient: Pubkey,
+
+        pub sender: Pubkey,
+
+        pub treasury: Pubkey,
+
+        pub stream_nft_collection: Pubkey,
+
+        pub deposit_token_mint: Pubkey,
+
+        pub stream_data: Pubkey,
+
+        pub stream_data_ata: Pubkey,
+
+        pub stream_nft: Pubkey,
+
+        pub deposit_token_program: Pubkey,
+    }
+
+    impl CreateWithTimestampsLtInstructionAccounts {
+        pub fn new(
+            funder: Pubkey,
+
+            funder_ata: Pubkey,
+
+            recipient: Pubkey,
+
+            sender: Pubkey,
+
+            treasury: Pubkey,
+
+            stream_nft_collection: Pubkey,
+
+            deposit_token_mint: Pubkey,
+
+            stream_data: Pubkey,
+
+            stream_data_ata: Pubkey,
+
+            stream_nft: Pubkey,
+
+            deposit_token_program: Pubkey,
+        ) -> Self {
+            Self {
+                funder,
+
+                funder_ata,
+
+                recipient,
+
+                sender,
+
+                treasury,
+
+                stream_nft_collection,
+
+                deposit_token_mint,
+
+                stream_data,
+
+                stream_data_ata,
+
+                stream_nft,
+
+                deposit_token_program,
+            }
+        }
+    }
+
+    /// Instruction data for CreateWithTimestampsLt
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct CreateWithTimestampsLtInstructionData {
+        pub salt: u128,
+
+        pub start_time: u64,
+
+        pub tranches: Vec<Tranche>,
+
+        pub is_cancelable: bool,
+    }
+
+    impl CreateWithTimestampsLtInstructionData {
+        pub fn new(salt: u128, start_time: u64, tranches: Vec<Tranche>, is_cancelable: bool) -> Self {
+            Self {
+                salt,
+
+                start_time,
+
+                tranches,
+
+                is_cancelable,
+            }
+        }
+    }
+
+    /// Implementation for CreateWithTimestampsLtInstruction
+    impl CreateWithTimestampsLtInstruction {
+        fn discriminator() -> [u8; 8] {
+            [107u8, 21u8, 32u8, 169u8, 97u8, 180u8, 149u8, 130u8]
+        }
+
+        pub fn data(data: CreateWithTimestampsLtInstructionData) -> Self {
+            Self {
+                accounts: CreateWithTimestampsLtInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: CreateWithTimestampsLtInstructionAccounts) -> Self {
+            self.accounts.funder = AccountMeta::new(accounts.funder, true);
+
+            self.accounts.funder_ata = AccountMeta::new(accounts.funder_ata, false);
+
+            self.accounts.recipient = AccountMeta::new_readonly(accounts.recipient, false);
+
+            self.accounts.sender = AccountMeta::new_readonly(accounts.sender, false);
+
+            self.accounts.treasury = AccountMeta::new_readonly(accounts.treasury, false);
+
+            self.accounts.stream_nft_collection = AccountMeta::new(accounts.stream_nft_collection, false);
+
+            self.accounts.deposit_token_mint = AccountMeta::new_readonly(accounts.deposit_token_mint, false);
+
+            self.accounts.stream_data = AccountMeta::new(accounts.stream_data, false);
+
+            self.accounts.stream_data_ata = AccountMeta::new(accounts.stream_data_ata, false);
+
+            self.accounts.stream_nft = AccountMeta::new(accounts.stream_nft, false);
+
+            self.accounts.associated_token_program =
+                AccountMeta::new_readonly(pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"), false);
+
+            self.accounts.deposit_token_program = AccountMeta::new_readonly(accounts.deposit_token_program, false);
+
+            self.accounts.mpl_core_program =
+                AccountMeta::new_readonly(pubkey!("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"), false);
+
+            self.accounts.system_program =
+                AccountMeta::new_readonly(pubkey!("11111111111111111111111111111111"), false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.funder.clone());
+
+            metas.push(self.accounts.funder_ata.clone());
+
+            metas.push(self.accounts.recipient.clone());
+
+            metas.push(self.accounts.sender.clone());
+
+            metas.push(self.accounts.treasury.clone());
+
+            metas.push(self.accounts.stream_nft_collection.clone());
+
+            metas.push(self.accounts.deposit_token_mint.clone());
+
+            metas.push(self.accounts.stream_data.clone());
+
+            metas.push(self.accounts.stream_data_ata.clone());
+
+            metas.push(self.accounts.stream_nft.clone());
+
+            metas.push(self.accounts.associated_token_program.clone());
+
+            metas.push(self.accounts.deposit_token_program.clone());
+
+            metas.push(self.accounts.mpl_core_program.clone());
+
+            metas.push(self.accounts.system_program.clone());
 
             metas.extend(self.remaining_accounts.clone());
             metas
@@ -1038,23 +1368,9 @@ pub mod sablier_lockup {
 
         pub treasury: AccountMeta,
 
-        pub nft_collection_data: AccountMeta,
+        pub stream_nft_collection: AccountMeta,
 
-        pub nft_collection_master_edition: AccountMeta,
-
-        pub nft_collection_metadata: AccountMeta,
-
-        pub nft_collection_mint: AccountMeta,
-
-        pub nft_collection_ata: AccountMeta,
-
-        pub associated_token_program: AccountMeta,
-
-        pub nft_token_program: AccountMeta,
-
-        pub token_metadata_program: AccountMeta,
-
-        pub rent: AccountMeta,
+        pub mpl_core_program: AccountMeta,
 
         pub system_program: AccountMeta,
     }
@@ -1066,53 +1382,17 @@ pub mod sablier_lockup {
 
         pub treasury: Pubkey,
 
-        pub nft_collection_data: Pubkey,
-
-        pub nft_collection_master_edition: Pubkey,
-
-        pub nft_collection_metadata: Pubkey,
-
-        pub nft_collection_mint: Pubkey,
-
-        pub nft_collection_ata: Pubkey,
-
-        pub nft_token_program: Pubkey,
+        pub stream_nft_collection: Pubkey,
     }
 
     impl InitializeInstructionAccounts {
-        pub fn new(
-            initializer: Pubkey,
-
-            treasury: Pubkey,
-
-            nft_collection_data: Pubkey,
-
-            nft_collection_master_edition: Pubkey,
-
-            nft_collection_metadata: Pubkey,
-
-            nft_collection_mint: Pubkey,
-
-            nft_collection_ata: Pubkey,
-
-            nft_token_program: Pubkey,
-        ) -> Self {
+        pub fn new(initializer: Pubkey, treasury: Pubkey, stream_nft_collection: Pubkey) -> Self {
             Self {
                 initializer,
 
                 treasury,
 
-                nft_collection_data,
-
-                nft_collection_master_edition,
-
-                nft_collection_metadata,
-
-                nft_collection_mint,
-
-                nft_collection_ata,
-
-                nft_token_program,
+                stream_nft_collection,
             }
         }
     }
@@ -1158,27 +1438,10 @@ pub mod sablier_lockup {
 
             self.accounts.treasury = AccountMeta::new(accounts.treasury, false);
 
-            self.accounts.nft_collection_data = AccountMeta::new(accounts.nft_collection_data, false);
+            self.accounts.stream_nft_collection = AccountMeta::new(accounts.stream_nft_collection, false);
 
-            self.accounts.nft_collection_master_edition =
-                AccountMeta::new(accounts.nft_collection_master_edition, false);
-
-            self.accounts.nft_collection_metadata = AccountMeta::new(accounts.nft_collection_metadata, false);
-
-            self.accounts.nft_collection_mint = AccountMeta::new(accounts.nft_collection_mint, false);
-
-            self.accounts.nft_collection_ata = AccountMeta::new(accounts.nft_collection_ata, false);
-
-            self.accounts.associated_token_program =
-                AccountMeta::new_readonly(pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"), false);
-
-            self.accounts.nft_token_program = AccountMeta::new_readonly(accounts.nft_token_program, false);
-
-            self.accounts.token_metadata_program =
-                AccountMeta::new_readonly(pubkey!("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"), false);
-
-            self.accounts.rent =
-                AccountMeta::new_readonly(pubkey!("SysvarRent111111111111111111111111111111111"), false);
+            self.accounts.mpl_core_program =
+                AccountMeta::new_readonly(pubkey!("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"), false);
 
             self.accounts.system_program =
                 AccountMeta::new_readonly(pubkey!("11111111111111111111111111111111"), false);
@@ -1198,23 +1461,9 @@ pub mod sablier_lockup {
 
             metas.push(self.accounts.treasury.clone());
 
-            metas.push(self.accounts.nft_collection_data.clone());
+            metas.push(self.accounts.stream_nft_collection.clone());
 
-            metas.push(self.accounts.nft_collection_master_edition.clone());
-
-            metas.push(self.accounts.nft_collection_metadata.clone());
-
-            metas.push(self.accounts.nft_collection_mint.clone());
-
-            metas.push(self.accounts.nft_collection_ata.clone());
-
-            metas.push(self.accounts.associated_token_program.clone());
-
-            metas.push(self.accounts.nft_token_program.clone());
-
-            metas.push(self.accounts.token_metadata_program.clone());
-
-            metas.push(self.accounts.rent.clone());
+            metas.push(self.accounts.mpl_core_program.clone());
 
             metas.push(self.accounts.system_program.clone());
 
@@ -1249,7 +1498,7 @@ pub mod sablier_lockup {
     pub struct RefundableAmountOfInstructionAccountMetas {
         pub stream_data: AccountMeta,
 
-        pub stream_nft_mint: AccountMeta,
+        pub stream_nft: AccountMeta,
     }
 
     /// Account pubkeys for RefundableAmountOf instruction
@@ -1257,15 +1506,15 @@ pub mod sablier_lockup {
     pub struct RefundableAmountOfInstructionAccounts {
         pub stream_data: Pubkey,
 
-        pub stream_nft_mint: Pubkey,
+        pub stream_nft: Pubkey,
     }
 
     impl RefundableAmountOfInstructionAccounts {
-        pub fn new(stream_data: Pubkey, stream_nft_mint: Pubkey) -> Self {
+        pub fn new(stream_data: Pubkey, stream_nft: Pubkey) -> Self {
             Self {
                 stream_data,
 
-                stream_nft_mint,
+                stream_nft,
             }
         }
     }
@@ -1297,7 +1546,7 @@ pub mod sablier_lockup {
         pub fn accounts(mut self, accounts: RefundableAmountOfInstructionAccounts) -> Self {
             self.accounts.stream_data = AccountMeta::new_readonly(accounts.stream_data, false);
 
-            self.accounts.stream_nft_mint = AccountMeta::new_readonly(accounts.stream_nft_mint, false);
+            self.accounts.stream_nft = AccountMeta::new_readonly(accounts.stream_nft, false);
 
             self
         }
@@ -1312,7 +1561,7 @@ pub mod sablier_lockup {
 
             metas.push(self.accounts.stream_data.clone());
 
-            metas.push(self.accounts.stream_nft_mint.clone());
+            metas.push(self.accounts.stream_nft.clone());
 
             metas.extend(self.remaining_accounts.clone());
             metas
@@ -1347,7 +1596,7 @@ pub mod sablier_lockup {
 
         pub stream_data: AccountMeta,
 
-        pub stream_nft_mint: AccountMeta,
+        pub stream_nft: AccountMeta,
     }
 
     /// Account pubkeys for Renounce instruction
@@ -1357,17 +1606,17 @@ pub mod sablier_lockup {
 
         pub stream_data: Pubkey,
 
-        pub stream_nft_mint: Pubkey,
+        pub stream_nft: Pubkey,
     }
 
     impl RenounceInstructionAccounts {
-        pub fn new(sender: Pubkey, stream_data: Pubkey, stream_nft_mint: Pubkey) -> Self {
+        pub fn new(sender: Pubkey, stream_data: Pubkey, stream_nft: Pubkey) -> Self {
             Self {
                 sender,
 
                 stream_data,
 
-                stream_nft_mint,
+                stream_nft,
             }
         }
     }
@@ -1401,7 +1650,7 @@ pub mod sablier_lockup {
 
             self.accounts.stream_data = AccountMeta::new(accounts.stream_data, false);
 
-            self.accounts.stream_nft_mint = AccountMeta::new_readonly(accounts.stream_nft_mint, false);
+            self.accounts.stream_nft = AccountMeta::new_readonly(accounts.stream_nft, false);
 
             self
         }
@@ -1418,7 +1667,7 @@ pub mod sablier_lockup {
 
             metas.push(self.accounts.stream_data.clone());
 
-            metas.push(self.accounts.stream_nft_mint.clone());
+            metas.push(self.accounts.stream_nft.clone());
 
             metas.extend(self.remaining_accounts.clone());
             metas
@@ -1451,7 +1700,7 @@ pub mod sablier_lockup {
     pub struct StatusOfInstructionAccountMetas {
         pub stream_data: AccountMeta,
 
-        pub stream_nft_mint: AccountMeta,
+        pub stream_nft: AccountMeta,
     }
 
     /// Account pubkeys for StatusOf instruction
@@ -1459,15 +1708,15 @@ pub mod sablier_lockup {
     pub struct StatusOfInstructionAccounts {
         pub stream_data: Pubkey,
 
-        pub stream_nft_mint: Pubkey,
+        pub stream_nft: Pubkey,
     }
 
     impl StatusOfInstructionAccounts {
-        pub fn new(stream_data: Pubkey, stream_nft_mint: Pubkey) -> Self {
+        pub fn new(stream_data: Pubkey, stream_nft: Pubkey) -> Self {
             Self {
                 stream_data,
 
-                stream_nft_mint,
+                stream_nft,
             }
         }
     }
@@ -1499,7 +1748,7 @@ pub mod sablier_lockup {
         pub fn accounts(mut self, accounts: StatusOfInstructionAccounts) -> Self {
             self.accounts.stream_data = AccountMeta::new_readonly(accounts.stream_data, false);
 
-            self.accounts.stream_nft_mint = AccountMeta::new_readonly(accounts.stream_nft_mint, false);
+            self.accounts.stream_nft = AccountMeta::new_readonly(accounts.stream_nft, false);
 
             self
         }
@@ -1514,7 +1763,7 @@ pub mod sablier_lockup {
 
             metas.push(self.accounts.stream_data.clone());
 
-            metas.push(self.accounts.stream_nft_mint.clone());
+            metas.push(self.accounts.stream_nft.clone());
 
             metas.extend(self.remaining_accounts.clone());
             metas
@@ -1545,19 +1794,19 @@ pub mod sablier_lockup {
     /// Account metadata for StreamExists instruction
     #[derive(Debug, Clone, Default)]
     pub struct StreamExistsInstructionAccountMetas {
-        pub stream_nft_mint: AccountMeta,
+        pub stream_nft: AccountMeta,
     }
 
     /// Account pubkeys for StreamExists instruction
     #[derive(Debug, Clone)]
     pub struct StreamExistsInstructionAccounts {
-        pub stream_nft_mint: Pubkey,
+        pub stream_nft: Pubkey,
     }
 
     impl StreamExistsInstructionAccounts {
-        pub fn new(stream_nft_mint: Pubkey) -> Self {
+        pub fn new(stream_nft: Pubkey) -> Self {
             Self {
-                stream_nft_mint,
+                stream_nft,
             }
         }
     }
@@ -1595,7 +1844,7 @@ pub mod sablier_lockup {
         }
 
         pub fn accounts(mut self, accounts: StreamExistsInstructionAccounts) -> Self {
-            self.accounts.stream_nft_mint = AccountMeta::new_readonly(accounts.stream_nft_mint, false);
+            self.accounts.stream_nft = AccountMeta::new_readonly(accounts.stream_nft, false);
 
             self
         }
@@ -1608,7 +1857,7 @@ pub mod sablier_lockup {
         fn to_account_metas(&self) -> Vec<AccountMeta> {
             let mut metas = Vec::new();
 
-            metas.push(self.accounts.stream_nft_mint.clone());
+            metas.push(self.accounts.stream_nft.clone());
 
             metas.extend(self.remaining_accounts.clone());
             metas
@@ -1641,7 +1890,7 @@ pub mod sablier_lockup {
     pub struct StreamedAmountOfInstructionAccountMetas {
         pub stream_data: AccountMeta,
 
-        pub stream_nft_mint: AccountMeta,
+        pub stream_nft: AccountMeta,
     }
 
     /// Account pubkeys for StreamedAmountOf instruction
@@ -1649,15 +1898,15 @@ pub mod sablier_lockup {
     pub struct StreamedAmountOfInstructionAccounts {
         pub stream_data: Pubkey,
 
-        pub stream_nft_mint: Pubkey,
+        pub stream_nft: Pubkey,
     }
 
     impl StreamedAmountOfInstructionAccounts {
-        pub fn new(stream_data: Pubkey, stream_nft_mint: Pubkey) -> Self {
+        pub fn new(stream_data: Pubkey, stream_nft: Pubkey) -> Self {
             Self {
                 stream_data,
 
-                stream_nft_mint,
+                stream_nft,
             }
         }
     }
@@ -1689,7 +1938,7 @@ pub mod sablier_lockup {
         pub fn accounts(mut self, accounts: StreamedAmountOfInstructionAccounts) -> Self {
             self.accounts.stream_data = AccountMeta::new_readonly(accounts.stream_data, false);
 
-            self.accounts.stream_nft_mint = AccountMeta::new_readonly(accounts.stream_nft_mint, false);
+            self.accounts.stream_nft = AccountMeta::new_readonly(accounts.stream_nft, false);
 
             self
         }
@@ -1704,7 +1953,7 @@ pub mod sablier_lockup {
 
             metas.push(self.accounts.stream_data.clone());
 
-            metas.push(self.accounts.stream_nft_mint.clone());
+            metas.push(self.accounts.stream_nft.clone());
 
             metas.extend(self.remaining_accounts.clone());
             metas
@@ -1823,8 +2072,6 @@ pub mod sablier_lockup {
     pub struct WithdrawInstructionAccountMetas {
         pub signer: AccountMeta,
 
-        pub stream_recipient: AccountMeta,
-
         pub withdrawal_recipient: AccountMeta,
 
         pub withdrawal_recipient_ata: AccountMeta,
@@ -1833,13 +2080,11 @@ pub mod sablier_lockup {
 
         pub deposited_token_mint: AccountMeta,
 
-        pub recipient_stream_nft_ata: AccountMeta,
-
         pub stream_data: AccountMeta,
 
         pub stream_data_ata: AccountMeta,
 
-        pub stream_nft_mint: AccountMeta,
+        pub stream_nft: AccountMeta,
 
         pub associated_token_program: AccountMeta,
 
@@ -1849,8 +2094,6 @@ pub mod sablier_lockup {
 
         pub deposited_token_program: AccountMeta,
 
-        pub nft_token_program: AccountMeta,
-
         pub system_program: AccountMeta,
     }
 
@@ -1858,8 +2101,6 @@ pub mod sablier_lockup {
     #[derive(Debug, Clone)]
     pub struct WithdrawInstructionAccounts {
         pub signer: Pubkey,
-
-        pub stream_recipient: Pubkey,
 
         pub withdrawal_recipient: Pubkey,
 
@@ -1869,28 +2110,22 @@ pub mod sablier_lockup {
 
         pub deposited_token_mint: Pubkey,
 
-        pub recipient_stream_nft_ata: Pubkey,
-
         pub stream_data: Pubkey,
 
         pub stream_data_ata: Pubkey,
 
-        pub stream_nft_mint: Pubkey,
+        pub stream_nft: Pubkey,
 
         pub chainlink_program: Pubkey,
 
         pub chainlink_sol_usd_feed: Pubkey,
 
         pub deposited_token_program: Pubkey,
-
-        pub nft_token_program: Pubkey,
     }
 
     impl WithdrawInstructionAccounts {
         pub fn new(
             signer: Pubkey,
-
-            stream_recipient: Pubkey,
 
             withdrawal_recipient: Pubkey,
 
@@ -1900,26 +2135,20 @@ pub mod sablier_lockup {
 
             deposited_token_mint: Pubkey,
 
-            recipient_stream_nft_ata: Pubkey,
-
             stream_data: Pubkey,
 
             stream_data_ata: Pubkey,
 
-            stream_nft_mint: Pubkey,
+            stream_nft: Pubkey,
 
             chainlink_program: Pubkey,
 
             chainlink_sol_usd_feed: Pubkey,
 
             deposited_token_program: Pubkey,
-
-            nft_token_program: Pubkey,
         ) -> Self {
             Self {
                 signer,
-
-                stream_recipient,
 
                 withdrawal_recipient,
 
@@ -1929,21 +2158,17 @@ pub mod sablier_lockup {
 
                 deposited_token_mint,
 
-                recipient_stream_nft_ata,
-
                 stream_data,
 
                 stream_data_ata,
 
-                stream_nft_mint,
+                stream_nft,
 
                 chainlink_program,
 
                 chainlink_sol_usd_feed,
 
                 deposited_token_program,
-
-                nft_token_program,
             }
         }
     }
@@ -1979,8 +2204,6 @@ pub mod sablier_lockup {
         pub fn accounts(mut self, accounts: WithdrawInstructionAccounts) -> Self {
             self.accounts.signer = AccountMeta::new(accounts.signer, true);
 
-            self.accounts.stream_recipient = AccountMeta::new_readonly(accounts.stream_recipient, false);
-
             self.accounts.withdrawal_recipient = AccountMeta::new_readonly(accounts.withdrawal_recipient, false);
 
             self.accounts.withdrawal_recipient_ata = AccountMeta::new(accounts.withdrawal_recipient_ata, false);
@@ -1989,14 +2212,11 @@ pub mod sablier_lockup {
 
             self.accounts.deposited_token_mint = AccountMeta::new_readonly(accounts.deposited_token_mint, false);
 
-            self.accounts.recipient_stream_nft_ata =
-                AccountMeta::new_readonly(accounts.recipient_stream_nft_ata, false);
-
             self.accounts.stream_data = AccountMeta::new(accounts.stream_data, false);
 
             self.accounts.stream_data_ata = AccountMeta::new(accounts.stream_data_ata, false);
 
-            self.accounts.stream_nft_mint = AccountMeta::new_readonly(accounts.stream_nft_mint, false);
+            self.accounts.stream_nft = AccountMeta::new_readonly(accounts.stream_nft, false);
 
             self.accounts.associated_token_program =
                 AccountMeta::new_readonly(pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"), false);
@@ -2006,8 +2226,6 @@ pub mod sablier_lockup {
             self.accounts.chainlink_sol_usd_feed = AccountMeta::new_readonly(accounts.chainlink_sol_usd_feed, false);
 
             self.accounts.deposited_token_program = AccountMeta::new_readonly(accounts.deposited_token_program, false);
-
-            self.accounts.nft_token_program = AccountMeta::new_readonly(accounts.nft_token_program, false);
 
             self.accounts.system_program =
                 AccountMeta::new_readonly(pubkey!("11111111111111111111111111111111"), false);
@@ -2025,8 +2243,6 @@ pub mod sablier_lockup {
 
             metas.push(self.accounts.signer.clone());
 
-            metas.push(self.accounts.stream_recipient.clone());
-
             metas.push(self.accounts.withdrawal_recipient.clone());
 
             metas.push(self.accounts.withdrawal_recipient_ata.clone());
@@ -2035,13 +2251,11 @@ pub mod sablier_lockup {
 
             metas.push(self.accounts.deposited_token_mint.clone());
 
-            metas.push(self.accounts.recipient_stream_nft_ata.clone());
-
             metas.push(self.accounts.stream_data.clone());
 
             metas.push(self.accounts.stream_data_ata.clone());
 
-            metas.push(self.accounts.stream_nft_mint.clone());
+            metas.push(self.accounts.stream_nft.clone());
 
             metas.push(self.accounts.associated_token_program.clone());
 
@@ -2050,8 +2264,6 @@ pub mod sablier_lockup {
             metas.push(self.accounts.chainlink_sol_usd_feed.clone());
 
             metas.push(self.accounts.deposited_token_program.clone());
-
-            metas.push(self.accounts.nft_token_program.clone());
 
             metas.push(self.accounts.system_program.clone());
 
@@ -2086,8 +2298,6 @@ pub mod sablier_lockup {
     pub struct WithdrawMaxInstructionAccountMetas {
         pub signer: AccountMeta,
 
-        pub stream_recipient: AccountMeta,
-
         pub withdrawal_recipient: AccountMeta,
 
         pub withdrawal_recipient_ata: AccountMeta,
@@ -2096,13 +2306,11 @@ pub mod sablier_lockup {
 
         pub deposited_token_mint: AccountMeta,
 
-        pub recipient_stream_nft_ata: AccountMeta,
-
         pub stream_data: AccountMeta,
 
         pub stream_data_ata: AccountMeta,
 
-        pub stream_nft_mint: AccountMeta,
+        pub stream_nft: AccountMeta,
 
         pub associated_token_program: AccountMeta,
 
@@ -2112,8 +2320,6 @@ pub mod sablier_lockup {
 
         pub deposited_token_program: AccountMeta,
 
-        pub nft_token_program: AccountMeta,
-
         pub system_program: AccountMeta,
     }
 
@@ -2121,8 +2327,6 @@ pub mod sablier_lockup {
     #[derive(Debug, Clone)]
     pub struct WithdrawMaxInstructionAccounts {
         pub signer: Pubkey,
-
-        pub stream_recipient: Pubkey,
 
         pub withdrawal_recipient: Pubkey,
 
@@ -2132,28 +2336,22 @@ pub mod sablier_lockup {
 
         pub deposited_token_mint: Pubkey,
 
-        pub recipient_stream_nft_ata: Pubkey,
-
         pub stream_data: Pubkey,
 
         pub stream_data_ata: Pubkey,
 
-        pub stream_nft_mint: Pubkey,
+        pub stream_nft: Pubkey,
 
         pub chainlink_program: Pubkey,
 
         pub chainlink_sol_usd_feed: Pubkey,
 
         pub deposited_token_program: Pubkey,
-
-        pub nft_token_program: Pubkey,
     }
 
     impl WithdrawMaxInstructionAccounts {
         pub fn new(
             signer: Pubkey,
-
-            stream_recipient: Pubkey,
 
             withdrawal_recipient: Pubkey,
 
@@ -2163,26 +2361,20 @@ pub mod sablier_lockup {
 
             deposited_token_mint: Pubkey,
 
-            recipient_stream_nft_ata: Pubkey,
-
             stream_data: Pubkey,
 
             stream_data_ata: Pubkey,
 
-            stream_nft_mint: Pubkey,
+            stream_nft: Pubkey,
 
             chainlink_program: Pubkey,
 
             chainlink_sol_usd_feed: Pubkey,
 
             deposited_token_program: Pubkey,
-
-            nft_token_program: Pubkey,
         ) -> Self {
             Self {
                 signer,
-
-                stream_recipient,
 
                 withdrawal_recipient,
 
@@ -2192,21 +2384,17 @@ pub mod sablier_lockup {
 
                 deposited_token_mint,
 
-                recipient_stream_nft_ata,
-
                 stream_data,
 
                 stream_data_ata,
 
-                stream_nft_mint,
+                stream_nft,
 
                 chainlink_program,
 
                 chainlink_sol_usd_feed,
 
                 deposited_token_program,
-
-                nft_token_program,
             }
         }
     }
@@ -2238,8 +2426,6 @@ pub mod sablier_lockup {
         pub fn accounts(mut self, accounts: WithdrawMaxInstructionAccounts) -> Self {
             self.accounts.signer = AccountMeta::new(accounts.signer, true);
 
-            self.accounts.stream_recipient = AccountMeta::new_readonly(accounts.stream_recipient, false);
-
             self.accounts.withdrawal_recipient = AccountMeta::new_readonly(accounts.withdrawal_recipient, false);
 
             self.accounts.withdrawal_recipient_ata = AccountMeta::new(accounts.withdrawal_recipient_ata, false);
@@ -2248,14 +2434,11 @@ pub mod sablier_lockup {
 
             self.accounts.deposited_token_mint = AccountMeta::new_readonly(accounts.deposited_token_mint, false);
 
-            self.accounts.recipient_stream_nft_ata =
-                AccountMeta::new_readonly(accounts.recipient_stream_nft_ata, false);
-
             self.accounts.stream_data = AccountMeta::new(accounts.stream_data, false);
 
             self.accounts.stream_data_ata = AccountMeta::new(accounts.stream_data_ata, false);
 
-            self.accounts.stream_nft_mint = AccountMeta::new_readonly(accounts.stream_nft_mint, false);
+            self.accounts.stream_nft = AccountMeta::new_readonly(accounts.stream_nft, false);
 
             self.accounts.associated_token_program =
                 AccountMeta::new_readonly(pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"), false);
@@ -2265,8 +2448,6 @@ pub mod sablier_lockup {
             self.accounts.chainlink_sol_usd_feed = AccountMeta::new_readonly(accounts.chainlink_sol_usd_feed, false);
 
             self.accounts.deposited_token_program = AccountMeta::new_readonly(accounts.deposited_token_program, false);
-
-            self.accounts.nft_token_program = AccountMeta::new_readonly(accounts.nft_token_program, false);
 
             self.accounts.system_program =
                 AccountMeta::new_readonly(pubkey!("11111111111111111111111111111111"), false);
@@ -2284,8 +2465,6 @@ pub mod sablier_lockup {
 
             metas.push(self.accounts.signer.clone());
 
-            metas.push(self.accounts.stream_recipient.clone());
-
             metas.push(self.accounts.withdrawal_recipient.clone());
 
             metas.push(self.accounts.withdrawal_recipient_ata.clone());
@@ -2294,13 +2473,11 @@ pub mod sablier_lockup {
 
             metas.push(self.accounts.deposited_token_mint.clone());
 
-            metas.push(self.accounts.recipient_stream_nft_ata.clone());
-
             metas.push(self.accounts.stream_data.clone());
 
             metas.push(self.accounts.stream_data_ata.clone());
 
-            metas.push(self.accounts.stream_nft_mint.clone());
+            metas.push(self.accounts.stream_nft.clone());
 
             metas.push(self.accounts.associated_token_program.clone());
 
@@ -2309,8 +2486,6 @@ pub mod sablier_lockup {
             metas.push(self.accounts.chainlink_sol_usd_feed.clone());
 
             metas.push(self.accounts.deposited_token_program.clone());
-
-            metas.push(self.accounts.nft_token_program.clone());
 
             metas.push(self.accounts.system_program.clone());
 
@@ -2345,7 +2520,7 @@ pub mod sablier_lockup {
     pub struct WithdrawableAmountOfInstructionAccountMetas {
         pub stream_data: AccountMeta,
 
-        pub stream_nft_mint: AccountMeta,
+        pub stream_nft: AccountMeta,
     }
 
     /// Account pubkeys for WithdrawableAmountOf instruction
@@ -2353,15 +2528,15 @@ pub mod sablier_lockup {
     pub struct WithdrawableAmountOfInstructionAccounts {
         pub stream_data: Pubkey,
 
-        pub stream_nft_mint: Pubkey,
+        pub stream_nft: Pubkey,
     }
 
     impl WithdrawableAmountOfInstructionAccounts {
-        pub fn new(stream_data: Pubkey, stream_nft_mint: Pubkey) -> Self {
+        pub fn new(stream_data: Pubkey, stream_nft: Pubkey) -> Self {
             Self {
                 stream_data,
 
-                stream_nft_mint,
+                stream_nft,
             }
         }
     }
@@ -2393,7 +2568,7 @@ pub mod sablier_lockup {
         pub fn accounts(mut self, accounts: WithdrawableAmountOfInstructionAccounts) -> Self {
             self.accounts.stream_data = AccountMeta::new_readonly(accounts.stream_data, false);
 
-            self.accounts.stream_nft_mint = AccountMeta::new_readonly(accounts.stream_nft_mint, false);
+            self.accounts.stream_nft = AccountMeta::new_readonly(accounts.stream_nft, false);
 
             self
         }
@@ -2408,7 +2583,7 @@ pub mod sablier_lockup {
 
             metas.push(self.accounts.stream_data.clone());
 
-            metas.push(self.accounts.stream_nft_mint.clone());
+            metas.push(self.accounts.stream_nft.clone());
 
             metas.extend(self.remaining_accounts.clone());
             metas
@@ -2536,6 +2711,7 @@ pub mod sablier_lockup {
     // ------------------------------------------------------------------------
 }
 
+
 // ============================================================================
 // CUSTOM TYPES
 // ============================================================================
@@ -2543,10 +2719,6 @@ pub mod sablier_lockup {
 /// Custom struct: Amounts
 #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
 pub struct Amounts {
-    pub start_unlock: u64,
-
-    pub cliff_unlock: u64,
-
     pub deposited: u64,
 
     pub refunded: u64,
@@ -2555,17 +2727,105 @@ pub struct Amounts {
 }
 
 impl Amounts {
-    pub fn new(start_unlock: u64, cliff_unlock: u64, deposited: u64, refunded: u64, withdrawn: u64) -> Self {
+    pub fn new(deposited: u64, refunded: u64, withdrawn: u64) -> Self {
         Self {
-            start_unlock,
-
-            cliff_unlock,
-
             deposited,
 
             refunded,
 
             withdrawn,
+        }
+    }
+}
+
+/// Custom struct: BaseAssetV1
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct BaseAssetV1 {
+    pub key: Key,
+
+    pub owner: Pubkey,
+
+    pub update_authority: UpdateAuthority,
+
+    pub name: String,
+
+    pub uri: String,
+
+    pub seq: Option<u64>,
+}
+
+impl BaseAssetV1 {
+    pub fn new(
+        key: Key,
+
+        owner: Pubkey,
+
+        update_authority: UpdateAuthority,
+
+        name: String,
+
+        uri: String,
+
+        seq: Option<u64>,
+    ) -> Self {
+        Self {
+            key,
+
+            owner,
+
+            update_authority,
+
+            name,
+
+            uri,
+
+            seq,
+        }
+    }
+}
+
+/// Custom struct: BaseCollectionV1
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct BaseCollectionV1 {
+    pub key: Key,
+
+    pub update_authority: Pubkey,
+
+    pub name: String,
+
+    pub uri: String,
+
+    pub num_minted: u32,
+
+    pub current_size: u32,
+}
+
+impl BaseCollectionV1 {
+    pub fn new(
+        key: Key,
+
+        update_authority: Pubkey,
+
+        name: String,
+
+        uri: String,
+
+        num_minted: u32,
+
+        current_size: u32,
+    ) -> Self {
+        Self {
+            key,
+
+            update_authority,
+
+            name,
+
+            uri,
+
+            num_minted,
+
+            current_size,
         }
     }
 }
@@ -2581,7 +2841,7 @@ pub struct CancelLockupStream {
 
     pub stream_data: Pubkey,
 
-    pub stream_nft_mint: Pubkey,
+    pub stream_nft: Pubkey,
 }
 
 impl CancelLockupStream {
@@ -2594,7 +2854,7 @@ impl CancelLockupStream {
 
         stream_data: Pubkey,
 
-        stream_nft_mint: Pubkey,
+        stream_nft: Pubkey,
     ) -> Self {
         Self {
             deposited_token_mint,
@@ -2605,17 +2865,19 @@ impl CancelLockupStream {
 
             stream_data,
 
-            stream_nft_mint,
+            stream_nft,
         }
     }
 }
 
-/// Custom struct: CreateLockupLinearStream
+/// Custom struct: CreateLockupStream
 #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
-pub struct CreateLockupLinearStream {
+pub struct CreateLockupStream {
     pub deposit_token_decimals: u8,
 
     pub deposit_token_mint: Pubkey,
+
+    pub model: CreateStreamModel,
 
     pub recipient: Pubkey,
 
@@ -2623,14 +2885,16 @@ pub struct CreateLockupLinearStream {
 
     pub stream_data: Pubkey,
 
-    pub stream_nft_mint: Pubkey,
+    pub stream_nft: Pubkey,
 }
 
-impl CreateLockupLinearStream {
+impl CreateLockupStream {
     pub fn new(
         deposit_token_decimals: u8,
 
         deposit_token_mint: Pubkey,
+
+        model: CreateStreamModel,
 
         recipient: Pubkey,
 
@@ -2638,12 +2902,14 @@ impl CreateLockupLinearStream {
 
         stream_data: Pubkey,
 
-        stream_nft_mint: Pubkey,
+        stream_nft: Pubkey,
     ) -> Self {
         Self {
             deposit_token_decimals,
 
             deposit_token_mint,
+
+            model,
 
             recipient,
 
@@ -2651,9 +2917,17 @@ impl CreateLockupLinearStream {
 
             stream_data,
 
-            stream_nft_mint,
+            stream_nft,
         }
     }
+}
+
+/// Custom enum: CreateStreamModel
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub enum CreateStreamModel {
+    Linear,
+
+    Tranched { tranches: Vec<Tranche> },
 }
 
 /// Custom struct: FeesCollected
@@ -2678,20 +2952,58 @@ impl FeesCollected {
     }
 }
 
-/// Custom struct: NftCollectionData
+/// Custom enum: Key
 #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
-pub struct NftCollectionData {
-    pub total_supply: u64,
+pub enum Key {
+    Uninitialized,
 
-    pub bump: u8,
+    AssetV1,
+
+    HashedAssetV1,
+
+    PluginHeaderV1,
+
+    PluginRegistryV1,
+
+    CollectionV1,
 }
 
-impl NftCollectionData {
-    pub fn new(total_supply: u64, bump: u8) -> Self {
-        Self {
-            total_supply,
+/// Custom struct: LinearTimestamps
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct LinearTimestamps {
+    pub start: u64,
 
-            bump,
+    pub cliff: u64,
+
+    pub end: u64,
+}
+
+impl LinearTimestamps {
+    pub fn new(start: u64, cliff: u64, end: u64) -> Self {
+        Self {
+            start,
+
+            cliff,
+
+            end,
+        }
+    }
+}
+
+/// Custom struct: LinearUnlockAmounts
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct LinearUnlockAmounts {
+    pub start: u64,
+
+    pub cliff: u64,
+}
+
+impl LinearUnlockAmounts {
+    pub fn new(start: u64, cliff: u64) -> Self {
+        Self {
+            start,
+
+            cliff,
         }
     }
 }
@@ -2703,17 +3015,17 @@ pub struct RenounceLockupStream {
 
     pub stream_data: Pubkey,
 
-    pub stream_nft_mint: Pubkey,
+    pub stream_nft: Pubkey,
 }
 
 impl RenounceLockupStream {
-    pub fn new(deposited_token_mint: Pubkey, stream_data: Pubkey, stream_nft_mint: Pubkey) -> Self {
+    pub fn new(deposited_token_mint: Pubkey, stream_data: Pubkey, stream_nft: Pubkey) -> Self {
         Self {
             deposited_token_mint,
 
             stream_data,
 
-            stream_nft_mint,
+            stream_nft,
         }
     }
 }
@@ -2733,7 +3045,9 @@ pub struct StreamData {
 
     pub is_depleted: bool,
 
-    pub timestamps: Timestamps,
+    pub model: StreamModel,
+
+    pub nft_address: Pubkey,
 
     pub sender: Pubkey,
 
@@ -2754,7 +3068,9 @@ impl StreamData {
 
         is_depleted: bool,
 
-        timestamps: Timestamps,
+        model: StreamModel,
+
+        nft_address: Pubkey,
 
         sender: Pubkey,
 
@@ -2773,13 +3089,23 @@ impl StreamData {
 
             is_depleted,
 
-            timestamps,
+            model,
+
+            nft_address,
 
             sender,
 
             was_canceled,
         }
     }
+}
+
+/// Custom enum: StreamModel
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub enum StreamModel {
+    Linear { timestamps: LinearTimestamps, unlock_amounts: LinearUnlockAmounts },
+
+    Tranched { timestamps: TranchedTimestamps, tranches: Vec<Tranche> },
 }
 
 /// Custom enum: StreamStatus
@@ -2796,24 +3122,38 @@ pub enum StreamStatus {
     Depleted,
 }
 
-/// Custom struct: Timestamps
+/// Custom struct: Tranche
 #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
-pub struct Timestamps {
-    pub cliff: u64,
+pub struct Tranche {
+    pub amount: u64,
 
-    pub end: u64,
-
-    pub start: u64,
+    pub timestamp: u64,
 }
 
-impl Timestamps {
-    pub fn new(cliff: u64, end: u64, start: u64) -> Self {
+impl Tranche {
+    pub fn new(amount: u64, timestamp: u64) -> Self {
         Self {
-            cliff,
+            amount,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: TranchedTimestamps
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct TranchedTimestamps {
+    pub start: u64,
+
+    pub end: u64,
+}
+
+impl TranchedTimestamps {
+    pub fn new(start: u64, end: u64) -> Self {
+        Self {
+            start,
 
             end,
-
-            start,
         }
     }
 }
@@ -2844,6 +3184,16 @@ impl Treasury {
     }
 }
 
+/// Custom enum: UpdateAuthority
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub enum UpdateAuthority {
+    None,
+
+    Address(Pubkey),
+
+    Collection(Pubkey),
+}
+
 /// Custom struct: WithdrawFromLockupStream
 #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
 pub struct WithdrawFromLockupStream {
@@ -2853,7 +3203,7 @@ pub struct WithdrawFromLockupStream {
 
     pub stream_data: Pubkey,
 
-    pub stream_nft_mint: Pubkey,
+    pub stream_nft: Pubkey,
 
     pub withdrawn_amount: u64,
 }
@@ -2866,7 +3216,7 @@ impl WithdrawFromLockupStream {
 
         stream_data: Pubkey,
 
-        stream_nft_mint: Pubkey,
+        stream_nft: Pubkey,
 
         withdrawn_amount: u64,
     ) -> Self {
@@ -2877,7 +3227,7 @@ impl WithdrawFromLockupStream {
 
             stream_data,
 
-            stream_nft_mint,
+            stream_nft,
 
             withdrawn_amount,
         }

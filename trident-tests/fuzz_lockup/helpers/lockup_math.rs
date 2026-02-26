@@ -1,4 +1,4 @@
-use super::get_stream_data;
+use super::{get_linear_params, get_stream_data};
 use trident_fuzz::fuzzing::{Pubkey, Trident};
 
 /// This file matches the logic from programs/lockup/src/utils/lockup_math.rs with some edits.
@@ -12,23 +12,25 @@ pub fn get_streamed_amount(trident: &mut Trident, stream_data_pubkey: &Pubkey) -
         return stream_data.amounts.deposited - stream_data.amounts.refunded;
     }
 
+    let (start, cliff, end, start_unlock, cliff_unlock) = get_linear_params(&stream_data);
+
     // If the start time is in the future, return zero.
-    if stream_data.timestamps.start > now {
+    if start > now {
         return 0;
     }
 
     // If the cliff time is in the future, return the start unlock amount.
-    if stream_data.timestamps.cliff > now {
-        return stream_data.amounts.start_unlock;
+    if cliff > now {
+        return start_unlock;
     }
 
     // If the end time is in the past or right now, return the deposited amount.
-    if stream_data.timestamps.end <= now {
+    if end <= now {
         return stream_data.amounts.deposited;
     }
 
     // Calculate the sum of the unlock amounts.
-    let unlock_amounts_sum: u64 = stream_data.amounts.start_unlock + stream_data.amounts.cliff_unlock;
+    let unlock_amounts_sum: u64 = start_unlock + cliff_unlock;
 
     // If the sum of the unlock amounts is greater than or equal to the deposited amount, return the deposited
     // amount. The ">=" operator is used as a safety measure in case of a bug, as the sum of the unlock amounts
@@ -38,17 +40,13 @@ pub fn get_streamed_amount(trident: &mut Trident, stream_data_pubkey: &Pubkey) -
     }
 
     // Determine the streaming start time.
-    let streaming_start_time = if stream_data.timestamps.cliff == 0 {
-        stream_data.timestamps.start
-    } else {
-        stream_data.timestamps.cliff
-    };
+    let streaming_start_time = if cliff == 0 { start } else { cliff };
 
     const SCALING_FACTOR: u128 = 1e18 as u128;
 
     // Calculate time variables. Scale to 18 decimals for increased precision and cast to u128 to prevent overflow.
     let elapsed_time = (now - streaming_start_time) as u128 * SCALING_FACTOR;
-    let streamable_range = (stream_data.timestamps.end - streaming_start_time) as u128;
+    let streamable_range = (end - streaming_start_time) as u128;
     let elapsed_time_percentage = elapsed_time / streamable_range;
 
     // Calculate the streamable amount.

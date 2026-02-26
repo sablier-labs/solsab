@@ -9,8 +9,8 @@ pub fn cancel(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses, is_pe
     let deposited_token_mint = fuzz_accounts.deposit_token_mint.get(trident).unwrap();
     let deposited_token_program = fuzz_accounts.deposit_token_program.get(trident).unwrap();
 
-    // Get stream NFT mint
-    let stream_nft_mint = fuzz_accounts.stream_nft_mint.get(trident).unwrap();
+    // Get stream NFT (MPL Core asset)
+    let stream_nft = fuzz_accounts.stream_nft.get(trident).unwrap();
 
     // Get stream data PDA
     let stream_data = fuzz_accounts.stream_data.get(trident).unwrap();
@@ -35,7 +35,7 @@ pub fn cancel(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses, is_pe
         deposited_token_mint,
         stream_data,
         stream_data_ata,
-        stream_nft_mint,
+        stream_nft,
         deposited_token_program,
     );
 

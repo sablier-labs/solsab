@@ -1,4 +1,4 @@
-use crate::types::StreamData;
+use crate::types::{StreamData, StreamModel};
 use trident_fuzz::fuzzing::*;
 
 /// Checks if an account exists by verifying it has lamports and data.
@@ -23,22 +23,13 @@ pub fn get_ata_token_balance(trident: &mut Trident, ata_pubkey: &Pubkey) -> u64 
     u64::from_le_bytes(amount_bytes.try_into().unwrap())
 }
 
-/// Get mint total supply from SPL token mint account data
-/// SPL Token mint layout (82 bytes):
-/// - 36 bytes: mint_authority (COption<Pubkey>)
-/// - 8 bytes: supply (u64)
-/// - 1 byte: decimals (u8)
-/// - 1 byte: is_initialized (bool)
-/// - 36 bytes: freeze_authority (COption<Pubkey>)
-pub fn get_mint_total_supply(trident: &mut Trident, pubkey: &Pubkey) -> u64 {
-    let account = trident.get_account(pubkey);
+/// Get the owner of an MPL Core asset.
+/// BaseAssetV1 layout: [1 byte Key discriminator][32 bytes owner]...
+pub fn get_mpl_core_asset_owner(trident: &mut Trident, asset_pubkey: &Pubkey) -> Pubkey {
+    let account = trident.get_account(asset_pubkey);
     let data = account.data();
-    if data.len() < 82 {
-        return 0;
-    }
-    // The supply is at offset 36 (mint_authority: 36 bytes)
-    let supply_bytes = &data[36..44];
-    u64::from_le_bytes(supply_bytes.try_into().unwrap())
+    assert!(data.len() >= 33, "MPL Core asset account data too short");
+    Pubkey::new_from_array(data[1..33].try_into().unwrap())
 }
 
 /// Get StreamData account from the trident client state.
@@ -46,4 +37,16 @@ pub fn get_stream_data(trident: &mut Trident, stream_data_pubkey: &Pubkey) -> St
     trident
         .get_account_with_type::<StreamData>(stream_data_pubkey, 8)
         .expect("Failed to deserialize stream_data account")
+}
+
+/// Extracts linear timestamps and unlock amounts from a StreamData's model.
+/// Returns (start, cliff, end, start_unlock, cliff_unlock).
+/// Panics if the model is not Linear.
+pub fn get_linear_params(stream_data: &StreamData) -> (u64, u64, u64, u64, u64) {
+    match &stream_data.model {
+        StreamModel::Linear { timestamps, unlock_amounts } => {
+            (timestamps.start, timestamps.cliff, timestamps.end, unlock_amounts.start, unlock_amounts.cliff)
+        }
+        _ => panic!("Expected Linear stream model"),
+    }
 }

@@ -16,41 +16,25 @@ pub struct AccountAddresses {
 
     pub stream_data_ata: AddressStorage,
 
-    pub stream_nft_mint: AddressStorage,
+    pub stream_nft: AddressStorage,
+
+    pub stream_nft_collection: AddressStorage,
 
     pub fee_collector: AddressStorage,
 
     pub treasury: AddressStorage,
 
-    pub creator: AddressStorage,
+    pub funder: AddressStorage,
 
-    pub creator_ata: AddressStorage,
+    pub funder_ata: AddressStorage,
 
     pub recipient: AddressStorage,
 
-    pub nft_collection_data: AddressStorage,
-
-    pub nft_collection_master_edition: AddressStorage,
-
-    pub nft_collection_metadata: AddressStorage,
-
-    pub nft_collection_mint: AddressStorage,
-
     pub deposit_token_mint: AddressStorage,
-
-    pub recipient_stream_nft_ata: AddressStorage,
-
-    pub stream_nft_master_edition: AddressStorage,
-
-    pub stream_nft_metadata: AddressStorage,
 
     pub deposit_token_program: AddressStorage,
 
-    pub nft_token_program: AddressStorage,
-
     pub initializer: AddressStorage,
-
-    pub nft_collection_ata: AddressStorage,
 
     pub signer: AddressStorage,
 

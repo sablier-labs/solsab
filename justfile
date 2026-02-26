@@ -156,7 +156,7 @@ alias tt := test-trident
 
 # Run Trident Lockup fuzz tests
 [group("test")]
-test-trident-lockup: build
+test-trident-lockup: build _setup-fixtures
     just --justfile trident-tests/justfile test-lockup
 alias ttlk := test-trident-lockup
 
@@ -166,10 +166,10 @@ _setup-fixtures:
     FIXTURES_DIR="tests/fixtures"
     mkdir -p "$FIXTURES_DIR"
 
-    # Token Metadata Program
-    if [ ! -f "$FIXTURES_DIR/token_metadata_program.so" ]; then
-        echo "📥 Downloading Token Metadata program..."
-        solana program dump -u m metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s "$FIXTURES_DIR/token_metadata_program.so"
+    # MPL Core Program
+    if [ ! -f "$FIXTURES_DIR/mpl_core_program.so" ]; then
+        echo "📥 Downloading MPL Core program..."
+        solana program dump -u m CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d "$FIXTURES_DIR/mpl_core_program.so"
     fi
 
     # Chainlink Program

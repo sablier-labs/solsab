@@ -19,13 +19,12 @@ pub fn withdraw(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses, wit
     // Get deposit token info
     let deposited_token_mint = fuzz_accounts.deposit_token_mint.get(trident).unwrap();
     let deposited_token_program = fuzz_accounts.deposit_token_program.get(trident).unwrap();
-    let nft_token_program = fuzz_accounts.nft_token_program.get(trident).unwrap();
 
     // Get treasury
     let treasury = fuzz_accounts.treasury.get(trident).unwrap();
 
-    // Get stream NFT mint
-    let stream_nft_mint = fuzz_accounts.stream_nft_mint.get(trident).unwrap();
+    // Get stream NFT (MPL Core asset)
+    let stream_nft = fuzz_accounts.stream_nft.get(trident).unwrap();
 
     // Get stream data PDA
     let stream_data = fuzz_accounts.stream_data.get(trident).unwrap();
@@ -39,9 +38,6 @@ pub fn withdraw(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses, wit
         )),
     );
 
-    // Get recipient stream NFT ATA
-    let recipient_stream_nft_ata = fuzz_accounts.recipient_stream_nft_ata.get(trident).unwrap();
-
     // Get stream data ATA
     let stream_data_ata = fuzz_accounts.stream_data_ata.get(trident).unwrap();
 
@@ -52,19 +48,16 @@ pub fn withdraw(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses, wit
     // Build instruction accounts
     let accounts = WithdrawInstructionAccounts::new(
         signer,
-        stream_recipient,
         withdrawal_recipient,
         withdrawal_recipient_ata,
         treasury,
         deposited_token_mint,
-        recipient_stream_nft_ata,
         stream_data,
         stream_data_ata,
-        stream_nft_mint,
+        stream_nft,
         chainlink_program,
         chainlink_sol_usd_feed,
         deposited_token_program,
-        nft_token_program,
     );
 
     // Build instruction data

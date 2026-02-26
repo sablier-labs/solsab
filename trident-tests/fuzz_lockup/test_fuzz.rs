@@ -91,14 +91,14 @@ impl FuzzTest {
         create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
 
         let stream_data_pubkey = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
-        let stream_nft_mint = self.fuzz_accounts.stream_nft_mint.get(&mut self.trident).unwrap();
+        let stream_nft = self.fuzz_accounts.stream_nft.get(&mut self.trident).unwrap();
         let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
 
         // Warp to active stream time
         self.warp_to_active_stream_time(&stream_data);
 
         // Build and execute view instruction
-        let accounts = RefundableAmountOfInstructionAccounts::new(stream_data_pubkey, stream_nft_mint);
+        let accounts = RefundableAmountOfInstructionAccounts::new(stream_data_pubkey, stream_nft);
         let data = RefundableAmountOfInstructionData::new();
         let ix = RefundableAmountOfInstruction::data(data).accounts(accounts).instruction();
         let result = self.trident.process_transaction(&[ix], Some("RefundableAmountOf"));
@@ -116,14 +116,14 @@ impl FuzzTest {
         create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
 
         let stream_data_pubkey = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
-        let stream_nft_mint = self.fuzz_accounts.stream_nft_mint.get(&mut self.trident).unwrap();
+        let stream_nft = self.fuzz_accounts.stream_nft.get(&mut self.trident).unwrap();
         let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
 
         // Warp to active stream time
         self.warp_to_active_stream_time(&stream_data);
 
         // Build and execute view instruction
-        let accounts = StreamedAmountOfInstructionAccounts::new(stream_data_pubkey, stream_nft_mint);
+        let accounts = StreamedAmountOfInstructionAccounts::new(stream_data_pubkey, stream_nft);
         let data = StreamedAmountOfInstructionData::new();
         let ix = StreamedAmountOfInstruction::data(data).accounts(accounts).instruction();
         let result = self.trident.process_transaction(&[ix], Some("StreamedAmountOf"));
@@ -141,12 +141,13 @@ impl FuzzTest {
         create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
 
         let stream_data_pubkey = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
-        let stream_nft_mint = self.fuzz_accounts.stream_nft_mint.get(&mut self.trident).unwrap();
+        let stream_nft = self.fuzz_accounts.stream_nft.get(&mut self.trident).unwrap();
         let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
 
         // Start from after cliff time to ensure streaming has started
-        let start_time = stream_data.timestamps.cliff.max(stream_data.timestamps.start) + 1;
-        let end_time = stream_data.timestamps.end;
+        let (start, cliff, end, _, _) = get_linear_params(&stream_data);
+        let start_time = cliff.max(start) + 1;
+        let end_time = end;
 
         // Perform multiple time jumps and verify monotonicity
         let num_jumps = 5;
@@ -158,7 +159,7 @@ impl FuzzTest {
             self.trident.warp_to_timestamp(warp_time.try_into().unwrap());
 
             // Execute view instruction and parse return data
-            let accounts = StreamedAmountOfInstructionAccounts::new(stream_data_pubkey, stream_nft_mint);
+            let accounts = StreamedAmountOfInstructionAccounts::new(stream_data_pubkey, stream_nft);
             let data = StreamedAmountOfInstructionData::new();
             let ix = StreamedAmountOfInstruction::data(data).accounts(accounts).instruction();
             let result = self.trident.process_transaction(&[ix], Some("StreamedAmountOf"));
@@ -197,7 +198,7 @@ impl FuzzTest {
         create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
 
         let stream_data_pubkey = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
-        let stream_nft_mint = self.fuzz_accounts.stream_nft_mint.get(&mut self.trident).unwrap();
+        let stream_nft = self.fuzz_accounts.stream_nft.get(&mut self.trident).unwrap();
         let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
 
         // Warp to active stream time
@@ -209,13 +210,14 @@ impl FuzzTest {
             let withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
             // If nothing is withdrawable, warp to near end time to ensure something is withdrawable
             if withdrawable == 0 {
-                self.trident.warp_to_timestamp((stream_data.timestamps.end - 1).try_into().unwrap());
+                let (_, _, end, _, _) = get_linear_params(&stream_data);
+                self.trident.warp_to_timestamp((end - 1).try_into().unwrap());
             }
             withdraw(&mut self.trident, &mut self.fuzz_accounts, true, withdrawable);
         }
 
         // Build and execute view instruction
-        let accounts = WithdrawableAmountOfInstructionAccounts::new(stream_data_pubkey, stream_nft_mint);
+        let accounts = WithdrawableAmountOfInstructionAccounts::new(stream_data_pubkey, stream_nft);
         let data = WithdrawableAmountOfInstructionData::new();
         let ix = WithdrawableAmountOfInstruction::data(data).accounts(accounts).instruction();
         let result = self.trident.process_transaction(&[ix], Some("WithdrawableAmountOf"));
@@ -242,10 +244,10 @@ impl FuzzTest {
         pubkey
     }
 
-    /// Creates default users (creator, recipient, sender, signer) and stores them in fuzz_accounts.
+    /// Creates default users (funder, recipient, sender, signer) and stores them in fuzz_accounts.
     fn create_users(&mut self) {
-        let creator = self.create_user();
-        self.fuzz_accounts.creator.insert_with_address(creator);
+        let funder = self.create_user();
+        self.fuzz_accounts.funder.insert_with_address(funder);
 
         let fee_collector = self.create_user();
         self.fuzz_accounts.fee_collector.insert_with_address(fee_collector);
@@ -261,12 +263,12 @@ impl FuzzTest {
     }
 
     fn create_tokens(&mut self) {
-        let creator = self.fuzz_accounts.creator.get(&mut self.trident).unwrap();
+        let funder = self.fuzz_accounts.funder.get(&mut self.trident).unwrap();
 
         // Create SPL token mint
         let deposit_token_mint = Keypair::new().pubkey();
         let mint_ix =
-            self.trident.initialize_mint(&creator, &deposit_token_mint, TOKEN_DECIMALS, &creator, Some(&creator));
+            self.trident.initialize_mint(&funder, &deposit_token_mint, TOKEN_DECIMALS, &funder, Some(&funder));
         self.trident.process_transaction(&mint_ix, None);
 
         self.fuzz_accounts.deposit_token_mint.insert_with_address(deposit_token_mint);
@@ -275,8 +277,8 @@ impl FuzzTest {
         let deposit_token_program: Pubkey = SPL_TOKEN_PROGRAM_ID.parse().unwrap();
         self.fuzz_accounts.deposit_token_program.insert_with_address(deposit_token_program);
 
-        // Create creator's ATA
-        let create_ata_ix = self.trident.initialize_associated_token_account(&creator, &deposit_token_mint, &creator);
+        // Create funder's ATA
+        let create_ata_ix = self.trident.initialize_associated_token_account(&funder, &deposit_token_mint, &funder);
         self.trident.process_transaction(&[create_ata_ix], None);
     }
 
@@ -320,7 +322,8 @@ impl FuzzTest {
             let mut withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
             if withdrawable == 0 {
                 // Warp to near end time to ensure something is withdrawable
-                self.trident.warp_to_timestamp((stream_data.timestamps.end - 1).try_into().unwrap());
+                let (_, _, end, _, _) = get_linear_params(&stream_data);
+                self.trident.warp_to_timestamp((end - 1).try_into().unwrap());
                 withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
             }
             (withdrawable, withdraw_to_recipient)
@@ -354,8 +357,8 @@ impl FuzzTest {
     /// This covers both streaming and settled statuses.
     fn warp_to_active_stream_time(&mut self, stream_data: &crate::types::StreamData) {
         const TWO_WEEKS: u64 = 14 * 24 * 60 * 60;
-        let warp_time =
-            self.trident.random_from_range(stream_data.timestamps.start + 1..stream_data.timestamps.end + TWO_WEEKS);
+        let (start, _, end, _, _) = get_linear_params(stream_data);
+        let warp_time = self.trident.random_from_range(start + 1..end + TWO_WEEKS);
         self.trident.warp_to_timestamp(warp_time.try_into().unwrap());
     }
 

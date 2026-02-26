@@ -32,8 +32,6 @@ pub const DEFAULT_LAMPORTS_BALANCE: u64 = 5 * LAMPORTS_PER_SOL;
 pub const SPL_TOKEN_PROGRAM_ID: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 // pub const TOKEN2022_PROGRAM_ID: &str = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
 pub const ASSOCIATED_TOKEN_PROGRAM_ID: &str = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
-pub const TOKEN_METADATA_PROGRAM_ID: &str = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";
-
 // Chainlink IDS
 pub const CHAINLINK_PROGRAM_ID: &str = "HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny";
 pub const CHAINLINK_SOL_USD_FEED_ID: &str = "99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY6jZ96ynrR";
@@ -41,10 +39,7 @@ pub const CHAINLINK_SOL_USD_FEED_ID: &str = "99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY
 // =============================================================================
 // PDA SEEDS
 // =============================================================================
-pub const NFT_COLLECTION_DATA: &[u8] = b"nft_collection_data";
-pub const NFT_COLLECTION_MINT: &[u8] = b"nft_collection_mint";
+pub const STREAM_NFT_COLLECTION: &[u8] = b"stream_nft_collection";
+pub const STREAM_NFT: &[u8] = b"stream_nft";
 pub const TREASURY: &[u8] = b"treasury";
-pub const METADATA: &[u8] = b"metadata";
-pub const EDITION: &[u8] = b"edition";
-pub const STREAM_NFT_MINT: &[u8] = b"stream_nft_mint";
 pub const STREAM_DATA: &[u8] = b"stream_data";
