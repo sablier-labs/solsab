@@ -118,8 +118,8 @@ pub fn assert_withdraw(
         "stream_data_ata balance should decrease by withdraw_amount"
     );
 
-    // Verify is_depleted is true if withdrawn + refunded = deposited
-    if stream_data.amounts.withdrawn + stream_data.amounts.refunded == stream_data.amounts.deposited {
+    // Verify is_depleted is true if withdrawn + refunded >= deposited
+    if stream_data.amounts.withdrawn + stream_data.amounts.refunded >= stream_data.amounts.deposited {
         assert!(stream_data.is_depleted, "is_depleted should be true when withdrawn + refunded = deposited");
     }
 

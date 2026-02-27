@@ -34,6 +34,14 @@ pub struct AccountAddresses {
 
     pub deposit_token_program: AddressStorage,
 
+    pub spl_token_mint: AddressStorage,
+
+    pub spl_token_program: AddressStorage,
+
+    pub token2022_mint: AddressStorage,
+
+    pub token2022_program: AddressStorage,
+
     pub initializer: AddressStorage,
 
     pub signer: AddressStorage,

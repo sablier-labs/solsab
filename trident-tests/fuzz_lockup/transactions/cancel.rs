@@ -70,14 +70,14 @@ fn assert_cancel(
     stream_data_ata_balance_before: u64,
     is_pending_stream: bool,
 ) {
-    // Data assert_cancel - retrieve and verify stream data
+    // Retrieve and verify stream data
     let stream_data = get_stream_data(trident, &accounts.stream_data);
-
-    // Verify is_cancelable is now false (stream was canceled)
-    assert!(!stream_data.is_cancelable, "is_cancelable should be false after cancel");
 
     // Verify was_canceled is now true
     assert!(stream_data.was_canceled, "was_canceled should be true after cancel");
+
+    // Verify is_cancelable is now false
+    assert!(!stream_data.is_cancelable, "is_cancelable should be false after cancel");
 
     // Verify the correct stream state based on whether it was pending or streaming
     if is_pending_stream {

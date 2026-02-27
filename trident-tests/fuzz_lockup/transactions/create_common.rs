@@ -72,7 +72,11 @@ pub fn derive_create_accounts(trident: &mut Trident, fuzz_accounts: &mut Account
 
 /// Mints tokens to the funder's ATA for stream creation.
 pub fn mint_deposit_tokens(trident: &mut Trident, accounts: &CreateAccounts, deposit_amount: u64) {
-    let mint_tokens_ix = trident.mint_to(&accounts.funder_ata, &accounts.deposit_token_mint, &accounts.funder, deposit_amount);
+    let mint_tokens_ix = if is_token_2022(&accounts.deposit_token_program) {
+        trident.mint_to_2022(&accounts.funder_ata, &accounts.deposit_token_mint, &accounts.funder, deposit_amount)
+    } else {
+        trident.mint_to(&accounts.funder_ata, &accounts.deposit_token_mint, &accounts.funder, deposit_amount)
+    };
     let mint_result = trident.process_transaction(&[mint_tokens_ix], None);
     assert!(mint_result.is_success(), "Failed to mint {deposit_amount} tokens to funder ATA");
 }
