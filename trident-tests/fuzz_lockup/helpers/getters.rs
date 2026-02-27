@@ -1,10 +1,10 @@
 use crate::types::{StreamData, StreamModel};
 use trident_fuzz::fuzzing::*;
 
-/// Checks if an account exists by verifying it has lamports and data.
+/// Checks if an account exists by verifying it has lamports.
 pub fn account_exists(trident: &mut Trident, pubkey: &Pubkey) -> bool {
     let account = trident.get_account(pubkey);
-    account.lamports() > 0 && !account.data().is_empty()
+    account.lamports() > 0
 }
 
 /// Get SPL Token balance of the ATA from the client state.
@@ -44,9 +44,10 @@ pub fn get_stream_data(trident: &mut Trident, stream_data_pubkey: &Pubkey) -> St
 /// Panics if the model is not Linear.
 pub fn get_linear_params(stream_data: &StreamData) -> (u64, u64, u64, u64, u64) {
     match &stream_data.model {
-        StreamModel::Linear { timestamps, unlock_amounts } => {
-            (timestamps.start, timestamps.cliff, timestamps.end, unlock_amounts.start, unlock_amounts.cliff)
-        }
+        StreamModel::Linear {
+            timestamps,
+            unlock_amounts,
+        } => (timestamps.start, timestamps.cliff, timestamps.end, unlock_amounts.start, unlock_amounts.cliff),
         _ => panic!("Expected Linear stream model"),
     }
 }

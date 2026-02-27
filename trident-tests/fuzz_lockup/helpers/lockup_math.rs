@@ -24,8 +24,8 @@ pub fn get_streamed_amount(trident: &mut Trident, stream_data_pubkey: &Pubkey) -
         return start_unlock;
     }
 
-    // If the end time is in the past or right now, return the deposited amount.
-    if end <= now {
+    // If the end time is in the past, return the deposited amount.
+    if now > end {
         return stream_data.amounts.deposited;
     }
 
@@ -71,7 +71,7 @@ pub fn get_refundable_amount(trident: &mut Trident, stream_data_pubkey: &Pubkey)
     // Note that checking for `is_cancelable` also checks if the stream `was_canceled` thanks to the protocol
     // invariant that canceled streams are not cancelable anymore.
     if stream_data.is_cancelable && !stream_data.is_depleted {
-        return stream_data.amounts.deposited - get_streamed_amount(trident, stream_data_pubkey);
+        return stream_data.amounts.deposited.saturating_sub(get_streamed_amount(trident, stream_data_pubkey));
     }
 
     // Otherwise, return zero.
@@ -80,5 +80,5 @@ pub fn get_refundable_amount(trident: &mut Trident, stream_data_pubkey: &Pubkey)
 
 pub fn get_withdrawable_amount(trident: &mut Trident, stream_data_pubkey: &Pubkey) -> u64 {
     let stream_data = get_stream_data(trident, stream_data_pubkey);
-    get_streamed_amount(trident, stream_data_pubkey) - stream_data.amounts.withdrawn
+    get_streamed_amount(trident, stream_data_pubkey).saturating_sub(stream_data.amounts.withdrawn)
 }

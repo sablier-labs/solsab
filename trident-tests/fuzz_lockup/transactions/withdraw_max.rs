@@ -111,4 +111,7 @@ fn assertions(
     if stream_data.amounts.withdrawn + stream_data.amounts.refunded == stream_data.amounts.deposited {
         assert!(stream_data.is_depleted, "is_depleted should be true when withdrawn + refunded = deposited");
     }
+
+    // Universal invariants
+    check_universal_invariants(trident, &accounts.stream_data, &accounts.stream_data_ata);
 }

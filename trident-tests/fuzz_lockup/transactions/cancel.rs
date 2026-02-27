@@ -105,4 +105,7 @@ fn assertions(
         actual_refund_amount,
         "sender_ata balance should increase by refunded amount"
     );
+
+    // Universal invariants
+    check_universal_invariants(trident, &accounts.stream_data, &accounts.stream_data_ata);
 }

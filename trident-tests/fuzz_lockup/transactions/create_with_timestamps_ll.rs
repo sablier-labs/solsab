@@ -184,4 +184,7 @@ fn assertions(
     // Verify token balances
     let stream_data_ata_balance = get_ata_token_balance(trident, &accounts.stream_data_ata);
     assert_eq!(stream_data_ata_balance, data.deposit_amount, "stream_data_ata balance should equal deposit_amount");
+
+    // Universal invariants
+    check_universal_invariants(trident, &accounts.stream_data, &accounts.stream_data_ata);
 }
