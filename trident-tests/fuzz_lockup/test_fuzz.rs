@@ -87,24 +87,14 @@ impl FuzzTest {
 
     #[flow]
     fn flow_refundable_amount_of(&mut self) {
-        // Create a non-default stream
-        create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
+        let (stream_data_pubkey, stream_nft) = self.setup_view_flow();
 
-        let stream_data_pubkey = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
-        let stream_nft = self.fuzz_accounts.stream_nft.get(&mut self.trident).unwrap();
-        let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
-
-        // Warp to active stream time
-        self.warp_to_active_stream_time(&stream_data);
-
-        // Build and execute view instruction
         let accounts = RefundableAmountOfInstructionAccounts::new(stream_data_pubkey, stream_nft);
         let data = RefundableAmountOfInstructionData::new();
         let ix = RefundableAmountOfInstruction::data(data).accounts(accounts).instruction();
         let result = self.trident.process_transaction(&[ix], Some("RefundableAmountOf"));
         assert!(result.is_success(), "RefundableAmountOf transaction failed");
 
-        // Get return data and compare with expected
         let actual: u64 = self.parse_return_data_from_logs(&result.logs()).expect("Failed to get return data");
         let expected = get_refundable_amount(&mut self.trident, &stream_data_pubkey);
         assert_eq!(actual, expected, "RefundableAmountOf return value mismatch: actual={actual}, expected={expected}");
@@ -112,24 +102,14 @@ impl FuzzTest {
 
     #[flow]
     fn flow_streamed_amount_of(&mut self) {
-        // Create a non-default stream
-        create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
+        let (stream_data_pubkey, stream_nft) = self.setup_view_flow();
 
-        let stream_data_pubkey = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
-        let stream_nft = self.fuzz_accounts.stream_nft.get(&mut self.trident).unwrap();
-        let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
-
-        // Warp to active stream time
-        self.warp_to_active_stream_time(&stream_data);
-
-        // Build and execute view instruction
         let accounts = StreamedAmountOfInstructionAccounts::new(stream_data_pubkey, stream_nft);
         let data = StreamedAmountOfInstructionData::new();
         let ix = StreamedAmountOfInstruction::data(data).accounts(accounts).instruction();
         let result = self.trident.process_transaction(&[ix], Some("StreamedAmountOf"));
         assert!(result.is_success(), "StreamedAmountOf transaction failed");
 
-        // Get return data and compare with expected
         let actual: u64 = self.parse_return_data_from_logs(&result.logs()).expect("Failed to get return data");
         let expected = get_streamed_amount(&mut self.trident, &stream_data_pubkey);
         assert_eq!(actual, expected, "StreamedAmountOf return value mismatch: actual={actual}, expected={expected}");
@@ -194,15 +174,7 @@ impl FuzzTest {
 
     #[flow]
     fn flow_withdrawable_amount_of(&mut self) {
-        // Create a non-default stream
-        create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
-
-        let stream_data_pubkey = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
-        let stream_nft = self.fuzz_accounts.stream_nft.get(&mut self.trident).unwrap();
-        let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
-
-        // Warp to active stream time
-        self.warp_to_active_stream_time(&stream_data);
+        let (stream_data_pubkey, stream_nft) = self.setup_view_flow();
 
         // Randomly (50/50) decide to perform a withdraw before checking withdrawable amount
         let withdraw_before = self.trident.random_bool();
@@ -210,20 +182,19 @@ impl FuzzTest {
             let withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
             // If nothing is withdrawable, warp to near end time to ensure something is withdrawable
             if withdrawable == 0 {
+                let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
                 let (_, _, end, _, _) = get_linear_params(&stream_data);
                 self.trident.warp_to_timestamp((end - 1).try_into().unwrap());
             }
             withdraw(&mut self.trident, &mut self.fuzz_accounts, true, withdrawable);
         }
 
-        // Build and execute view instruction
         let accounts = WithdrawableAmountOfInstructionAccounts::new(stream_data_pubkey, stream_nft);
         let data = WithdrawableAmountOfInstructionData::new();
         let ix = WithdrawableAmountOfInstruction::data(data).accounts(accounts).instruction();
         let result = self.trident.process_transaction(&[ix], Some("WithdrawableAmountOf"));
         assert!(result.is_success(), "WithdrawableAmountOf transaction failed");
 
-        // Get return data and compare with expected
         let actual: u64 = self.parse_return_data_from_logs(&result.logs()).expect("Failed to get return data");
         let expected = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
         assert_eq!(
@@ -238,8 +209,7 @@ impl FuzzTest {
 
     /// Creates a new user and funds it with the default lamports balance.
     fn create_user(&mut self) -> Pubkey {
-        let keypair = Keypair::new();
-        let pubkey = keypair.pubkey();
+        let pubkey = Keypair::new().pubkey();
         self.trident.airdrop(&pubkey, DEFAULT_LAMPORTS_BALANCE);
         pubkey
     }
@@ -280,6 +250,19 @@ impl FuzzTest {
         // Create funder's ATA
         let create_ata_ix = self.trident.initialize_associated_token_account(&funder, &deposit_token_mint, &funder);
         self.trident.process_transaction(&[create_ata_ix], None);
+    }
+
+    /// Common setup for view flows: creates a stream, warps to active time, returns pubkeys.
+    fn setup_view_flow(&mut self) -> (Pubkey, Pubkey) {
+        create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
+
+        let stream_data_pubkey = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
+        let stream_nft = self.fuzz_accounts.stream_nft.get(&mut self.trident).unwrap();
+        let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
+
+        self.warp_to_active_stream_time(&stream_data);
+
+        (stream_data_pubkey, stream_nft)
     }
 
     /// Common setup for withdraw and withdraw_max flows.

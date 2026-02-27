@@ -52,7 +52,7 @@ pub fn cancel(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses, is_pe
     assert!(result.is_success(), "Cancel transaction failed");
 
     // Verify accounts and data
-    assertions(
+    assert_cancel(
         trident,
         &accounts,
         expected_refund_amount,
@@ -62,7 +62,7 @@ pub fn cancel(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses, is_pe
     );
 }
 
-fn assertions(
+fn assert_cancel(
     trident: &mut Trident,
     accounts: &CancelInstructionAccounts,
     expected_refund_amount: u64,
@@ -70,7 +70,7 @@ fn assertions(
     stream_data_ata_balance_before: u64,
     is_pending_stream: bool,
 ) {
-    // Data assertions - retrieve and verify stream data
+    // Data assert_cancel - retrieve and verify stream data
     let stream_data = get_stream_data(trident, &accounts.stream_data);
 
     // Verify is_cancelable is now false (stream was canceled)

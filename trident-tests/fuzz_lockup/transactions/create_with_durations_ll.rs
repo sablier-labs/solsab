@@ -1,163 +1,88 @@
 use crate::{fuzz_accounts::AccountAddresses, helpers::*, types::sablier_lockup::*};
 use trident_fuzz::fuzzing::*;
 
-pub fn create_with_durations_ll(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses) {
-    let program_id = program_id();
+use super::create_common::{assert_create, derive_create_accounts, mint_deposit_tokens};
 
-    // Random salt for PDA derivation
+pub fn create_with_durations_ll(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses) {
     let salt: u128 = trident.random_from_range(2..(u128::MAX - 1));
 
-    // Get values needed for PDA derivations
-    let funder = fuzz_accounts.funder.get(trident).unwrap();
-    let deposit_token_mint = fuzz_accounts.deposit_token_mint.get(trident).unwrap();
-    let deposit_token_program = fuzz_accounts.deposit_token_program.get(trident).unwrap();
-    let recipient = fuzz_accounts.recipient.get(trident).unwrap();
-    let sender = fuzz_accounts.sender.get(trident).unwrap();
-    let treasury = fuzz_accounts.treasury.get(trident).unwrap();
-    let stream_nft_collection = fuzz_accounts.stream_nft_collection.get(trident).unwrap();
+    let common = derive_create_accounts(trident, fuzz_accounts, salt);
 
-    let ata_program: Pubkey = ASSOCIATED_TOKEN_PROGRAM_ID.parse().unwrap();
-
-    // Derive funder ATA
-    let funder_ata = fuzz_accounts.funder_ata.insert(
-        trident,
-        Some(PdaSeeds::new(
-            &[funder.as_ref(), deposit_token_program.as_ref(), deposit_token_mint.as_ref()],
-            ata_program,
-        )),
-    );
-
-    // Derive stream NFT PDA (MPL Core asset)
-    let stream_nft = fuzz_accounts
-        .stream_nft
-        .insert(trident, Some(PdaSeeds::new(&[STREAM_NFT, sender.as_ref(), &salt.to_le_bytes()], program_id)));
-
-    // Derive stream data PDA
-    let stream_data = fuzz_accounts
-        .stream_data
-        .insert(trident, Some(PdaSeeds::new(&[STREAM_DATA, stream_nft.as_ref()], program_id)));
-
-    // Derive stream data ATA
-    let stream_data_ata = fuzz_accounts.stream_data_ata.insert(
-        trident,
-        Some(PdaSeeds::new(
-            &[stream_data.as_ref(), deposit_token_program.as_ref(), deposit_token_mint.as_ref()],
-            ata_program,
-        )),
-    );
-
-    // Build instruction accounts
-    let accounts = CreateWithDurationsLlInstructionAccounts::new(
-        funder,
-        funder_ata,
-        recipient,
-        sender,
-        treasury,
-        stream_nft_collection,
-        deposit_token_mint,
-        stream_data,
-        stream_data_ata,
-        stream_nft,
-        deposit_token_program,
-    );
-
-    // Build instruction data
     let data = get_data(trident, salt);
 
-    // Mint tokens to funder's ATA
-    let mint_tokens_ix = trident.mint_to(&funder_ata, &deposit_token_mint, &funder, data.deposit_amount);
-    let mint_result = trident.process_transaction(&[mint_tokens_ix], None);
-    assert!(mint_result.is_success(), "Failed to mint {} tokens to funder ATA", data.deposit_amount);
+    mint_deposit_tokens(trident, &common, data.deposit_amount);
 
-    let ix = CreateWithDurationsLlInstruction::data(data.clone()).accounts(accounts.clone()).instruction();
+    let accounts = CreateWithDurationsLlInstructionAccounts::new(
+        common.funder,
+        common.funder_ata,
+        common.recipient,
+        common.sender,
+        common.treasury,
+        common.stream_nft_collection,
+        common.deposit_token_mint,
+        common.stream_data,
+        common.stream_data_ata,
+        common.stream_nft,
+        common.deposit_token_program,
+    );
+
+    let ix = CreateWithDurationsLlInstruction::data(data.clone()).accounts(accounts).instruction();
     let result = trident.process_transaction(&[ix], Some("CreateWithDurationsLL"));
     assert!(result.is_success(), "CreateWithDurationsLL transaction failed");
 
-    // Verify accounts and data
-    assertions(trident, accounts, data);
-}
+    // Shared assertions
+    let stream_data = assert_create(
+        trident,
+        &common,
+        data.deposit_amount,
+        data.start_unlock_amount,
+        data.cliff_unlock_amount,
+        data.salt,
+        data.is_cancelable,
+    );
 
-fn get_data(trident: &mut Trident, salt: u128) -> CreateWithDurationsLlInstructionData {
-    // Generate random deposit amount (cap at 1 billion tokens with decimals to avoid overflow issues)
-    let deposit_amount = trident.random_from_range(1..1_000_000_000 * DECIMALS_MULTIPLIER);
-
-    // Determine cliff and total durations
-    let random_cliff_selector = trident.random_from_range(1..10);
-    let (cliff_duration, total_duration) = if random_cliff_selector == 1 {
-        // No cliff
-        let total = trident.random_from_range(1..1_000_000);
-        (0, total)
-    } else {
-        // With cliff
-        let cliff = trident.random_from_range(1..100_000);
-        let total = trident.random_from_range(cliff + 1..cliff + 1_000_000);
-        (cliff, total)
-    };
-
-    // Generate random amounts
-    // Ensure start_amount + cliff_amount < deposit_amount (at least 1 token streams over time)
-    let start_amount = trident.random_from_range(0..deposit_amount);
-    let cliff_amount = if cliff_duration > 0 {
-        trident.random_from_range(0..deposit_amount - start_amount)
-    } else {
-        0
-    };
-
-    // Generate random cancelable flag
-    let cancelable = trident.random_bool();
-
-    CreateWithDurationsLlInstructionData::new(salt, deposit_amount, cliff_duration, total_duration, start_amount, cliff_amount, cancelable)
-}
-
-fn assertions(
-    trident: &mut Trident,
-    accounts: CreateWithDurationsLlInstructionAccounts,
-    data: CreateWithDurationsLlInstructionData,
-) {
-    // Account assertions - verify accounts were created
-    assert!(account_exists(trident, &accounts.stream_nft), "stream_nft account was not created");
-    assert!(account_exists(trident, &accounts.stream_data), "stream_data account was not created");
-    assert!(account_exists(trident, &accounts.stream_data_ata), "stream_data_ata account was not created");
-
-    // Verify the stream NFT is owned by the recipient
-    let nft_owner = get_mpl_core_asset_owner(trident, &accounts.stream_nft);
-    assert_eq!(nft_owner, accounts.recipient, "stream NFT should be owned by the recipient");
-
-    // Data assertions - retrieve and verify stream data
-    let stream_data = get_stream_data(trident, &accounts.stream_data);
-
-    // Extract linear timestamps and unlock amounts from the model
-    let (start_time, cliff_time, end_time, start_unlock, cliff_unlock) = get_linear_params(&stream_data);
-
-    // Verify durations were converted to timestamps correctly
-    // The on-chain program converts durations to timestamps based on current time
-    // We verify the relative relationships hold
+    // Duration-specific assertions
+    let (start_time, cliff_time, end_time, _, _) = get_linear_params(&stream_data);
     if data.cliff_duration > 0 {
         assert_eq!(cliff_time - start_time, data.cliff_duration, "cliff_duration mismatch");
     } else {
         assert_eq!(cliff_time, 0, "cliff_time should be 0 when no cliff");
     }
     assert_eq!(end_time - start_time, data.total_duration, "total_duration mismatch");
+}
 
-    // Verify amounts
-    assert_eq!(stream_data.amounts.deposited, data.deposit_amount, "deposit_amount mismatch");
-    assert_eq!(start_unlock, data.start_unlock_amount, "start_unlock_amount mismatch");
-    assert_eq!(cliff_unlock, data.cliff_unlock_amount, "cliff_unlock_amount mismatch");
-    assert_eq!(stream_data.amounts.withdrawn, 0, "withdrawn should be 0 initially");
-    assert_eq!(stream_data.amounts.refunded, 0, "refunded should be 0 initially");
+fn get_data(trident: &mut Trident, salt: u128) -> CreateWithDurationsLlInstructionData {
+    let deposit_amount = trident.random_from_range(1..1_000_000_000 * DECIMALS_MULTIPLIER);
 
-    // Verify other fields
-    assert_eq!(stream_data.salt, data.salt, "salt mismatch");
-    assert_eq!(stream_data.is_cancelable, data.is_cancelable, "is_cancelable mismatch");
-    assert_eq!(stream_data.deposited_token_mint, accounts.deposit_token_mint, "deposit_token_mint mismatch");
-    assert_eq!(stream_data.sender, accounts.sender, "sender mismatch");
-    assert!(!stream_data.is_depleted, "is_depleted should be false initially");
-    assert!(!stream_data.was_canceled, "was_canceled should be false initially");
+    const MAX_TOTAL_DURATION: u64 = 1_000_000;
+    let random_cliff_selector = trident.random_from_range(1..10);
+    let (cliff_duration, total_duration) = match random_cliff_selector {
+        1 => {
+            let total = trident.random_from_range(1..MAX_TOTAL_DURATION);
+            (0, total)
+        }
+        _ => {
+            let cliff = trident.random_from_range(1..100_000);
+            let total = trident.random_from_range(cliff..MAX_TOTAL_DURATION);
+            (cliff, total)
+        }
+    };
 
-    // Verify token balances
-    let stream_data_ata_balance = get_ata_token_balance(trident, &accounts.stream_data_ata);
-    assert_eq!(stream_data_ata_balance, data.deposit_amount, "stream_data_ata balance should equal deposit_amount");
+    let start_amount = trident.random_from_range(0..deposit_amount);
+    let cliff_amount = match cliff_duration {
+        0 => 0,
+        _ => trident.random_from_range(0..deposit_amount - start_amount),
+    };
 
-    // Universal invariants
-    check_universal_invariants(trident, &accounts.stream_data, &accounts.stream_data_ata);
+    let cancelable = trident.random_bool();
+
+    CreateWithDurationsLlInstructionData::new(
+        salt,
+        deposit_amount,
+        cliff_duration,
+        total_duration,
+        start_amount,
+        cliff_amount,
+        cancelable,
+    )
 }
