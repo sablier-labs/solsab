@@ -67,7 +67,7 @@ fn get_data(trident: &mut Trident, salt: u128) -> CreateWithDurationsLlInstructi
         }
         _ => {
             let cliff = trident.random_from_range(1..100_000);
-            let total = trident.random_from_range(cliff..MAX_TOTAL_DURATION);
+            let total = trident.random_from_range(cliff + 1..MAX_TOTAL_DURATION);
             (cliff, total)
         }
     };
