@@ -62,7 +62,8 @@ fn assert_cancel(
     assert!(!stream_data.is_cancelable, "is_cancelable must be false after cancel");
 
     // is_depleted: true when all tokens have been accounted for (withdrawn + refunded == deposited)
-    let expected_depleted = stream_data.amounts.withdrawn + stream_data.amounts.refunded == stream_data.amounts.deposited;
+    let expected_depleted =
+        stream_data.amounts.withdrawn + stream_data.amounts.refunded == stream_data.amounts.deposited;
     assert_eq!(stream_data.is_depleted, expected_depleted, "is_depleted mismatch after cancel");
 
     let actual_refund_amount = stream_data.amounts.refunded;

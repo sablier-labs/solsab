@@ -18,7 +18,11 @@ pub struct CreateAccounts {
 }
 
 /// Derives all accounts needed for Create instructions.
-pub fn derive_create_accounts(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses, salt: u128) -> CreateAccounts {
+pub fn derive_create_accounts(
+    trident: &mut Trident,
+    fuzz_accounts: &mut AccountAddresses,
+    salt: u128,
+) -> CreateAccounts {
     let program_id = program_id();
 
     let funder = fuzz_accounts.funder.get(trident).unwrap();
@@ -43,9 +47,8 @@ pub fn derive_create_accounts(trident: &mut Trident, fuzz_accounts: &mut Account
         .stream_nft
         .insert(trident, Some(PdaSeeds::new(&[STREAM_NFT, sender.as_ref(), &salt.to_le_bytes()], program_id)));
 
-    let stream_data = fuzz_accounts
-        .stream_data
-        .insert(trident, Some(PdaSeeds::new(&[STREAM_DATA, stream_nft.as_ref()], program_id)));
+    let stream_data =
+        fuzz_accounts.stream_data.insert(trident, Some(PdaSeeds::new(&[STREAM_DATA, stream_nft.as_ref()], program_id)));
 
     let stream_data_ata = fuzz_accounts.stream_data_ata.insert(
         trident,

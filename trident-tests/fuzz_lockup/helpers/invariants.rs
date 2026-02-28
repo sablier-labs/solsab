@@ -33,7 +33,10 @@ pub fn check_universal_invariants(trident: &mut Trident, stream_data_pk: &Pubkey
 
     // Depletion invariant: is_depleted iff all deposited tokens have been streamed and/or claimed back
     let all_accounted = stream_data.amounts.withdrawn + stream_data.amounts.refunded == stream_data.amounts.deposited;
-    assert_eq!(stream_data.is_depleted, all_accounted, "is_depleted must be true iff withdrawn + refunded == deposited");
+    assert_eq!(
+        stream_data.is_depleted, all_accounted,
+        "is_depleted must be true iff withdrawn + refunded == deposited"
+    );
 
     if stream_data.is_depleted {
         assert!(!stream_data.is_cancelable, "A depleted stream must not be cancelable");
@@ -109,9 +112,9 @@ fn check_streaming_stream(trident: &mut Trident, stream_data_pk: &Pubkey) {
     let now = trident.get_current_timestamp() as u64;
 
     let streamed = get_streamed_amount(trident, stream_data_pk);
-    let past_cliff = cliff == 0 || now >= cliff;
-    if past_cliff {
-        assert!(streamed > 0, "Streamed amount of a post-cliff streaming stream must be greater than 0");
+    let tokens_have_streamed = cliff == 0 || now >= cliff;
+    if tokens_have_streamed {
+        assert!(streamed > 0, "Streamed amount must be greater than 0 when tokens have streamed");
     }
     assert!(
         streamed < stream_data.amounts.deposited,
@@ -119,11 +122,7 @@ fn check_streaming_stream(trident: &mut Trident, stream_data_pk: &Pubkey) {
     );
 
     let withdrawable = get_withdrawable_amount(trident, stream_data_pk);
-    assert_eq!(
-        withdrawable,
-        streamed - stream_data.amounts.withdrawn,
-        "Withdrawable must equal streamed - withdrawn"
-    );
+    assert_eq!(withdrawable, streamed - stream_data.amounts.withdrawn, "Withdrawable must equal streamed - withdrawn");
 
     let refundable = get_refundable_amount(trident, stream_data_pk);
     if stream_data.is_cancelable {

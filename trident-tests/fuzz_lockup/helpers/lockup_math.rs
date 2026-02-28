@@ -40,7 +40,11 @@ pub fn get_streamed_amount(trident: &mut Trident, stream_data_pk: &Pubkey) -> u6
     }
 
     // Determine the streaming start time.
-    let streaming_start_time = if cliff == 0 { start } else { cliff };
+    let streaming_start_time = if cliff == 0 {
+        start
+    } else {
+        cliff
+    };
 
     const SCALING_FACTOR: u128 = 1e18 as u128;
 

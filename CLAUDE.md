@@ -9,6 +9,18 @@ handing off. If it fails, run `just full-write`, then re-run `just full-check` t
 Skip this step when changes are limited to non-code files (e.g., documentation-only conversations, config files not
 covered by the checker).
 
+## Fuzz Test Validation
+
+When modifying files under `trident-tests/` or `programs/lockup/src/`, run `just ttlk` to verify the Trident lockup fuzz
+tests pass. All instructions must show 0 failures and 0 panics.
+
+## Fuzz Test Conventions
+
+- Assert messages use "must" (not "should")
+- Variable names use `_pk` suffix (not `_pubkey`)
+- Transaction files have section comments: `// Prepare instruction accounts`, `// Execute the ix`,
+  `// Assert post-execution state`
+
 ## Binary Test Pattern
 
 All `describe` blocks in test files must follow a binary pair structure. Every failure-condition `describe` must have a

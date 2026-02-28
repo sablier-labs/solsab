@@ -31,5 +31,11 @@ pub fn withdraw_max(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses,
     assert!(result.is_success(), "WithdrawMax transaction failed");
 
     // Assert post-execution state
-    assert_withdraw(trident, &common, withdrawable_amount, recipient_ata_balance_before, stream_data_ata_balance_before);
+    assert_withdraw(
+        trident,
+        &common,
+        withdrawable_amount,
+        recipient_ata_balance_before,
+        stream_data_ata_balance_before,
+    );
 }

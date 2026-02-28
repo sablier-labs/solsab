@@ -37,9 +37,7 @@ pub fn get_mpl_core_asset_owner(trident: &mut Trident, asset_pk: &Pubkey) -> Pub
 
 /// Get StreamData account from the trident client state.
 pub fn get_stream_data(trident: &mut Trident, stream_data_pk: &Pubkey) -> StreamData {
-    trident
-        .get_account_with_type::<StreamData>(stream_data_pk, 8)
-        .expect("Failed to deserialize stream_data account")
+    trident.get_account_with_type::<StreamData>(stream_data_pk, 8).expect("Failed to deserialize stream_data account")
 }
 
 /// Returns true if the given program ID is the Token-2022 program.

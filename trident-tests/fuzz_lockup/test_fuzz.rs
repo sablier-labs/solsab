@@ -110,7 +110,7 @@ impl FuzzTest {
         let stream_nft = self.fuzz_accounts.stream_nft.get(&mut self.trident).unwrap();
         let stream_data = get_stream_data(&mut self.trident, &stream_data_pk);
 
-        // Determine the time when streaming has started
+        // Determine the time when tokens have streamed
         let (start, cliff, end, _, _) = get_linear_params(&stream_data);
         let start_time = cliff.max(start) + 1;
         let end_time = end;
@@ -271,51 +271,39 @@ impl FuzzTest {
     }
 
     /// Common setup for withdraw and withdraw_max flows.
-    /// Randomizes token, creates a stream, warps time, optionally cancels, and returns withdrawable amount.
+    /// Randomizes the deposit token, creates a stream, warps to a time when tokens have streamed,
+    /// optionally cancels, and returns withdrawable amount.
     fn setup_withdraw_flow(&mut self) -> (u64, bool) {
         self.randomize_deposit_token();
-        // 25% chance to cancel the stream first
-        let should_cancel = self.trident.random_from_range(1..100) <= 25;
+        self.create_random_stream();
+
+        let stream_data_pk = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
+        let stream_data = get_stream_data(&mut self.trident, &stream_data_pk);
+        let (start, cliff, end, _, _) = get_linear_params(&stream_data);
+
+        // Warp to a time when tokens have streamed
+        let streaming_start = if cliff > 0 {
+            cliff + 1
+        } else {
+            start + 1
+        };
+        let warp_time = self.trident.random_from_range(streaming_start..end - 1);
+        self.warp_to(warp_time);
+
+        // 25% chance to cancel the stream first (only if cancelable)
+        let should_cancel = stream_data.is_cancelable && self.trident.random_from_range(1..100) <= 25;
+        if should_cancel {
+            cancel(&mut self.trident, &mut self.fuzz_accounts);
+        }
+
+        let withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pk);
 
         // Randomly choose withdrawal scenario 50/50:
         // - true: anyone signs, tokens go to stream_recipient
         // - false: stream_recipient signs, tokens go to any address
         let withdraw_to_recipient = self.trident.random_bool();
 
-        if should_cancel {
-            // Create a default stream
-            create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, true);
-            let stream_data_pk = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
-
-            // Warp to post-cliff STREAMING time
-            let warp_time = self.trident.random_from_range(CLIFF_TIME + 1..END_TIME - 1);
-            self.warp_to(warp_time);
-
-            // Cancel the stream
-            cancel(&mut self.trident, &mut self.fuzz_accounts);
-
-            // Return withdrawable after cancel
-            (get_withdrawable_amount(&mut self.trident, &stream_data_pk), withdraw_to_recipient)
-        } else {
-            self.create_random_stream();
-
-            // Get the stream data
-            let stream_data_pk = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
-            let stream_data = get_stream_data(&mut self.trident, &stream_data_pk);
-
-            // Warp to active stream time
-            self.warp_to_active_stream_time(&stream_data);
-
-            // Check withdrawable after warp
-            let mut withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pk);
-            if withdrawable == 0 {
-                // Warp to near end time to ensure something is withdrawable
-                let (_, _, end, _, _) = get_linear_params(&stream_data);
-                self.warp_to(end - 1);
-                withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pk);
-            }
-            (withdrawable, withdraw_to_recipient)
-        }
+        (withdrawable, withdraw_to_recipient)
     }
 
     fn warp_to(&mut self, timestamp: u64) {

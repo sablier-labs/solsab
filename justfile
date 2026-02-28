@@ -86,12 +86,14 @@ full-check:
     just _run-with-status biome-check
     just _run-with-status tsc-check
     just _run-with-status rust-check
+    just _run-with-status rust-check-trident
 
 # Run all code fixes
 full-write:
     just _run-with-status prettier-write
     just _run-with-status biome-write
     just _run-with-status rust-write
+    just _run-with-status rust-write-trident
 
 # Run Rust checks
 # TODO: Remove `--allow deprecated` once mpl-core crate deprecation warnings are resolved upstream.
@@ -106,6 +108,18 @@ rust-write:
     cargo fmt
     cargo clippy --fix --allow-dirty -- --allow deprecated
 alias rw := rust-write
+
+# Run Rust checks on Trident fuzz tests
+rust-check-trident:
+    cargo fmt --check --manifest-path trident-tests/Cargo.toml
+    cargo clippy --manifest-path trident-tests/Cargo.toml
+alias rct := rust-check-trident
+
+# Format Trident fuzz test code
+rust-write-trident:
+    cargo fmt --manifest-path trident-tests/Cargo.toml
+    cargo clippy --fix --allow-dirty --manifest-path trident-tests/Cargo.toml
+alias rwt := rust-write-trident
 
 # ---------------------------------------------------------------------------- #
 #                                    TESTING                                   #
