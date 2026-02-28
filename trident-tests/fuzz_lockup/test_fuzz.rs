@@ -51,7 +51,7 @@ impl FuzzTest {
 
     #[flow]
     fn flow_cancel(&mut self) {
-        self.select_random_token();
+        self.randomize_deposit_token();
 
         // Create a default stream
         create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, true);
@@ -78,33 +78,33 @@ impl FuzzTest {
 
     #[flow]
     fn flow_create_with_durations_ll(&mut self) {
-        self.select_random_token();
+        self.randomize_deposit_token();
         create_with_durations_ll(&mut self.trident, &mut self.fuzz_accounts);
     }
 
     #[flow]
     fn flow_create_with_timestamps_ll(&mut self) {
-        self.select_random_token();
+        self.randomize_deposit_token();
         create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
     }
 
     #[flow]
     fn flow_refundable_amount_of(&mut self) {
-        self.select_random_token();
+        self.randomize_deposit_token();
         let (stream_data_pubkey, stream_nft) = self.setup_view_flow();
         refundable_amount_of(&mut self.trident, &stream_data_pubkey, &stream_nft);
     }
 
     #[flow]
     fn flow_streamed_amount_of(&mut self) {
-        self.select_random_token();
+        self.randomize_deposit_token();
         let (stream_data_pubkey, stream_nft) = self.setup_view_flow();
         streamed_amount_of(&mut self.trident, &stream_data_pubkey, &stream_nft);
     }
 
     #[flow]
-    fn flow_streamed_amount_of_monotonic_increase(&mut self) {
-        self.select_random_token();
+    fn flow_monotonic_increase_of_streamed_amount_of(&mut self) {
+        self.randomize_deposit_token();
 
         // Create a non-default stream
         create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
@@ -139,7 +139,7 @@ impl FuzzTest {
 
     #[flow]
     fn flow_withdraw(&mut self) {
-        self.select_random_token();
+        self.randomize_deposit_token();
         let (withdrawable, withdraw_to_recipient) = self.setup_withdraw_flow();
         let withdraw_amount = self.trident.random_from_range(1..withdrawable);
         withdraw(&mut self.trident, &mut self.fuzz_accounts, withdraw_to_recipient, withdraw_amount);
@@ -147,25 +147,26 @@ impl FuzzTest {
 
     #[flow]
     fn flow_withdraw_max(&mut self) {
-        self.select_random_token();
+        self.randomize_deposit_token();
         let (_, withdraw_to_recipient) = self.setup_withdraw_flow();
         withdraw_max(&mut self.trident, &mut self.fuzz_accounts, withdraw_to_recipient);
     }
 
     #[flow]
     fn flow_withdrawable_amount_of(&mut self) {
-        self.select_random_token();
+        self.randomize_deposit_token();
         let (stream_data_pubkey, stream_nft) = self.setup_view_flow();
 
         // Randomly (50/50) decide to perform a withdraw before checking withdrawable amount
         let withdraw_before = self.trident.random_bool();
         if withdraw_before {
-            let withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
+            let mut withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
             // If nothing is withdrawable, warp to near end time to ensure something is withdrawable
             if withdrawable == 0 {
                 let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
                 let (_, _, end, _, _) = get_linear_params(&stream_data);
                 self.warp_to(end - 1);
+                withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
             }
             withdraw(&mut self.trident, &mut self.fuzz_accounts, true, withdrawable);
         }
@@ -210,28 +211,32 @@ impl FuzzTest {
         // Create SPL Token mint and funder ATA
         let spl_mint = Keypair::new().pubkey();
         let spl_mint_ix = self.trident.initialize_mint(&funder, &spl_mint, TOKEN_DECIMALS, &funder, Some(&funder));
-        self.trident.process_transaction(&spl_mint_ix, None);
+        let result = self.trident.process_transaction(&spl_mint_ix, None);
+        assert!(result.is_success(), "Failed to initialize SPL Token mint");
         self.fuzz_accounts.spl_token_mint.insert_with_address(spl_mint);
         self.fuzz_accounts.spl_token_program.insert_with_address(spl_program);
 
         let initialize_ata_ix = self.trident.initialize_associated_token_account(&funder, &spl_mint, &funder);
-        self.trident.process_transaction(&[initialize_ata_ix], None);
+        let result = self.trident.process_transaction(&[initialize_ata_ix], None);
+        assert!(result.is_success(), "Failed to initialize SPL Token funder ATA");
 
         // Create Token-2022 mint and funder ATA
         let token2022_mint = Keypair::new().pubkey();
         let token2022_mint_ix =
             self.trident.initialize_mint_2022(&funder, &token2022_mint, TOKEN_DECIMALS, &funder, Some(&funder), &[]);
-        self.trident.process_transaction(&token2022_mint_ix, None);
+        let result = self.trident.process_transaction(&token2022_mint_ix, None);
+        assert!(result.is_success(), "Failed to initialize Token-2022 mint");
         self.fuzz_accounts.token2022_mint.insert_with_address(token2022_mint);
         self.fuzz_accounts.token2022_program.insert_with_address(token2022_program);
 
         let initialize_ata_2022_ix =
             self.trident.initialize_associated_token_account_2022(&funder, &token2022_mint, &funder, &[]);
-        self.trident.process_transaction(&initialize_ata_2022_ix, None);
+        let result = self.trident.process_transaction(&initialize_ata_2022_ix, None);
+        assert!(result.is_success(), "Failed to initialize Token-2022 funder ATA");
     }
 
     /// Randomly selects SPL Token or Token-2022 as the active deposit token for the next flow.
-    fn select_random_token(&mut self) {
+    fn randomize_deposit_token(&mut self) {
         let use_token_2022 = self.trident.random_bool();
         let (mint, program) = if use_token_2022 {
             (

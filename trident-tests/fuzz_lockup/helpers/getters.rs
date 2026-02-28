@@ -44,8 +44,7 @@ pub fn get_stream_data(trident: &mut Trident, stream_data_pubkey: &Pubkey) -> St
 
 /// Returns true if the given program ID is the Token-2022 program.
 pub fn is_token_2022(program: &Pubkey) -> bool {
-    let token2022: Pubkey = TOKEN2022_PROGRAM_ID.parse().unwrap();
-    *program == token2022
+    program.to_string() == TOKEN2022_PROGRAM_ID
 }
 
 /// Parses u64 return data from transaction logs.

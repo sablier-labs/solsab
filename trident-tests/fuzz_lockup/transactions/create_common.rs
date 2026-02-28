@@ -92,6 +92,7 @@ pub fn assert_create(
     cliff_unlock_amount: u64,
     salt: u128,
     is_cancelable: bool,
+    funder_ata_balance_before: u64,
 ) -> crate::types::StreamData {
     // Account existence
     assert!(account_exists(trident, &accounts.stream_nft), "stream_nft account was not created");
@@ -124,6 +125,13 @@ pub fn assert_create(
     // Token balances
     let stream_data_ata_balance = get_ata_token_balance(trident, &accounts.stream_data_ata);
     assert_eq!(stream_data_ata_balance, deposit_amount, "stream_data_ata balance should equal deposit_amount");
+
+    let funder_ata_balance_after = get_ata_token_balance(trident, &accounts.funder_ata);
+    assert_eq!(
+        funder_ata_balance_before - funder_ata_balance_after,
+        deposit_amount,
+        "funder_ata balance should decrease by deposit_amount"
+    );
 
     // Universal invariants
     check_universal_invariants(trident, &accounts.stream_data, &accounts.stream_data_ata);

@@ -92,7 +92,7 @@ pub fn setup_withdraw_accounts(
 pub fn assert_withdraw(
     trident: &mut Trident,
     accounts: &WithdrawAccounts,
-    withdraw_amount: u64,
+    expected_withdrawn_amount: u64,
     recipient_ata_balance_before: u64,
     stream_data_ata_balance_before: u64,
 ) {
@@ -100,22 +100,22 @@ pub fn assert_withdraw(
     let stream_data = get_stream_data(trident, &accounts.stream_data);
 
     // Verify withdrawn amount increased by the withdraw_amount
-    assert_eq!(stream_data.amounts.withdrawn, withdraw_amount, "withdrawn amount should increase by withdraw_amount");
+    assert_eq!(stream_data.amounts.withdrawn, expected_withdrawn_amount, "withdrawn amount mismatch");
 
     // Verify recipient ATA balance increased by withdraw_amount
     let recipient_ata_balance_after = get_ata_token_balance(trident, &accounts.withdrawal_recipient_ata);
     assert_eq!(
         recipient_ata_balance_after - recipient_ata_balance_before,
-        withdraw_amount,
-        "recipient ATA balance should increase by withdraw_amount"
+        expected_withdrawn_amount,
+        "recipient ATA balance mismatch"
     );
 
     // Verify stream_data_ata balance decreased by withdraw_amount
     let stream_data_ata_balance_after = get_ata_token_balance(trident, &accounts.stream_data_ata);
     assert_eq!(
         stream_data_ata_balance_before - stream_data_ata_balance_after,
-        withdraw_amount,
-        "stream_data_ata balance should decrease by withdraw_amount"
+        expected_withdrawn_amount,
+        "stream_data_ata balance mismatch"
     );
 
     // Verify is_depleted is true if withdrawn + refunded >= deposited

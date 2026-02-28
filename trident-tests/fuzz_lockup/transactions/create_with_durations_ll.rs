@@ -11,6 +11,7 @@ pub fn create_with_durations_ll(trident: &mut Trident, fuzz_accounts: &mut Accou
     let data = get_data(trident, salt);
 
     mint_deposit_tokens(trident, &common, data.deposit_amount);
+    let funder_ata_balance_before = get_ata_token_balance(trident, &common.funder_ata);
 
     let accounts = CreateWithDurationsLlInstructionAccounts::new(
         common.funder,
@@ -39,10 +40,13 @@ pub fn create_with_durations_ll(trident: &mut Trident, fuzz_accounts: &mut Accou
         data.cliff_unlock_amount,
         data.salt,
         data.is_cancelable,
+        funder_ata_balance_before,
     );
 
     // Duration-specific assertions
     let (start_time, cliff_time, end_time, _, _) = get_linear_params(&stream_data);
+    let now = trident.get_current_timestamp() as u64;
+    assert!(now - start_time <= 1, "start_time should be within 1 second of now");
     if data.cliff_duration > 0 {
         assert_eq!(cliff_time - start_time, data.cliff_duration, "cliff_duration mismatch");
     } else {

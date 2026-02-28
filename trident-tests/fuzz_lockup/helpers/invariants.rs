@@ -1,5 +1,6 @@
 use super::{
-    get_ata_token_balance, get_linear_params, get_refundable_amount, get_stream_data, get_withdrawable_amount,
+    get_ata_token_balance, get_linear_params, get_refundable_amount, get_stream_data, get_streamed_amount,
+    get_withdrawable_amount,
 };
 use trident_fuzz::fuzzing::{Pubkey, Trident};
 
@@ -51,6 +52,10 @@ pub fn check_universal_invariants(trident: &mut Trident, stream_data_pubkey: &Pu
         check_canceled_stream(trident, stream_data_pubkey);
     } else if now < start {
         check_pending_stream(trident, stream_data_pubkey);
+    } else if now >= end {
+        check_settled_stream(trident, stream_data_pubkey);
+    } else {
+        check_streaming_stream(trident, stream_data_pubkey);
     }
 }
 
@@ -74,6 +79,38 @@ fn check_canceled_stream(trident: &mut Trident, stream_data_pubkey: &Pubkey) {
 
     let refundable = get_refundable_amount(trident, stream_data_pubkey);
     assert_eq!(refundable, 0, "Refundable amount of a canceled stream must be 0");
+}
+
+fn check_settled_stream(trident: &mut Trident, stream_data_pubkey: &Pubkey) {
+    let stream_data = get_stream_data(trident, stream_data_pubkey);
+
+    let refundable = get_refundable_amount(trident, stream_data_pubkey);
+    assert_eq!(refundable, 0, "Refundable amount of a settled stream must be 0");
+
+    let withdrawable = get_withdrawable_amount(trident, stream_data_pubkey);
+    assert_eq!(
+        withdrawable,
+        stream_data.amounts.deposited - stream_data.amounts.withdrawn,
+        "Withdrawable amount of a settled stream must equal deposited - withdrawn"
+    );
+}
+
+fn check_streaming_stream(trident: &mut Trident, stream_data_pubkey: &Pubkey) {
+    let stream_data = get_stream_data(trident, stream_data_pubkey);
+
+    let streamed = get_streamed_amount(trident, stream_data_pubkey);
+    assert!(streamed > 0, "Streamed amount of a streaming stream must be greater than 0");
+    assert!(
+        streamed < stream_data.amounts.deposited,
+        "Streamed amount of a streaming stream must be less than deposited"
+    );
+
+    let refundable = get_refundable_amount(trident, stream_data_pubkey);
+    if stream_data.is_cancelable {
+        assert!(refundable > 0, "Refundable amount of a cancelable streaming stream must be greater than 0");
+    } else {
+        assert_eq!(refundable, 0, "Refundable amount of a non-cancelable streaming stream must be 0");
+    }
 }
 
 fn check_pending_stream(trident: &mut Trident, stream_data_pubkey: &Pubkey) {

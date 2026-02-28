@@ -19,6 +19,7 @@ pub fn create_with_timestamps_ll(
     let data = get_data(trident, salt, use_default_stream);
 
     mint_deposit_tokens(trident, &common, data.deposit_amount);
+    let funder_ata_balance_before = get_ata_token_balance(trident, &common.funder_ata);
 
     let accounts = CreateWithTimestampsLlInstructionAccounts::new(
         common.funder,
@@ -47,6 +48,7 @@ pub fn create_with_timestamps_ll(
         data.cliff_unlock_amount,
         data.salt,
         data.is_cancelable,
+        funder_ata_balance_before,
     );
 
     // Timestamp-specific assertions
