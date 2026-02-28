@@ -21,5 +21,5 @@ repomix
 *.env
 *.local.json
 .DS_Store
-*.fuzz-artifacts
+trident-tests/.fuzz-artifacts
 *.zip
