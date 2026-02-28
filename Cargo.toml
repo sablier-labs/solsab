@@ -1,5 +1,5 @@
 [workspace]
-  members = ["programs/*"]
+  members = ["programs/*", "crates/*"]
   resolver = "2"
 
 # Force older versions to avoid edition2024 requirements

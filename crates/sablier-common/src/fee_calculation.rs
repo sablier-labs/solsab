@@ -1,9 +1,8 @@
 use anchor_lang::prelude::*;
 use chainlink_solana as chainlink;
 
-use crate::utils::constants::LAMPORTS_PER_SOL;
+use crate::{constants::LAMPORTS_PER_SOL, time::get_current_time};
 
-// TODO: export this into a crate that'd be imported by both the lockup and merkle_instant programs.
 /// Converts the fee amount from USD to lamports.
 /// The price is considered to be 0 if:
 /// 1. The USD fee is 0.
@@ -33,7 +32,8 @@ pub fn convert_usd_fee_to_lamports<'info>(
         return 0;
     };
 
-    let current_timestamp: u32 = Clock::get().unwrap().unix_timestamp as u32;
+    // Downcasting is safe as long as the date is before 7 February 2106 at 06:28:16 UTC.
+    let current_timestamp: u32 = get_current_time().unwrap() as u32;
 
     // Due to reorgs and latency issues, the oracle can have a timestamp that is in the future. In
     // this case, we ignore the price and skip fee charging.
@@ -56,11 +56,11 @@ pub fn convert_usd_fee_to_lamports<'info>(
 
     let fee_in_lamports: u64 = match oracle_decimals {
         8 => {
-            // If the oracle decimals are 8, calculate the fee.
+            // Fast path for standard Chainlink decimals (most common case).
             fee_usd * LAMPORTS_PER_SOL / price
         }
         decimals => {
-            // Otherwise, adjust the calculation to account for the oracle decimals. `u128` is used to prevent overflow.
+            // Adjust calculation for non-standard decimals. `u128` is used to prevent overflow.
             ((fee_usd as u128) * 10_u128.pow(1 + decimals as u32) / (price as u128)) as u64
         }
     };

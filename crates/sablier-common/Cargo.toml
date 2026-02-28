@@ -1,0 +1,13 @@
+[package]
+  name = "sablier-common"
+  version = "0.1.0"
+  description = "Shared utilities for Sablier programs"
+  edition = "2021"
+
+[lib]
+  name = "sablier_common"
+
+[dependencies]
+  anchor-lang = { version = "0.31.1" }
+  anchor-spl = "0.31.1"
+  chainlink_solana = { git = "https://github.com/smartcontractkit/chainlink-solana", branch = "solana-2.1" }
