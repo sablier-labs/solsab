@@ -10,13 +10,13 @@ pub fn account_exists(trident: &mut Trident, pubkey: &Pubkey) -> bool {
     account.lamports() > 0
 }
 
-/// Get SPL Token balance of the ATA from the client state.
+/// Get token balance of an ATA from the client state.
 /// Layout (prefix):
 /// - 32 bytes: mint
 /// - 32 bytes: owner
 /// - 8  bytes: amount (u64, LE)
-pub fn get_ata_token_balance(trident: &mut Trident, ata_pubkey: &Pubkey) -> u64 {
-    let account = trident.get_account(ata_pubkey);
+pub fn get_ata_balance(trident: &mut Trident, ata_pk: &Pubkey) -> u64 {
+    let account = trident.get_account(ata_pk);
     let data = account.data();
     if data.len() < 72 {
         return 0;
@@ -28,17 +28,17 @@ pub fn get_ata_token_balance(trident: &mut Trident, ata_pubkey: &Pubkey) -> u64 
 
 /// Get the owner of an MPL Core asset.
 /// BaseAssetV1 layout: [1 byte Key discriminator][32 bytes owner]...
-pub fn get_mpl_core_asset_owner(trident: &mut Trident, asset_pubkey: &Pubkey) -> Pubkey {
-    let account = trident.get_account(asset_pubkey);
+pub fn get_mpl_core_asset_owner(trident: &mut Trident, asset_pk: &Pubkey) -> Pubkey {
+    let account = trident.get_account(asset_pk);
     let data = account.data();
     assert!(data.len() >= 33, "MPL Core asset account data too short");
     Pubkey::new_from_array(data[1..33].try_into().unwrap())
 }
 
 /// Get StreamData account from the trident client state.
-pub fn get_stream_data(trident: &mut Trident, stream_data_pubkey: &Pubkey) -> StreamData {
+pub fn get_stream_data(trident: &mut Trident, stream_data_pk: &Pubkey) -> StreamData {
     trident
-        .get_account_with_type::<StreamData>(stream_data_pubkey, 8)
+        .get_account_with_type::<StreamData>(stream_data_pk, 8)
         .expect("Failed to deserialize stream_data account")
 }
 

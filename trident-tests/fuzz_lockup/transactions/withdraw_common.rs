@@ -17,41 +17,28 @@ pub struct WithdrawAccounts {
     pub deposited_token_program: Pubkey,
 }
 
-/// Sets up all accounts needed for Withdraw/WithdrawMax and captures pre-transaction balances.
+/// Sets up all accounts needed for Withdraw/WithdrawMax and captures data before ix execution.
 /// Returns (accounts, recipient_ata_balance_before, stream_data_ata_balance_before).
 pub fn setup_withdraw_accounts(
     trident: &mut Trident,
     fuzz_accounts: &mut AccountAddresses,
     withdraw_to_recipient: bool,
 ) -> (WithdrawAccounts, u64, u64) {
-    // Get stream recipient (owner of the stream NFT)
+    // Prepare instruction accounts
     let stream_recipient = fuzz_accounts.recipient.get(trident).unwrap();
-
-    // Determine signer and withdrawal_recipient based on scenario
     let (signer, withdrawal_recipient) = if withdraw_to_recipient {
-        // Anyone can sign, tokens go to stream_recipient
         let signer = fuzz_accounts.signer.get(trident).unwrap();
         (signer, stream_recipient)
     } else {
-        // Stream recipient must sign, tokens can go to any address
         let random_recipient = trident.payer().pubkey();
         (stream_recipient, random_recipient)
     };
-
-    // Get deposit token info
     let deposited_token_mint = fuzz_accounts.deposit_token_mint.get(trident).unwrap();
     let deposited_token_program = fuzz_accounts.deposit_token_program.get(trident).unwrap();
-
-    // Get treasury
     let treasury = fuzz_accounts.treasury.get(trident).unwrap();
-
-    // Get stream NFT (MPL Core asset)
     let stream_nft = fuzz_accounts.stream_nft.get(trident).unwrap();
-
-    // Get stream data PDA
     let stream_data = fuzz_accounts.stream_data.get(trident).unwrap();
-
-    // Derive withdrawal recipient ATA (init_if_needed in the instruction)
+    let stream_data_ata = fuzz_accounts.stream_data_ata.get(trident).unwrap();
     let withdrawal_recipient_ata = fuzz_accounts.withdrawal_recipient_ata.insert(
         trident,
         Some(PdaSeeds::new(
@@ -59,11 +46,6 @@ pub fn setup_withdraw_accounts(
             ASSOCIATED_TOKEN_PROGRAM_ID.parse().unwrap(),
         )),
     );
-
-    // Get stream data ATA
-    let stream_data_ata = fuzz_accounts.stream_data_ata.get(trident).unwrap();
-
-    // Get chainlink accounts
     let chainlink_program: Pubkey = CHAINLINK_PROGRAM_ID.parse().unwrap();
     let chainlink_sol_usd_feed: Pubkey = CHAINLINK_SOL_USD_FEED_ID.parse().unwrap();
 
@@ -81,9 +63,9 @@ pub fn setup_withdraw_accounts(
         deposited_token_program,
     };
 
-    // Capture balances before withdraw
-    let recipient_ata_balance_before = get_ata_token_balance(trident, &withdrawal_recipient_ata);
-    let stream_data_ata_balance_before = get_ata_token_balance(trident, &stream_data_ata);
+    // Capture data before ix execution
+    let recipient_ata_balance_before = get_ata_balance(trident, &withdrawal_recipient_ata);
+    let stream_data_ata_balance_before = get_ata_balance(trident, &stream_data_ata);
 
     (accounts, recipient_ata_balance_before, stream_data_ata_balance_before)
 }
@@ -96,33 +78,28 @@ pub fn assert_withdraw(
     recipient_ata_balance_before: u64,
     stream_data_ata_balance_before: u64,
 ) {
-    // Get stream data after withdrawal
     let stream_data = get_stream_data(trident, &accounts.stream_data);
 
-    // Verify withdrawn amount increased by the withdraw_amount
     assert_eq!(stream_data.amounts.withdrawn, expected_withdrawn_amount, "withdrawn amount mismatch");
 
-    // Verify recipient ATA balance increased by withdraw_amount
-    let recipient_ata_balance_after = get_ata_token_balance(trident, &accounts.withdrawal_recipient_ata);
+    let recipient_ata_balance_after = get_ata_balance(trident, &accounts.withdrawal_recipient_ata);
     assert_eq!(
         recipient_ata_balance_after - recipient_ata_balance_before,
         expected_withdrawn_amount,
         "recipient ATA balance mismatch"
     );
 
-    // Verify stream_data_ata balance decreased by withdraw_amount
-    let stream_data_ata_balance_after = get_ata_token_balance(trident, &accounts.stream_data_ata);
+    let stream_data_ata_balance_after = get_ata_balance(trident, &accounts.stream_data_ata);
     assert_eq!(
         stream_data_ata_balance_before - stream_data_ata_balance_after,
         expected_withdrawn_amount,
         "stream_data_ata balance mismatch"
     );
 
-    // Verify is_depleted is true if withdrawn + refunded >= deposited
-    if stream_data.amounts.withdrawn + stream_data.amounts.refunded >= stream_data.amounts.deposited {
-        assert!(stream_data.is_depleted, "is_depleted should be true when withdrawn + refunded = deposited");
+    // is_depleted: true when all deposited tokens have been streamed and/or claimed back
+    if stream_data.amounts.withdrawn + stream_data.amounts.refunded == stream_data.amounts.deposited {
+        assert!(stream_data.is_depleted, "is_depleted must be true when withdrawn + refunded == deposited");
     }
 
-    // Universal invariants
     check_universal_invariants(trident, &accounts.stream_data, &accounts.stream_data_ata);
 }

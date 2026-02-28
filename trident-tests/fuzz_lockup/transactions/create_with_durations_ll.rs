@@ -11,7 +11,7 @@ pub fn create_with_durations_ll(trident: &mut Trident, fuzz_accounts: &mut Accou
     let data = get_data(trident, salt);
 
     mint_deposit_tokens(trident, &common, data.deposit_amount);
-    let funder_ata_balance_before = get_ata_token_balance(trident, &common.funder_ata);
+    let funder_ata_balance_before = get_ata_balance(trident, &common.funder_ata);
 
     let accounts = CreateWithDurationsLlInstructionAccounts::new(
         common.funder,
@@ -27,11 +27,12 @@ pub fn create_with_durations_ll(trident: &mut Trident, fuzz_accounts: &mut Accou
         common.deposit_token_program,
     );
 
+    // Execute the ix
     let ix = CreateWithDurationsLlInstruction::data(data.clone()).accounts(accounts).instruction();
     let result = trident.process_transaction(&[ix], Some("CreateWithDurationsLL"));
     assert!(result.is_success(), "CreateWithDurationsLL transaction failed");
 
-    // Shared assertions
+    // Assert post-execution state
     let stream_data = assert_create(
         trident,
         &common,
@@ -43,14 +44,13 @@ pub fn create_with_durations_ll(trident: &mut Trident, fuzz_accounts: &mut Accou
         funder_ata_balance_before,
     );
 
-    // Duration-specific assertions
     let (start_time, cliff_time, end_time, _, _) = get_linear_params(&stream_data);
     let now = trident.get_current_timestamp() as u64;
-    assert!(now - start_time <= 1, "start_time should be within 1 second of now");
+    assert!(now - start_time <= 1, "start_time must be within 1 second of now");
     if data.cliff_duration > 0 {
         assert_eq!(cliff_time - start_time, data.cliff_duration, "cliff_duration mismatch");
     } else {
-        assert_eq!(cliff_time, 0, "cliff_time should be 0 when no cliff");
+        assert_eq!(cliff_time, 0, "cliff_time must be 0 when no cliff");
     }
     assert_eq!(end_time - start_time, data.total_duration, "total_duration mismatch");
 }

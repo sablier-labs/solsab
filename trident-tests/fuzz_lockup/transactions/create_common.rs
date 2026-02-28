@@ -101,7 +101,7 @@ pub fn assert_create(
 
     // NFT ownership
     let nft_owner = get_mpl_core_asset_owner(trident, &accounts.stream_nft);
-    assert_eq!(nft_owner, accounts.recipient, "stream NFT should be owned by the recipient");
+    assert_eq!(nft_owner, accounts.recipient, "stream NFT must be owned by the recipient");
 
     // Stream data
     let stream_data = get_stream_data(trident, &accounts.stream_data);
@@ -111,26 +111,26 @@ pub fn assert_create(
     assert_eq!(stream_data.amounts.deposited, deposit_amount, "deposit_amount mismatch");
     assert_eq!(start_unlock, start_unlock_amount, "start_unlock_amount mismatch");
     assert_eq!(cliff_unlock, cliff_unlock_amount, "cliff_unlock_amount mismatch");
-    assert_eq!(stream_data.amounts.withdrawn, 0, "withdrawn should be 0 initially");
-    assert_eq!(stream_data.amounts.refunded, 0, "refunded should be 0 initially");
+    assert_eq!(stream_data.amounts.withdrawn, 0, "withdrawn must be 0 initially");
+    assert_eq!(stream_data.amounts.refunded, 0, "refunded must be 0 initially");
 
     // Metadata
     assert_eq!(stream_data.salt, salt, "salt mismatch");
     assert_eq!(stream_data.is_cancelable, is_cancelable, "is_cancelable mismatch");
     assert_eq!(stream_data.deposited_token_mint, accounts.deposit_token_mint, "deposit_token_mint mismatch");
     assert_eq!(stream_data.sender, accounts.sender, "sender mismatch");
-    assert!(!stream_data.is_depleted, "is_depleted should be false initially");
-    assert!(!stream_data.was_canceled, "was_canceled should be false initially");
+    assert!(!stream_data.is_depleted, "is_depleted must be false initially");
+    assert!(!stream_data.was_canceled, "was_canceled must be false initially");
 
     // Token balances
-    let stream_data_ata_balance = get_ata_token_balance(trident, &accounts.stream_data_ata);
-    assert_eq!(stream_data_ata_balance, deposit_amount, "stream_data_ata balance should equal deposit_amount");
+    let stream_data_ata_balance = get_ata_balance(trident, &accounts.stream_data_ata);
+    assert_eq!(stream_data_ata_balance, deposit_amount, "stream_data_ata balance must equal deposit_amount");
 
-    let funder_ata_balance_after = get_ata_token_balance(trident, &accounts.funder_ata);
+    let funder_ata_balance_after = get_ata_balance(trident, &accounts.funder_ata);
     assert_eq!(
         funder_ata_balance_before - funder_ata_balance_after,
         deposit_amount,
-        "funder_ata balance should decrease by deposit_amount"
+        "funder_ata balance must decrease by deposit_amount"
     );
 
     // Universal invariants

@@ -19,7 +19,7 @@ pub fn create_with_timestamps_ll(
     let data = get_data(trident, salt, use_default_stream);
 
     mint_deposit_tokens(trident, &common, data.deposit_amount);
-    let funder_ata_balance_before = get_ata_token_balance(trident, &common.funder_ata);
+    let funder_ata_balance_before = get_ata_balance(trident, &common.funder_ata);
 
     let accounts = CreateWithTimestampsLlInstructionAccounts::new(
         common.funder,
@@ -35,11 +35,12 @@ pub fn create_with_timestamps_ll(
         common.deposit_token_program,
     );
 
+    // Execute the ix
     let ix = CreateWithTimestampsLlInstruction::data(data.clone()).accounts(accounts).instruction();
     let result = trident.process_transaction(&[ix], Some("CreateWithTimestampsLL"));
     assert!(result.is_success(), "CreateWithTimestampsLL transaction failed");
 
-    // Shared assertions
+    // Assert post-execution state
     let stream_data = assert_create(
         trident,
         &common,
@@ -51,7 +52,6 @@ pub fn create_with_timestamps_ll(
         funder_ata_balance_before,
     );
 
-    // Timestamp-specific assertions
     let (start, cliff, end, _, _) = get_linear_params(&stream_data);
     assert_eq!(start, data.start_time, "start_time mismatch");
     assert_eq!(cliff, data.cliff_time, "cliff_time mismatch");

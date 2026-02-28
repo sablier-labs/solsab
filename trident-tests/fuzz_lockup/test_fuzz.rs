@@ -35,7 +35,7 @@ impl FuzzTest {
         // Create default users
         self.create_users();
 
-        // Create tokens and mint
+        // Create tokens and mints
         self.create_tokens();
 
         // Initialize the program
@@ -57,8 +57,8 @@ impl FuzzTest {
         create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, true);
 
         // A stream can be canceled in the following scenarios:
-        // 1. Stream is PENDING, thus the stream becomes DEPLETED.
-        // 2. Stream is STREAMING, thus the stream becomes CANCELED.
+        // 1. when the stream is PENDING (and becomes DEPLETED).
+        // 2. when the stream is STREAMING (and becomes CANCELED).
         // Set 10% probability to cancel a PENDING stream
         let is_pending_stream = self.trident.random_from_range(1..100) <= 10;
 
@@ -68,12 +68,12 @@ impl FuzzTest {
             self.warp_to(warp_time);
         } else {
             // Warp between start and end time to put stream in STREAMING state
-            let warp_time = self.trident.random_from_range(CLIFF_TIME + 1..END_TIME - 1);
+            let warp_time = self.trident.random_from_range(START_TIME + 1..END_TIME - 1);
             self.warp_to(warp_time);
         }
 
         // Run the cancel test
-        cancel(&mut self.trident, &mut self.fuzz_accounts, is_pending_stream);
+        cancel(&mut self.trident, &mut self.fuzz_accounts);
     }
 
     #[flow]
@@ -90,30 +90,27 @@ impl FuzzTest {
 
     #[flow]
     fn flow_refundable_amount_of(&mut self) {
-        self.randomize_deposit_token();
-        let (stream_data_pubkey, stream_nft) = self.setup_view_flow();
-        refundable_amount_of(&mut self.trident, &stream_data_pubkey, &stream_nft);
+        let (stream_data_pk, stream_nft) = self.setup_view_flow();
+        refundable_amount_of(&mut self.trident, &stream_data_pk, &stream_nft);
     }
 
     #[flow]
     fn flow_streamed_amount_of(&mut self) {
-        self.randomize_deposit_token();
-        let (stream_data_pubkey, stream_nft) = self.setup_view_flow();
-        streamed_amount_of(&mut self.trident, &stream_data_pubkey, &stream_nft);
+        let (stream_data_pk, stream_nft) = self.setup_view_flow();
+        streamed_amount_of(&mut self.trident, &stream_data_pk, &stream_nft);
     }
 
     #[flow]
     fn flow_monotonic_increase_of_streamed_amount_of(&mut self) {
         self.randomize_deposit_token();
 
-        // Create a non-default stream
-        create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
+        self.create_random_stream();
 
-        let stream_data_pubkey = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
+        let stream_data_pk = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
         let stream_nft = self.fuzz_accounts.stream_nft.get(&mut self.trident).unwrap();
-        let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
+        let stream_data = get_stream_data(&mut self.trident, &stream_data_pk);
 
-        // Start from after cliff time to ensure streaming has started
+        // Determine the time when streaming has started
         let (start, cliff, end, _, _) = get_linear_params(&stream_data);
         let start_time = cliff.max(start) + 1;
         let end_time = end;
@@ -126,7 +123,7 @@ impl FuzzTest {
         for i in 0..num_jumps {
             self.warp_to(start_time + (time_step * i));
 
-            let current_amount = execute_streamed_amount_of(&mut self.trident, &stream_data_pubkey, &stream_nft);
+            let current_amount = execute_streamed_amount_of(&mut self.trident, &stream_data_pk, &stream_nft);
 
             assert!(
                 current_amount >= previous_amount,
@@ -139,7 +136,6 @@ impl FuzzTest {
 
     #[flow]
     fn flow_withdraw(&mut self) {
-        self.randomize_deposit_token();
         let (withdrawable, withdraw_to_recipient) = self.setup_withdraw_flow();
         let withdraw_amount = self.trident.random_from_range(1..withdrawable);
         withdraw(&mut self.trident, &mut self.fuzz_accounts, withdraw_to_recipient, withdraw_amount);
@@ -147,31 +143,29 @@ impl FuzzTest {
 
     #[flow]
     fn flow_withdraw_max(&mut self) {
-        self.randomize_deposit_token();
         let (_, withdraw_to_recipient) = self.setup_withdraw_flow();
         withdraw_max(&mut self.trident, &mut self.fuzz_accounts, withdraw_to_recipient);
     }
 
     #[flow]
     fn flow_withdrawable_amount_of(&mut self) {
-        self.randomize_deposit_token();
-        let (stream_data_pubkey, stream_nft) = self.setup_view_flow();
+        let (stream_data_pk, stream_nft) = self.setup_view_flow();
 
         // Randomly (50/50) decide to perform a withdraw before checking withdrawable amount
         let withdraw_before = self.trident.random_bool();
         if withdraw_before {
-            let mut withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
+            let mut withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pk);
             // If nothing is withdrawable, warp to near end time to ensure something is withdrawable
             if withdrawable == 0 {
-                let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
+                let stream_data = get_stream_data(&mut self.trident, &stream_data_pk);
                 let (_, _, end, _, _) = get_linear_params(&stream_data);
                 self.warp_to(end - 1);
-                withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
+                withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pk);
             }
             withdraw(&mut self.trident, &mut self.fuzz_accounts, true, withdrawable);
         }
 
-        withdrawable_amount_of(&mut self.trident, &stream_data_pubkey, &stream_nft);
+        withdrawable_amount_of(&mut self.trident, &stream_data_pk, &stream_nft);
     }
 
     // -------------------------------------------------------------------------- //
@@ -253,22 +247,33 @@ impl FuzzTest {
         self.fuzz_accounts.deposit_token_program.insert_with_address(program);
     }
 
-    /// Common setup for view flows: creates a stream, warps to active time, returns pubkeys.
-    fn setup_view_flow(&mut self) -> (Pubkey, Pubkey) {
-        create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
+    /// Randomly creates a stream using either CreateWithTimestampsLL or CreateWithDurationsLL.
+    fn create_random_stream(&mut self) {
+        if self.trident.random_bool() {
+            create_with_durations_ll(&mut self.trident, &mut self.fuzz_accounts);
+        } else {
+            create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
+        }
+    }
 
-        let stream_data_pubkey = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
+    /// Common setup for view flows: randomizes token, creates a stream, warps to active time, returns pubkeys.
+    fn setup_view_flow(&mut self) -> (Pubkey, Pubkey) {
+        self.randomize_deposit_token();
+        self.create_random_stream();
+
+        let stream_data_pk = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
         let stream_nft = self.fuzz_accounts.stream_nft.get(&mut self.trident).unwrap();
-        let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
+        let stream_data = get_stream_data(&mut self.trident, &stream_data_pk);
 
         self.warp_to_active_stream_time(&stream_data);
 
-        (stream_data_pubkey, stream_nft)
+        (stream_data_pk, stream_nft)
     }
 
     /// Common setup for withdraw and withdraw_max flows.
-    /// Creates a stream, warps time, optionally cancels, and returns withdrawable amount.
+    /// Randomizes token, creates a stream, warps time, optionally cancels, and returns withdrawable amount.
     fn setup_withdraw_flow(&mut self) -> (u64, bool) {
+        self.randomize_deposit_token();
         // 25% chance to cancel the stream first
         let should_cancel = self.trident.random_from_range(1..100) <= 25;
 
@@ -280,35 +285,34 @@ impl FuzzTest {
         if should_cancel {
             // Create a default stream
             create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, true);
-            let stream_data_pubkey = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
+            let stream_data_pk = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
 
-            // Warp to STREAMING time
+            // Warp to post-cliff STREAMING time
             let warp_time = self.trident.random_from_range(CLIFF_TIME + 1..END_TIME - 1);
             self.warp_to(warp_time);
 
             // Cancel the stream
-            cancel(&mut self.trident, &mut self.fuzz_accounts, false);
+            cancel(&mut self.trident, &mut self.fuzz_accounts);
 
             // Return withdrawable after cancel
-            (get_withdrawable_amount(&mut self.trident, &stream_data_pubkey), withdraw_to_recipient)
+            (get_withdrawable_amount(&mut self.trident, &stream_data_pk), withdraw_to_recipient)
         } else {
-            // Create a non-default stream
-            create_with_timestamps_ll(&mut self.trident, &mut self.fuzz_accounts, false);
+            self.create_random_stream();
 
             // Get the stream data
-            let stream_data_pubkey = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
-            let stream_data = get_stream_data(&mut self.trident, &stream_data_pubkey);
+            let stream_data_pk = self.fuzz_accounts.stream_data.get(&mut self.trident).unwrap();
+            let stream_data = get_stream_data(&mut self.trident, &stream_data_pk);
 
             // Warp to active stream time
             self.warp_to_active_stream_time(&stream_data);
 
             // Check withdrawable after warp
-            let mut withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
+            let mut withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pk);
             if withdrawable == 0 {
                 // Warp to near end time to ensure something is withdrawable
                 let (_, _, end, _, _) = get_linear_params(&stream_data);
                 self.warp_to(end - 1);
-                withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pubkey);
+                withdrawable = get_withdrawable_amount(&mut self.trident, &stream_data_pk);
             }
             (withdrawable, withdraw_to_recipient)
         }

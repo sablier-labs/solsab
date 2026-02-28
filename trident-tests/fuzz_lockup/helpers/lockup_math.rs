@@ -2,8 +2,8 @@ use super::{get_linear_params, get_stream_data};
 use trident_fuzz::fuzzing::{Pubkey, Trident};
 
 /// This file matches the logic from programs/lockup/src/utils/lockup_math.rs with some edits.
-pub fn get_streamed_amount(trident: &mut Trident, stream_data_pubkey: &Pubkey) -> u64 {
-    let stream_data = get_stream_data(trident, stream_data_pubkey);
+pub fn get_streamed_amount(trident: &mut Trident, stream_data_pk: &Pubkey) -> u64 {
+    let stream_data = get_stream_data(trident, stream_data_pk);
     let now = trident.get_current_timestamp() as u64;
 
     if stream_data.is_depleted {
@@ -65,20 +65,20 @@ pub fn get_streamed_amount(trident: &mut Trident, stream_data_pubkey: &Pubkey) -
     streamed_amount
 }
 
-pub fn get_refundable_amount(trident: &mut Trident, stream_data_pubkey: &Pubkey) -> u64 {
-    let stream_data = get_stream_data(trident, stream_data_pubkey);
+pub fn get_refundable_amount(trident: &mut Trident, stream_data_pk: &Pubkey) -> u64 {
+    let stream_data = get_stream_data(trident, stream_data_pk);
 
     // Note that checking for `is_cancelable` also checks if the stream `was_canceled` thanks to the protocol
     // invariant that canceled streams are not cancelable anymore.
     if stream_data.is_cancelable && !stream_data.is_depleted {
-        return stream_data.amounts.deposited.saturating_sub(get_streamed_amount(trident, stream_data_pubkey));
+        return stream_data.amounts.deposited.saturating_sub(get_streamed_amount(trident, stream_data_pk));
     }
 
     // Otherwise, return zero.
     0
 }
 
-pub fn get_withdrawable_amount(trident: &mut Trident, stream_data_pubkey: &Pubkey) -> u64 {
-    let stream_data = get_stream_data(trident, stream_data_pubkey);
-    get_streamed_amount(trident, stream_data_pubkey).saturating_sub(stream_data.amounts.withdrawn)
+pub fn get_withdrawable_amount(trident: &mut Trident, stream_data_pk: &Pubkey) -> u64 {
+    let stream_data = get_stream_data(trident, stream_data_pk);
+    get_streamed_amount(trident, stream_data_pk).saturating_sub(stream_data.amounts.withdrawn)
 }

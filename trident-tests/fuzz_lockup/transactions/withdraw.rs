@@ -23,9 +23,11 @@ pub fn withdraw(trident: &mut Trident, fuzz_accounts: &mut AccountAddresses, wit
 
     let data = WithdrawInstructionData::new(amount);
 
+    // Execute the ix
     let ix = WithdrawInstruction::data(data).accounts(accounts).instruction();
     let result = trident.process_transaction(&[ix], Some("Withdraw"));
     assert!(result.is_success(), "Withdraw transaction failed");
 
+    // Assert post-execution state
     assert_withdraw(trident, &common, amount, recipient_ata_balance_before, stream_data_ata_balance_before);
 }
