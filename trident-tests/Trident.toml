@@ -1,0 +1,23 @@
+[fuzz.metrics]
+  enabled = true
+  dashboard = true
+
+[[fuzz.programs]]
+  address = "5rRqnrYc5v1HTWub3nViVX1LwrrRrQTshvGiAAJvK3Er"
+  program = "../target/deploy/sablier_lockup.so"
+
+[[fuzz.programs]]
+  address = "7gHPcvMam4Fs6eLV792xJui8bfXZwruq7RZCknrwECP1"
+  program = "../target/deploy/sablier_merkle_instant.so"
+
+[[fuzz.programs]]
+  address = "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+  program = "../tests/fixtures/mpl_core_program.so"
+
+[[fuzz.programs]]
+  address = "HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny"
+  program = "../tests/fixtures/chainlink_program.so"
+
+[[fuzz.accounts]]
+  address = "99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY6jZ96ynrR"
+  filename = "../lib/chainlink_sol_usd_feed_mock.json"

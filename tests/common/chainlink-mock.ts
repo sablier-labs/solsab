@@ -1,5 +1,6 @@
 import type { BN } from "@coral-xyz/anchor";
 import type { AddedAccount } from "solana-bankrun";
+import mockAccount from "../../lib/chainlink_sol_usd_feed_mock.json";
 import { ProgramId } from "../../lib/constants";
 import { toBn } from "../../lib/helpers";
 
@@ -8,19 +9,15 @@ import { toBn } from "../../lib/helpers";
 export class ChainlinkMock {
   /// To get the mock data run the CLI: `solana account 99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY6jZ96ynrR --url devnet --output json`
   /// This data is mocked at "1754142441" Unix timestamp
-  public MOCK_CHAINLINK_DATA =
-    "YLNFQoCBSXUCAWQUUYa2ANnUYYrbqZcNlEBTsnm1vMbAD/Shxwnxadi/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+AAD9IzGmE6swmiVX6E+mpeINgNJ4h4AyDGib6NC7wlNPTCAvIFVTRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAr+bMBAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD7PsAXAAAAAOkWjmgAAAAAoTdp0wMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-  private readonly mockBuffer = Buffer.from(this.MOCK_CHAINLINK_DATA, "base64");
+  private readonly mockBuffer = Buffer.from(mockAccount.account.data[0], "base64");
 
   async accountData(): Promise<AddedAccount> {
-    const MOCK_ACCOUNT_DATA = new Uint8Array(this.mockBuffer);
-
     return {
       address: ProgramId.CHAINLINK_SOL_USD_FEED,
       info: {
-        data: MOCK_ACCOUNT_DATA,
-        executable: false,
-        lamports: 2616962,
+        data: new Uint8Array(this.mockBuffer),
+        executable: mockAccount.account.executable,
+        lamports: mockAccount.account.lamports,
         owner: ProgramId.CHAINLINK_PROGRAM,
       },
     };
@@ -46,7 +43,7 @@ export class ChainlinkMock {
   }
 
   /**
-   * Reads the timestamp from {@link MOCK_CHAINLINK_DATA}.
+   * Reads the timestamp from the mock Chainlink data.
    * Parses the u64 at offset 208 (Chainlink's Round.timestamp) and returns it
    * as a {@link BN} via {@link toBn}.
    */

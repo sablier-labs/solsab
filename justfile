@@ -9,6 +9,8 @@ import "./node_modules/@sablier/devkit/just/base.just"
 anchor := require("anchor")
 # Solana: https://solana.com/docs/intro/installation#install-the-solana-cli
 solana := require("solana")
+# Trident: https://ackee.xyz/trident/docs/latest/basics/installation/
+trident := require("trident")
 
 # ---------------------------------------------------------------------------- #
 #                                  ENVIRONMENT                                 #
@@ -84,12 +86,14 @@ full-check:
     just _run-with-status biome-check
     just _run-with-status tsc-check
     just _run-with-status rust-check
+    just _run-with-status rust-check-trident
 
 # Run all code fixes
 full-write:
     just _run-with-status prettier-write
     just _run-with-status biome-write
     just _run-with-status rust-write
+    just _run-with-status rust-write-trident
 
 # Run Rust checks
 # TODO: Remove `--allow deprecated` once mpl-core crate deprecation warnings are resolved upstream.
@@ -105,40 +109,70 @@ rust-write:
     cargo clippy --fix --allow-dirty -- --allow deprecated
 alias rw := rust-write
 
+# Run Rust checks on Trident fuzz tests
+rust-check-trident:
+    cargo fmt --check --manifest-path trident-tests/Cargo.toml
+    cargo clippy --manifest-path trident-tests/Cargo.toml
+alias rct := rust-check-trident
+
+# Format Trident fuzz test code
+rust-write-trident:
+    cargo fmt --manifest-path trident-tests/Cargo.toml
+    cargo clippy --fix --allow-dirty --manifest-path trident-tests/Cargo.toml
+alias rwt := rust-write-trident
+
 # ---------------------------------------------------------------------------- #
 #                                    TESTING                                   #
 # ---------------------------------------------------------------------------- #
 
-# Run all tests
-# To debug the Solana logs, run this as `RUST_LOG=debug just test`
+# Run all tests (Anchor + Trident)
 [group("test")]
-test *args: build _setup-fixtures
-    na vitest run --hideSkippedTests {{ args }}
+test: test-anchor test-trident
 alias t := test
 
-# Run all tests without building
+# ---------------------------------------------------------------------------- #
+#                                 ANCHOR TESTS                                 #
+# ---------------------------------------------------------------------------- #
+
+# Run all Anchor tests (lockup + merkle instant)
+# To debug the Solana logs, run this as `RUST_LOG=debug just test-anchor`
 [group("test")]
-test-lite *args: _setup-fixtures
+test-anchor *args: build _setup-fixtures
     na vitest run --hideSkippedTests {{ args }}
-alias tl := test-lite
+alias ta := test-anchor
 
-# Run tests with UI
+# Run Anchor tests with UI
 [group("test")]
-test-ui *args: build _setup-fixtures
+test-anchor-ui *args: build _setup-fixtures
     na vitest --hideSkippedTests --ui {{ args }}
-alias tui := test-ui
+alias taui := test-anchor-ui
 
-# Run Lockup tests only
+# Run Anchor Lockup tests only
 [group("test")]
-test-lockup *args="tests/lockup":
-    just test {{ args }}
-alias tlk := test-lockup
+test-anchor-lockup *args="tests/lockup": build _setup-fixtures
+    na vitest run --hideSkippedTests {{ args }}
+alias talk := test-anchor-lockup
 
-# Run Merkle Instant tests only
+# Run Anchor Merkle Instant tests only
 [group("test")]
-test-merkle-instant *args="tests/merkle-instant":
-    just test {{ args }}
-alias tmi := test-merkle-instant
+test-anchor-merkle-instant *args="tests/merkle-instant": build _setup-fixtures
+    na vitest run --hideSkippedTests {{ args }}
+alias tami := test-anchor-merkle-instant
+
+# ---------------------------------------------------------------------------- #
+#                                TRIDENT TESTS                                 #
+# ---------------------------------------------------------------------------- #
+
+# Run all Trident fuzz tests
+[group("test")]
+test-trident: test-trident-lockup
+alias tt := test-trident
+
+# Run Trident Lockup fuzz tests
+[group("test")]
+test-trident-lockup: build _setup-fixtures
+    just --justfile trident-tests/justfile test-lockup
+alias ttlk := test-trident-lockup
 
 # Download external program fixtures for testing
 _setup-fixtures:
@@ -146,10 +180,10 @@ _setup-fixtures:
     FIXTURES_DIR="tests/fixtures"
     mkdir -p "$FIXTURES_DIR"
 
-    # Token Metadata Program
-    if [ ! -f "$FIXTURES_DIR/token_metadata_program.so" ]; then
-        echo "📥 Downloading Token Metadata program..."
-        solana program dump -u m metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s "$FIXTURES_DIR/token_metadata_program.so"
+    # MPL Core Program
+    if [ ! -f "$FIXTURES_DIR/mpl_core_program.so" ]; then
+        echo "📥 Downloading MPL Core program..."
+        solana program dump -u m CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d "$FIXTURES_DIR/mpl_core_program.so"
     fi
 
     # Chainlink Program
