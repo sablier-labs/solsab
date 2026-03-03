@@ -1315,13 +1315,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 
 [[package]]
-name = "sablier_lockup"
+name = "sablier-common"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
  "chainlink_solana",
+]
+
+[[package]]
+name = "sablier_lockup"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
  "mpl-core",
+ "sablier-common",
 ]
 
 [[package]]
@@ -1330,7 +1339,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "chainlink_solana",
+ "sablier-common",
 ]
 
 [[package]]

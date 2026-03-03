@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
 
+use sablier_common::safe_collectible_amount;
+
 use crate::{
     state::Treasury,
     utils::{constants::seeds::TREASURY, events, validations::check_collect_fees},
@@ -59,28 +61,4 @@ pub fn handler(ctx: Context<CollectFees>) -> Result<()> {
     });
 
     Ok(())
-}
-
-/// TODO: abstract this to a utils module used by both Lockup and Merkle Instant
-/// Helper function to calculate the collectable amount from an account. It takes an extra-safe approach by adding a
-/// buffer to the rent exemption, ensuring that the account balance does not fall below the rent-exempt minimum, which
-/// could otherwise make the program unusable.
-pub fn safe_collectible_amount(account: &AccountInfo) -> Result<u64> {
-    // Retrieve the current balance of the account.
-    let current_balance = account.lamports();
-
-    // Determine the size of the account's data.
-    let data_len = account.data_len();
-
-    // Retrieve the rent sysvar.
-    let rent = Rent::get()?;
-
-    // Calculate the minimum balance needed for rent exemption.
-    let rent_exempt_minimum = rent.minimum_balance(data_len);
-
-    const SAFE_RENT_BUFFER_LAMPORTS: u64 = 1_000_000; // 0.001 SOL
-    let safe_minimum = rent_exempt_minimum.checked_add(SAFE_RENT_BUFFER_LAMPORTS).unwrap();
-
-    // Return the collectable amount
-    Ok(current_balance.saturating_sub(safe_minimum))
 }

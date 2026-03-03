@@ -1,5 +1,6 @@
-pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
-pub const LAMPORTS_PER_SOL: u64 = 1e9 as u64; // 1 billion lamports in 1 SOL
+// Re-export shared constants so that they are accessible via `crate::utils::constants::*`.
+pub use sablier_common::constants::*;
+
 /// Maximum number of tranches in a LT stream (constrained by tx size/CU limits).
 pub const MAX_TRANCHES: usize = 30;
 /// The fee amount in USD, denominated in Chainlink's 8-decimal format for USD prices, where 1e8 is $1.
@@ -8,10 +9,11 @@ pub const WITHDRAWAL_FEE_USD: u64 = 0;
 
 // Account Seeds
 pub mod seeds {
+    pub use sablier_common::constants::seeds::TREASURY;
+
     pub const STREAM_NFT_COLLECTION: &[u8] = b"stream_nft_collection";
     pub const STREAM_NFT: &[u8] = b"stream_nft";
     pub const STREAM_DATA: &[u8] = b"stream_data";
-    pub const TREASURY: &[u8] = b"treasury";
 }
 
 // NFT

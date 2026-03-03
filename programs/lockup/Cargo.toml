@@ -19,5 +19,5 @@
 [dependencies]
   anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
   anchor-spl = "0.31.1"
-  chainlink_solana = { git = "https://github.com/smartcontractkit/chainlink-solana", branch = "solana-2.1" }
   mpl-core = { version = "=0.11.1-beta.2", features = ["anchor"] }
+  sablier-common = { path = "../../crates/sablier-common" }
