@@ -1,4 +1,27 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{
+    prelude::*,
+    solana_program::{program::invoke, system_instruction::transfer},
+};
+
+use crate::convert_usd_fee_to_lamports;
+
+/// Charges a fee in lamports by converting a USD amount via Chainlink oracle and transferring SOL to the treasury.
+pub fn charge_fee<'info>(
+    fee_usd: u64,
+    chainlink_program: AccountInfo<'info>,
+    chainlink_sol_usd_feed: AccountInfo<'info>,
+    tx_signer: AccountInfo<'info>,
+    treasury: AccountInfo<'info>,
+) -> Result<u64> {
+    let fee_in_lamports: u64 = convert_usd_fee_to_lamports(fee_usd, chainlink_program, chainlink_sol_usd_feed);
+
+    if fee_in_lamports > 0 {
+        let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);
+        invoke(&fee_charging_ix, &[tx_signer, treasury])?;
+    }
+
+    Ok(fee_in_lamports)
+}
 
 /// Helper function to calculate the collectable amount from an account. As a precaution, we add a buffer to the rent
 /// exemption, ensuring that the account balance will not fall below the rent-exempt minimum. This could otherwise

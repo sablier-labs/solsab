@@ -1,7 +1,4 @@
-use anchor_lang::{
-    prelude::*,
-    solana_program::{program::invoke, system_instruction::transfer},
-};
+use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
@@ -12,7 +9,6 @@ use crate::{
     utils::{
         constants::{seeds::*, ANCHOR_DISCRIMINATOR_SIZE, CLAIM_FEE_USD},
         events,
-        fee_calculation::convert_usd_fee_to_lamports,
         transfer_helper::transfer_tokens,
         validations::check_claim,
     },
@@ -134,7 +130,8 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
     ctx.accounts.campaign.claim()?;
 
     // Interaction: charge the claim fee.
-    let fee_in_lamports = charge_claim_fee(
+    let fee_in_lamports = sablier_common::charge_fee(
+        CLAIM_FEE_USD,
         ctx.accounts.chainlink_program.to_account_info(),
         ctx.accounts.chainlink_sol_usd_feed.to_account_info(),
         ctx.accounts.claimer.to_account_info(),
@@ -174,23 +171,4 @@ pub fn handler(ctx: Context<Claim>, index: u32, amount: u64, merkle_proof: Vec<[
     });
 
     Ok(())
-}
-
-/// Charges the claim fee in lamports.
-fn charge_claim_fee<'info>(
-    chainlink_program: AccountInfo<'info>,
-    chainlink_sol_usd_feed: AccountInfo<'info>,
-    tx_signer: AccountInfo<'info>,
-    treasury: AccountInfo<'info>,
-) -> Result<u64> {
-    // Calculate the fee in lamports.
-    let fee_in_lamports: u64 = convert_usd_fee_to_lamports(CLAIM_FEE_USD, chainlink_program, chainlink_sol_usd_feed);
-
-    if fee_in_lamports > 0 {
-        // Interaction: transfer the fee from the signer to the treasury.
-        let fee_charging_ix = transfer(&tx_signer.key(), &treasury.key(), fee_in_lamports);
-        invoke(&fee_charging_ix, &[tx_signer, treasury])?;
-    }
-
-    Ok(fee_in_lamports)
 }
