@@ -1,7 +1,7 @@
 # SolSab [![Github Actions][gha-badge]][gha] [![Anchor][anchor-badge]][anchor] [![Discord][discord-badge]][discord] [![Twitter][twitter-badge]][twitter]
 
-[gha]: https://github.com/sablier-labs/lockup/actions
-[gha-badge]: https://github.com/sablier-labs/lockup/actions/workflows/ci.yml/badge.svg
+[gha]: https://github.com/sablier-labs/solsab/actions
+[gha-badge]: https://github.com/sablier-labs/solsab/actions/workflows/ci.yml/badge.svg
 [discord]: https://discord.gg/bSwRCwWRsT
 [discord-badge]: https://img.shields.io/discord/659709894315868191
 [anchor]: https://www.anchor-lang.com/docs
