@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "extends": ["@sablier/devkit/biome"],
+  "extends": ["@prb/devkit/biome"],
   "files": {
     "includes": ["**/*.{js,json,jsonc,ts}", "!node_modules", "!target"]
   },

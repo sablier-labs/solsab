@@ -261,7 +261,7 @@ Working code examples demonstrating key patterns:
 | File                               | Content                                |
 | ---------------------------------- | -------------------------------------- |
 | `examples/withdraw_instruction.rs` | Complete Anchor instruction example    |
-| `examples/test_pattern.ts`         | Vitest + anchor-bankrun test structure |
+| `examples/test-pattern.ts`         | Vitest + anchor-bankrun test structure |
 
 ### External Documentation
 

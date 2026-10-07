@@ -14,7 +14,7 @@ jobs:
     runs-on: "macos-latest"
     steps:
       - name: "Set up Sablier devkit and install Node.js dependencies"
-        uses: "sablier-labs/devkit/actions/setup@v1"
+        uses: "PaulRBerg/devkit/actions/setup@v1"
         with:
           package-manager: "bun"
 
