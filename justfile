@@ -76,11 +76,24 @@ setup:
 #                                  CODE CHECKS                                 #
 # ---------------------------------------------------------------------------- #
 
+# Check bash script formatting
+[group("code-checks")]
+bash-check:
+    shfmt -i 2 -d scripts/bash/*.sh
+alias bashc := bash-check
+
+# Format bash scripts
+[group("code-fixes")]
+bash-write:
+    shfmt -i 2 -w -s scripts/bash/*.sh
+alias bashw := bash-write
+
 # Run all code checks
 full-check:
     just _run-with-status codegen
     just _run-with-status prettier-check
     just _run-with-status biome-check
+    just _run-with-status bash-check
     just _run-with-status tsc-check
     just _run-with-status rust-check
 
@@ -88,6 +101,7 @@ full-check:
 full-write:
     just _run-with-status prettier-write
     just _run-with-status biome-write
+    just _run-with-status bash-write
     just _run-with-status rust-write
 
 # Run Rust checks
